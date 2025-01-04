@@ -1,0 +1,56 @@
+<div class="resource {{blocktype}} {{name}}">
+  <div class="attribute flex-group-center">
+    <div class="block-background">
+      <div class="block-title">
+        {{#if headerlink}}
+        <a class="{{headerclass}}" {{{headerattributes}}}>{{localize title}}</a>
+        {{else}} {{localize title}}{{/if}}
+      </div>
+      <div class="block-attribute">
+        {{#if (or (eq blocktype "single") (eq blocktype "double") (eq blocktype "full")) }} {{#if (eq type "Boolean")}}
+        <input class="ranked-toggle" style="text-align: center;" type="checkbox" name="{{name}}" data-dtype="{{type}}" {{checked value}} />
+        {{/if}} {{#if (eq type "Dropdown")}}
+        <select style="text-align: center;" name="{{name}}">
+          {{#if (eq name "data.characteristic.value")}}<option value="">None</option>{{/if}}
+          {{#select value}} {{#each options as |t|}}
+          <option value="{{#if (eq t.value undefined) }}{{t._id}}{{else}}{{t.value}}{{/if}}">{{t.label}}{{t.name}}</option>
+          {{/each}} {{/select}}
+        </select>
+        {{/if}} {{#if (eq type "Multicheckbox")}}
+        <div class="grid grid-2col firing-arcs">
+          {{#each fields as |t|}}
+          <div>
+            <input type="checkbox" id="{{t.name}}" name="{{t.name}}" {{checked t.value}} />
+            <label for="{{t.name}}"> {{localize t.label}}</label>
+          </div>
+          {{/each}}
+        </div>
+        {{/if}} {{#if (eq type "PopoutEditor")}}
+        <div class="block-value block-single">
+          <div class="popout-editor" data-target="{{name}}" data-value="{{value}}" data-label="{{title}}">
+            <div class="popout-editor-button">{{#if readonly}}{{ else }}<i class="fas fa-edit"></i>{{/if}}</div>
+            {{{value}}}
+          </div>
+        </div>
+        {{/if}} {{#if (and (ne type "Boolean") (ne type "Dropdown") (ne type "Multicheckbox") (ne type "PopoutEditor"))}}
+        <div class="block-value block-single">{{#if prefix}}{{{prefix}}}{{/if}}<input type="text" name="{{name}}" value="{{value}}" data-dtype="{{type}}" {{#if disabled}}disabled{{/if}} /></div>
+        {{/if}} {{/if}} {{#if (eq blocktype "split")}} {{#each fields as |t|}}
+        <div class="block-value"><input type="text" name="{{name}}" value="{{value}}" data-dtype="{{type}}" {{#if disabled}}disabled{{/if}} /></div>
+        {{/each}} {{/if}} {{#with (lookup options [value])~}} {{#if (ne label ../adjusted)}}
+        <div class="adjustedvalue">{{localize ../adjusted}}</div>
+        {{/if}} {{/with}}
+        {{#if (and (ne value adjusted) (eq type "Number"))}}<div class="adjustedvalue">{{adjusted}}</div>{{/if}}
+      </div>
+    </div>
+    {{#if (or (eq hasShadow true) (eq blocktype "split"))}}
+    <div class="block-background-shadow">
+      <div class="shadow-left">
+        <div class="shadow-text">{{localize fields.[0].label}}</div>
+      </div>
+      <div class="shadow-right">
+        <div class="shadow-text">{{localize fields.[1].label}}</div>
+      </div>
+    </div>
+    {{/if}}
+  </div>
+</div>

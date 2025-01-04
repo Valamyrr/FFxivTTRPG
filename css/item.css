@@ -1,0 +1,50 @@
+@import url("item/abilities.css");
+@import url("item/inventory-dialog.css");
+
+.ffxiv.item .window-content{
+  background: #2C2C2C;
+  color: white;
+  display: block;
+}
+
+.ffxiv.item .item-delete{
+  height: 50px;
+  max-width: 50px;
+  margin-left: 15px;
+  background-color: red;
+}
+
+.ffxiv.item .window-content select{
+  color: white;
+}
+.ffxiv.item .window-content input{
+  color: white;
+}
+.ffxiv.item .window-content button{
+  color: white;
+}
+.ffxiv.item .window-content option{
+  color: black;
+}
+
+.ffxiv.item .profile-img{
+  border:none;
+}
+
+.ffxiv.item .sheet-body{
+  height: 100%;
+}
+
+.delete-item-btn {
+  background-color: #d9534f;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.delete-item-btn:hover {
+  background-color: #c9302c;
+}

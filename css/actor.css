@@ -1,0 +1,53 @@
+@import url("actor/sidebar.css");
+@import url("actor/header.css");
+@import url("actor/nav.css");
+@import url("actor/inventory.css");
+@import url("actor/abilities.css");
+@import url("actor/attributes.css");
+
+.ffxiv.actor .window-content{
+  background: var(--background-color);
+  color: var(--text-color);
+  padding: 0;
+  overflow-y: auto;
+}
+
+.ffxiv.actor a:hover{
+  text-shadow: none;
+}
+
+.ffxiv.actor .sheet-body {
+  flex: 1;
+  padding: 10px;
+  min-width: calc(100% - 230px);
+  transition: all 0.8s ease;
+}
+
+.ffxiv.actor .window-content button {
+  color:white;
+}
+
+.ffxiv.actor .sheet-body-wrapper {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  width: 100%;
+}
+.ffxiv.actor .full-width .fixed-part{
+  transform: translateX(-100%);
+}
+.ffxiv.actor .full-width .sheet-body{
+  min-width: 100%;
+  transform: translateX(-230px);
+}
+
+
+.ffxiv.actor .window-content input{
+  color: white;
+}
+.ffxiv.actor .window-content select{
+  color: white;
+}
+.ffxiv.actor .window-content option{
+  color: black;
+}

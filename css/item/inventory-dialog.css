@@ -1,0 +1,133 @@
+.ffxiv.item .window-content:has(.limited-display){
+  padding: 0
+}
+.ffxiv.item:has(.limited-display) .window-resizable-handle{
+  display: none;
+}
+
+
+/* Rarity Title*/
+.limited-display .text-rarity-basic {
+  color: var(--rarity-basic);
+}
+.limited-display .text-rarity-green {
+  color: var(--rarity-green);
+}
+.limited-display .text-rarity-aetherial {
+  color: var(--rarity-aetherial);
+}
+.limited-display .text-rarity-blue {
+  color: var(--rarity-blue);
+}
+.limited-display .text-rarity-relic {
+  color: var(--rarity-relic);
+}
+.limited-display .text-rarity-unique {
+  color: var(--rarity-unique);
+}
+.limited-display .item-dialog-name{
+  text-shadow: 0px 0px 5px var(--shadow-improve-readability);
+}
+
+
+.item-card {
+  border: 2px solid var(--border-color-1);
+  border-radius: 7px;
+  background: var(--primary-color);
+  color: var(--text-color);
+  overflow: hidden;
+}
+
+.item-card strong{
+  color: var(--text-color-strong);
+}
+
+.item-card .item-card-info {
+  background: linear-gradient(0deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  padding: 5px;
+  min-height: 66px;
+}
+
+.item-card .item-dialog-header{
+  border-bottom: solid 2px var(--border-color-2);
+  box-shadow: 0px 7px 3px -2px var(--border-shadow-1);
+  display: inline-block;
+  margin: 0 5px 5px 0;
+  padding: 5px 0 5px 0;
+  width: calc(100% - 70px);
+}
+
+.item-card .item-dialog-icon {
+  float: left;
+  width: 60px;
+  height: 60px;
+  border: solid 1px var(--border-color-1);
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 5px 5px 5px 0;
+}
+
+.item-card .item-dialog-name {
+  font-size: 1.4em;
+  display: inline;
+}
+
+.item-card .item-dialog-right {
+  float: right;
+  display: inline;
+}
+
+.item-card .item-dialog-tags{
+  display: inline-block;
+  vertical-align: super;
+}
+
+.item-card .item-dialog-tags .tag {
+  display: inline;
+  font-style: italic;
+}
+
+
+
+.item-card .item-dialog-details {
+  padding-top: 5px;
+}
+
+.item-card .detail {
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.item-card .item-dialog-effects {
+  padding: 5px;
+}
+.item-card .effect {
+  display: inline-block;
+}
+
+.item-card .item-dialog-roll-button {
+  background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  border: none;
+  border-radius: 0;
+  padding: 10px;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text-color-strong);
+  transition: color 0.2s ease;
+}
+
+.item-card .item-dialog-button:hover{
+  box-shadow: none;
+  color: var(--text-color);
+}
+.item-card .item-dialog-button:focus{
+  box-shadow: none;
+}
+.item-card .item-dialog-button:active{
+  box-shadow: none;
+}
+
+
+.ability-description{
+  padding: 10px;
+}

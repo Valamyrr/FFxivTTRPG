@@ -1,0 +1,139 @@
+/* Arrow to display or not sidebar */
+.arrow-sidebar{
+  position: absolute;
+  top: 190px;
+  width: 25px;
+  height: 25px;
+  border: solid 1px #393939;
+  border-radius: 0 8px 8px 0;
+  background-color: #393939;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1;
+  transition: left 0.8s ease;
+}
+
+.arrow-sidebar:has(.fa-left){
+  left: 230px;
+}
+
+.arrow-sidebar:has(.fa-right){
+  left: 0px;
+}
+
+/*Fixed sidebar*/
+
+.ffxiv.actor .fixed-part {
+  min-width: 230px;
+  max-width: 230px;
+  padding: 10px;
+  border-right: solid 1px #393939;
+  padding-top: 10px;
+  transition: all 0.8s ease;
+  transform: translateX(0);
+}
+
+.ffxiv.actor .fixed-part .resources.grid-1col{
+  grid-template-columns: repeat(1,minmax(0,1fr));
+}
+
+/*Avatar*/
+.ffxiv.actor .fixed-part img.character-img{
+  height: 320px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  -webkit-box-shadow: 0px 0px 5px 0px black;
+  box-shadow: 0px 0px 10px 0px black;
+}
+
+
+
+
+
+/*Health & Mana bars*/
+
+.stat-bar {
+  height: 30px;
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+  background: linear-gradient(180deg, rgba(117,140,159,1) 0%, rgba(42,70,92,1) 30%, rgba(25,50,70,1) 100%);
+  border-radius: 10px;
+  padding: 5px
+}
+
+.mana-slot {
+  height: 16px;
+  width: 36px;
+  background-color: #393939; /* Default color for empty slots */
+  clip-path: polygon(20% 0, 100% 0, 80% 100%, 0% 100%);
+  transition: all 0.6s ease;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+
+.mana-border {
+  box-sizing: border-box;
+  display: inline-block;
+  position: relative;
+  background: white;
+  height:20px;
+  width: 40px;
+  clip-path: polygon(20% 0, 100% 0, 80% 100%, 0% 100%);
+}
+
+.mana-slot.slot-1, .mana-border:first-child {
+  border-radius: 5px 0 0 5px;
+  clip-path: polygon(0 0, 100% 0, 80% 100%, 0% 100%);
+}
+.mana-slot.slot-5, .mana-border:last-child {
+  border-radius: 0 5px 5px 0;
+  clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
+}
+
+.mana-filled {
+  background: linear-gradient(180deg, rgba(242,198,232,1) 0%, rgba(108,0,76,1) 100%);
+  transition: all 0.6s ease;
+}
+
+.health-border{
+  position: relative;
+  height: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  border: solid 2px white;
+  border-radius: 5px;
+  text-align: center;
+}
+.health-bar{
+  position: absolute;
+  height: 16px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border-radius: 3px;
+}
+.health-bar.health-good{
+  background: linear-gradient(to right, green, limegreen);
+}
+.health-bar.health-bad{
+  background: linear-gradient(to right, darkorange, orange);
+}
+.health-bar.health-danger{
+  background: linear-gradient(to right, darkred, red);
+}
+.ffxiv.actor .window-content input.health-input{
+  border:none;
+  position: relative;
+  background: transparent;
+  width:30%;
+  height: 16px;
+}
+.health-border span{
+  font-weight: bold;
+  position: relative;
+}

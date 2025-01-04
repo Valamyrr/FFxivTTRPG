@@ -1,0 +1,54 @@
+<form class='{{cssClass}} limited-display' autocomplete='off'>
+  <div class="item-card">
+    <div class="item-card-info">
+      <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon">
+      <div class="item-dialog-header">
+        <div class="item-dialog-name text-rarity-{{ delabelize 'rarities' item.system.rarity }}">
+          {{item.name}}
+        </div>
+        <div class="item-dialog-right">
+          <div class="item-dialog-tags">
+              <span class="tag">{{ localize item.system.rarity }}</span>{{#if system.tags }}, {{/if}}
+            {{#each system.tags as |tag|}}
+              <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+
+      <div class="item-dialog-details">
+
+        {{#if (not (eq item.system.price.buy 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{item.system.price.buy}}{{#if item.system.price.denomination}} {{item.system.price.denomination}}{{/if}}</div>{{/if}}
+        {{#if (not (eq item.system.price.sell 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Sell" }}:</strong> {{item.system.price.sell}}{{#if item.system.price.denomination}} {{item.system.price.denomination}}{{/if}}</div>{{/if}}
+        {{#if item.system.weight}}<div class="detail"><strong>{{ localize "FFXIV.Item.Weight" }}:</strong> {{item.system.weight}}</div>{{/if}}
+
+      </div>
+
+
+      <div class="item-dialog-effects">
+        {{#if item.system.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{item.system.base_effect}}</div>{{/if}}
+        {{#if item.system.target}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{item.system.target}}</div>{{/if}}
+        {{#if item.system.range}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{item.system.range}}</div>{{/if}}
+        {{#if (not (eq item.system.check "None")) }}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Check" }}:</strong> {{item.system.check}}</div>{{/if}}
+        {{#if item.system.challenge}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{item.system.challenge}}</div>{{/if}}
+        {{#if item.system.trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{item.system.trigger}}</div>{{/if}}
+        {{#if item.system.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{item.system.direct_hit}}</div>{{/if}}
+        {{#if item.system.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{item.system.marker_trigger}}</div>{{/if}}
+        {{#if item.system.marker_area}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{item.system.marker_area}}</div>{{/if}}
+        {{#if item.system.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{item.system.marker_effect}}</div>{{/if}}
+
+      </div>
+
+
+
+      {{#if system.description}}
+      <div class="item-dialog-description">
+        {{system.description}}
+      </div>
+      {{/if}}
+
+      <button class="item-dialog-button fas fa-dice-d20"></button>
+      <button class="item-dialog-button fa fa-trash-can"></button>
+    </div>
+  </div>
+</form>

@@ -1,0 +1,64 @@
+<form class='{{cssClass}}' autocomplete='off'>
+  <header class='sheet-header'>
+    <img
+      class='profile-img'
+      src='{{item.img}}'
+      data-edit='img'
+      title='{{item.name}}'
+    />
+    <div class='header-fields'>
+      <h1 class='charname'><input
+          name='name'
+          type='text'
+          value='{{item.name}}'
+          placeholder='Name'
+        /></h1>
+    </div>
+    <button class="item-delete fa fa-trash-can"></button>
+  </header>
+
+  {{! Sheet Body }}
+  <section class='sheet-body'>
+
+    {{! Attributes Tab }}
+    <div class='attributes'>
+      <div class="tags-container">
+        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
+        <ul class="tag-list">
+          {{#each system.tags as |tag index|}}
+            <li>
+              <select style="text-align: center;" class="select-tags">
+                {{#each ../config.tags_traits as |t|}}
+                <option value="{{t.label}}" {{#if (eq t.label tag)}}selected {{/if}}>{{ localize t.label }}</option>
+                {{/each}}
+              </select>
+              <button type="button" class="remove-tag" data-index="{{index}}">x</button>
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+
+      <hr>
+
+      <div class="resources grid grid-2col">
+        <div class="resource" style="margin:auto">
+          <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
+        </div>
+        <div class="resource-content">
+          <input name="system.activable" type="checkbox" {{#if item.system.activable}}checked {{/if}}/>
+        </div>
+      </div>
+
+      <hr>
+
+      {{! Editors must receive enriched text data from getData to properly handle rolls }}
+      {{editor
+        enrichedDescription
+        target='system.description'
+        engine='prosemirror'
+        button=true
+        editable=editable
+      }}
+    </div>
+  </section>
+</form>

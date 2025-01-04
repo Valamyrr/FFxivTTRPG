@@ -1,0 +1,40 @@
+<div class="resources grid grid-2col">
+
+
+  <div class="resource flex-group-center">
+    <label for="name" class="resource-label">{{ localize "FFXIV.Name" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+      <input name="name" type="text" value="{{actor.name}}" placeholder="Name"/>
+    </div>
+  </div>
+
+  <div class="resource flex-group-center">
+    <label for="system.experience.level.value" class="resource-label">{{ localize "FFXIV.Level" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+    <input type="text" name="system.experience.level.value" value="{{system.experience.level.value}}" data-dtype="Number"/>
+    </div>
+  </div>
+
+  <div class="resource flex-group-center">
+    <label for="system.class.name" class="resource-label">{{ localize "FFXIV.Class" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+
+      <select style="text-align: center;" name="system.class.name">
+        {{#select system.class.name}} {{#each this.config.classes as |t|}}
+        <option value="{{t.value}}">{{ localize t.label }} - {{ localize (labelize 'roles' t.role) }}</option>
+        {{/each}} {{/select}}
+      </select>
+
+    </div>
+  </div>
+
+  {{#if settings.showExperience }}
+  <div class="resource flex-group-center">
+    <label for="system.experience.experience.value" class="resource-label">{{ localize "FFXIV.Experience" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+    <input type="text" name="system.experience.experience.value" value="{{system.experience.experience.value}}" data-dtype="Number"/>
+    </div>
+  </div>
+  {{/if}}
+
+</div>

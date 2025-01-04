@@ -1,0 +1,17 @@
+.ffxiv.item .tags-container li{
+  list-style-type: none
+}
+
+.ffxiv.item .tags-container button{
+  width: 34px;
+  height: 34px;
+}
+
+.ffxiv.item .tags-container .add-tag{
+  display: inline;
+}
+
+.ffxiv.item .attributes hr{
+  border-top: solid 2px #393939;
+  margin: 15px 0 15px 0;
+}

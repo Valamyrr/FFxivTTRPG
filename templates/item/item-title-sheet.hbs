@@ -1,0 +1,66 @@
+{{! This template is a fallback for when items don't have more specific templates. }}
+{{! Generally, you'll want to make more specific templates when possible. }}
+<form class='{{cssClass}}' autocomplete='off'>
+  <header class='sheet-header'>
+    <img
+      class='profile-img'
+      src='{{item.img}}'
+      data-edit='img'
+      title='{{item.name}}'
+    />
+    <div class='header-fields'>
+      <h1 class='charname'><input
+          name='name'
+          type='text'
+          value='{{item.name}}'
+          placeholder='Name'
+        /></h1>
+    </div>
+  </header>
+
+  {{! Sheet Tab Navigation }}
+  <nav class='sheet-tabs tabs' data-group='primary'>
+    <a class='item' data-tab='description'>Description</a>
+    <a class='item' data-tab='attributes'>Attributes</a>
+  </nav>
+
+  {{! Sheet Body }}
+  <section class='sheet-body'>
+
+    {{! Description Tab }}
+    <div class='tab' data-group='primary' data-tab='description'>
+      description
+      {{editor
+        enrichedDescription
+        target='system.description'
+        engine='prosemirror'
+        button=true
+        editable=editable
+      }}
+    </div>
+    <div class='tab' data-group='primary' data-tab='attributes'>
+
+      <div class="resources grid grid-1col">
+        <div class="resource flex-group-center">
+          <label for="system.source" class="resource-label">{{ localize "FFXIV.Item.Source" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.source" value="{{ system.source }}">
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.rarity">
+              {{#each this.config.rarities as |a|}}
+              <option value="{{a.label}}" {{#if (eq a.label ../item.system.rarity)}}selected {{/if}}>{{ localize a.label }}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+</form>

@@ -1,0 +1,150 @@
+{
+  "FFXIV":{
+    "Name": "Name",
+    "Level": "Level",
+    "Class": "Class",
+    "Experience": "Experience",
+    "Health": {
+      "long": "Health",
+      "abbrv": "HP"
+    },
+    "Mana": {
+      "long": "Mana",
+      "abbrv": "MP"
+    },
+    "Attributes":{
+      "Attributes": "Attributes",
+      "Primary": "Primary Attributes",
+      "Secondary": "Secondary Attributes",
+      "Strength":{
+        "long": "Strength",
+        "abbrv": "STR"
+      },
+      "Dexterity":{
+        "long": "Dexterity",
+        "abbrv": "DEX"
+      },
+      "Vitality":{
+        "long": "Vitality",
+        "abbrv": "VIT"
+      },
+      "Intelligence":{
+        "long": "Intelligence",
+        "abbrv": "INT"
+      },
+      "Mind":{
+        "long": "Mind",
+        "abbrv": "MND"
+      },
+      "Defense": "Defense",
+      "MagicDefense": "Magic Defense",
+      "Vigilance": "Vigilance",
+      "Speed": "Speed"
+    },
+    "CharacterSheet":{
+      "Biography": "Biography",
+      "Inventory": "Inventory",
+      "Currencies": "Currencies",
+      "Titles": "Titles",
+      "ActiveTitle": "Active Title",
+      "Roll": "Roll !"
+    },
+    "Item":{
+      "Name": "Name",
+      "Source": "Source",
+      "Rarity": "Rarity",
+      "Buy": "Buy Price",
+      "Sell": "Sell Price",
+      "Denomination": "Denomination",
+      "Weight": "Weight"
+    },
+    "ItemType":{
+      "ItemType":"Item Type",
+      "consumable": "Consumable",
+      "limit_break": "Limit Break",
+      "primary_ability": "Primary Ability",
+      "secondary_ability": "Secondary Ability",
+      "instant_ability": "Instant Ability",
+      "trait": "Trait",
+      "currency": "Currency",
+      "title": "Title"
+    },
+    "ActorType":{
+      "character": "Character",
+      "npc": "NPC"
+    },
+    "Classes":{
+      "BlackMage": "Black Mage",
+      "Dragoon": "Dragoon",
+      "Warrior": "Warrior",
+      "WhiteMage": "White Mage"
+    },
+    "Roles":{
+      "DPS": "DPS",
+      "Healer": "Healer",
+      "Tank": "Tank"
+    },
+    "Abilities":{
+      "Primary": "Primary Abilities",
+      "Secondary": "Secondary Abilities",
+      "Instant": "Instant Abilities",
+      "Traits": "Traits & Other Effects",
+      "Abilities": "Abilities",
+      "Cost": "Cost",
+      "Target" :"Target",
+      "Range": "Range",
+      "Check": "Check",
+      "Challenge": "CR",
+      "Trigger": "Trigger",
+      "BaseEffect": "Base Effect",
+      "Combo": "Combo",
+      "DirectHit": "Direct Hit",
+      "MarkerArea": "Marker Area",
+      "MarkerTrigger": "Marker Trigger",
+      "MarkerEffect": "Marker Effect",
+      "Limitations":"Limitation",
+      "Limitations_max":"Limitation Boxes Number"
+    },
+    "Tags":{
+      "Tags": "Tags",
+      "Primary": "Primary",
+      "Secondary": "Secondary",
+      "Instant": "Instant",
+      "LimitBreak": "Limit Break",
+      "Trait": "Trait",
+      "Enhancement": "Enhancement",
+      "Invoked": "Invoked",
+      "Magic": "Magic",
+      "Physical": "Physical",
+      "EarthAspected": "Earth-Aspected",
+      "WindAspected": "Wind-Aspected",
+      "FireAspected": "Fire-Aspected",
+      "IceAspected": "Ice-Aspected",
+      "LightningAspected": "Lightning-Aspected"
+    },
+    "Traits":{
+      "Activable": "Activable"
+    },
+    "Rarities":{
+      "Basic": "Basic",
+      "Aetherial": "Aetherial",
+      "Green": "Green",
+      "Blue": "Blue",
+      "Relic": "Relic",
+      "Unique": "Unique"
+    },
+    "Settings":{
+      "ToggleExperience":"Show Experience",
+      "ToggleExperienceHint":"Do you use homebrew rules for experience ?",
+      "Theme": "Theme",
+      "ThemeHint": "Color palettes with which you want to display sheets.",
+      "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
+      "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?"
+    },
+    "Confirm":"Are you sure you want to complete this action?",
+    "None": "None",
+    "Special": "Special",
+    "Dark": "Dark",
+    "Light": "Light"
+  }
+}

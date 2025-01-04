@@ -1,0 +1,62 @@
+body{
+  --rarity-basic: #FFFFFF;
+  --rarity-green: #20bc70; /*#00FF00*/
+  --rarity-aetherial: #ff65ad; /*#FF007F*/
+  --rarity-blue: #87CEFA; /*#0000FF*/
+  --rarity-relic: #7641af; /*#800080*/
+  --rarity-unique: #FF0000; /*#FF0000*/
+
+  --tank: rgba(65,105,224,1);
+  --healer: rgba(43,204,74,1);
+  --dps: rgba(227,44,64,1);
+}
+
+
+.dark_theme {
+  --background-color: #2C2C2C;
+  --text-color: white;
+  --invert-text-color: black;
+  --text-color-strong: #999;
+
+  --primary-color: #393939;
+  --secondary-color: #a3a3a3;
+
+  --border-color-1: #999;
+  --border-color-2: #999;
+  --border-shadow-1: #444;
+
+  --gradient-color-1: rgb(50,50,50);
+  --gradient-color-2: rgb(58,58,58);
+  --gradient-color-3: rgb(87,87,87);
+  --gradient-color-4: rgb(66,66,66);
+
+  --shadow-color-top: rgb(150,150,150);
+  --shadow-color-bottom: rgb(0,0,0);
+  --shadow-improve-readability: rgba(0,0,0,0.4);
+
+  --chip-color: grey;
+  --chip-color-active: rgb(237,210,99);
+}
+
+.light_theme{
+  --background-color: #E2C2C2;
+  --text-color: black;
+  --text-color-strong: #8A775B;
+
+  --primary-color: #393939;
+  --secondary-color: #a3a3a3;
+
+  --border-color-1: #A1826E;
+  --border-color-2: #8A775B;
+  --border-shadow-1: #C2B49C;
+
+  --gradient-color-1: rgb(222,214,199);
+  --gradient-color-2: rgb(58,58,58);
+  --gradient-color-3: rgb(247,245,241);
+  --shadow-color-top: rgb(150,150,150);
+  --shadow-color-bottom: rgb(0,0,0);
+
+  --chip-color: rgb(237,210,99);
+  --chip-color-active: grey;
+
+}

@@ -1,0 +1,5 @@
+<nav class="sheet-tabs tabs nav-{{system.class.role}}" data-group="primary" style="{{#if (and (eq limited true) (eq displayLimited false)) }}display:none;{{/if}}">
+  {{#each items}}
+  <a class="item" data-tab="{{tab}}" title="{{label}}"><img src="systems/ffxiv/assets/hud/{{icon}}.png"></img></a>
+  {{/each}}
+</nav>

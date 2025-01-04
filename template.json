@@ -1,0 +1,160 @@
+{
+  "Actor": {
+    "types": ["character", "npc"],
+    "templates": {
+      "biography": {
+        "biography": ""
+      },
+      "health": {
+        "health": {
+          "value": 0,
+          "max": null
+        },
+        "barrier": {
+          "value": 0,
+          "max": null
+        }
+      },
+      "mana": {
+        "mana": {
+          "value": 0,
+          "max": 5
+        }
+      },
+      "attributes": {
+        "primary_attributes": {
+          "strength": {
+            "value": 0,
+            "label": "Strength"
+          },
+          "dexterity": {
+            "value": 0,
+            "label": "Dexterity"
+          },
+          "vitality": {
+            "value": 0,
+            "label": "Vitality"
+          },
+          "intelligence": {
+            "value": 0,
+            "label": "Intelligence"
+          },
+          "mind": {
+            "value": 0,
+            "label": "Mind"
+          }
+        },
+        "secondary_attributes": {
+          "defense": {
+            "value": 0,
+            "label": "Defense"
+          },
+          "magic_defense": {
+            "value": 0,
+            "label": "MagicDefense"
+          },
+          "vigilance": {
+            "value": 0,
+            "label": "Vigilance"
+          },
+          "speed": {
+            "value": 0,
+            "unit": "squares",
+            "label": "Speed"
+          }
+        }
+      }
+    },
+    "character": {
+      "templates": ["biography","attributes","health","mana"],
+      "experience": {
+        "level": {
+          "value": 1,
+          "max": null
+        },
+        "experience":{
+          "value":0,
+          "max":null,
+          "label": "XP"
+        }
+      },
+      "class":{
+        "name": "",
+        "role": ""
+      },
+      "activeTitle": ""
+    },
+    "npc":{
+      "templates": ["biography","attributes","health"]
+    }
+  },
+  "Item": {
+    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title"],
+    "templates": {
+      "physical_item":{
+        "quantity": 1,
+        "weight": 0,
+        "price": {
+          "buy": 0,
+          "sell":0,
+          "denomination": "gils"
+        },
+        "equipped": false,
+        "position": 0,
+        "craft_level": 0,
+        "craft_job": ""
+      },
+      "core":{
+        "description": "",
+        "rarity": "",
+        "tags": [],
+        "source": "",
+        "level": 0
+      },
+      "ability":{
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0
+      }
+    },
+    "consumable": {
+      "templates": ["core","physical_item","ability"]
+    },
+    "limit_break": {
+      "templates": ["core","ability"]
+    },
+    "primary_abilitiy": {
+      "templates": ["core","ability"]
+    },
+    "secondary_ability": {
+      "templates": ["core","ability"]
+    },
+    "instant_ability": {
+      "templates": ["core","ability"]
+    },
+    "trait": {
+      "templates": ["core"],
+      "activable": false,
+      "active": false
+    },
+    "currency": {
+      "templates": ["core"],
+      "quantity": 1
+    },
+    "title": {
+      "templates": ["core"]
+    }
+  }
+}

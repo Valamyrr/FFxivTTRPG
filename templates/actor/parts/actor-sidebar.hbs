@@ -1,0 +1,32 @@
+<div class="fixed-part">
+  <img class="profile-img character-img" src="{{ actor.img }}" data-edit="img" title="{{ actor.name }}" alt="avatar"/>
+  <div class="resources grid grid-1col">
+
+    <div class="resource flex-group-center">
+      <label for="system.mana.value" class="resource-label">{{ localize "FFXIV.Health.long" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <div class="stat-bar">
+          <div class="health-border">
+            <div class="health-bar"></div>
+            <input type="number" class="health-input" min="0" value="{{ system.health.value }}" name="system.health.value" />
+            <span>/</span>
+            <input type="number" class="health-input" min="0" value="{{ system.health.max }}" name="system.health.max" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource flex-group-center">
+      <label for="system.mana.value" class="resource-label">{{ localize "FFXIV.Mana.long" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <div class="stat-bar mana-bar">
+          <div class="mana-border"><div class="mana-slot slot-1"></div></div>
+          <div class="mana-border"><div class="mana-slot slot-2"></div></div>
+          <div class="mana-border"><div class="mana-slot slot-3"></div></div>
+          <div class="mana-border"><div class="mana-slot slot-4"></div></div>
+          <div class="mana-border"><div class="mana-slot slot-5"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

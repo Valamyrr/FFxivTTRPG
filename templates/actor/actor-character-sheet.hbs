@@ -1,0 +1,82 @@
+<form class="{{cssClass}} flexcol" autocomplete="off">
+  {{!-- Sheet Header --}}
+  <header class="sheet-header {{system.class.role}}-header">
+{{!--
+<img class="class-img" src="systems/ffxiv/assets/classes/{{system.class.name}}.png" alt="class icon">
+<div class="class-level">
+  {{system.experience.level.value}}
+</div>
+<div>
+  <h1 class="charname">{{actor.name}}</h1>
+</div>
+--}}
+    <div class="header-fields">
+        <div class="charname">
+          <h1>{{actor.name}}</h1>
+        </div>
+        <div class="header-info">
+          <img class="class-icon" src="systems/ffxiv/assets/classes/{{system.class.name}}.png" alt="class icon">
+          <div class="class-info">
+            <div class="level">{{system.experience.level.value}}</div>
+            <div class="class-name">
+                <span>{{ localize (labelize 'classes' system.class.name)}}</span>{{#if (not (eq system.activeTitle ""))}}<span> - {{system.activeTitle}}</span>{{/if}}
+                {{#if settings.showExperience}}
+                <div class="experience-border"><div class="experience-bar"></div></div>
+                {{/if}}
+            </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {{!-- Sheet Tab Navigation --}}
+  {{> "systems/ffxiv/templates/actor/parts/tabs.hbs" displayLimited=true limited=limited
+    items=(array
+      (object tab="abilities" label="Abilities" icon="fight")
+      (object tab="roleplay" label="Description" icon="character")
+      (object tab="items" label="Inventory" icon="inventory")
+      (object tab="jobs" label="Jobs" icon="achievements")
+      (object tab="settings" label="Settings" icon="configuration")
+    )
+  }}
+
+
+  <div class="sheet-body-wrapper {{#if hidingSidebar}}full-width{{/if}}">
+    <!-- The fixed part to the left -->
+    {{> "systems/ffxiv/templates/actor/parts/actor-sidebar.hbs"}}
+
+    <div class="arrow-sidebar">
+      <div class="fa {{#if hidingSidebar}}fa-right{{else}}fa-left{{/if}}"></div>
+    </div>
+  {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+      {{!-- Fight Tab --}}
+      <div class="tab abilities" data-group="primary" data-tab="abilities">
+            {{> "systems/ffxiv/templates/actor/parts/actor-abilities.hbs" }}
+      </div>
+
+      {{!-- Biography Tab --}}
+      <div class="tab biography" data-group="primary" data-tab="roleplay">
+        {{> "systems/ffxiv/templates/actor/parts/actor-attributes.hbs" }}
+      </div>
+
+      {{!-- Owned Items Tab --}}
+      <div class="tab items" data-group="primary" data-tab="items">
+         {{> "systems/ffxiv/templates/actor/parts/actor-items.hbs"}}
+      </div>
+
+      {{!-- Jobs Tab --}}
+      <div class="tab jobs" data-group="primary" data-tab="jobs">
+        jobs
+        {{!--> "systems/ffxiv/templates/actor/parts/actor-spells.hbs"--}}
+      </div>
+
+      {{!-- Configuration Tab --}}
+      <div class="tab settings" data-group="primary" data-tab="settings">
+        {{> "systems/ffxiv/templates/actor/parts/actor-settings.hbs"}}
+      </div>
+
+    </section>
+  </div>
+</form>

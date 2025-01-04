@@ -1,0 +1,105 @@
+/*@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400..900&display=swap');*/
+@font-face{
+  font-family: "Cinzel";
+  src: url('../../fonts/Cinzel-Regular.ttf') format('truetype');
+}
+@font-face{
+  font-family: "Cinzel Decorative";
+  src: url('../../fonts/CinzelDecorative-Regular.ttf') format('truetype');
+}
+
+/*Character sheet header*/
+.ffxiv.actor .sheet-header{
+  background-size: cover;
+  background-position: top 20% left 40%;
+  padding: 5px;
+  height: 150px;
+}
+
+/*Header's background depengind on characters' class*/
+.tank-header{
+  background: linear-gradient(90deg, var(--tank) 0%, rgba(255,255,255,0) 100%), url("/systems/ffxiv/assets/banner.jpg")
+}
+.healer-header{
+  background: linear-gradient(90deg, var(--healer) 0%, rgba(255,255,255,0) 100%), url("/systems/ffxiv/assets/banner.jpg")
+}
+.dps-header{
+  background: linear-gradient(90deg, var(--dps) 0%, rgba(255,255,255,0) 100%), url("/systems/ffxiv/assets/banner.jpg")
+}
+
+/*Character Name*/
+.charname{
+  width: 100%;
+}
+.charname h1{
+  font-size: 3.5em;
+  font-family: "Cinzel", serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+/*Class Icon + Class Name block*/
+.ffxiv.actor .header-info{
+  display:flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ffxiv.actor .class-icon{
+  border: none;
+}
+.ffxiv.actor .class-info{
+  display: contents;
+}
+
+.ffxiv.actor .class-info .level{
+  color: orange;
+  font-size: 4em;
+  text-shadow: 0px 0px 11px orange;
+}
+
+.ffxiv.actor .class-info .class-name{
+  padding-left:10px;
+  display: inline-block;
+}
+
+.ffxiv.actor .class-info .class-name span{
+  font-size: 2em;
+  font-family: "Cinzel Decorative", serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.ffxiv.actor .class-info .experience-border{
+  width: 160px;
+  height: 8px;
+  background-color: #393939;
+  border: solid 1px #cecece;
+  position: relative;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.ffxiv.actor .class-info .experience-bar{
+  background-color: gold;
+  position: absolute;
+  height: 8px;
+  left: 0;
+  right: 0;
+}
+
+
+/*Meteor number
+.ffxiv.actor .class-level{
+  background: url("/systems/ffxiv/assets/meteor-center.png"), radial-gradient(circle, rgba(44,44,32,1) 40%, rgba(255,255,255,0) 0%);
+  flex: 0 0 64px;
+  margin-right: 6px;
+  background-size: cover;
+  height: 64px;
+  background-position: center;
+  text-align: center;
+  padding-top: 21px;
+  padding-left: 2px;
+  font-size: 1.2em;
+  color: lightgray;
+  font-weight: bold;
+}*/

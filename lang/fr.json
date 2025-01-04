@@ -1,0 +1,59 @@
+{
+  "FFXIV":{
+    "Name": "Nom",
+    "Level": "Niveau",
+    "Class": "Classe",
+    "CharacterSheet":{
+      "Health": "Points de vie",
+      "Mana": "Mana",
+      "Inventory": "Inventaire",
+      "Currencies": "Monnaies",
+      "Attributes":{
+        "Strength":{
+          "value": "Force",
+          "abbrv": "FOR"
+        },
+        "Dexterity":{
+          "value": "Dextérité",
+          "abbrv": "DEX"
+        },
+        "Vitality":{
+          "value": "Vitalité",
+          "abbrv": "VIT"
+        },
+        "Intelligence":{
+          "value": "Intelligence",
+          "abbrv": "INT"
+        },
+        "Mind":{
+          "value": "Esprit",
+          "abbrv": "ESP"
+        }
+      }
+    },
+    "Classes":{
+      "BlackMage": "Mage Noir",
+      "Dragoon": "Dragoon",
+      "Warrior": "Guerrier",
+      "WhiteMage": "Mage Blanc"
+    },
+    "Roles":{
+      "DPS": "DPS",
+      "Healer": "Soigneur",
+      "Tank": "Tank"
+    },
+    "Abilities":{
+
+    },
+    "ItemSheet":{
+      "Rarities":{
+        "Basic": "Basique",
+        "Aetherial": "Aethéré",
+        "Green": "Vert",
+        "Blue": "Bleu",
+        "Relic": "Relique",
+        "Unique": "Unique"
+      }
+    }
+  }
+}

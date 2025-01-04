@@ -1,0 +1,164 @@
+<form class='{{cssClass}}' autocomplete='off'>
+  <header class='sheet-header'>
+    <img
+      class='profile-img'
+      src='{{item.img}}'
+      data-edit='img'
+      title='{{item.name}}'
+    />
+    <div class='header-fields'>
+      <h1 class='charname'><input
+          name='name'
+          type='text'
+          value='{{item.name}}'
+          placeholder='Name'
+        /></h1>
+    </div>
+    <button class="item-delete fa fa-trash-can"></button>
+  </header>
+  
+  <hr>
+
+  {{! Sheet Body }}
+  <section class='sheet-body'>
+
+    <div class='attributes'>
+      <div class="tags-container">
+        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
+        <ul class="tag-list">
+          {{#each system.tags as |tag index|}}
+            <li>
+              <select style="text-align: center;" class="select-tags">
+                {{#each ../config.tags_abilities as |t|}}
+                <option value="{{t.label}}" {{#if (eq t.label tag)}}selected {{/if}}>{{ localize t.label }}</option>
+                {{/each}}
+              </select>
+              <button type="button" class="remove-tag" data-index="{{index}}">x</button>
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+
+      <hr>
+
+      <div class="resources grid grid-3col">
+
+        <div class="resource flex-group-center">
+          <label for="system.cost" class="resource-label">{{ localize "FFXIV.Abilities.Cost" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.cost" type="text" value="{{item.system.cost}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.target" class="resource-label">{{ localize "FFXIV.Abilities.Target" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.target" type="text" value="{{item.system.target}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.range" class="resource-label">{{ localize "FFXIV.Abilities.Range" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.range" type="text" value="{{item.system.range}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.check" class="resource-label">{{ localize "FFXIV.Abilities.Check" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.check">
+              <option value="{{localize "FFXIV.None"}}">{{localize "FFXIV.None"}}</option>
+              {{#each this.config.attributes as |a|}}
+              <option value="{{a.label}}" {{#if (eq a.label ../item.system.check)}}selected {{/if}}>{{ localize a.label }}</option>
+              {{/each}}
+              <option value="FFXIV.Special" {{#if (eq "FFXIV.Special" item.system.check)}}selected {{/if}}>{{localize "FFXIV.Special"}}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.challenge" class="resource-label">{{ localize "FFXIV.Abilities.Challenge" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.challenge" type="text" value="{{item.system.challenge}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.trigger" class="resource-label">{{ localize "FFXIV.Abilities.Trigger" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.trigger" type="text" value="{{item.system.trigger}}"/>
+          </div>
+        </div>
+
+      </div>
+      <hr>
+      <div class="resources grid grid-3col">
+
+        <div class="resource flex-group-center">
+          <label for="system.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.BaseEffect" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.base_effect" type="text" value="{{item.system.base_effect}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.combo" class="resource-label">{{ localize "FFXIV.Abilities.Combo" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.combo" type="text" value="{{item.system.combo}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.direct_hit" class="resource-label">{{ localize "FFXIV.Abilities.DirectHit" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.direct_hit" type="text" value="{{item.system.direct_hit}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.marker_trigger" type="text" value="{{item.system.marker_trigger}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.marker_area" type="text" value="{{item.system.marker_area}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.marker_effect" type="text" value="{{item.system.marker_effect}}"/>
+          </div>
+        </div>
+
+      </div>
+
+      <hr>
+      <div class="resources grid grid-2col">
+
+        <div class="resource flex-group-center">
+          <label for="system.limitations" class="resource-label">{{ localize "FFXIV.Abilities.Limitations" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.limitations" type="text" value="{{item.system.limitations}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.limitations_max" class="resource-label">{{ localize "FFXIV.Abilities.Limitations_max" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.limitations_max" type="number" min=0 value="{{item.system.limitations_max}}"/>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+</form>

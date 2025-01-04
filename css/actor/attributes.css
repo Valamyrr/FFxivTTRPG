@@ -1,0 +1,136 @@
+.ffxiv.actor .actor-attributes-tab > *:not(hr){
+  padding: 5px;
+  margin: 5px;
+}
+
+.actor-attributes-tab h2{
+  text-decoration: none;
+  border: none;
+  margin: auto;
+  width: fit-content;
+  padding: 15px 0 5px 0
+}
+
+.primary-attributes-list{
+  display: flex;
+  width: 100%;
+  margin: 10px 0 10px 0;
+}
+.primary-attribute{
+  flex-grow:1;
+  text-align: center;
+}
+.primary_attribute .label{
+  font-weight: bold;
+}
+
+.meteor-value{
+  height: 68px;
+  width: 68px;
+  position: relative;
+  margin: auto;
+}
+.meteor-value img{
+  height: 68px;
+  width: 68px;
+  border: none;
+  position: relative;
+}
+.meteor-value .value{
+  position: absolute;
+  margin:0;
+  top:50%;
+  left: 50%;
+  transform: translate(-48%, -49%);
+}
+.meteor-value input.value{
+  width: 30px;
+  border: none;
+}
+.meteor-value input.value:focus{
+  border-radius: 1000px;
+  box-shadow: 0px 0px 0px 3px silver;
+}
+
+/* Secondary Attributes */
+.secondary-attributes{
+  margin: 10px 0 10px 0
+}
+.s-attribute-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-top: 10px;
+}
+.s-attribute-card {
+  padding: 10px;
+  border: 1px solid var(--secondary-color);
+  border-radius: 5px;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+}
+.s-attribute-header{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.s-attribute-header img {
+  width: 28px;
+  height: 28px;
+  border: none;
+}
+.s-attribute-info {
+  margin-top:5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-attribute-name {
+  margin-top: 2px;
+  margin-left: 5px;
+  font-size: 14px;
+  color: #fff;
+  font-weight: bold;
+}
+.s-attribute-value {
+  width: 60px;
+  text-align: center;
+  background: #393939;
+  color: white;
+  border: 1px solid #a3a3a3;
+  border-radius: 3px;
+  flex:1
+}
+
+.actor-titles .actor-titles-box{
+  border:solid 1px var(--color-border-light-tertiary);
+  border-radius: 5px;
+  margin-top: 5px;
+}
+.actor-titles .actor-title-description{
+  padding: 10px;
+}
+.actor-titles .actor-title-data{
+  padding: 10px;
+  border-bottom: solid 1px var(--color-border-light-tertiary);
+  line-height: 22px;
+}
+.actor-titles .detail {
+  display: inline-block;
+  margin-right: 3px;
+}
+.actor-titles .detail strong{
+  color: var(--text-color-strong);
+}
+.actor-titles .title-delete{
+  height: 22px;
+  width: 22px;
+  background: red;
+  border: solid 1px white;
+  float: right;
+}
+
+.actor-biography .editor-content{
+  margin: 10px;
+}

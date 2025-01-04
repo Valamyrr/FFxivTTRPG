@@ -1,0 +1,229 @@
+
+.ffxiv.item .attributes{
+  margin-top: 10px;
+}
+
+.abilities-sub-tabs {
+  margin-bottom: 10px;
+  width: 100%;
+  text-align: center;
+  filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+}
+
+
+.sub-tab {
+  margin: 4px -2px 4px -2px;
+  width: 40%;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+  text-align: center;
+  height: 25px;
+  display: inline-block;
+  overflow: hidden;
+  clip-path: polygon(5% 0, 95% 0, 100% 30%, 95% 100%, 5% 100%, 0 70%);
+  background: var(--gradient-color-1);
+  background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+}
+
+.sub-tab .chip{
+  position: absolute;
+  width: 10px;
+  height: 5px;
+  background: var(--chip-color);
+  margin: -6px -6px;
+  border-radius: 2px;
+  transform: rotate(35deg);
+}
+
+.sub-tab.active .chip{
+  background: var(--chip-color-active);
+  /*background: radial-gradient(circle, rgba(237,210,99,1) 65%, rgba(255,255,255,0) 100%);*/
+}
+.sub-tab.active {
+  filter: contrast(125%);
+}
+
+.sub-tab-content {
+  display: none;
+}
+
+.sub-tab-content.active {
+  display: block;
+}
+
+
+
+.actor-abilities .ability-card {
+  border: 2px solid var(--border-color-1);
+  border-radius: 7px;
+  background: var(--primary-color);
+  color: var(--text-color);
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.actor-abilities .ability-card strong{
+  color: var(--text-color-strong);
+}
+
+.actor-abilities .ability-card-info {
+  background: linear-gradient(0deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  padding: 5px;
+  min-height: 66px;
+}
+
+.actor-abilities .ability-header{
+  border-bottom: solid 2px var(--border-color-2);
+  box-shadow: 0px 7px 3px -2px var(--border-shadow-1);
+  display: inline-block;
+  margin: 0 5px 5px 0;
+  padding: 5px 0 5px 0;
+  width: calc(100% - 60px);
+}
+
+.actor-abilities .ability-icon {
+  float: left;
+  width: 50px;
+  height: 50px;
+  border: none;
+  cursor: pointer;
+  margin: 5px 5px 5px 0;
+}
+
+.actor-abilities .ability-name {
+  font-size: 1.4em;
+  display: inline;
+}
+
+.actor-abilities .ability-right {
+  float: right;
+  display: inline;
+}
+
+.actor-abilities .ability-tags{
+  display: inline-block;
+  vertical-align: super;
+}
+
+.actor-abilities .ability-tags .tag {
+  display: inline;
+  font-style: italic;
+}
+
+
+
+.actor-abilities .ability-limitations {
+  display: inline-block;
+}
+
+.actor-abilities .ability-limitations .limitation{
+
+}
+
+
+.actor-abilities .ability-details {
+  padding-top: 5px;
+}
+
+.actor-abilities .detail {
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.actor-abilities .ability-effects {
+  padding: 5px;
+}
+.actor-abilities .effect {
+  display: inline-block;
+}
+
+.actor-abilities .ability-roll-button {
+  background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text-color-strong);
+  transition: color 2s ease;
+  position: relative;
+  z-index: 1;
+}
+.actor-abilities .ability-roll-button:hover{
+  color: var(--invert-text-color) !important;
+}
+
+.actor-abilities .ability-roll-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(to right, var(--text-color) 50%, rgba(0,0,0,0) 100%);
+  z-index: -1;
+  transition: width 2s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
+}
+.actor-abilities .ability-roll-button:hover::before {
+  width: 150%;
+}
+
+.actor-abilities .ability-roll-button:hover{
+  box-shadow: none;
+}
+.actor-abilities .ability-roll-button:focus{
+  box-shadow: none;
+}
+.actor-abilities .ability-roll-button:active{
+  box-shadow: none;
+}
+
+
+
+.ability-limitations .limitation{
+  cursor: pointer;
+}
+
+.ability-limitations input[type="checkbox"]:checked + .checkmark::before,
+.ability-limitations input[type="checkbox"]:checked + .checkmark::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background-color: var(--primary-color);
+    top: 50%;
+    left: 50%;
+    transform-origin: center;
+}
+
+.ability-limitations .limitation:checked + .checkmark::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.ability-limitations .limitation:checked + .checkmark::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.ability-limitations .limitation {
+  opacity: 0;
+  position: absolute;
+  margin: 0;
+  z-index: 1;
+}
+
+.ability-limitations .checkmark {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color-1);
+    position: relative;
+    cursor: pointer;
+    background: white;
+}
+.ability-limitations .limitation:nth-of-type(1), .ability-limitations .checkmark:nth-of-type(1){
+  margin-left: 8px;
+}
+
+.ability-description{
+  padding: 10px;
+}

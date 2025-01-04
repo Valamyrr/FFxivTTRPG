@@ -1,0 +1,27 @@
+{
+  "id": "ffxiv",
+  "title": "Final Fantasy XIV TTRPG",
+  "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
+  "media": [
+    {
+      "type": "setup",
+      "thumbnail": "systems/ffxiv/assets/meteor.png"
+    }
+  ],
+  "version": "0.1",
+  "esmodules": ["module/ffxiv.mjs"],
+  "styles": ["css/ffxiv.css"],
+  "background": "systems/ffxiv/assets/meteor.png",
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "fr",
+      "name": "Français (French)",
+      "path": "lang/fr.json"
+    }
+  ]
+}

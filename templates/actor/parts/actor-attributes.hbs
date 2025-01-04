@@ -1,0 +1,142 @@
+
+<div class="actor-attributes-tab">
+  <div class="actor-attributes">
+    <div class="primary-attributes">
+      <h2>{{ localize "FFXIV.Attributes.Primary"}}</h2>
+      <div class="primary-attributes-list">
+
+          <div class="primary-attribute">
+            <div class="meteor-value">
+              <img src="systems/ffxiv/assets/meteor-center.png">
+              <input type="number" class="value" name="system.primary_attributes.strength.value" value="{{ system.primary_attributes.strength.value }}">
+            </div>
+            <span class="label">{{ localize system.primary_attributes.strength.label }}</span>
+          </div>
+
+          <div class="primary-attribute">
+            <div class="meteor-value">
+              <img src="systems/ffxiv/assets/meteor-center.png">
+              <input type="number" class="value" name="system.primary_attributes.dexterity.value" value="{{ system.primary_attributes.dexterity.value }}">
+            </div>
+            <span class="label">{{ localize system.primary_attributes.dexterity.label }}</span>
+          </div>
+
+          <div class="primary-attribute">
+            <div class="meteor-value">
+              <img src="systems/ffxiv/assets/meteor-center.png">
+              <input type="number" class="value" name="system.primary_attributes.vitality.value" value="{{ system.primary_attributes.vitality.value }}">
+            </div>
+            <span class="label">{{ localize system.primary_attributes.vitality.label }}</span>
+          </div>
+
+          <div class="primary-attribute">
+            <div class="meteor-value">
+              <img src="systems/ffxiv/assets/meteor-center.png">
+              <input type="number" class="value" name="system.primary_attributes.intelligence.value" value="{{ system.primary_attributes.intelligence.value }}">
+            </div>
+            <span class="label">{{ localize system.primary_attributes.intelligence.label }}</span>
+          </div>
+
+          <div class="primary-attribute">
+            <div class="meteor-value">
+              <img src="systems/ffxiv/assets/meteor-center.png">
+              <input type="number" class="value" name="system.primary_attributes.mind.value" value="{{ system.primary_attributes.mind.value }}">
+            </div>
+            <span class="label">{{ localize system.primary_attributes.mind.label }}</span>
+          </div>
+
+      </div>
+    </div>
+
+    <div class="secondary-attributes">
+      <h2>{{ localize "FFXIV.Attributes.Secondary"}}</h2>
+
+      <div class="s-attribute-grid">
+
+        <div class="s-attribute-card">
+          <div class="s-attribute-header">
+            <img src="systems/ffxiv/assets/properties/defense.png">
+            <div class="s-attribute-name">{{ localize system.secondary_attributes.defense.label }}</div>
+          </div>
+          <div class="s-attribute-info">
+            <input type="number" class="s-attribute-value" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}">
+          </div>
+        </div>
+
+        <div class="s-attribute-card">
+          <div class="s-attribute-header">
+            <img src="systems/ffxiv/assets/properties/magic_defense.png">
+            <div class="s-attribute-name">{{ localize system.secondary_attributes.magic_defense.label }}</div>
+          </div>
+          <div class="s-attribute-info">
+            <input type="number" class="s-attribute-value" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}">
+          </div>
+        </div>
+
+        <div class="s-attribute-card">
+          <div class="s-attribute-header">
+            <img src="systems/ffxiv/assets/properties/vigilance.png">
+            <div class="s-attribute-name">{{ localize system.secondary_attributes.vigilance.label }}</div>
+          </div>
+          <div class="s-attribute-info">
+            <input type="number" class="s-attribute-value" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}">
+          </div>
+        </div>
+
+        <div class="s-attribute-card">
+          <div class="s-attribute-header">
+            <img src="systems/ffxiv/assets/properties/speed.png">
+            <div class="s-attribute-name">{{ localize system.secondary_attributes.speed.label }}</div>
+          </div>
+          <div class="s-attribute-info">
+            <input type="number" class="s-attribute-value" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}">
+            <input type="text" class="s-attribute-value" name="system.secondary_attributes.speed.unit" value="{{ system.secondary_attributes.speed.unit }}">
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+
+  <div class="actor-titles">
+    <h2>{{ localize "FFXIV.CharacterSheet.Titles"}}</h2>
+
+    <div class="actor-titles-box">
+      <div class="title-selector resource-content flexrow flex-center flex-between">
+        <select style="text-align: center;" name="system.activeTitle">
+          <option value="">
+            {{localize "FFXIV.None"}}
+          </option>
+          {{#each items}}
+            {{#if (eq type "title")}}
+              <option value="{{name}}" {{#if (eq name ../system.activeTitle)}}selected {{/if}}>
+                {{#if (eq name ../system.activeTitle)}}{{localize "FFXIV.CharacterSheet.ActiveTitle"}} : {{/if}}{{ name }}
+              </option>
+            {{/if}}
+          {{/each}}
+        </select>
+      </div>
+
+      {{#each items}}
+        {{#if (and (eq type "title") (eq name ../system.activeTitle))}}
+          <div class="actor-title-data">
+            <div class="detail"><strong>{{localize "FFXIV.Item.Name"}}:</strong> {{localize name}}</div>
+            {{#if system.rarity}}<div class="detail"><strong>{{localize "FFXIV.Item.Rarity"}}:</strong> {{localize system.rarity}}</div>{{/if}}
+            {{#if system.source}}<div class="detail"><strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}</div>{{/if}}
+            <button data-item-id="{{_id}}" class="title-delete fa fa-trash-can"></button>
+          </div>
+          <div class="actor-title-description">{{{ system.description }}}</div>
+        {{/if}}
+      {{/each}}
+    </div>
+  </div>
+
+  <div class="actor-biography">
+    <h2>{{ localize "FFXIV.CharacterSheet.Biography"}}</h2>
+    {{!-- Editors must receive enriched text data from getData to properly handle rolls --}}
+    <div class="actor-biography-content">
+      {{editor enrichedBiography target="system.biography" engine="prosemirror" button=true editable=editable}}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,51 @@
+<div class="inventory">
+  <h2>{{ localize "FFXIV.CharacterSheet.Inventory"}}</h2>
+  <div class="inventory-grid">
+    {{!-- Build inventory grid with 20 slots --}}
+
+    {{#each (buildInventoryGrid actor.items 27) as |item|}}
+      {{#if item}}  <!-- If there's an item at this position -->
+        <div class="inventory-item rarity-{{item.system.rarity}}"
+             data-item-id="{{item.id}}"
+             data-item-position="{{item.system.position}}"
+             draggable="true">
+             <img class="item-icon" src="{{item.img}}" alt="{{item.name}}">
+             <div class="item-shadow"></div>
+          <div class="item-tooltip rarity-{{ delabelize 'rarities' item.system.rarity}}">{{item.name}}</div>
+          {{#if (or (eq item.type "consumable") (eq item.type "stuff"))}}
+            <div class="item-quantity">{{item.system.quantity}}</div>
+          {{/if}}
+        </div>
+      {{else}}  <!-- If this slot is empty -->
+        <div class="inventory-item empty-slot"
+             data-item-position="{{add @index 1}}"
+             draggable="false">
+             <div class="item-shadow"></div>
+        </div>
+      {{/if}}
+    {{/each}}
+  </div>
+  <h2>{{ localize "FFXIV.CharacterSheet.Currencies"}}</h2>
+
+  <div class="currencies">
+
+    <div class="currencies-grid">
+    {{#each items as |item|}}
+      {{#if (eq item.type "currency")}}
+      <div class="currency-card">
+        <div class="currency-image">
+          <img src="{{item.img}}" alt="{{item.name}}">
+        </div>
+        <hr/>
+        <div class="currency-info">
+          <div class="currency-name">{{item.name}}</div>
+          <input type="number" class="currency-quantity" data-item-id="{{item._id}}" value="{{item.system.quantity}}">
+        </div>
+      </div>
+      {{/if}}
+    {{/each}}
+    </div>
+
+  </div>
+
+</div>
