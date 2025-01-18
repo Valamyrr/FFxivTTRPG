@@ -14,7 +14,7 @@
 .sub-tab {
   margin: 4px -2px 4px -2px;
   width: 40%;
-  padding: 5px 10px;
+  padding: 5px 10px !important;
   cursor: pointer;
   border-radius: 3px;
   text-align: center;
@@ -162,7 +162,7 @@
   height: 100%;
   background: linear-gradient(to right, var(--text-color) 50%, rgba(0,0,0,0) 100%);
   z-index: -1;
-  transition: width 2s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
+  transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
 }
 .actor-abilities .ability-roll-button:hover::before {
   width: 150%;
