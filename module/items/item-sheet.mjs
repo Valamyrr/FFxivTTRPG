@@ -111,18 +111,11 @@ export class FfxivItemSheet extends ItemSheet {
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-/*
-    const isEmbedded = !!this.item.parent;
-    const dimensions = isEmbedded
-      ? { width: 450, height: 200 }
-      : { width: 520, height: 480 };
-    this.setPosition(dimensions);*/
+
 
     Hooks.once("renderItemSheet", (app, html, data) => {
       this.setPosition({ height: $(html).find('.limited-display').height() + 30 });
     });
-
-
 
     // Everything below here is only needed if the sheet is editable
     if (!this.isEditable) return;
