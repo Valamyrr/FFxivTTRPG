@@ -14,11 +14,8 @@ This project is opened to PR. I am the only maintainer of this project, so pleas
 ## Roadmap
 This is what is currently planned. Feel free to ask me for any other feature you would like to see on this project.
 
-### Sheets for NPCs
-To create creatures, monsters or any NPC with a simpler character sheet.
-
 ### CSS for item Sheets
-Re-design item sheets. There are currently two kind of sheets: editable and non-editable. The non-editable one has ugly buttons and could use tabs for specific information or later attached bonus for characters' DerivedData.
+Re-design item sheets. There are currently two kind of sheets: editable and non-editable. The non-editable one has ugly buttons and could use tabs for descriptions, specific information or later attached bonus for characters' DerivedData.
 
 ### Handle rolls
 Making roll buttons on abilities and items clickable, as well as cleaning the animation. Roll must use the correct attribute if specified.
