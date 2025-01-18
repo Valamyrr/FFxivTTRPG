@@ -249,9 +249,11 @@
 .ffxiv .sheet-body{
   height: 100%;
 }
-.ffxiv .sheet-body .tab .editor {
+.ffxiv .sheet-body .editor {
   height: 100%;
   min-height: 280px;
+  border: solid 1px var(--color-border-light-tertiary);
+  border-radius: 5px;
 }
 .ffxiv .tox .tox-editor-container {
   background: #fff;
@@ -373,4 +375,13 @@
 }
 .ffxiv .effects .item .effect-controls {
   border: none;
+}
+.ffxiv .prosemirror menu .pm-dropdown{
+  background-color: var(--primary-color);
+}
+.ffxiv .prosemirror menu button:hover, .prosemirror menu button.active{
+  background-color: var(--primary-color);
+}
+.ffxiv .prosemirror menu .pm-dropdown:hover i{
+  color: var(--text-color);
 }
