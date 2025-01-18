@@ -1,0 +1,82 @@
+.npc .profile-img{
+  width: 100%;
+  height: auto;
+  border-color: var(--border-color-1)
+}
+.npc h1{
+  border: none;
+}
+.npc h1 input{
+  padding: 20px;
+}
+.sheet-npc-header-left{
+  float: left;
+  width: 30%;
+}
+.sheet-npc-header-right{
+  float: right;
+  width: 70%
+}
+
+/*statblock*/
+.npc-statblock{
+  padding: 15px;
+  font-weight: bold;
+}
+
+
+.statblock-header{
+  background: linear-gradient(0deg, var(--gradient-color-3) 20%, var(--gradient-color-2) 50%, var(--gradient-color-3) 80%);
+  border-radius: 20px;
+  padding: 3px 20px 3px 20px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+}
+.statblock-content{
+  padding: 30px 10px 1px 10px;
+  margin: -30px 3px 0 3px;
+  background: linear-gradient(90deg, var(--primary-color) 90%, var(--gradient-color-2) 100%);
+  border-radius: 5px;
+  position: relative;
+  z-index: 1
+}
+
+.statblock-header-left {
+  display: inline;
+}
+
+.statblock-header-right {
+  margin: auto;
+  margin-right: 0
+}
+
+.npc-statblock .input-transparent{
+  border: none;
+  position: relative;
+  width: 90px;
+  background: transparent;
+}
+.npc-statblock .input-window{
+  width: 3em;
+  text-align: center;
+}
+.npc .input-size-numbers{
+  width: 30px;
+  text-align: center;
+}
+
+.statblock-header input::placeholder{
+  color: lightgrey
+}
+
+/*Nav*/
+.npc nav.nav-sub-tabs {
+  padding-top: 10px;
+  border:none;
+  border-top: solid 1px var(--border-color-1);
+  margin-bottom: 10px;
+  width: 100%;
+  text-align: center;
+  filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+}

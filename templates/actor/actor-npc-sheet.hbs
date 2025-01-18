@@ -1,0 +1,55 @@
+<form class="{{cssClass}} {{actor.type}} flexcol" autocomplete="off">
+
+  {{!-- Sheet Header --}}
+  <header class="sheet-npc-header">
+    <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
+    <div class="sheet-npc-header-left">
+      <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}"/>
+    </div>
+    <div class="sheet-npc-header-right">
+      <div class="header-fields">
+        {{> "systems/ffxiv/templates/actor/parts/actor-npc-statblock.hbs"}}
+      </div>
+    </div>
+
+
+  </header>
+
+  {{!-- Sheet Tab Navigation --}}
+  <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
+    <a class="sub-tab" data-tab="fight">{{ localize "FFXIV.Abilities.Abilities" }}<div class="chip"></div></a>
+    <a class="sub-tab" data-tab="traits">{{ localize "FFXIV.Abilities.TraitsShort" }}<div class="chip"></div></a>
+  </nav>
+
+  {{!-- Sheet Body --}}
+  <section class="sheet-body">
+    <div class="tab fight actor-abilities" data-group="primary" data-tab="fight">
+      {{#each (reverse items)}}
+        {{#if (eq type "primary_ability")}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+        {{/if}}
+      {{/each}}
+      {{#each (reverse items)}}
+        {{#if (eq type "secondary_ability")}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+        {{/if}}
+      {{/each}}
+      {{#each (reverse items)}}
+        {{#if (eq type "instant_ability")}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+        {{/if}}
+      {{/each}}
+    </div>
+    <div class="tab traits actor-abilities" data-group="primary" data-tab="traits">
+      {{#each (reverse items)}}
+        {{#if (eq type "limit_break")}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
+        {{/if}}
+        {{#if (eq type "trait")}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
+        {{/if}}
+      {{/each}}
+    </div>
+
+  </section>
+</form>

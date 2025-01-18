@@ -11,6 +11,10 @@ export const preloadHandlebarsTemplates = async function () {
     'systems/ffxiv/templates/actor/parts/actor-sidebar.hbs',
     'systems/ffxiv/templates/actor/parts/actor-abilities.hbs',
     'systems/ffxiv/templates/actor/parts/actor-attributes.hbs',
+    'systems/ffxiv/templates/actor/parts/actor-npc-statblock.hbs',
+    'systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs',
+    'systems/ffxiv/templates/actor/parts/actor-card-traits.hbs',
+    'systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs',
     'systems/ffxiv/templates/actor/parts/tabs.hbs',
     // Item partials
     'systems/ffxiv/templates/item/parts/box.hbs',

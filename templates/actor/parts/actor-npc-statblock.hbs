@@ -1,0 +1,61 @@
+<div class="npc-statblock">
+  <div class="statblock-header">
+    <div class="statblock-header-left">
+      {{ localize "FFXIV.CharacterSheet.Size" }}: <input class="input-transparent" type="text" name="system.size.text" value="{{ system.size.text }}" placeholder="Medium"/> (<input class="input-transparent input-size-numbers" type="text" name="system.size.numbers" value="{{ system.size.numbers }}" placeholder="1x1"/>) - <input class="input-transparent" type="text" name="system.specie" value="{{ system.specie }}" placeholder="Humanoid"/>
+    </div>
+    <div class="statblock-header-right">
+      {{ localize "FFXIV.Attributes.Vigilance" }}: <input class="input-window" type="text" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}"/>
+    </div>
+  </div>
+  <div class="statblock-content">
+    <div class="resources grid grid-2col">
+      <div class="resource flex-group-left">
+          {{ localize "FFXIV.Attributes.Defense" }}: <input class="input-window" type="text" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}"/>
+      </div>
+      <div class="resource flex-group-left">
+          {{ localize "FFXIV.Attributes.MagicDefense" }}: <input class="input-window" type="text" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}"/>
+      </div>
+      <div class="resource flex-group-left">
+          {{ localize "FFXIV.Attributes.Speed" }}: <input class="input-window" type="text" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}"/>
+      </div>
+      <div class="resource flex-group-left">
+          {{ localize "FFXIV.Health.max" }}: <input class="input-window" type="text" name="system.health.max" value="{{ system.health.max }}"/>
+      </div>
+    </div>
+    <hr>
+    <div class="resources grid grid-5col">
+
+      <div class="resource flex-group-center">
+        <label for="system.experience.level.value" class="resource-label">{{ localize "FFXIV.Attributes.Strength.abbrv" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+        <input type="text" name="system.experience.level.value" value="{{ system.primary_attributes.strength.value }}" placeholder="+0"/>
+        </div>
+      </div>
+      <div class="resource flex-group-center">
+        <label for="system.experience.level.value" class="resource-label">{{ localize "FFXIV.Attributes.Dexterity.abbrv" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+        <input type="text" name="system.experience.level.value" value="{{ system.primary_attributes.dexterity.value }}" placeholder="+0"/>
+        </div>
+      </div>
+      <div class="resource flex-group-center">
+        <label for="system.experience.level.value" class="resource-label">{{ localize "FFXIV.Attributes.Vitality.abbrv" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+        <input type="text" name="system.experience.level.value" value="{{ system.primary_attributes.vitality.value }}" placeholder="+0"/>
+        </div>
+      </div>
+      <div class="resource flex-group-center">
+        <label for="system.experience.level.value" class="resource-label">{{ localize "FFXIV.Attributes.Intelligence.abbrv" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+        <input type="text" name="system.experience.level.value" value="{{ system.primary_attributes.intelligence.value }}" placeholder="+0"/>
+        </div>
+      </div>
+      <div class="resource flex-group-center">
+        <label for="system.experience.level.value" class="resource-label">{{ localize "FFXIV.Attributes.Mind.abbrv" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+        <input type="text" name="system.experience.level.value" value="{{ system.primary_attributes.mind.value }}" placeholder="+0"/>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

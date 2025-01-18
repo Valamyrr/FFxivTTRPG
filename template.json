@@ -85,7 +85,9 @@
       "activeTitle": ""
     },
     "npc":{
-      "templates": ["biography","attributes","health"]
+      "templates": ["biography","attributes","health"],
+      "size": "",
+      "specie": ""
     }
   },
   "Item": {

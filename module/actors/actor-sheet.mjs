@@ -40,15 +40,17 @@ export class FfxivActorSheet extends ActorSheet {
   render(force, options) {
     super.render(force, options);
     this._applySidebarPreference();
-    Hooks.once('renderActorSheet', () => {
+
+    if(this.actor.type == "character"){
+      Hooks.once('renderActorSheet', () => {
         this._updateManaBar();
         this._updateHealthBar();
         if(game.settings.get('ffxiv', 'toggleExperience')){
           this._updateExperienceBar();
         }
         this._applyStoredAbilityTab();
-
-    });
+      });
+    };
   }
 
   /* -------------------------------------------- */
@@ -246,6 +248,16 @@ export class FfxivActorSheet extends ActorSheet {
         li.addEventListener('dragstart', handler, false);
       });
     }
+
+    /*Size for different actor types*//*
+    if(this.actor.type == "npc"){
+      console.log("test")
+      Hooks.once("renderActorSheet", (app, html, data) => {
+        this.setPosition({ width: 430, height: 725 });
+        console.log("render")
+      });
+    }*/
+
 
     html.on('click', '.inventory-item', this._renderItem.bind(this));
 

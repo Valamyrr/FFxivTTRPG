@@ -1,0 +1,32 @@
+<div class="ability-card" data-item-id="{{_id}}">
+  <div class="ability-card-info">
+    <img src="{{img}}" alt="{{name}}" class="ability-icon" data-item-id="{{_id}}">
+    <div class="ability-header">
+      <div class="ability-name">
+        {{name}}
+      </div>
+      <div class="ability-right">
+        <div class="ability-tags">
+          {{#each system.tags as |tag|}}
+            <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+          {{/each}}
+        </div>
+        <div class="ability-limitations">
+          {{#if system.activable}}
+            <input type="checkbox" class="limitation active"
+              data-item-id={{_id}}
+              {{#if system.active}}checked {{/if}}>
+            <span class="checkmark"></span>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ability-description">
+    {{{system.description}}}
+  </div>
+
+  <button class="ability-roll-button fas fa-dice-d20"></button>
+
+</div>

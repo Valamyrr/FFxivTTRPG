@@ -6,7 +6,8 @@
     "Experience": "Experience",
     "Health": {
       "long": "Health",
-      "abbrv": "HP"
+      "abbrv": "HP",
+      "max": "Max HP"
     },
     "Mana": {
       "long": "Mana",
@@ -43,7 +44,9 @@
     },
     "CharacterSheet":{
       "Biography": "Biography",
+      "Size": "Size",
       "Inventory": "Inventory",
+      "Config": "Configuration",
       "Currencies": "Currencies",
       "Titles": "Titles",
       "ActiveTitle": "Active Title",
@@ -88,6 +91,7 @@
       "Primary": "Primary Abilities",
       "Secondary": "Secondary Abilities",
       "Instant": "Instant Abilities",
+      "TraitsShort": "Traits",
       "Traits": "Traits & Other Effects",
       "Abilities": "Abilities",
       "Cost": "Cost",

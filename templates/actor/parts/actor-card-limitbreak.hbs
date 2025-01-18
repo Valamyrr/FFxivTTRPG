@@ -1,0 +1,41 @@
+<div class="ability-card" data-item-id="{{_id}}">
+  <div class="ability-card-info">
+    <img src="{{img}}" alt="{{name}}" class="ability-icon" data-item-id="{{_id}}">
+    <div class="ability-header">
+      <div class="ability-name">
+        {{name}}
+      </div>
+      <div class="ability-right">
+        <div class="ability-tags">
+          {{#each system.tags as |tag|}}
+            <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+    <div class="ability-details">
+      {{#if system.target}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{system.target}}</div>{{/if}}
+      {{#if system.range}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{system.range}}</div>{{/if}}
+      {{#if system.check}}
+        {{#if (not (eq system.check (localize "FFXIV.None")))}}
+        <div class="detail"><strong>{{ localize "FFXIV.Abilities.Check"}}:</strong>
+            {{localize system.check}}
+        </div>
+        {{/if}}
+      {{/if}}
+      {{#if system.challenge}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{system.challenge}}</div>{{/if}}
+      {{#if system.trigger}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{system.trigger}}</div>{{/if}}
+    </div>
+  </div>
+
+  <div class="ability-effects">
+    {{#if system.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{system.base_effect}}</div>{{/if}}
+    {{#if system.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{system.direct_hit}}</div>{{/if}}
+    {{#if system.marker_area}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{system.marker_area}}</div>{{/if}}
+    {{#if system.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{system.marker_trigger}}</div>{{/if}}
+    {{#if system.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{system.marker_effect}}</div>{{/if}}
+  </div>
+
+  <button class="ability-roll-button fas fa-dice-d20"></button>
+
+</div>
