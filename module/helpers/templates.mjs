@@ -20,5 +20,7 @@ export const preloadHandlebarsTemplates = async function () {
     'systems/ffxiv/templates/item/parts/box.hbs',
     // Item user-side
     'systems/ffxiv/templates/item/item-sheet-dialog.hbs',
+    // Chat templates
+    'systems/ffxiv/templates/chat/item-chat-card.hbs'
   ]);
 };
