@@ -457,10 +457,10 @@ export class FfxivActorSheet extends ActorSheet {
 
     if (item) {
       if (newQuantity < 0){
-        let confirmDelete = confirm(`Are you sure you want to remove ${item.name}?`);
+        let confirmDelete = confirm(game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: item.name}));
         if (confirmDelete) {
           item.delete();
-          ui.notifications.info(`${item.name} has been removed.`);
+          ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
         }
       } else {
           item.update({ 'system.quantity': newQuantity });

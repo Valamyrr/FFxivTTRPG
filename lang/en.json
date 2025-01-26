@@ -59,7 +59,10 @@
       "Buy": "Buy Price",
       "Sell": "Sell Price",
       "Denomination": "Denomination",
-      "Weight": "Weight"
+      "Weight": "Weight",
+      "Quantity": "Quantity",
+      "Stack": "Stackability",
+      "Delete": "Delete Item"
     },
     "ItemType":{
       "ItemType":"Item Type",
@@ -145,7 +148,13 @@
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
       "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?"
     },
-    "Confirm":"Are you sure you want to complete this action?",
+    "Dialogs":{
+      "Confirm":"Are you sure you want to complete this action?",
+      "ItemDelete":"Are you sure you want to delete this item : {itemName}?"
+    },
+    "Notifications":{
+      "ItemDelete":"{itemName} has been removed."
+    },
     "None": "None",
     "Special": "Special",
     "Dark": "Dark",
