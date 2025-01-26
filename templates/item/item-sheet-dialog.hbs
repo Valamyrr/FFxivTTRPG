@@ -43,12 +43,19 @@
 
       {{#if system.description}}
       <div class="item-dialog-description">
-        {{system.description}}
+        {{{system.description}}}
       </div>
       {{/if}}
 
-      <button class="item-dialog-button fas fa-dice-d20"></button>
-      <button class="item-dialog-button fa fa-trash-can"></button>
+      <div class="quantity-form">
+      {{#if system.stack}}
+        <div class="detail"><strong>{{ localize "FFXIV.Item.Quantity" }} :</strong></div> <button class="item-qty-btn item-qty-btn-rm">-</button> {{ item.system.quantity }} <button class="item-qty-btn item-qty-btn-add">+</button>
+      {{else}}
+        <div class="detail"><strong>{{ localize "FFXIV.Item.Delete" }} :</strong></div> <button class="item-qty-btn fa fa-xmark delete"></button>
+      {{/if}}
+      </div>
+
+      <button class="item-roll-button">{{ localize "Roll" }}</button>
     </div>
   </div>
 </form>

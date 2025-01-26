@@ -103,6 +103,7 @@
         },
         "equipped": false,
         "position": 0,
+        "stack": false,
         "craft_level": 0,
         "craft_job": ""
       },

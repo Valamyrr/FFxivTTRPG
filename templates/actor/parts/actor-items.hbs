@@ -12,7 +12,7 @@
              <img class="item-icon" src="{{item.img}}" alt="{{item.name}}">
              <div class="item-shadow"></div>
           <div class="item-tooltip rarity-{{ delabelize 'rarities' item.system.rarity}}">{{item.name}}</div>
-          {{#if (or (eq item.type "consumable") (eq item.type "stuff"))}}
+          {{#if item.system.stack}}
             <div class="item-quantity">{{item.system.quantity}}</div>
           {{/if}}
         </div>

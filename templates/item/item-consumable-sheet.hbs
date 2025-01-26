@@ -35,6 +35,21 @@
           </div>
         </div>
       </div>
+
+      <div class="resources grid grid-2col">
+        <div class="resource flex-group-center">
+          <label for="system.stack" class="resource-label">{{ localize "FFXIV.Item.Stack" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="checkbox" name="system.stack" {{#if (eq item.system.stack true)}}checked{{/if}}>
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.quantity" class="resource-label">{{ localize "FFXIV.Item.Quantity" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="number" name="system.quantity" value="{{item.system.quantity}}" {{#if (eq item.system.stack false)}}disabled{{/if}}>
+          </div>
+        </div>
+      </div>
       <hr>
 
       <div class="resources grid grid-2col">
@@ -156,6 +171,14 @@
       </div>
 
     </div>
+
+    {{editor
+      enrichedDescription
+      target='system.description'
+      engine='prosemirror'
+      button=true
+      editable=editable
+    }}
 
   </section>
 </form>

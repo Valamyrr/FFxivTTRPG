@@ -48,3 +48,7 @@
 .delete-item-btn:hover {
   background-color: #c9302c;
 }
+
+.ffxiv.item .attributes input[type='checkbox']{
+  margin: 3px auto auto auto;
+}

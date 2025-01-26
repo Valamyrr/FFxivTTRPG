@@ -179,7 +179,10 @@ export class FfxivItemSheet extends ItemSheet {
 
 
     html.on('click', '.item-delete', this._deleteItem.bind(this));
-    html.on('click', '.fa-trash-can', this._deleteItem.bind(this));
+    html.on('click', '.quantity-form .delete', this._deleteItem.bind(this));
+    html.on('click', '.quantity-form .item-qty-btn-rm', this._decreaseQuantity.bind(this));
+    html.on('click', '.quantity-form .item-qty-btn-add', this._increaseQuantity.bind(this));
+
 
     html.on("keydown", (event) => {
       if (event.key === "Enter") {
@@ -189,9 +192,26 @@ export class FfxivItemSheet extends ItemSheet {
 
   }
 
+  _decreaseQuantity(event){
+    const newQuantity = this.item.system.quantity - 1;
+      if (newQuantity < 1){
+        let confirmDelete = confirm(game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}));
+        if (confirmDelete) {
+          this.item.delete();
+          ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
+        }
+      } else {
+          this.item.update({ 'system.quantity': newQuantity });
+      }
+  }
+  _increaseQuantity(event){
+    this.item.update({ 'system.quantity': this.item.system.quantity + 1 });
+  }
+
   _deleteItem(event) {
-    if(confirm(game.i18n.localize("FFXIV.Confirm"))){
+    if(confirm(game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}))){
       this.item.delete();
+      ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
       this.render(false);
     }
   }
