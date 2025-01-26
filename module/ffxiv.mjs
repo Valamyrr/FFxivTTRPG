@@ -304,3 +304,17 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
     itemData.updateSource({ img: defaultImg });
   }
 });
+
+Hooks.on("userConnected", (player, login, data) => {
+  if(login && !game.paused){ //If the game is paused or the player logouts, do not play anything
+    ui.notifications.info(game.i18n.format("FFXIV.Notifications.NewPlayer", {playerName: player.name}));
+    if(game.settings.get('ffxiv', 'soundNotificationNewPlayer')){
+      foundry.audio.AudioHelper.play({
+          src: "systems/ffxiv/assets/sounds/enter_chat.wav", // Ensure this path is valid
+          volume: 0.8,
+          autoplay: true,
+          loop: false
+      });
+    }
+  }
+});

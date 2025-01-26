@@ -36,6 +36,16 @@ export class SettingsHelpers {
       requiresReload: true
     });
 
+    game.settings.register("ffxiv", "soundNotificationNewPlayer", {
+      name: game.i18n.localize("FFXIV.Settings.SoundNotificationNewPlayer"),
+      hint: game.i18n.localize("FFXIV.Settings.SoundNotificationNewPlayerHint"),
+      scope: "client",
+      config: true,
+      default: true,
+      type: Boolean,
+      requiresReload: false
+    });
+
   }
 
 }

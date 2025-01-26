@@ -146,14 +146,17 @@
       "Theme": "Theme",
       "ThemeHint": "Color palettes with which you want to display sheets.",
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
-      "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?"
+      "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?",
+      "SoundNotificationNewPlayer":"New Player Sound Notification",
+      "SoundNotificationNewPlayerHint":"Plays a sound notification whenever a player logs in."
     },
     "Dialogs":{
       "Confirm":"Are you sure you want to complete this action?",
       "ItemDelete":"Are you sure you want to delete this item : {itemName}?"
     },
     "Notifications":{
-      "ItemDelete":"{itemName} has been removed."
+      "ItemDelete":"{itemName} has been removed.",
+      "NewPlayer":"{playerName} has joined the party."
     },
     "None": "None",
     "Special": "Special",
