@@ -193,7 +193,7 @@ Hooks.on('renderActorSheet', async (app, html, data) => {
   // Iterate through the items and check for duplicates or invalid positions
   items.forEach(item => {
     if (FF_XIV.inventory_items.indexOf(item.type) > -1){
-        const position = item.system.position || 0;
+        const position = item.system.position.toString() || 0;
         if (occupiedPositions.has(position) || position === 0) {
           // Invalid or duplicate position, needs to be updated
           itemsToUpdate.push(item);
@@ -209,7 +209,7 @@ Hooks.on('renderActorSheet', async (app, html, data) => {
   itemsToUpdate.forEach(item => {
     if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1){
       // Find the next free position
-      while (occupiedPositions.has(nextFreePosition)) {
+      while (occupiedPositions.has(nextFreePosition.toString())) {
         nextFreePosition++;
       }
 
@@ -287,6 +287,15 @@ Hooks.on('renderActorSheet', (app, html, data) => {
       await draggedItemData.update({ 'system.position': targetPosition });
     }
 
+    if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
+      foundry.audio.AudioHelper.play({
+          src: "systems/ffxiv/assets/sounds/move_inventory.wav", // Ensure this path is valid
+          volume: 0.8,
+          autoplay: true,
+          loop: false
+      });
+    }
+
     // Re-render the inventory after dropping
     app.render();
   });
@@ -308,7 +317,7 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
 Hooks.on("userConnected", (player, login, data) => {
   if(login && !game.paused){ //If the game is paused or the player logouts, do not play anything
     ui.notifications.info(game.i18n.format("FFXIV.Notifications.NewPlayer", {playerName: player.name}));
-    if(game.settings.get('ffxiv', 'soundNotificationNewPlayer')){
+    if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
       foundry.audio.AudioHelper.play({
           src: "systems/ffxiv/assets/sounds/enter_chat.wav", // Ensure this path is valid
           volume: 0.8,
@@ -318,3 +327,27 @@ Hooks.on("userConnected", (player, login, data) => {
     }
   }
 });
+
+Hooks.on("renderActorSheet", (hookEvent, actorData, sheetData) => {
+  if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && !hookEvent.actor._sheetOpened){
+    foundry.audio.AudioHelper.play({
+        src: "systems/ffxiv/assets/sounds/sheet_open.wav", // Ensure this path is valid
+        volume: 0.8,
+        autoplay: true,
+        loop: false
+    });
+    hookEvent.actor._sheetOpened = true;
+  }
+});
+
+Hooks.on("closeActorSheet", (hookEvent, html) => {
+  if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
+    foundry.audio.AudioHelper.play({
+        src: "systems/ffxiv/assets/sounds/sheet_close.wav", // Ensure this path is valid
+        volume: 0.8,
+        autoplay: true,
+        loop: false
+    });
+    hookEvent.actor._sheetOpened = false;
+  }
+})

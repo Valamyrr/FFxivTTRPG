@@ -147,8 +147,8 @@
       "ThemeHint": "Color palettes with which you want to display sheets.",
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
       "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?",
-      "SoundNotificationNewPlayer":"New Player Sound Notification",
-      "SoundNotificationNewPlayerHint":"Plays a sound notification whenever a player logs in."
+      "SoundNotificationFFxiv":"Sound Notifications from FFXIV",
+      "SoundNotificationFFxivHint":"Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your iventory, etc."
     },
     "Dialogs":{
       "Confirm":"Are you sure you want to complete this action?",

@@ -183,6 +183,7 @@ export class FfxivItemSheet extends ItemSheet {
     html.on('click', '.quantity-form .item-qty-btn-rm', this._decreaseQuantity.bind(this));
     html.on('click', '.quantity-form .item-qty-btn-add', this._increaseQuantity.bind(this));
 
+    html.on('click', '.item-roll-button', this._rollItem.bind(this));
 
     html.on("keydown", (event) => {
       if (event.key === "Enter") {
@@ -192,14 +193,39 @@ export class FfxivItemSheet extends ItemSheet {
 
   }
 
+  async _rollItem(event){
+    ChatMessage.create({
+      content: await renderTemplate("systems/ffxiv/templates/chat/item-chat-card.hbs", { item: this.item }),
+      flags: { core: { canParseHTML: true } },
+      flavor: "Flavor placeholder",
+      classes: "chat-template"
+    });
+    /*
+    console.log(this.item.system)
+    const description = this.item.system.description
+
+
+
+    var content = this.item.name+"<br>"
+    for(var sysvar in this.item.system){
+      if (!this.item.system.hasOwnProperty(sysvar)) continue;
+      if (this.item.system[sysvar]=="") continue
+      content+="<b>"+sysvar+"</b> : "+this.item.system[sysvar]+"<br>"
+    }
+    ChatMessage.create({
+      content: content,
+      flags: { core: { canParseHTML: true } },
+    });
+
+
+    const roll = new Roll()
+    */
+  }
+
   _decreaseQuantity(event){
     const newQuantity = this.item.system.quantity - 1;
       if (newQuantity < 1){
-        let confirmDelete = confirm(game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}));
-        if (confirmDelete) {
-          this.item.delete();
-          ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
-        }
+        this._deleteItem(event)
       } else {
           this.item.update({ 'system.quantity': newQuantity });
       }
@@ -212,6 +238,14 @@ export class FfxivItemSheet extends ItemSheet {
     if(confirm(game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}))){
       this.item.delete();
       ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
+      if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
+        foundry.audio.AudioHelper.play({
+            src: "systems/ffxiv/assets/sounds/delete_item.wav", // Ensure this path is valid
+            volume: 0.8,
+            autoplay: true,
+            loop: false
+        });
+      }
       this.render(false);
     }
   }

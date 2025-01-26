@@ -36,9 +36,9 @@ export class SettingsHelpers {
       requiresReload: true
     });
 
-    game.settings.register("ffxiv", "soundNotificationNewPlayer", {
-      name: game.i18n.localize("FFXIV.Settings.SoundNotificationNewPlayer"),
-      hint: game.i18n.localize("FFXIV.Settings.SoundNotificationNewPlayerHint"),
+    game.settings.register("ffxiv", "soundNotificationFFxiv", {
+      name: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxiv"),
+      hint: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivHint"),
       scope: "client",
       config: true,
       default: true,
