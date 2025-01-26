@@ -14,7 +14,7 @@ This project is opened to PR. I am the only maintainer of this project, so pleas
 ## Roadmap
 This is what is currently planned. Feel free to ask me for any other feature you would like to see on this project.
 
-### CSS for item Sheets
+### CSS for item Sheets (done on last commits)
 Re-design item sheets. There are currently two kind of sheets: editable and non-editable. The non-editable one has ugly buttons and could use tabs for descriptions, specific information or later attached bonus for characters' DerivedData.
 
 ### Handle rolls
@@ -28,6 +28,9 @@ Making items (titles, consumables, any homebrew) have a list of attached bonuses
 
 ### French translation
 Cocorico ! Actually, any string is already translated from labels to English, so it should be easy to do so in any language. French has already been started.
+
+### Sounds
+Adding a soundboard to the gamemaster's tools.
 
 ## Attributions
 - game icons from [ffxiv's fan kit](https://fr.finalfantasyxiv.com/lodestone/special/fankit/icon/)
