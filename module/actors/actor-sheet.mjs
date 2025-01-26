@@ -387,7 +387,7 @@ export class FfxivActorSheet extends ActorSheet {
     if (item) {
       item.sheet.render(true);
     } else {
-      console.error(`Item with ID ${itemId} not found.`);
+      console.error(`Item with ID ${itemId} not found. Cannot open empty inventory cells.`);
     }
   };
 
