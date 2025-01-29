@@ -268,6 +268,7 @@ export class FfxivActorSheet extends ActorSheet {
     html.on('change', '.currency-quantity', this._updateCurrency.bind(this));
 
     html.on('click', '.ability-icon', this._renderItem.bind(this));
+    html.on('click', '.ability-roll-button', this._rollItem.bind(this));
 
     html.on('click', '.arrow-sidebar', this._toggleSidebar.bind(this))
 
@@ -379,6 +380,22 @@ export class FfxivActorSheet extends ActorSheet {
       dialog.render(true);
     }
   };
+
+  async _rollItem(event){
+    const itemId = event.currentTarget.dataset.itemId
+    const item = this.actor.items.get(itemId);
+    if(item){
+      ChatMessage.create({
+        content: await renderTemplate("systems/ffxiv/templates/chat/item-chat-card.hbs", { item: this.item }),
+        flags: { core: { canParseHTML: true } },
+        flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
+      });
+    }else{
+      console.error("Roll Error : No item found.")
+      console.error(event.currentTarget)
+    }
+
+  }
 
   async _renderItem(event){
     const itemId = event.currentTarget.dataset.itemId

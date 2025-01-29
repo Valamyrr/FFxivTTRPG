@@ -351,3 +351,7 @@ Hooks.on("closeActorSheet", (hookEvent, html) => {
     hookEvent.actor._sheetOpened = false;
   }
 })
+
+Hooks.on("renderChatLog", (app, html) => {
+  $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(game.settings.get("ffxiv", "theme")+'_theme')
+});

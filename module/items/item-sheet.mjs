@@ -197,8 +197,7 @@ export class FfxivItemSheet extends ItemSheet {
     ChatMessage.create({
       content: await renderTemplate("systems/ffxiv/templates/chat/item-chat-card.hbs", { item: this.item }),
       flags: { core: { canParseHTML: true } },
-      flavor: "Flavor placeholder",
-      classes: "chat-template"
+      flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
     });
     /*
     console.log(this.item.system)
