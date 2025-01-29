@@ -95,7 +95,7 @@
     "templates": {
       "physical_item":{
         "quantity": 1,
-        "weight": 0,
+        "weight": "",
         "price": {
           "buy": 0,
           "sell":0,
@@ -129,7 +129,9 @@
         "marker_effect": "",
         "limitations": "",
         "limitations_status": [],
-        "limitations_max": 0
+        "limitations_max": 0,
+        "direct_formula": "",
+        "base_formula": ""
       }
     },
     "consumable": {

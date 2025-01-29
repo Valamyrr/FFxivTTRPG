@@ -110,7 +110,9 @@
       "MarkerTrigger": "Marker Trigger",
       "MarkerEffect": "Marker Effect",
       "Limitations":"Limitation",
-      "Limitations_max":"Limitation Boxes Number"
+      "Limitations_max":"Limitation Boxes Number",
+      "BaseFormula": "Base Effect Formula",
+      "DirectFormula": "Direct Hit Formula"
     },
     "Tags":{
       "Tags": "Tags",
@@ -127,7 +129,11 @@
       "WindAspected": "Wind-Aspected",
       "FireAspected": "Fire-Aspected",
       "IceAspected": "Ice-Aspected",
-      "LightningAspected": "Lightning-Aspected"
+      "LightningAspected": "Lightning-Aspected",
+      "StationaryMarker": "StationaryMarker",
+      "Medicine": "Medicine",
+      "Meal": "Meal",
+      "Other": "Other"
     },
     "Traits":{
       "Activable": "Activable"
@@ -159,6 +165,8 @@
     "Notifications":{
       "ItemDelete":"{itemName} has been removed.",
       "NewPlayer":"{playerName} has joined the party."
+    },
+    "Chat":{
     },
     "None": "None",
     "Special": "Special",

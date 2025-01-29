@@ -23,6 +23,24 @@
 
     <div class='attributes'>
 
+      <div class="tags-container">
+        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
+        <ul class="tag-list">
+          {{#each system.tags as |tag index|}}
+            <li>
+              <select style="text-align: center;" class="select-tags">
+                {{#each ../config.tags_consumables as |t|}}
+                <option value="{{t.label}}" {{#if (eq t.label tag)}}selected {{/if}}>{{ localize t.label }}</option>
+                {{/each}}
+              </select>
+              <button type="button" class="remove-tag" data-index="{{index}}">x</button>
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+
+      <hr>
+
       <div class="resources grid grid-1col">
         <div class="resource flex-group-center">
           <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
@@ -109,10 +127,18 @@
           </div>
         </div>
       </div>
+      <div class="resources grid grid-1col">
+        <div class="resource flex-group-center">
+          <label for="system.base_formula" class="resource-label">{{ localize "FFXIV.Abilities.BaseFormula" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.base_formula" type="text" value="{{item.system.base_formula}}"/>
+          </div>
+        </div>
+      </div>
 
       <hr>
 
-      <div class="resources grid grid-3col">
+      <div class="resources grid grid-2col">
         <div class="resource flex-group-center">
           <label for="system.check" class="resource-label">{{ localize "FFXIV.Abilities.Check" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
@@ -134,18 +160,28 @@
         </div>
 
         <div class="resource flex-group-center">
+          <label for="system.direct_hit" class="resource-label">{{ localize "FFXIV.Abilities.DirectHit" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.direct_hit" type="text" value="{{item.system.direct_hit}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.direct_formula" class="resource-label">{{ localize "FFXIV.Abilities.DirectFormula" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.direct_formula" type="text" value="{{item.system.direct_formula}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
           <label for="system.trigger" class="resource-label">{{ localize "FFXIV.Abilities.Trigger" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <input name="system.trigger" type="text" value="{{item.system.trigger}}"/>
           </div>
         </div>
 
-        <div class="resource flex-group-center">
-          <label for="system.direct_hit" class="resource-label">{{ localize "FFXIV.Abilities.DirectHit" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.direct_hit" type="text" value="{{item.system.direct_hit}}"/>
-          </div>
-        </div>
+      </div>
+      <div class="resources grid grid-3col">
 
         <div class="resource flex-group-center">
           <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
@@ -167,6 +203,8 @@
             <input name="system.marker_effect" type="text" value="{{item.system.marker_effect}}"/>
           </div>
         </div>
+
+
 
       </div>
 

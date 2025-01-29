@@ -5,3 +5,13 @@
   border-radius: 8px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
+.chat-ffxiv .item-card .item-dialog-icon{
+  width: 45px;
+  height: 45px;
+}
+.chat-ffxiv .item-card .item-dialog-header{
+  width: calc(100% - 55px);
+}
+.chat-ffxiv .item-card .item-dialog-details{
+  padding: 5px;
+}

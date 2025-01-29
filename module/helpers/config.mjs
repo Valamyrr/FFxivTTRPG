@@ -178,6 +178,10 @@ FF_XIV.tags_abilities = {
   "lightningaspected":{
     "value":"lightningaspected",
     "label":"FFXIV.Tags.LightningAspected"
+  },
+  "stationarymarker":{
+    "value":"stationarymarker",
+    "label":"FFXIV.Tags.StationaryMarker"
   }
 }
 
@@ -189,5 +193,32 @@ FF_XIV.tags_traits = {
   "enhancement":{
     "value":"enhancement",
     "label":"FFXIV.Tags.Enhancement"
+  }
+}
+
+FF_XIV.tags_consumables = {
+  "primary":{
+    "value":"primary",
+    "label":"FFXIV.Tags.Primary"
+  },
+  "secondary":{
+    "value":"enhancement",
+    "label":"FFXIV.Tags.Secondary"
+  },
+  "instant":{
+    "value":"instant",
+    "label":"FFXIV.Tags.Instant"
+  },
+  "medicine":{
+    "value":"medicine",
+    "label":"FFXIV.Tags.Medicine"
+  },
+  "meal":{
+    "value":"meal",
+    "label":"FFXIV.Tags.Meal"
+  },
+  "other":{
+    "value":"other",
+    "label":"FFXIV.Tags.Other"
   }
 }

@@ -16,7 +16,7 @@
     </div>
     <button class="item-delete fa fa-trash-can"></button>
   </header>
-  
+
   <hr>
 
   {{! Sheet Body }}
@@ -93,12 +93,33 @@
 
       </div>
       <hr>
-      <div class="resources grid grid-3col">
+      <div class="resources grid grid-2col">
 
         <div class="resource flex-group-center">
           <label for="system.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.BaseEffect" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <input name="system.base_effect" type="text" value="{{item.system.base_effect}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.base_formula" class="resource-label">{{ localize "FFXIV.Abilities.BaseFormula" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.base_formula" type="text" value="{{item.system.base_formula}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.direct_hit" class="resource-label">{{ localize "FFXIV.Abilities.DirectHit" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.direct_hit" type="text" value="{{item.system.direct_hit}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.direct_formula" class="resource-label">{{ localize "FFXIV.Abilities.DirectFormula" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.direct_formula" type="text" value="{{item.system.direct_formula}}"/>
           </div>
         </div>
 
@@ -109,12 +130,8 @@
           </div>
         </div>
 
-        <div class="resource flex-group-center">
-          <label for="system.direct_hit" class="resource-label">{{ localize "FFXIV.Abilities.DirectHit" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.direct_hit" type="text" value="{{item.system.direct_hit}}"/>
-          </div>
-        </div>
+      </div>
+      <div class="resources grid grid-3col">
 
         <div class="resource flex-group-center">
           <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
@@ -136,6 +153,8 @@
             <input name="system.marker_effect" type="text" value="{{item.system.marker_effect}}"/>
           </div>
         </div>
+
+
 
       </div>
 

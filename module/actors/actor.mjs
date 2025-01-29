@@ -102,7 +102,7 @@ export class FfxivActor extends Actor {
       data.mdef = data.system.secondary_attributes.magic_defense ?? 0
       data.vigilance = data.system.secondary_attributes.vigilance ?? 0
     }
-
+    return data
   }
 
 }

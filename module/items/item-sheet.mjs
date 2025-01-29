@@ -199,26 +199,7 @@ export class FfxivItemSheet extends ItemSheet {
       flags: { core: { canParseHTML: true } },
       flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
     });
-    /*
-    console.log(this.item.system)
-    const description = this.item.system.description
-
-
-
-    var content = this.item.name+"<br>"
-    for(var sysvar in this.item.system){
-      if (!this.item.system.hasOwnProperty(sysvar)) continue;
-      if (this.item.system[sysvar]=="") continue
-      content+="<b>"+sysvar+"</b> : "+this.item.system[sysvar]+"<br>"
-    }
-    ChatMessage.create({
-      content: content,
-      flags: { core: { canParseHTML: true } },
-    });
-
-
-    const roll = new Roll()
-    */
+    this.item.roll();
   }
 
   _decreaseQuantity(event){
