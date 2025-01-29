@@ -148,7 +148,9 @@
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
       "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?",
       "SoundNotificationFFxiv":"Sound Notifications from FFXIV",
-      "SoundNotificationFFxivHint":"Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your iventory, etc."
+      "SoundNotificationFFxivHint":"Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your iventory, etc.",
+      "SoundNotificationFFxivVolume":"Volume from Sound Notifications",
+      "SoundNotificationFFxivHintVolume":"Volume for Sound Notifications from FFXIV."
     },
     "Dialogs":{
       "Confirm":"Are you sure you want to complete this action?",

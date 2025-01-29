@@ -241,7 +241,7 @@ export class FfxivItemSheet extends ItemSheet {
       if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
         foundry.audio.AudioHelper.play({
             src: "systems/ffxiv/assets/sounds/delete_item.wav", // Ensure this path is valid
-            volume: 0.8,
+            volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
             autoplay: true,
             loop: false
         });

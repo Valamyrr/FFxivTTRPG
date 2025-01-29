@@ -46,6 +46,17 @@ export class SettingsHelpers {
       requiresReload: false
     });
 
+    game.settings.register("ffxiv", "soundNotificationFFxivVolume", {
+      name: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivVolume"),
+      hint: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivHintVolume"),
+      scope: "client",
+      config: true,
+      type: Number,
+      default: 0.5,
+      range: {min: 0, max: 1, step: 0.01}
+      requiresReload: false
+    });
+
   }
 
 }

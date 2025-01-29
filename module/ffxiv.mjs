@@ -290,7 +290,7 @@ Hooks.on('renderActorSheet', (app, html, data) => {
     if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
       foundry.audio.AudioHelper.play({
           src: "systems/ffxiv/assets/sounds/move_inventory.wav", // Ensure this path is valid
-          volume: 0.8,
+          volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
           autoplay: true,
           loop: false
       });
@@ -320,7 +320,7 @@ Hooks.on("userConnected", (player, login, data) => {
     if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
       foundry.audio.AudioHelper.play({
           src: "systems/ffxiv/assets/sounds/enter_chat.wav", // Ensure this path is valid
-          volume: 0.8,
+          volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
           autoplay: true,
           loop: false
       });
@@ -332,7 +332,7 @@ Hooks.on("renderActorSheet", (hookEvent, actorData, sheetData) => {
   if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && !hookEvent.actor._sheetOpened){
     foundry.audio.AudioHelper.play({
         src: "systems/ffxiv/assets/sounds/sheet_open.wav", // Ensure this path is valid
-        volume: 0.8,
+        volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
         autoplay: true,
         loop: false
     });
@@ -344,7 +344,7 @@ Hooks.on("closeActorSheet", (hookEvent, html) => {
   if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
     foundry.audio.AudioHelper.play({
         src: "systems/ffxiv/assets/sounds/sheet_close.wav", // Ensure this path is valid
-        volume: 0.8,
+        volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
         autoplay: true,
         loop: false
     });
