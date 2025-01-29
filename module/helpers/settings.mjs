@@ -53,7 +53,7 @@ export class SettingsHelpers {
       config: true,
       type: Number,
       default: 0.5,
-      range: {min: 0, max: 1, step: 0.01}
+      range: {min: 0, max: 1, step: 0.01},
       requiresReload: false
     });
 
