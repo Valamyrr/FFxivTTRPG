@@ -6,8 +6,7 @@ There is a "[FFXIV TTRPG Fan](https://discord.gg/6EghsJdCbS)" Discord server whi
 ## Known Issues
 
 ### Inventory Glitchs
-When moving around items in the inventory, they may returns to the first position. There could be multiple items in the same slot too. It happens when moving an item before the callback to render the sheet happens. If it happens, closing the sheet and reopening (or any other action forcing the sheet to re-render) should fix the issue.
-(I think it has been fixed as I can't reproduce the issue anymore.)
+When moving around items in the inventory, if you switch two items, it will replace one in the first available position instead of switching positions.
 
 ## Contributing
 This project is opened to PR. I am the only maintainer of this project, so please understand that you might need to send me messages on Discord if your PR does not get attention. It's entirely possible I miss notifications.
