@@ -50,7 +50,8 @@
       "Currencies": "Currencies",
       "Titles": "Titles",
       "ActiveTitle": "Active Title",
-      "Roll": "Roll !"
+      "Roll": "Roll !",
+      "Show": "Show Item"
     },
     "Item":{
       "Name": "Name",
@@ -104,15 +105,19 @@
       "Challenge": "CR",
       "Trigger": "Trigger",
       "BaseEffect": "Base Effect",
+      "BaseEffectRoll": "Base Effect Roll",
       "Combo": "Combo",
       "DirectHit": "Direct Hit",
+      "DirectHitRoll": "Direct Hit Roll",
       "MarkerArea": "Marker Area",
       "MarkerTrigger": "Marker Trigger",
       "MarkerEffect": "Marker Effect",
       "Limitations":"Limitation",
       "Limitations_max":"Limitation Boxes Number",
       "BaseFormula": "Base Effect Formula",
-      "DirectFormula": "Direct Hit Formula"
+      "DirectFormula": "Direct Hit Formula",
+      "HitFormula": "Hit Formula",
+      "HitRoll": "Hit Roll"
     },
     "Tags":{
       "Tags": "Tags",

@@ -199,7 +199,7 @@ export class FfxivItemSheet extends ItemSheet {
       flags: { core: { canParseHTML: true } },
       flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
     });
-    this.item.roll();
+    this.item.roll(event);
   }
 
   _decreaseQuantity(event){

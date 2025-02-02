@@ -55,7 +55,11 @@
       {{/if}}
       </div>
 
+      {{#if (or system.base_formula system.direct_formula)}}
       <button class="item-roll-button">{{ localize "FFXIV.CharacterSheet.Roll" }}</button>
+      {{else}}
+      <button class="item-roll-button">{{ localize "FFXIV.CharacterSheet.Show" }}</button>
+      {{/if}}
     </div>
   </div>
 </form>

@@ -22,11 +22,14 @@ export class FfxivItem extends Item {
     // Starts off by populating the roll data with a shallow copy of `this.system`
     const rollData = { ...this.system };
 
-    // Quit early if there's no parent actor
-    if (!this.actor) return rollData;
+    const target = game.user.targets.first()
+    if (target){ //If player has selected any target
+      rollData.target = game.actors.get(target.document.actorId).getRollData() //Adds the target's RollData
+    }
 
-    // If present, add the actor's roll data
-    rollData.actor = this.actor.getRollData();
+    if (this.parent){ //If an actor is present
+      rollData.actor = this.parent.getRollData(); // If present, add the actor's roll data
+    }
 
     return rollData;
   }
@@ -36,28 +39,49 @@ export class FfxivItem extends Item {
    * @param {Event} event   The originating click event
    * @private
    */
-  async roll() {
-    if (!this.system.formula) {
-      return //If there is no formula to roll, nothing should be done
-    }
-    // Initialize chat data.
-    const speaker = ChatMessage.getSpeaker({ actor: this.actor });
-    const rollMode = game.settings.get('core', 'rollMode');
-    const label = `[${item.type}] ${item.name}`;
-
-    // Retrieve roll data from actor
+  async roll(event) {
     const rollData = this.getRollData();
-
-    // Invoke the roll and submit it to chat.
-    const roll = new Roll(rollData.formula, rollData);
-    // If you need to store the value first, uncomment the next line.
-    // const result = await roll.evaluate();
-    roll.toMessage({
-      speaker: speaker,
-      rollMode: rollMode,
-      flavor: label,
-    });
-    return roll;
+    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
+    const rollMode = game.settings.get('core', 'rollMode');
+    const label = `[${this.type}] ${this.name}`;
+    const user = game.user.id
+    console.log(rollData)
+    //Hit roll
+    if(rollData.hit_formula){
+      console.log(rollData.hit_formula)
+      const roll = new Roll(rollData.hit_formula, rollData);
+      await roll.evaluate();
+      ChatMessage.create({
+        user: user,
+        speaker: speaker,
+        rolls: [roll],
+        flavor: game.i18n.format("FFXIV.Abilities.HitRoll")
+      });
+    }
+    //Base damage roll
+    if(rollData.base_formula){
+      console.log(rollData.base_formula)
+      const roll = new Roll(rollData.base_formula, rollData);
+      await roll.evaluate();
+      ChatMessage.create({
+        user: user,
+        speaker: speaker,
+        rolls: [roll],
+        flavor: game.i18n.format("FFXIV.Abilities.BaseEffectRoll")
+      });
+    }
+    //Direct damage roll
+    if(rollData.direct_formula){
+      console.log(rollData.direct_formula)
+      const roll = new Roll(rollData.direct_formula, rollData);
+      await roll.evaluate();
+      ChatMessage.create({
+        user: user,
+        speaker: speaker,
+        rolls: [roll],
+        flavor: game.i18n.format("FFXIV.Abilities.DirectHitRoll")
+      });
+    }
 
   }
 }

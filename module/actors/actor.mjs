@@ -69,7 +69,7 @@ export class FfxivActor extends Actor {
   getRollData() {
     // Starts off by populating the roll data with a shallow copy of `this.system`
 
-    const data = { ...this };
+    const data = { ...this.system };
     // Prepare character roll data.
     this._getCharacterRollData({ ...this });
 

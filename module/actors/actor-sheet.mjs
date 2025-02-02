@@ -386,10 +386,12 @@ export class FfxivActorSheet extends ActorSheet {
     const item = this.actor.items.get(itemId);
     if(item){
       ChatMessage.create({
-        content: await renderTemplate("systems/ffxiv/templates/chat/item-chat-card.hbs", { item: this.item }),
+        content: await renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: item }),
         flags: { core: { canParseHTML: true } },
-        flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
+        flavor: game.i18n.format("FFXIV.ItemType."+item.type)
       });
+      console.log(item)
+      item.roll(event);
     }else{
       console.error("Roll Error : No item found.")
       console.error(event.currentTarget)

@@ -130,6 +130,7 @@
         "limitations": "",
         "limitations_status": [],
         "limitations_max": 0,
+        "hit_formula": "",
         "direct_formula": "",
         "base_formula": ""
       }
