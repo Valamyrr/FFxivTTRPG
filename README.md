@@ -6,20 +6,13 @@ There is a "[FFXIV TTRPG Fan](https://discord.gg/6EghsJdCbS)" Discord server whi
 ## Known Issues
 
 ### Inventory Glitchs
-When moving around items in the inventory, they may returns to the first position. There could be multiple items in the same slot too. It happens when moving an item before the callback to render the sheet happens. If it happens, closing the sheet and reopening (or any other action forcing the sheet to re-render) should fix the issue.
-(I think it has been fixed as I can't reproduce the issue anymore.)
+When moving around items in the inventory, if you switch two items, it will replace one in the first available position instead of switching positions.
 
 ## Contributing
 This project is opened to PR. I am the only maintainer of this project, so please understand that you might need to send me messages on Discord if your PR does not get attention. It's entirely possible I miss notifications.
 
 ## Roadmap
 This is what is currently planned. Feel free to ask me for any other feature you would like to see on this project.
-
-### CSS for item Sheets (done on last commits)
-Re-design item sheets. There are currently two kind of sheets: editable and non-editable. The non-editable one has ugly buttons and could use tabs for descriptions, specific information or later attached bonus for characters' DerivedData.
-
-### Handle rolls
-Making roll buttons on abilities and items clickable, as well as cleaning the animation. Roll must use the correct attribute if specified.
 
 ### Variablize css
 Clean CSS files to use variables defined in `vars.css`, which are not always used, thus making dark/light themes usable (currently, only the dark theme is really supported).
@@ -31,7 +24,7 @@ Making items (titles, consumables, any homebrew) have a list of attached bonuses
 Cocorico ! Actually, any string is already translated from labels to English, so it should be easy to do so in any language. French has already been started.
 
 ### Sounds
-Adding a soundboard to the gamemaster's tools.
+Adding a soundboard to the gamemaster's tools (starting quests/fates, level up, etc.)
 
 ## Attributions
 - game icons from [ffxiv's fan kit](https://fr.finalfantasyxiv.com/lodestone/special/fankit/icon/)
