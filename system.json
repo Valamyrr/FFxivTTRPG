@@ -8,7 +8,7 @@
       "thumbnail": "systems/ffxiv/assets/meteor.png"
     }
   ],
-  "version": "0.2",
+  "version": "0.3",
   "esmodules": ["module/ffxiv.mjs"],
   "styles": ["css/ffxiv.css"],
   "background": "systems/ffxiv/assets/meteor.png",
