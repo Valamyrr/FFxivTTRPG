@@ -3,33 +3,82 @@
     "Name": "Nom",
     "Level": "Niveau",
     "Class": "Classe",
+    "Experience": "Expérience",
+    "Health": {
+      "long": "Points de vie",
+      "abbrv": "PV",
+      "max": "Max PV"
+    },
+    "Mana": {
+      "long": "Mana",
+      "abbrv": "PM"
+    },
+    "Attributes":{
+      "Attributes": "Caractéristiques",
+      "Primary": "Caractéristiques primaires",
+      "Secondary": "Caractéristiques secondaires",
+      "Strength":{
+        "long": "Force",
+        "abbrv": "FOR"
+      },
+      "Dexterity":{
+        "long": "Dextérité",
+        "abbrv": "DEX"
+      },
+      "Vitality":{
+        "long": "Vitalité",
+        "abbrv": "VIT"
+      },
+      "Intelligence":{
+        "long": "Intelligence",
+        "abbrv": "INT"
+      },
+      "Mind":{
+        "long": "Esprit",
+        "abbrv": "ESP"
+      },
+      "Defense": "Défense",
+      "MagicDefense": "Défense Magique",
+      "Vigilance": "Vigilance",
+      "Speed": "Vitesse"
+    },
     "CharacterSheet":{
-      "Health": "Points de vie",
-      "Mana": "Mana",
+      "Biography": "Biographie",
+      "Size": "Taille",
       "Inventory": "Inventaire",
-      "Currencies": "Monnaies",
-      "Attributes":{
-        "Strength":{
-          "value": "Force",
-          "abbrv": "FOR"
-        },
-        "Dexterity":{
-          "value": "Dextérité",
-          "abbrv": "DEX"
-        },
-        "Vitality":{
-          "value": "Vitalité",
-          "abbrv": "VIT"
-        },
-        "Intelligence":{
-          "value": "Intelligence",
-          "abbrv": "INT"
-        },
-        "Mind":{
-          "value": "Esprit",
-          "abbrv": "ESP"
-        }
-      }
+      "Config": "Configuration",
+      "Currencies": "Devises",
+      "Titles": "Hauts faits",
+      "ActiveTitle": "Haut fait actif",
+      "Roll": "Jet de dés !",
+      "Show": "Afficher l'Objet"
+    },
+    "Item":{
+      "Name": "Nom",
+      "Source": "Source",
+      "Rarity": "Rareté",
+      "Buy": "Prix d'achat",
+      "Sell": "Prix de revente",
+      "Denomination": "Devise utilisée",
+      "Weight": "Poids",
+      "Quantity": "Quantité",
+      "Stack": "Accumulable",
+      "Delete": "Supprimer l'objet"
+    },
+    "ItemType":{
+      "ItemType":"Type d'Objet",
+      "consumable": "Consommable",
+      "limit_break": "Transcendance",
+      "primary_ability": "Compétence Primaire",
+      "secondary_ability": "Compétence Secondaire",
+      "instant_ability": "Compétence Instantanée",
+      "trait": "Trait",
+      "currency": "Devise",
+      "title": "Haut Fait"
+    },
+    "ActorType":{
+      "character": "Personnage",
+      "npc": "PNJ"
     },
     "Classes":{
       "BlackMage": "Mage Noir",
@@ -43,17 +92,91 @@
       "Tank": "Tank"
     },
     "Abilities":{
-
+      "Primary": "Compétences Primaires",
+      "Secondary": "Compétences Secondaires",
+      "Instant": "Compétences Instantanées",
+      "TraitsShort": "Traits",
+      "Traits": "Traits & Autres Effets",
+      "Abilities": "Compétences",
+      "Cost": "Coût",
+      "Target" :"Cible",
+      "Range": "Portée",
+      "Check": "Test",
+      "Challenge": "Niveau de Difficulté",
+      "Trigger": "Déclencheur",
+      "BaseEffect": "Effet de Base",
+      "BaseEffectRoll": "Jet pour l'Effet de Base",
+      "Combo": "Combo",
+      "DirectHit": "Attaque Directe",
+      "DirectHitRoll": "Jet d'Attaque Directe",
+      "MarkerArea": "Marqueur de Zone",
+      "MarkerTrigger": "Marqueur de Cible",
+      "MarkerEffect": "Marqueur d'Effet",
+      "Limitations":"Limites",
+      "Limitations_max":"Limite du Nombre de Case",
+      "BaseFormula": "Formule de l'Effet de Base",
+      "DirectFormula": "Formule d'Attaque Directe",
+      "HitFormula": "Formule d'Attaque",
+      "HitRoll": "Jet d'Attaque"
     },
-    "ItemSheet":{
-      "Rarities":{
-        "Basic": "Basique",
-        "Aetherial": "Aethéré",
-        "Green": "Vert",
-        "Blue": "Bleu",
-        "Relic": "Relique",
-        "Unique": "Unique"
-      }
-    }
+    "Tags":{
+      "Tags": "Labels",
+      "Primary": "Primaire",
+      "Secondary": "Secondaire",
+      "Instant": "Instantanée",
+      "LimitBreak": "Transcendance",
+      "Trait": "Trait",
+      "Enhancement": "Amélioration",
+      "Invoked": "Invocation",
+      "Magic": "Magie",
+      "Physical": "Physique",
+      "EarthAspected": "Élément Terre",
+      "WindAspected": "Élément Vent",
+      "FireAspected": "Élément Feu",
+      "IceAspected": "Élément Glace",
+      "LightningAspected": "Élément Éclair",
+      "StationaryMarker": "Marqueur Stationnaire",
+      "Medicine": "Potion",
+      "Meal": "Plat",
+      "Other": "Autre"
+    },
+    "Traits":{
+      "Activable": "Activable"
+    },
+    "Rarities":{
+      "Basic": "Basique",
+      "Aetherial": "Aethéré",
+      "Green": "Vert",
+      "Blue": "Bleu",
+      "Relic": "Relique",
+      "Unique": "Unique"
+    },
+    "Settings":{
+      "ToggleExperience":"Afficher Expérience",
+      "ToggleExperienceHint":"Utilisez-vous des règles faites maison pour gérer l'Expérience ?",
+      "Theme": "Thème",
+      "ThemeHint": "La palette de couleur avec laquelle vous voulez rerésenter vos fiches.",
+      "LimitedPhysicalItemsDialog": "Limiter la Boîte de dialogue",
+      "LimitedPhysicalItemsDialogHint": "Afficher les objets avec des boîtes de dialogue réduites et des droits limités pour les joueurs ?",
+      "SoundNotificationFFxiv":"Bruitages de FFXIV",
+      "SoundNotificationFFxivHint":"Ajoute quelques bruitages déclenchés par des actions telles que la connexion d'un autre joueur, l'ouverture/fermeture de votre feuille de personnage, le déplacement d'objets dans votre inventaire, etc.",
+      "SoundNotificationFFxivVolume":"Volume des Bruitages",
+      "SoundNotificationFFxivHintVolume":"Volume des Bruitages de FFXIV."
+    },
+    "Dialogs":{
+      "Confirm":"Êtes-vous sûr de vouloir effectuer cette action ?",
+      "ItemDelete":"Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?"
+    },
+    "Notifications":{
+      "ItemDelete":"{itemName} a été supprimé/e.",
+      "NewPlayer":"{playerName} a rejoint l'équipe."
+    },
+    "Chat":{
+    },
+    "None": "Aucun",
+    "Special": "Spécial",
+    "Dark": "Sombre",
+    "Light": "Lumineux"
+  
   }
 }
