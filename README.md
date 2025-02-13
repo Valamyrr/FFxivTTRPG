@@ -20,9 +20,6 @@ Clean CSS files to use variables defined in `vars.css`, which are not always use
 ### Attributes from Items
 Making items (titles, consumables, any homebrew) have a list of attached bonuses. For example, an equipped title "Vigilant" could give +3 Viligance to a character and making it visible on the sheet (kind of "11 | 3" in two separate cells).
 
-### French translation
-Cocorico ! Actually, any string is already translated from labels to English, so it should be easy to do so in any language. French has already been started.
-
 ### Sounds
 Adding a soundboard to the gamemaster's tools (starting quests/fates, level up, etc.)
 
