@@ -22,20 +22,6 @@ export class SettingsHelpers {
       requiresReload: false
     });
 
-    game.settings.register("ffxiv", "theme", {
-      name: game.i18n.localize("FFXIV.Settings.Theme"),
-      hint: game.i18n.localize("FFXIV.Settings.ThemeHint"),
-      scope: "client",
-      config: true,
-      default: "dark",
-      type: String,
-      choices: {
-            "dark": "Dark",
-            "light": "Light"
-      },
-      requiresReload: true
-    });
-
     game.settings.register("ffxiv", "soundNotificationFFxiv", {
       name: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxiv"),
       hint: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivHint"),

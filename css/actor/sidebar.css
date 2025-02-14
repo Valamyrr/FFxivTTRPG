@@ -4,9 +4,9 @@
   top: 190px;
   width: 25px;
   height: 25px;
-  border: solid 1px #393939;
+  border: solid 1px var(--secondary-color);
   border-radius: 0 8px 8px 0;
-  background-color: #393939;
+  background-color: var(--secondary-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,7 +60,7 @@
   display: flex;
   justify-content: space-between;
   margin: 10px 0;
-  background: linear-gradient(180deg, rgba(117,140,159,1) 0%, rgba(42,70,92,1) 30%, rgba(25,50,70,1) 100%);
+  background: var(--gradient-stats-sidebar);
   border-radius: 10px;
   padding: 5px
 }
@@ -68,7 +68,7 @@
 .mana-slot {
   height: 16px;
   width: 36px;
-  background-color: #393939; /* Default color for empty slots */
+  background-color: var(--primary-color); /* Default color for empty slots */
   clip-path: polygon(20% 0, 100% 0, 80% 100%, 0% 100%);
   transition: all 0.6s ease;
   position: absolute;
@@ -132,6 +132,7 @@
   background: transparent;
   width:30%;
   height: 16px;
+  color: white;
 }
 .health-border span{
   font-weight: bold;

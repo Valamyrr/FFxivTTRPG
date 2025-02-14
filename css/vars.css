@@ -15,6 +15,7 @@ body{
 .dark_theme {
   --background-color: #2C2C2C;
   --text-color: white;
+  --text-color-input: white;
   --invert-text-color: black;
   --text-color-strong: #999;
 
@@ -29,34 +30,48 @@ body{
   --gradient-color-2: rgb(58,58,58);
   --gradient-color-3: rgb(87,87,87);
   --gradient-color-4: rgb(66,66,66);
+  --gradient-stats-sidebar: linear-gradient(180deg, rgba(117,140,159,1) 0%, rgba(42,70,92,1) 30%, rgba(25,50,70,1) 100%);
 
   --shadow-color-top: rgb(150,150,150);
   --shadow-color-bottom: rgb(0,0,0);
-  --shadow-improve-readability: rgba(0,0,0,0.4);
+  --shadow-improve-readability-white: 0px 0px 5px rgba(0,0,0,0.4);
+  --shadow-improve-readability-light: 0px 0px 5px rgba(0,0,0,0.4);
+  --shadow-improve-readability-dark: 1px 0px 2px rgba(0,0,0,0.2), -1px 0px 2px rgba(0,0,0,0.2);
+
+  --tooltip: rgba(0, 0, 0, 0.6);
 
   --chip-color: grey;
   --chip-color-active: rgb(237,210,99);
 }
 
-.light_theme{
-  --background-color: #E2C2C2;
-  --text-color: black;
-  --text-color-strong: #8A775B;
+.light_theme {
+  --background-color: #F5F0E8;
+  --text-color: #2C2C2C;
+  --text-color-input: #2C2C2C;
+  --invert-text-color: white;
+  --text-color-strong: #5A5A5A;
 
-  --primary-color: #393939;
-  --secondary-color: #a3a3a3;
+  --primary-color: white;
+  --secondary-color: #D2B48C;
 
-  --border-color-1: #A1826E;
-  --border-color-2: #8A775B;
-  --border-shadow-1: #C2B49C;
+  --border-color-1: #B0A89E;
+  --border-color-2: #D4C7B0;
+  --border-shadow-1: #C4B899;
 
-  --gradient-color-1: rgb(222,214,199);
-  --gradient-color-2: rgb(58,58,58);
-  --gradient-color-3: rgb(247,245,241);
-  --shadow-color-top: rgb(150,150,150);
-  --shadow-color-bottom: rgb(0,0,0);
+  --gradient-color-1: rgb(245,240,232);
+  --gradient-color-2: rgb(232,224,212);
+  --gradient-color-3: rgb(210,198,179);
+  --gradient-color-4: rgb(188,176,157);
+  --gradient-stats-sidebar: linear-gradient(180deg, rgba(227,190,159,1) 0%, rgba(222,184,145,1) 30%, rgba(210,180,140,1) 100%);
 
-  --chip-color: rgb(237,210,99);
-  --chip-color-active: grey;
+  --shadow-color-top: rgb(255,255,255);
+  --shadow-color-bottom: rgb(100,100,100);
+  --shadow-improve-readability-white: -1px -1px 5px rgba(0,0,0,0.4), 1px -1px 5px rgba(0,0,0,0.4), -1px 1px 5px rgba(0,0,0,0.4), 1px 1px 5px rgba(0,0,0,0.4);
+  --shadow-improve-readability-light: -1px 1px 3px rgba(255,255,255,0.4), 1px 1px 3px rgba(255,255,255,0.4);
+  --shadow-improve-readability-dark: none ;
 
+  --tooltip: rgba(0, 0, 0, 0.4);
+
+  --chip-color: rgb(220,202,179);
+  --chip-color-active: rgb(237,210,99);
 }

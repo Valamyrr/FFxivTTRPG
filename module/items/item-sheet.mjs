@@ -13,7 +13,7 @@ export class FfxivItemSheet extends ItemSheet {
   /** @override */
   static get defaultOptions() {
     let options = foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ['ffxiv', 'sheet', 'item',  game.settings.get("ffxiv", "theme")+'_theme'],
+      classes: ['ffxiv', 'sheet', 'item',  CONFIG.theme+'_theme'],
       width: 520,
       height: 480,
       tabs: [

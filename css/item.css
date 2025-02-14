@@ -15,16 +15,16 @@
 }
 
 .ffxiv.item .window-content select{
-  color: white;
+  color: var(--text-color-input);
 }
 .ffxiv.item .window-content input{
-  color: white;
+  color: var(--text-color-input);
 }
 .ffxiv.item .window-content button{
-  color: white;
+  color: var(--text-color-input);
 }
 .ffxiv.item .window-content option{
-  color: black;
+  color: var(--text-color-input);
 }
 
 .ffxiv.item .profile-img{

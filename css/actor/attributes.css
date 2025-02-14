@@ -90,14 +90,14 @@
   margin-top: 2px;
   margin-left: 5px;
   font-size: 14px;
-  color: #fff;
+  color: var(--text-color);
   font-weight: bold;
 }
 .s-attribute-value {
   width: 60px;
   text-align: center;
   background: #393939;
-  color: white;
+  color: var(--text-color);
   border: 1px solid #a3a3a3;
   border-radius: 3px;
   flex:1

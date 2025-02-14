@@ -18,7 +18,7 @@ export class FfxivActorSheet extends ActorSheet {
   /** @override */
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ['ffxiv', 'sheet', 'actor', game.settings.get("ffxiv", "theme")+'_theme'],
+      classes: ['ffxiv', 'sheet', 'actor', CONFIG.theme+'_theme'],
       width: 780,
       height: 700,
       tabs: [

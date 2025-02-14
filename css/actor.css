@@ -25,7 +25,7 @@
 }
 
 .ffxiv.actor .window-content button {
-  color:white;
+  color: var(--text-color-input);
 }
 
 .ffxiv.actor .sheet-body-wrapper {
@@ -44,11 +44,11 @@
 
 
 .ffxiv.actor .window-content input{
-  color: white;
+  color: var(--text-color-input);
 }
 .ffxiv.actor .window-content select{
-  color: white;
+  color: var(--text-color-input);
 }
 .ffxiv.actor .window-content option{
-  color: black;
+  color: var(--text-color-input);
 }

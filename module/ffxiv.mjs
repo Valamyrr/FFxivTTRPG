@@ -26,17 +26,6 @@ Hooks.once('init', function () {
   // Add custom constants for configuration.
   CONFIG.FF_XIV = FF_XIV;
 
-
-
-  /**
-   * Set an initiative formula for the system
-   * @type {String}
-   */
-  CONFIG.Combat.initiative = {
-    formula: '3d10',
-    decimals: 0,
-  };
-
   // Define custom Document classes
   CONFIG.Actor.documentClass = FfxivActor;
   CONFIG.Item.documentClass = FfxivItem;
@@ -83,9 +72,6 @@ Hooks.once('init', function () {
 
   // Preload Handlebars templates.
   return preloadHandlebarsTemplates();
-
-
-
 });
 
 /* -------------------------------------------- */
@@ -176,6 +162,13 @@ Handlebars.registerHelper('buildInventoryGrid', function(items, gridSize) {
 Hooks.once('ready', function () {
   // Wait to register hotbar drop hook on ready so that modules could register earlier if they want to
   Hooks.on('hotbarDrop', (bar, data, slot) => createItemMacro(data, slot));
+
+  // Color Scheme to use with css variables
+  if (game.settings.get("core", "colorScheme") == "") {
+    CONFIG.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }else{
+    CONFIG.theme = game.settings.get("core", "colorScheme")
+  }
 });
 
 /* -------------------------------------------- */
@@ -353,5 +346,9 @@ Hooks.on("closeActorSheet", (hookEvent, html) => {
 })
 
 Hooks.on("renderChatLog", (app, html) => {
-  $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(game.settings.get("ffxiv", "theme")+'_theme')
+  let theme = game.settings.get("core", "colorScheme")
+  if (theme == "") {
+    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(theme+'_theme')
 });

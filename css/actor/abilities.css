@@ -160,7 +160,7 @@
   left: 0;
   width: 0;
   height: 100%;
-  background: linear-gradient(to right, var(--text-color) 50%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0,0,0,0) 100%);
   z-index: -1;
   transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
 }
@@ -190,7 +190,7 @@
     position: absolute;
     width: 16px;
     height: 2px;
-    background-color: var(--primary-color);
+    background-color: black;
     top: 50%;
     left: 50%;
     transform-origin: center;

@@ -78,8 +78,8 @@
   bottom: 105%; /* Position the tooltip above the icon */
   left: 50%;
   transform: translateX(-50%); /* Center the tooltip horizontally */
-  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
-  color: white;
+  background-color: var(--tooltip);
+  color: var(--text-color);
   padding: 3px 8px;
   border-radius: 11px;
   white-space: nowrap;
@@ -119,23 +119,11 @@
   position: absolute;
   bottom: 0px;
   right: 0px;
-  font-size: 14px
+  font-size: 14px;
   color: white;
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
 }
 
-/*Currencies
-.currencies ul{
-  margin: 0;
-  text-align: center;
-  columns: 2
-}
-
-.currencies li{
-  display: inline-block;
-  vertical-align: top;
-}
-*/
 /* Currencies Grid Layout */
 .currencies-grid {
   display: grid;
@@ -172,7 +160,7 @@
 .currency-name {
   font-size: 14px;
   margin-bottom: 5px;
-  color: #fff;
+  color: var(--text-color);
   font-weight: bold;
 }
 

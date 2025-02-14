@@ -9,24 +9,27 @@
 /* Rarity Title*/
 .limited-display .text-rarity-basic {
   color: var(--rarity-basic);
+  text-shadow: var(--shadow-improve-readability-white);
 }
 .limited-display .text-rarity-green {
   color: var(--rarity-green);
+  text-shadow: var(--shadow-improve-readability-light);
 }
 .limited-display .text-rarity-aetherial {
   color: var(--rarity-aetherial);
+  text-shadow: var(--shadow-improve-readability-light);
 }
 .limited-display .text-rarity-blue {
   color: var(--rarity-blue);
+  text-shadow: var(--shadow-improve-readability-light);
 }
 .limited-display .text-rarity-relic {
   color: var(--rarity-relic);
+  text-shadow: var(--shadow-improve-readability-dark);
 }
 .limited-display .text-rarity-unique {
   color: var(--rarity-unique);
-}
-.limited-display .item-dialog-name{
-  text-shadow: 0px 0px 5px var(--shadow-improve-readability);
+  text-shadow: var(--shadow-improve-readability-dark);
 }
 
 /* General display */
@@ -145,6 +148,7 @@
 .ffxiv.item .item-card .quantity-form .delete{
   color: red;
   border-color: red;
+  width: fit-content;
 }
 
 /* Roll button*/
@@ -164,6 +168,7 @@
   width: calc(100% + 10px)
 }
 .item-roll-button:hover{
+  box-shadow: none;
   color: var(--invert-text-color) !important;
 }
 
@@ -174,7 +179,7 @@
   left: 0;
   width: 0;
   height: 100%;
-  background: linear-gradient(to right, var(--text-color) 50%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0,0,0,0) 100%);
   z-index: -1;
   transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
 }
