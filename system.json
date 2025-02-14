@@ -2,6 +2,7 @@
   "id": "ffxiv",
   "title": "Final Fantasy XIV TTRPG",
   "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
+  "background": "systems/ffxiv/assets/banner.jpg",
   "media": [
     {
       "type": "setup",
