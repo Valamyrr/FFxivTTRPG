@@ -278,6 +278,9 @@ export class FfxivActorSheet extends ActorSheet {
 
     html.on('click', '.actor-titles .title-delete', this._onDeleteTitle.bind(this))
 
+    html.on('click', '.move-up', this._moveAbility.bind(this, -1));
+    html.on('click', '.move-down', this._moveAbility.bind(this, 1))
+
   }
 
   /**
@@ -566,6 +569,36 @@ export class FfxivActorSheet extends ActorSheet {
       item.delete();
       ui.notifications.info(`Item with ID ${itemId} has been removed.`);
     }
+  }
+
+  async _moveAbility(direction, event){
+    const actor = this.actor;
+    const abilityType = event.currentTarget.dataset.type;
+    const itemId = event.currentTarget.dataset.itemId;
+    if (!actor || !abilityType || !itemId || !direction) return;
+
+    let abilityOrder = foundry.utils.deepClone(actor.system.ability_order || {});
+    if (!abilityOrder[abilityType]) abilityOrder[abilityType] = [];
+
+    const allAbilities = actor.items.filter(i => i.type === abilityType).map(i => i.id);
+
+    abilityOrder[abilityType] = abilityOrder[abilityType].filter(id => allAbilities.includes(id)); //redefinition to avoid issues with deleted abilities
+
+    allAbilities.forEach(id => { // add new items
+        if (!abilityOrder[abilityType].includes(id)) {
+            abilityOrder[abilityType].push(id);
+        }
+    });
+
+    const index = abilityOrder[abilityType].indexOf(itemId);
+    if (index === -1) return; // Fail if item not found
+
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= abilityOrder[abilityType].length) return; //fail if out of bounds
+
+    [abilityOrder[abilityType][index], abilityOrder[abilityType][newIndex]] =
+    [abilityOrder[abilityType][newIndex], abilityOrder[abilityType][index]];
+    await actor.update({ "system.ability_order": abilityOrder });
   }
 
 

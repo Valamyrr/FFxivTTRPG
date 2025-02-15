@@ -24,40 +24,61 @@
     <!-- Sub-tab content -->
     <section class="sub-tab-content active" data-tab="primary">
       {{!-- Primary abilities content here --}}
-
-      {{#each (reverse items)}}
-        {{#if (eq type "primary_ability")}}
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-        {{/if}}
+      {{#each (sortAbilities items system.ability_order "primary_ability")}}
+          <div class="ability-container">
+            {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+            <div class="move-buttons">
+              {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="primary_ability">▲</button>{{/unless}}
+              {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="primary_ability">▼</button>{{/unless}}
+            </div>
+          </div>
       {{/each}}
+
     </section>
 
     <section class="sub-tab-content" data-tab="secondary" style="display:none;">
       {{!-- Secondary abilities content here --}}
-      {{#each (reverse items)}}
-        {{#if (eq type "secondary_ability")}}
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-        {{/if}}
+      {{#each (sortAbilities items system.ability_order "secondary_ability")}}
+          <div class="ability-container">
+            {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+            <div class="move-buttons">
+              {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="secondary_ability">▲</button>{{/unless}}
+              {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="secondary_ability">▼</button>{{/unless}}
+            </div>
+          </div>
       {{/each}}
+
     </section>
 
     <section class="sub-tab-content" data-tab="instant" style="display:none;">
       {{!-- Instant abilities content here --}}
-      {{#each (reverse items)}}
-        {{#if (eq type "instant_ability")}}
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-        {{/if}}
+      {{#each (sortAbilities items system.ability_order "instant_ability")}}
+          <div class="ability-container">
+            {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+            <div class="move-buttons">
+              {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
+              {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
+            </div>
+          </div>
       {{/each}}
+
     </section>
 
     <section class="sub-tab-content" data-tab="traits" style="display:none;">
+
       {{#each (reverse items)}}
         {{#if (eq type "limit_break")}}
           {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
         {{/if}}
-        {{#if (eq type "trait")}}
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
-        {{/if}}
+      {{/each}}
+      {{#each (sortAbilities items system.ability_order "trait")}}
+          <div class="ability-container">
+            {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+            <div class="move-buttons">
+              {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="trait">▲</button>{{/unless}}
+              {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="trait">▼</button>{{/unless}}
+            </div>
+          </div>
       {{/each}}
     </section>
   </div>

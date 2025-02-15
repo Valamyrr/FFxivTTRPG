@@ -21,6 +21,9 @@
           "max": 5
         }
       },
+      "abilities": {
+        "ability_order": []
+      },
       "attributes": {
         "primary_attributes": {
           "strength": {
@@ -66,7 +69,7 @@
       }
     },
     "character": {
-      "templates": ["biography","attributes","health","mana"],
+      "templates": ["biography","abilities","attributes","health","mana"],
       "experience": {
         "level": {
           "value": 1,
@@ -85,7 +88,7 @@
       "activeTitle": ""
     },
     "npc":{
-      "templates": ["biography","attributes","health"],
+      "templates": ["biography","abilities","attributes","health"],
       "size": "",
       "specie": ""
     }
@@ -141,7 +144,7 @@
     "limit_break": {
       "templates": ["core","ability"]
     },
-    "primary_abilitiy": {
+    "primary_ability": {
       "templates": ["core","ability"]
     },
     "secondary_ability": {

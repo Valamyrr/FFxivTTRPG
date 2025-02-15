@@ -151,6 +151,21 @@ Handlebars.registerHelper('buildInventoryGrid', function(items, gridSize) {
 
   return grid; // Return the filled grid array
 });
+Handlebars.registerHelper("sortAbilities", function (items, order, type) {
+  if (!order || !order[type] || !Array.isArray(order[type])) {
+    return items.filter((i) => i.type === type); // no saved order, return as is
+  }
+
+  return items
+  .filter((i) => i.type === type)
+  .sort((a, b) => {
+    const indexA = order[type].indexOf(a._id);
+    const indexB = order[type].indexOf(b._id);
+
+    return (indexA === -1 ? 9999 : indexA) - (indexB === -1 ? 9999 : indexB);
+  });
+
+});
 
 
 

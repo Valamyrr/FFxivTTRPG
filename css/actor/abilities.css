@@ -61,6 +61,7 @@
   color: var(--text-color);
   overflow: hidden;
   margin-bottom: 15px;
+  flex:1;
 }
 
 .actor-abilities .ability-card strong{
@@ -226,4 +227,21 @@
 
 .ability-description{
   padding: 10px;
+}
+.ability-container{
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+.ffxiv.actor .move-buttons{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-left: 5px;
+  height: 100%;
+}
+.ffxiv.actor .move-buttons button{
+  margin: 5px 0;
+  background: var(--primary-color);
 }
