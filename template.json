@@ -121,7 +121,7 @@
         "cost": "",
         "target": "",
         "range": "",
-        "check": "",
+        "check": "None",
         "challenge": "",
         "trigger": "",
         "base_effect": "",
