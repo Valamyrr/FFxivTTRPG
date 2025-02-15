@@ -35,7 +35,6 @@
       (object tab="abilities" label="Abilities" icon="fight")
       (object tab="roleplay" label="Description" icon="character")
       (object tab="items" label="Inventory" icon="inventory")
-      (object tab="jobs" label="Jobs" icon="achievements")
       (object tab="settings" label="Settings" icon="configuration")
     )
   }}
@@ -64,12 +63,6 @@
       {{!-- Owned Items Tab --}}
       <div class="tab items" data-group="primary" data-tab="items">
          {{> "systems/ffxiv/templates/actor/parts/actor-items.hbs"}}
-      </div>
-
-      {{!-- Jobs Tab --}}
-      <div class="tab jobs" data-group="primary" data-tab="jobs">
-        jobs
-        {{!--> "systems/ffxiv/templates/actor/parts/actor-spells.hbs"--}}
       </div>
 
       {{!-- Configuration Tab --}}
