@@ -2,8 +2,8 @@
 @import url("item/inventory-dialog.css");
 
 .ffxiv.item .window-content{
-  background: #2C2C2C;
-  color: white;
+  background: var(--background-color);
+  color: var(--text-color);
   display: block;
 }
 
