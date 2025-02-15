@@ -38,3 +38,12 @@
   {{/if}}
 
 </div>
+<hr>
+<div class="resources grid grid-2col">
+  <div class="resource" style="margin:auto">
+    <label for="system.showModifiers" class="resource-label">{{ localize "FFXIV.CharacterSheet.ShowModifiers" }}</label>
+  </div>
+  <div class="resource-content">
+    <input type="checkbox" name="system.showModifiers" {{#if system.showModifiers}}checked {{/if}}>
+  </div>
+</div>

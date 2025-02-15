@@ -51,7 +51,8 @@
       "Titles": "Hauts faits",
       "ActiveTitle": "Haut fait actif",
       "Roll": "Jet de dés !",
-      "Show": "Afficher l'Objet"
+      "Show": "Afficher l'Objet",
+      "ShowModifiers": "Afficher Améliorations/Affaiblissements avant les jets de dés ?"
     },
     "Item":{
       "Name": "Nom",
@@ -127,6 +128,7 @@
       "LimitBreak": "Transcendance",
       "Trait": "Trait",
       "Enhancement": "Amélioration",
+      "Enfeeblement": "Affaiblissement",
       "Invoked": "Invocation",
       "Magic": "Magie",
       "Physical": "Physique",
@@ -141,7 +143,8 @@
       "Other": "Autre"
     },
     "Traits":{
-      "Activable": "Activable"
+      "Activable": "Activable",
+      "Modifiers": "Modificateurs"
     },
     "Rarities":{
       "Basic": "Basique",

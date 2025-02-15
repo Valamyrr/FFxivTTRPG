@@ -1,0 +1,26 @@
+{{#each items}}
+  {{#if (eq type "trait")}}
+    {{#if system.active}}
+      <div class="item-card">
+        <div class="item-card-info">
+          <img src="{{img}}" alt="{{name}}" class="item-dialog-icon">
+          <div class="item-dialog-header">
+            <div class="item-dialog-name text-rarity-{{ delabelize 'rarities' system.rarity }}">
+              {{name}}
+            </div>
+            <div class="item-dialog-right">
+              <div class="item-dialog-tags">
+                {{#each system.tags as |tag|}}
+                  <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+                {{/each}}
+              </div>
+            </div>
+          </div>
+          <div class="item-dialog-effects">
+            {{#if system.description}}<div class="effect">{{{system.description}}}</div>{{/if}}
+          </div>
+        </div>
+      </div>
+    {{/if}}
+  {{/if}}
+{{/each}}

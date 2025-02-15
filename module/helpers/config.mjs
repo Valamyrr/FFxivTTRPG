@@ -193,6 +193,10 @@ FF_XIV.tags_traits = {
   "enhancement":{
     "value":"enhancement",
     "label":"FFXIV.Tags.Enhancement"
+  },
+  "enfeeblement":{
+    "value":"enfeeblement",
+    "label":"FFXIV.Tags.Enfeeblement"
   }
 }
 

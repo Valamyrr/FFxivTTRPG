@@ -51,7 +51,8 @@
       "Titles": "Titles",
       "ActiveTitle": "Active Title",
       "Roll": "Roll !",
-      "Show": "Show Item"
+      "Show": "Show Item",
+      "ShowModifiers": "Display Enhancements/Enfeeblement before rolls ?"
     },
     "Item":{
       "Name": "Name",
@@ -127,6 +128,7 @@
       "LimitBreak": "Limit Break",
       "Trait": "Trait",
       "Enhancement": "Enhancement",
+      "Enfeeblement": "Enfeeblement",
       "Invoked": "Invoked",
       "Magic": "Magic",
       "Physical": "Physical",
@@ -141,7 +143,8 @@
       "Other": "Other"
     },
     "Traits":{
-      "Activable": "Activable"
+      "Activable": "Activable",
+      "Modifiers": "Modifiers"
     },
     "Rarities":{
       "Basic": "Basic",

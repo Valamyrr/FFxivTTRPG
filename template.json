@@ -85,7 +85,8 @@
         "name": "",
         "role": ""
       },
-      "activeTitle": ""
+      "activeTitle": "",
+      "showModifiers": true
     },
     "npc":{
       "templates": ["biography","abilities","attributes","health"],
