@@ -13,10 +13,12 @@
         </div>
         <div class="ability-limitations">
           {{#repeat system.limitations_max}}
-            <input type="checkbox" class="limitation"
-              data-index={{index}} data-item-id={{../_id}}
-              {{#if (lookup ../system.limitations_status index)}}checked {{/if}}>
-            <span class="checkmark"></span>
+            <div class="limitation-wrapper">
+              <input type="checkbox" class="limitation"
+                data-index={{index}} data-item-id={{../_id}}
+                {{#if (lookup ../system.limitations_status index)}}checked {{/if}}>
+              <span class="checkmark"></span>
+            </div>
           {{/repeat}}
         </div>
       </div>
