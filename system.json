@@ -12,7 +12,6 @@
   "version": "0.3",
   "esmodules": ["module/ffxiv.mjs"],
   "styles": ["css/ffxiv.css"],
-  "background": "systems/ffxiv/assets/meteor.png",
   "languages": [
     {
       "lang": "en",
