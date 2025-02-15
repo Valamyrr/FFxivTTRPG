@@ -14,13 +14,13 @@ This project is opened to PR. I am the only maintainer of this project, so pleas
 ## Roadmap
 This is what is currently planned. Feel free to ask me for any other feature you would like to see on this project.
 
-### Variablize css
+### Variablize css (dev finished)
 Clean CSS files to use variables defined in `vars.css`, which are not always used, thus making dark/light themes usable (currently, only the dark theme is really supported).
 
 ### Attributes from Items
 Making items (titles, consumables, any homebrew) have a list of attached bonuses. For example, an equipped title "Vigilant" could give +3 Viligance to a character and making it visible on the sheet (kind of "11 | 3" in two separate cells).
 
-### Sounds
+### Sounds (dev finished)
 Adding a soundboard to the gamemaster's tools (starting quests/fates, level up, etc.)
 
 ## Attributions
