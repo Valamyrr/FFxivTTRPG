@@ -24,6 +24,7 @@
   color: var(--text-color-input);
 }
 .ffxiv.item .window-content option{
+  background: var(--background-color);
   color: var(--text-color-input);
 }
 
