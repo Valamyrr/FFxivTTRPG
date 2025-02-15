@@ -553,6 +553,7 @@ export class FfxivActorSheet extends ActorSheet {
   }
 
   _onChangeActiveTrait(event){
+    console.log("test")
     const checkbox = event.currentTarget
     const itemId = checkbox.dataset.itemId;
 

@@ -28,7 +28,7 @@ export class FfxivItem extends Item {
     }
 
     if (this.parent){ //If an actor is present
-      rollData.actor = this.parent.getRollData(); // If present, add the actor's roll data
+      Object.assign(rollData,this.parent.getRollData())
     }
 
     return rollData;
@@ -46,18 +46,6 @@ export class FfxivItem extends Item {
     const label = `[${this.type}] ${this.name}`;
     const user = game.user.id
     console.log(rollData)
-    //Hit roll
-    if(rollData.hit_formula){
-      console.log(rollData.hit_formula)
-      const roll = new Roll(rollData.hit_formula, rollData);
-      await roll.evaluate();
-      ChatMessage.create({
-        user: user,
-        speaker: speaker,
-        rolls: [roll],
-        flavor: game.i18n.format("FFXIV.Abilities.HitRoll")
-      });
-    }
     //Base damage roll
     if(rollData.base_formula){
       console.log(rollData.base_formula)
@@ -68,6 +56,18 @@ export class FfxivItem extends Item {
         speaker: speaker,
         rolls: [roll],
         flavor: game.i18n.format("FFXIV.Abilities.BaseEffectRoll")
+      });
+    }
+    //Hit roll
+    if(rollData.hit_formula){
+      console.log(rollData.hit_formula)
+      const roll = new Roll(rollData.hit_formula, rollData);
+      await roll.evaluate();
+      ChatMessage.create({
+        user: user,
+        speaker: speaker,
+        rolls: [roll],
+        flavor: game.i18n.format("FFXIV.Abilities.HitRoll")
       });
     }
     //Direct damage roll

@@ -15,3 +15,6 @@
 .chat-ffxiv .item-card .item-dialog-details{
   padding: 5px;
 }
+.chat-ffxiv .item-dialog-icon{
+  border-width: 0;
+}

@@ -36,7 +36,7 @@ export class FfxivActor extends Actor {
     // things organized.
     this._prepareSharedData(this)
     this._prepareCharacterData(this);
-    this._prepareSimpleData(this);
+    this._prepareNpcData(this);
   }
 
   /**
@@ -58,8 +58,8 @@ export class FfxivActor extends Actor {
 
   }
 
-  _prepareSimpleData(actorData) {
-    if (actorData.type !== 'simple') return;
+  _prepareNpcData(actorData) {
+    if (actorData.type !== 'npc') return;
   }
 
 
@@ -70,39 +70,28 @@ export class FfxivActor extends Actor {
     // Starts off by populating the roll data with a shallow copy of `this.system`
 
     const data = { ...this.system };
-    // Prepare character roll data.
-    this._getCharacterRollData({ ...this });
+    console.log(data)
+    if (data.primary_attributes) {
+      for (let [k, v] of Object.entries(data.primary_attributes)) {
+        data[k] = foundry.utils.deepClone(v);
+      }
+      data.str = data.primary_attributes.strength.value ?? 0
+      data.dex = data.primary_attributes.dexterity.value ?? 0
+      data.vit = data.primary_attributes.vitality.value ?? 0
+      data.int = data.primary_attributes.intelligence.value ?? 0
+      data.mnd = data.primary_attributes.mind.value ?? 0
+    }
+    if (data.secondary_attributes) {
+      for (let [k, v] of Object.entries(data.secondary_attributes)) {
+        data[k] = foundry.utils.deepClone(v);
+      }
+      data.def = data.secondary_attributes.defense.value ?? 0
+      data.mdef = data.secondary_attributes.magic_defense.value ?? 0
+      data.vigilance = data.secondary_attributes.vigilance.value ?? 0
+    }
 
     return data;
   }
 
-  /**
-   * Prepare character roll data.
-   */
-  _getCharacterRollData(data) {
-    if (data.type !== 'character') return;
-
-    // Copy the ability scores to the top level, so that rolls can use
-    // formulas like `@str.mod + 4`.
-    if (data.system.primary_attributes) {
-      for (let [k, v] of Object.entries(data.system.primary_attributes)) {
-        data[k] = foundry.utils.deepClone(v);
-      }
-      data.str = data.system.primary_attributes.strength ?? 0
-      data.dex = data.system.primary_attributes.dexterity ?? 0
-      data.vit = data.system.primary_attributes.vitality ?? 0
-      data.int = data.system.primary_attributes.intelligence ?? 0
-      data.mnd = data.system.primary_attributes.mind ?? 0
-    }
-    if (data.system.secondary_attributes) {
-      for (let [k, v] of Object.entries(data.system.secondary_attributes)) {
-        data[k] = foundry.utils.deepClone(v);
-      }
-      data.def = data.system.secondary_attributes.defense ?? 0
-      data.mdef = data.system.secondary_attributes.magic_defense ?? 0
-      data.vigilance = data.system.secondary_attributes.vigilance ?? 0
-    }
-    return data
-  }
 
 }
