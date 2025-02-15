@@ -167,9 +167,14 @@
       "Confirm":"Êtes-vous sûr de vouloir effectuer cette action ?",
       "ItemDelete":"Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?"
     },
+    "Controls":{
+      "FFXIVTools":"Outils FF XIV",
+      "Soundboard":"Bruitages"
+    },
     "Notifications":{
       "ItemDelete":"{itemName} a été supprimé/e.",
-      "NewPlayer":"{playerName} a rejoint l'équipe."
+      "NewPlayer":"{playerName} a rejoint l'équipe.",
+      "NoSoundAvailable":"Aucun fichier son ne se trouve dans le répertoire des bruitages."
     },
     "Chat":{
     },
@@ -177,6 +182,6 @@
     "Special": "Spécial",
     "Dark": "Sombre",
     "Light": "Lumineux"
-  
+
   }
 }

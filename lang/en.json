@@ -167,9 +167,14 @@
       "Confirm":"Are you sure you want to complete this action?",
       "ItemDelete":"Are you sure you want to delete this item : {itemName}?"
     },
+    "Controls":{
+      "FFXIVTools":"FF XIV Tools",
+      "Soundboard":"Soundboard"
+    },
     "Notifications":{
       "ItemDelete":"{itemName} has been removed.",
-      "NewPlayer":"{playerName} has joined the party."
+      "NewPlayer":"{playerName} has joined the party.",
+      "NoSoundAvailable":"No sound files found in the system soundboard directory."
     },
     "Chat":{
     },

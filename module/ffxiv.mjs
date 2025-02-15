@@ -10,6 +10,8 @@ import { FF_XIV } from './helpers/config.mjs';
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
 import { LEVELS } from './helpers/levels.mjs';
+
+import { register_controls } from "./helpers/controls.js";
 /* -------------------------------------------- */
 /*  Init Hook                                   */
 /* -------------------------------------------- */
@@ -366,4 +368,11 @@ Hooks.on("renderChatLog", (app, html) => {
     theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
   $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(theme+'_theme')
+});
+
+Hooks.on("getSceneControlButtons", (controls) => {
+  if (!game.user.isGM) {
+      return;
+  }
+  register_controls(controls);
 });
