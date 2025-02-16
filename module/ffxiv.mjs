@@ -135,7 +135,7 @@ Handlebars.registerHelper("delabelize", function ( category, label ) {
         return configCategory[key].value;
     }
   }
-  console.log("FFXIV | cannot find label for "+label+" in "+category)
+  console.error("FFXIV | cannot find label for "+label+" in "+category)
   return "label error"
 });
 
@@ -144,7 +144,6 @@ Handlebars.registerHelper('buildInventoryGrid', function(items, gridSize) {
   items.forEach(item => {
     if ( CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1 ){ //Check item is inventoriable
       const pos = item.system.position;
-      console.log(item.name +" : " + item.system.position)
       if ( pos >= 1 && pos <= gridSize ) { // Check if position is between 1 and gridSize
         grid[pos - 1] = item; // Place item in its position (0-indexed)
       }
