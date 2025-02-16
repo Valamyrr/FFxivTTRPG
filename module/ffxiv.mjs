@@ -315,8 +315,9 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
   //Default Images for Items
   if (!itemData.img || itemData.img === "icons/svg/item-bag.svg") {
     const defaultImages = {
-      limit_break: "systems/ffxiv/assets/limit_break.png",
-      title: "systems/ffxiv/assets/titles/default-title.png"
+      limit_break: "systems/ffxiv/assets/default_img/limit_break.png",
+      title: "systems/ffxiv/assets/default_img/default-title.png",
+      trait: "systems/ffxiv/assets/"
     };
     const defaultImg = defaultImages[itemData.type] || "icons/svg/item-bag.svg";
     itemData.updateSource({ img: defaultImg });
