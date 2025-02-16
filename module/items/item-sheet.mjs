@@ -55,6 +55,7 @@ export class FfxivItemSheet extends ItemSheet {
       return `${path}/item-ability-sheet.hbs`;
     }
     if (this.item.type == "trait"){
+      console.log(this.item.system)
       return `${path}/item-trait-sheet.hbs`;
     }
     if (this.item.type == "limit_break"){
@@ -152,16 +153,14 @@ export class FfxivItemSheet extends ItemSheet {
       app.render();
     });
 
-    // Update to handle the change
+    //Tags
     html.on('change', '.select-tags', (event) => {
       const index = $(event.currentTarget).closest('li').index(); // Find the index of the current item
       const value = $(event.currentTarget).val(); // Get the selected value
       const tags = this.item.system.tags || []; // Ensure tags is initialized
-
       tags[index] = value; // Update the correct index in the array
       this.item.update({ "system.tags": tags }); // Update the item with the new tags array
     });
-
     html.on('click', '.remove-tag', (event) => {
       const index = event.currentTarget.dataset.index;
       const tags = this.item.system.tags || [];
@@ -169,13 +168,49 @@ export class FfxivItemSheet extends ItemSheet {
       this.item.update({ "system.tags": tags });
       this.render(); // Re-render to show the updated fields
     });
-
     html.on('click', '.add-tag', () => {
       const tags = this.item.system.tags || [];
       tags.push("FFXIV.Tags.Primary"); // Add an empty tag
       this.item.update({ "system.tags": tags });
       this.render(); // Re-render to show the new field
     });
+
+
+
+    // Modifiers, similar as tags
+    html.on('change', '.modifier-name', (event) => {
+      const index = event.currentTarget.dataset.index;
+      const value = event.currentTarget.value;
+      const modifiers = this.item.system.modifiers || [];
+      if (modifiers[index]) {
+        modifiers[index][0] = value; // Update name
+        this.item.update({ "system.modifiers": modifiers });
+      }
+    });
+    html.on('change', '.modifier-value', (event) => {
+      const index = event.currentTarget.dataset.index;
+      const value = parseInt(event.currentTarget.value) || 0;
+      const modifiers = this.item.system.modifiers || [];
+      if (modifiers[index]) {
+        modifiers[index][1] = value; // Update value
+        this.item.update({ "system.modifiers": modifiers });
+      }
+    });
+    html.on('click', '.add-modifier', () => {
+      const modifiers = this.item.system.modifiers || [];
+      modifiers.push(["FFXIV.Attributes.Strength.long", 0]);
+      this.item.update({ "system.modifiers": modifiers });
+    });
+    html.on('click', '.remove-modifier', (event) => {
+      const index = event.currentTarget.dataset.index;
+      const modifiers = this.item.system.modifiers || [];
+      modifiers.splice(index, 1);
+      this.item.update({ "system.modifiers": modifiers });
+      this.render();
+    });
+
+
+
 
 
     html.on('click', '.item-delete', this._deleteItem.bind(this));

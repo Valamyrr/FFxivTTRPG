@@ -7,25 +7,46 @@ export const FF_XIV = {};
 FF_XIV.attributes = {
   "Strength":{
     "value":"Strength",
-    "label":"FFXIV.Attributes.Strength.abbrv"
+    "label":"FFXIV.Attributes.Strength.long"
   },
   "Dexterity":{
     "value":"Dexterity",
-    "label":"FFXIV.Attributes.Dexterity.abbrv"
+    "label":"FFXIV.Attributes.Dexterity.long"
   },
   "Vitality":{
     "value":"Vitality",
-    "label":"FFXIV.Attributes.Vitality.abbrv"
+    "label":"FFXIV.Attributes.Vitality.long"
   },
   "Intelligence":{
     "value":"Intelligence",
-    "label":"FFXIV.Attributes.Intelligence.abbrv"
+    "label":"FFXIV.Attributes.Intelligence.long"
   },
   "Mind":{
     "value":"Mind",
-    "label":"FFXIV.Attributes.Mind.abbrv"
+    "label":"FFXIV.Attributes.Mind.long"
+  },
+  "Defense":{
+    "label":"FFXIV.Attributes.Defense"
+  },
+  "MagicDefense":{
+    "label":"FFXIV.Attributes.MagicDefense"
+  },
+  "Vigilance":{
+    "label":"FFXIV.Attributes.Vigilance"
+  },
+  "Speed":{
+    "label":"FFXIV.Attributes.Speed"
   }
 };
+
+FF_XIV.characteristics = {
+  "Health":{
+    "label": "FFXIV.Health.long"
+  },
+  "Damages":{
+    "label": "FFXIV.Damages"
+  }
+}
 
 FF_XIV.attributesAbbreviations = {
   "Strength":{

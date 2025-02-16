@@ -53,3 +53,7 @@
 .ffxiv.item .attributes input[type='checkbox']{
   margin: 3px auto auto auto;
 }
+
+.ffxiv.item .modifier-value{
+  width: fit-content;  
+}

@@ -9,6 +9,7 @@
       "abbrv": "PV",
       "max": "Max PV"
     },
+    "Damages": "Dégâts",
     "Mana": {
       "long": "Mana",
       "abbrv": "PM"
@@ -64,7 +65,8 @@
       "Weight": "Poids",
       "Quantity": "Quantité",
       "Stack": "Accumulable",
-      "Delete": "Supprimer l'objet"
+      "Delete": "Supprimer l'objet",
+      "Modifiers": "Modificateurs"
     },
     "ItemType":{
       "ItemType":"Type d'Objet",
@@ -185,6 +187,5 @@
     "Special": "Spécial",
     "Dark": "Sombre",
     "Light": "Lumineux"
-
   }
 }

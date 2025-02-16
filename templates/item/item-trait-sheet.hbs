@@ -22,6 +22,7 @@
 
     {{! Attributes Tab }}
     <div class='attributes'>
+      {{! Tags}}
       <div class="tags-container">
         <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
         <ul class="tag-list">
@@ -33,6 +34,27 @@
                 {{/each}}
               </select>
               <button type="button" class="remove-tag" data-index="{{index}}">x</button>
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+      <hr>
+      {{! Modifiers}}
+      <div class="tags-container">
+        <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label> <button type="button" class="add-modifier">+</button>
+        <ul class="tag-list">
+          {{#each system.modifiers as |modifier index|}}
+            <li>
+              <select style="text-align: center;" class="modifier-name" data-index="{{index}}">
+                {{#each ../config.attributes as |m|}}
+                <option value="{{m.label}}" {{#if (eq m.label modifier.[0])}}selected {{/if}}>{{ localize m.label }}</option>
+                {{/each}}
+                {{#each ../config.characteristics as |m|}}
+                <option value="{{m.label}}" {{#if (eq m.label modifier.[0])}}selected {{/if}}>{{ localize m.label }}</option>
+                {{/each}}
+              </select>
+              <input type="number" class="modifier-value" value="{{modifier.[1]}}" data-index="{{index}}">
+              <button type="button" class="remove-modifier" data-index="{{index}}">x</button>
             </li>
           {{/each}}
         </ul>

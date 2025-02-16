@@ -13,6 +13,7 @@
       "long": "Mana",
       "abbrv": "MP"
     },
+    "Damages": "Damages",
     "Attributes":{
       "Attributes": "Attributes",
       "Primary": "Primary Attributes",
@@ -64,7 +65,8 @@
       "Weight": "Weight",
       "Quantity": "Quantity",
       "Stack": "Stackability",
-      "Delete": "Delete Item"
+      "Delete": "Delete Item",
+      "Modifiers": "Modifiers"
     },
     "ItemType":{
       "ItemType":"Item Type",

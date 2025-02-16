@@ -28,42 +28,42 @@
         "primary_attributes": {
           "strength": {
             "value": 0,
-            "label": "Strength"
+            "label": "FFXIV.Attributes.Strength.long"
           },
           "dexterity": {
             "value": 0,
-            "label": "Dexterity"
+            "label": "FFXIV.Attributes.Dexterity.long"
           },
           "vitality": {
             "value": 0,
-            "label": "Vitality"
+            "label": "FFXIV.Attributes.Vitality.long"
           },
           "intelligence": {
             "value": 0,
-            "label": "Intelligence"
+            "label": "FFXIV.Attributes.Intelligence.long"
           },
           "mind": {
             "value": 0,
-            "label": "Mind"
+            "label": "FFXIV.Attributes.Mind.long"
           }
         },
         "secondary_attributes": {
           "defense": {
             "value": 0,
-            "label": "Defense"
+            "label": "FFXIV.Attributes.Defense"
           },
           "magic_defense": {
             "value": 0,
-            "label": "MagicDefense"
+            "label": "FFXIV.Attributes.MagicDefense"
           },
           "vigilance": {
             "value": 0,
-            "label": "Vigilance"
+            "label": "FFXIV.Attributes.Vigilance"
           },
           "speed": {
             "value": 0,
             "unit": "squares",
-            "label": "Speed"
+            "label": "FFXIV.Attributes.Speed"
           }
         }
       }
@@ -137,6 +137,9 @@
         "hit_formula": "",
         "direct_formula": "",
         "base_formula": ""
+      },
+      "modifiers":{
+        "modifiers":[]
       }
     },
     "consumable": {
@@ -155,7 +158,7 @@
       "templates": ["core","ability"]
     },
     "trait": {
-      "templates": ["core"],
+      "templates": ["core","modifiers"],
       "activable": false,
       "active": false
     },
@@ -164,7 +167,7 @@
       "quantity": 1
     },
     "title": {
-      "templates": ["core"]
+      "templates": ["core","modifiers"],
     }
   }
 }
