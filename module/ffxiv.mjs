@@ -15,7 +15,7 @@ import { register_controls } from "./helpers/controls.js";
 /* -------------------------------------------- */
 /*  Init Hook                                   */
 /* -------------------------------------------- */
-console.log("FFXIV | Système chargé")
+console.log("FFXIV | Initilisation du Système")
 
 Hooks.once('init', function () {
   // Add utility classes to the global game object so that they're more easily

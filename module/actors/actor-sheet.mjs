@@ -249,16 +249,6 @@ export class FfxivActorSheet extends ActorSheet {
       });
     }
 
-    /*Size for different actor types*//*
-    if(this.actor.type == "npc"){
-      console.log("test")
-      Hooks.once("renderActorSheet", (app, html, data) => {
-        this.setPosition({ width: 430, height: 725 });
-        console.log("render")
-      });
-    }*/
-
-
     html.on('click', '.inventory-item', this._renderItem.bind(this));
 
     html.on('click', '.abilities-sub-tabs .sub-tab', this._displayAbilityTab.bind(this))
@@ -559,7 +549,6 @@ export class FfxivActorSheet extends ActorSheet {
   }
 
   _onChangeActiveTrait(event){
-    console.log("test")
     const checkbox = event.currentTarget
     const itemId = checkbox.dataset.itemId;
 

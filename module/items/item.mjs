@@ -45,10 +45,8 @@ export class FfxivItem extends Item {
     const rollMode = game.settings.get('core', 'rollMode');
     const label = `[${this.type}] ${this.name}`;
     const user = game.user.id
-    console.log(rollData)
     //Base damage roll
     if(rollData.base_formula){
-      console.log(rollData.base_formula)
       const roll = new Roll(rollData.base_formula, rollData);
       await roll.evaluate();
       ChatMessage.create({
@@ -60,7 +58,6 @@ export class FfxivItem extends Item {
     }
     //Hit roll
     if(rollData.hit_formula){
-      console.log(rollData.hit_formula)
       const roll = new Roll(rollData.hit_formula, rollData);
       await roll.evaluate();
       ChatMessage.create({
@@ -72,7 +69,6 @@ export class FfxivItem extends Item {
     }
     //Direct damage roll
     if(rollData.direct_formula){
-      console.log(rollData.direct_formula)
       const roll = new Roll(rollData.direct_formula, rollData);
       await roll.evaluate();
       ChatMessage.create({

@@ -55,14 +55,12 @@ export class FfxivItemSheet extends ItemSheet {
       return `${path}/item-ability-sheet.hbs`;
     }
     if (this.item.type == "trait"){
-      console.log(this.item.system)
       return `${path}/item-trait-sheet.hbs`;
     }
     if (this.item.type == "limit_break"){
       return `${path}/item-limitbreak-sheet.hbs`;
     }
     if (this.item.type == "title"){
-      console.log("test")
       return `${path}/item-title-sheet.hbs`;
     }
     return `${path}/item-sheet.hbs`;
