@@ -317,7 +317,7 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
     const defaultImages = {
       limit_break: "systems/ffxiv/assets/default_img/limit_break.png",
       title: "systems/ffxiv/assets/default_img/default-title.png",
-      trait: "systems/ffxiv/assets/"
+      trait: "systems/ffxiv/assets/default_img/default-trait.png"
     };
     const defaultImg = defaultImages[itemData.type] || "icons/svg/item-bag.svg";
     itemData.updateSource({ img: defaultImg });
