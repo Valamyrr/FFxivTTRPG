@@ -167,7 +167,7 @@
       "quantity": 1
     },
     "title": {
-      "templates": ["core","modifiers"],
+      "templates": ["core","modifiers"]
     }
   }
 }
