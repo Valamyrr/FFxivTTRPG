@@ -3,6 +3,10 @@
   "title": "Final Fantasy XIV TTRPG",
   "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
   "background": "systems/ffxiv/assets/banner.jpg",
+  "compatibility": {
+    "minimum": "12.331",
+    "verified": "12.331"
+  },
   "media": [
     {
       "type": "setup",
