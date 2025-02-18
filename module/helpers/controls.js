@@ -21,9 +21,7 @@ export const register_controls = (controls) => {
     ]
 
   }
-  console.log(controls)
   controls.push(ffxiv_controls)
-  console.log(controls)
 
 }
 
