@@ -28,16 +28,29 @@
     </div>
   </div>
 
-  {{#if settings.showExperience }}
+</div>
+{{#if settings.showExperience }}
+<hr>
+<div class="resources grid grid-2col">
+
+
   <div class="resource flex-group-center">
-    <label for="system.experience.experience.value" class="resource-label">{{ localize "FFXIV.Experience" }}</label>
+    <label for="system.experience.experience.value" class="resource-label">{{ localize "FFXIV.Experience.Exp" }}</label>
     <div class="resource-content flexrow flex-center flex-between">
     <input type="text" name="system.experience.experience.value" value="{{system.experience.experience.value}}" data-dtype="Number"/>
     </div>
   </div>
-  {{/if}}
+
+  <div class="resource flex-group-center">
+    <label for="system.experience.experience.total" class="resource-label">{{ localize "FFXIV.Experience.Total" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+    <input type="text" name="system.experience.experience.total" value="{{system.experience.experience.total}}" data-dtype="Number"/>
+    </div>
+  </div>
+
 
 </div>
+{{/if}}
 <hr>
 <div class="resources grid grid-2col">
   <div class="resource" style="margin:auto">

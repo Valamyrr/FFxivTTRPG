@@ -3,7 +3,10 @@
     "Name": "Name",
     "Level": "Level",
     "Class": "Class",
-    "Experience": "Experience",
+    "Experience": {
+      "Exp": "Experience",
+      "Total": "Total Experience"
+    },
     "Health": {
       "long": "Health",
       "abbrv": "HP",

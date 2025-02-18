@@ -55,6 +55,9 @@ export class FfxivActor extends Actor {
     if (actorData.system.class.name != ""){
       actorData.system.class.role = CONFIG.FF_XIV.classes[actorData.system.class.name].role
     }
+    const expToNextLevel = CONFIG.FF_XIV.levels[actorData.system.experience.level.value.toString()]["EXP"];
+    const experiencePercentage = actorData.system.experience.experience.value * 100 / expToNextLevel;
+    actorData.system.experiencePercentage = Math.min(100,Math.max(0,Math.floor(experiencePercentage)));
 
   }
 

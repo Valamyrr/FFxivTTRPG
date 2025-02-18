@@ -45,9 +45,6 @@ export class FfxivActorSheet extends ActorSheet {
       Hooks.once('renderActorSheet', () => {
         this._updateManaBar();
         this._updateHealthBar();
-        if(game.settings.get('ffxiv', 'toggleExperience')){
-          this._updateExperienceBar();
-        }
         this._applyStoredAbilityTab();
       });
     };
@@ -482,17 +479,6 @@ export class FfxivActorSheet extends ActorSheet {
         }
       } else {
           item.update({ 'system.quantity': newQuantity });
-      }
-    }
-  }
-
-  _updateExperienceBar(){
-    const characterSheet = document.getElementById(`FfxivActorSheet-Actor-${this.actor._id}`);
-    const experiencePercentage = Math.min(100,Math.max(0,100 * this.actor.system.experience.experience.value / CONFIG.LEVELS[this.actor.system.experience.level.value]["experience"]))
-    if (characterSheet) {
-      const experienceBar = characterSheet.querySelectorAll('.experience-bar');
-      if(experienceBar.length > 0){
-        experienceBar[0].style.width = `${experiencePercentage}%`
       }
     }
   }

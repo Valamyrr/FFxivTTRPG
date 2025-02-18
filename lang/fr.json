@@ -3,7 +3,10 @@
     "Name": "Nom",
     "Level": "Niveau",
     "Class": "Classe",
-    "Experience": "Expérience",
+    "Experience": {
+      "Exp": "Experience",
+      "Total": "Experience Totale"
+    },
     "Health": {
       "long": "Points de vie",
       "abbrv": "PV",

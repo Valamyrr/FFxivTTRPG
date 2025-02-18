@@ -21,7 +21,7 @@
             <div class="class-name">
                 <span>{{ localize (labelize 'classes' system.class.name)}}</span>{{#if (not (eq system.activeTitle ""))}}<span> - {{system.activeTitle}}</span>{{/if}}
                 {{#if settings.showExperience}}
-                <div class="experience-border"><div class="experience-bar"></div></div>
+                <div class="experience-border"><div class="experience-bar" style="width:{{system.experiencePercentage}}%;"></div></div>
                 {{/if}}
             </div>
         </div>

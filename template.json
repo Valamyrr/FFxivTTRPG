@@ -73,10 +73,11 @@
       "experience": {
         "level": {
           "value": 1,
-          "max": null
+          "max": 100
         },
         "experience":{
           "value":0,
+          "total":150742270,
           "max":null,
           "label": "XP"
         }
