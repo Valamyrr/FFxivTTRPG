@@ -64,7 +64,8 @@ Hooks.once('init', function () {
     instant_ability: game.i18n.localize("FFXIV.ItemType.instant_ability"),
     trait: game.i18n.localize("FFXIV.ItemType.trait"),
     currency: game.i18n.localize("FFXIV.ItemType.currency"),
-    title: game.i18n.localize("FFXIV.ItemType.title")
+    title: game.i18n.localize("FFXIV.ItemType.title"),
+    gear: game.i18n.localize("FFXIV.ItemType.gear")
   };
 
   CONFIG.Actor.typeLabels = {
@@ -110,6 +111,16 @@ Handlebars.registerHelper('and', function(a, b) {
 Handlebars.registerHelper("array", function () {
   return Array.from(arguments).slice(0, arguments.length - 1);
 });
+Handlebars.registerHelper("characterTabs", function(settings){
+  let items = [
+    { tab: "abilities", label: game.i18n.localize("FFXIV.Abilities.Abilities"), icon: "fight" },
+    { tab: "roleplay", label: game.i18n.localize("FFXIV.Attributes.Attributes"), icon: "character" },
+  ];
+  if (settings.showGear) items.push({ tab: "gear", label: game.i18n.localize("FFXIV.CharacterSheet.Gear"), icon: "gear" });
+  items.push({ tab: "items", label: game.i18n.localize("FFXIV.CharacterSheet.Inventory"), icon: "inventory" })
+  items.push({ tab: "settings", label: game.i18n.localize("FFXIV.CharacterSheet.Config"), icon: "configuration" })
+  return items;
+})
 Handlebars.registerHelper('repeat', function(n, options) {
     let content = '';
     for (let i = 0; i < n; i++) {

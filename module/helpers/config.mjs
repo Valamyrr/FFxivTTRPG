@@ -105,6 +105,39 @@ FF_XIV.rarities = {
     }
 };
 
+FF_XIV.gear_categories = {
+  "Arms": { "label": "FFXIV.GearCategories.Arms" },
+  "Armor": { "label": "FFXIV.GearCategories.Armor" },
+  "Accessories": { "label": "FFXIV.GearCategories.Accessories" }
+}
+
+FF_XIV.gear_subcategories = {
+  "Arms":{
+    "category": "Arms",
+    "label": "FFXIV.GearCategories.Arms"
+  },
+  "Shield":{
+    "category": "Armor",
+    "label": "FFXIV.GearCategories.Shield"
+  },
+  "Head":{
+    "category": "Armor",
+    "label": "FFXIV.GearCategories.Head"
+  },
+  "Body":{
+    "category": "Armor",
+    "label": "FFXIV.GearCategories.Body"
+  },
+  "Ring":{
+    "category": "Accessories",
+    "label": "FFXIV.GearCategories.Ring"
+  },
+  "Necklace":{
+    "category": "Accessories",
+    "label": "FFXIV.GearCategories.Necklace"
+  }
+};
+
 FF_XIV.roles = {
   "tank": {
     "value":"tank",
@@ -124,24 +157,28 @@ FF_XIV.classes = {
   "warrior": {
     "value":"warrior",
     "label":"FFXIV.Classes.Warrior",
+    "labelshort": "FFXIV.Classes.WarriorShort",
     "role": "tank",
     "role_label": "FFXIV.Roles.Tank"
   },
   "whitemage":{
     "value":"whitemage",
     "label":"FFXIV.Classes.WhiteMage",
+    "labelshort": "FFXIV.Classes.WhiteMageShort",
     "role":"healer",
     "role_label": "FFXIV.Roles.Healer"
   },
   "dragoon":{
     "value":"dragoon",
     "label":"FFXIV.Classes.Dragoon",
+    "labelshort": "FFXIV.Classes.DragoonShort",
     "role":"dps",
     "role_label": "FFXIV.Roles.DPS"
   },
   "blackmage":{
     "value":"blackmage",
     "label":"FFXIV.Classes.BlackMage",
+    "labelshort": "FFXIV.Classes.BlackMageShort",
     "role":"dps",
     "role_label": "FFXIV.Roles.DPS"
   }
@@ -149,6 +186,7 @@ FF_XIV.classes = {
 
 FF_XIV.inventory_items = [
   "consumable",
+  "gear"
 ]
 
 FF_XIV.tags_abilities = {

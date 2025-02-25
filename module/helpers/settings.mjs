@@ -12,6 +12,16 @@ export class SettingsHelpers {
       requiresReload: false
     });
 
+    game.settings.register("ffxiv", "toggleGear", {
+      name: game.i18n.localize("FFXIV.Settings.ToggleGear"),
+      hint: game.i18n.localize("FFXIV.Settings.ToggleGearHint"),
+      scope: "world",
+      config: true,
+      default: false,
+      type: Boolean,
+      requiresReload: false
+    });
+
     game.settings.register("ffxiv", "limitedPhysicalItemsDialog", {
       name: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialog"),
       hint: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialogHint"),

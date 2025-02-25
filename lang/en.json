@@ -50,6 +50,7 @@
       "Biography": "Biography",
       "Size": "Size",
       "Inventory": "Inventory",
+      "Gear": "Gear",
       "Config": "Configuration",
       "Currencies": "Currencies",
       "Titles": "Titles",
@@ -69,7 +70,20 @@
       "Quantity": "Quantity",
       "Stack": "Stackability",
       "Delete": "Delete Item",
-      "Modifiers": "Modifiers"
+      "Modifiers": "Modifiers",
+      "Description": "Description"
+    },
+    "GearCategories":{
+      "Category": "Category",
+      "SubCategory": "Sub-category",
+      "Armor": "Armor",
+      "Accessories": "Accessories",
+      "Arms": "Arms",
+      "Shield": "Shield",
+      "Head": "Head",
+      "Body": "Body",
+      "Ring": "Ring",
+      "Necklace": "Necklace"
     },
     "ItemType":{
       "ItemType":"Item Type",
@@ -80,17 +94,23 @@
       "instant_ability": "Instant Ability",
       "trait": "Trait",
       "currency": "Currency",
-      "title": "Title"
+      "title": "Title",
+      "gear": "Gear"
     },
     "ActorType":{
       "character": "Character",
       "npc": "NPC"
     },
-    "Classes":{
+    "Classes":{      
+      "Classes": "Classes",
       "BlackMage": "Black Mage",
+      "BlackMageShort": "BLM",
       "Dragoon": "Dragoon",
+      "DragoonShort": "DRG",
       "Warrior": "Warrior",
-      "WhiteMage": "White Mage"
+      "WarriorShort": "WAR",
+      "WhiteMage": "White Mage",
+      "WhiteMageShort": "WHM"
     },
     "Roles":{
       "DPS": "DPS",
@@ -160,8 +180,10 @@
       "Unique": "Unique"
     },
     "Settings":{
-      "ToggleExperience":"Show Experience",
-      "ToggleExperienceHint":"Do you use homebrew rules for experience ?",
+      "ToggleExperience":"Display Character Experience",
+      "ToggleExperienceHint":"Do you use homebrew rules for experience?",
+      "ToggleGear":"Display gear tab on character sheet",
+      "ToggleGearHint":"Do you use homebrew rules for gear?",
       "Theme": "Theme",
       "ThemeHint": "Color palettes with which you want to display sheets.",
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",

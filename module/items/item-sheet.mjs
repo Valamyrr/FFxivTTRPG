@@ -63,6 +63,9 @@ export class FfxivItemSheet extends ItemSheet {
     if (this.item.type == "title"){
       return `${path}/item-title-sheet.hbs`;
     }
+    if (this.item.type == "gear"){
+      return `${path}/item-gear-sheet.hbs`;
+    }
     return `${path}/item-sheet.hbs`;
   }
 
@@ -172,6 +175,34 @@ export class FfxivItemSheet extends ItemSheet {
       this.item.update({ "system.tags": tags });
       this.render(); // Re-render to show the new field
     });
+
+    //Gear Classes, similar as tags
+    if(this.item.type=="gear"){
+      html.on('change', '.select-classes', (event) => {
+        const index = $(event.currentTarget).closest('li').index();
+        const value = $(event.currentTarget).val();
+        const classes = this.item.system.classes || [];
+        classes[index] = value;
+        this.item.update({ "system.classes": classes });
+      });
+      html.on('click', '.remove-class', (event) => {
+        const index = event.currentTarget.dataset.index;
+        const classes = this.item.system.classes || [];
+        classes.splice(index, 1);
+        this.item.update({ "system.classes": classes });
+        this.render();
+      });
+      console.log("add class pre button")
+      html.on('click', '.add-class', () => {
+        console.log("add class button")
+        const classes = this.item.system.classes || [];
+        classes.push("FFXIV.Classes.WarriorShort");
+        console.log("add class pushed")
+        this.item.update({ "system.classes": classes });
+        console.log("add class updates")
+        this.render();
+      });
+    }
 
 
 

@@ -7,6 +7,7 @@ export const preloadHandlebarsTemplates = async function () {
   return loadTemplates([
     // Actor partials.
     'systems/ffxiv/templates/actor/parts/actor-items.hbs',
+    'systems/ffxiv/templates/actor/parts/actor-gear.hbs',
     'systems/ffxiv/templates/actor/parts/actor-settings.hbs',
     'systems/ffxiv/templates/actor/parts/actor-sidebar.hbs',
     'systems/ffxiv/templates/actor/parts/actor-abilities.hbs',

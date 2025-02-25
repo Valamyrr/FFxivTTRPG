@@ -50,6 +50,7 @@
       "Biography": "Biographie",
       "Size": "Taille",
       "Inventory": "Inventaire",
+      "Gear": "Equipement",
       "Config": "Configuration",
       "Currencies": "Devises",
       "Titles": "Hauts faits",
@@ -69,7 +70,20 @@
       "Quantity": "Quantité",
       "Stack": "Accumulable",
       "Delete": "Supprimer l'objet",
-      "Modifiers": "Modificateurs"
+      "Modifiers": "Modificateurs",
+      "Description": "Description"
+    },
+    "GearCategories":{
+      "Category": "Categorie",
+      "SubCategory": "Sous-Catégorie",
+      "Armor": "Armures",
+      "Accessories": "Accessoires",
+      "Arms": "Armes",
+      "Shield": "Bouclier",
+      "Head": "Tête",
+      "Body": "Torse",
+      "Ring": "Bague",
+      "Necklace": "Collier"
     },
     "ItemType":{
       "ItemType":"Type d'Objet",
@@ -80,17 +94,23 @@
       "instant_ability": "Compétence Instantanée",
       "trait": "Trait",
       "currency": "Devise",
-      "title": "Haut Fait"
+      "title": "Haut Fait",
+      "gear": "Equipement"
     },
     "ActorType":{
       "character": "Personnage",
       "npc": "PNJ"
     },
     "Classes":{
+      "Classes": "Classes",
       "BlackMage": "Mage Noir",
+      "BlackMageShort": "MNO",
       "Dragoon": "Dragoon",
+      "DragoonShort": "DRG",
       "Warrior": "Guerrier",
-      "WhiteMage": "Mage Blanc"
+      "WarriorShort": "GUE",
+      "WhiteMage": "Mage Blanc",
+      "WhiteMageShort": ""
     },
     "Roles":{
       "DPS": "DPS",
@@ -162,6 +182,8 @@
     "Settings":{
       "ToggleExperience":"Afficher Expérience",
       "ToggleExperienceHint":"Utilisez-vous des règles faites maison pour gérer l'Expérience ?",
+      "ToggleGear":"Afficher l'onglet d'équipements",
+      "ToggleGearHint":"Utilisez-vous des règles faites maison pour l'équipement ?",
       "Theme": "Thème",
       "ThemeHint": "La palette de couleur avec laquelle vous voulez rerésenter vos fiches.",
       "LimitedPhysicalItemsDialog": "Limiter la Boîte de dialogue",

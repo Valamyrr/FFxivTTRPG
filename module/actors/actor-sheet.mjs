@@ -71,7 +71,8 @@ export class FfxivActorSheet extends ActorSheet {
     context.config = CONFIG.FF_XIV;
 
     context.settings = {
-      "showExperience": game.settings.get('ffxiv','toggleExperience')
+      "showExperience": game.settings.get('ffxiv','toggleExperience'),
+      "showGear": game.settings.get('ffxiv','toggleGear')
     }
 
     // Prepare character data and items.

@@ -1,0 +1,116 @@
+{{! This template is a fallback for when items don't have more specific templates. }}
+{{! Generally, you'll want to make more specific templates when possible. }}
+<form class='{{cssClass}}' autocomplete='off'>
+  <header class='sheet-header'>
+    <img
+      class='profile-img'
+      src='{{item.img}}'
+      data-edit='img'
+      title='{{item.name}}'
+    />
+    <div class='header-fields'>
+      <h1 class='charname'><input
+          name='name'
+          type='text'
+          value='{{item.name}}'
+          placeholder='Name'
+        /></h1>
+    </div>
+    <button class="item-delete fa fa-trash-can"></button>
+  </header>
+
+  {{! Sheet Tab Navigation }}
+  <nav class='sheet-tabs tabs' data-group='primary'>
+    <a class='item' data-tab='description'>{{ localize "FFXIV.Item.Description" }}</a>
+    <a class='item' data-tab='attributes'>{{ localize "FFXIV.Attributes.Attributes" }}</a>
+  </nav>
+
+  {{! Sheet Body }}
+  <section class='sheet-body'>
+
+    {{! Description Tab }}
+    <div class='tab' data-group='primary' data-tab='description'>
+
+      {{editor
+        enrichedDescription
+        target='system.description'
+        engine='prosemirror'
+        button=true
+        editable=editable
+      }}
+    </div>
+    <div class='tab' data-group='primary' data-tab='attributes'>
+
+      <div class="resources grid grid-3col">
+
+        <div class="resource flex-group-center">
+          <label for="system.category" class="resource-label">{{ localize "FFXIV.GearCategories.Category" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.category">
+              {{#each this.config.gear_subcategories as |a|}}
+              <option value="{{a.label}}" {{#if (eq a.label ../item.system.category)}}selected {{/if}}>{{ localize a.label }}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.level" class="resource-label">{{ localize "FFXIV.Level" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.level" value="{{ system.level }}">
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.rarity">
+              {{#each this.config.rarities as |a|}}
+              <option value="{{a.label}}" {{#if (eq a.label ../item.system.rarity)}}selected {{/if}}>{{ localize a.label }}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="tags-container">
+        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Classes.Classes" }}</label> <button type="button" class="add-class">+</button>
+        <ul class="tag-list">
+          {{#each system.classes as |class index|}}
+            <li>
+              <select style="text-align: center;" class="select-classes">
+                {{#each ../config.classes as |c|}}
+                <option value="{{c.labelshort}}" {{#if (eq c.labelshort class)}}selected {{/if}}>{{ localize c.labelshort }}</option>
+                {{/each}}
+              </select>
+              <button type="button" class="remove-class" data-index="{{index}}">x</button>
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+
+      <div class="tags-container">
+        <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label> <button type="button" class="add-modifier">+</button>
+        <ul class="tag-list">
+          {{#each system.modifiers as |modifier index|}}
+            <li>
+              <select style="text-align: center;" class="modifier-name" data-index="{{index}}">
+                {{#each ../config.attributes as |m|}}
+                <option value="{{m.label}}" {{#if (eq m.label modifier.[0])}}selected {{/if}}>{{ localize m.label }}</option>
+                {{/each}}
+                {{#each ../config.characteristics as |m|}}
+                <option value="{{m.label}}" {{#if (eq m.label modifier.[0])}}selected {{/if}}>{{ localize m.label }}</option>
+                {{/each}}
+              </select>
+              <input type="number" class="modifier-value" value="{{modifier.[1]}}" data-index="{{index}}">
+              <button type="button" class="remove-modifier" data-index="{{index}}">x</button>
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+
+    </div>
+
+  </section>
+</form>
