@@ -66,7 +66,13 @@ export class FfxivItemSheet extends ItemSheet {
     if (this.item.type == "gear"){
       return `${path}/item-gear-sheet.hbs`;
     }
+    
+    if (this.item.type == "currency"){
+      return `${path}/item-currency-sheet.hbs`;
+    }
+
     return `${path}/item-sheet.hbs`;
+
   }
 
   /* -------------------------------------------- */
