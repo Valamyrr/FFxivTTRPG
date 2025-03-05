@@ -22,7 +22,7 @@
         "limitations": "",
         "limitations_status": [],
         "limitations_max": 0,
-        "hit_formula": "1d20",
+        "hit_formula": "1d20+@str",
         "direct_formula": "2d6+3",
         "base_formula": "3"
     },
