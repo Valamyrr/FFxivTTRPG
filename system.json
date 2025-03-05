@@ -28,6 +28,28 @@
       "path": "lang/fr.json"
     }
   ],
+  "packs": [
+    {
+      "name": "primary-abilities",
+      "label": "Primary Abilities",
+      "path": "packs/primary-abilities",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+          "PLAYER": "OBSERVER",
+          "ASSISTANT": "OWNER"
+      }
+    }
+  ],
+  "packFolders": [
+    {
+      "name": "Abilities",
+      "sorting": "a",
+      "packs": [
+        "primary-abilities"
+      ]
+    }
+  ],
   "url": "https://github.com/Valamyrr/FFxivTTRPG",
   "manifest": "https://github.com/Valamyrr/FFxivTTRPG/releases/latest/download/system.json",
   "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v1.1/system.zip",

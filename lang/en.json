@@ -143,7 +143,14 @@
       "BaseFormula": "Base Effect Formula",
       "DirectFormula": "Direct Hit Formula",
       "HitFormula": "Hit Formula",
-      "HitRoll": "Hit Roll"
+      "HitRoll": "Hit Roll",
+      "DRG": {
+          "True_Thrust": {
+              "base_effect": "Deals 3 damage to the target",
+              "combo": "Dragoon Combo or Disembowel",
+              "direct_hit": "Deals an additional 2d6 damage"
+          }
+      }
     },
     "Tags":{
       "Tags": "Tags",
