@@ -21,6 +21,7 @@ export const preloadHandlebarsTemplates = async function () {
     'systems/ffxiv/templates/item/parts/box.hbs',
     // Item user-side
     'systems/ffxiv/templates/item/item-sheet-dialog.hbs',
+    'systems/ffxiv/templates/item/item-sheet-dialog-gear.hbs',
     // Chat templates
     'systems/ffxiv/templates/chat/item-chat-card.hbs',
     'systems/ffxiv/templates/chat/ability-chat-card.hbs',

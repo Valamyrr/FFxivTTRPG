@@ -64,9 +64,13 @@ export class FfxivItemSheet extends ItemSheet {
       return `${path}/item-title-sheet.hbs`;
     }
     if (this.item.type == "gear"){
-      return `${path}/item-gear-sheet.hbs`;
+      if (game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null){
+        return `${path}/item-sheet-dialog-gear.hbs`;
+      }else{
+        return `${path}/item-gear-sheet.hbs`;
+      }
     }
-    
+
     if (this.item.type == "currency"){
       return `${path}/item-currency-sheet.hbs`;
     }
@@ -115,6 +119,10 @@ export class FfxivItemSheet extends ItemSheet {
 
   /* -------------------------------------------- */
 
+  /** @override */
+  render(force, options) {
+    super.render(force, options);
+  }
 
   /** @override */
   activateListeners(html) {
@@ -123,6 +131,8 @@ export class FfxivItemSheet extends ItemSheet {
 
     Hooks.once("renderItemSheet", (app, html, data) => {
       this.setPosition({ height: $(html).find('.limited-display').height() + 30 });
+      const limitedDisplay = game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null;
+      if(this.item.type=="gear" && limitedDisplay) this.setPosition({ width: 340 });
     });
 
     // Everything below here is only needed if the sheet is editable
@@ -137,28 +147,6 @@ export class FfxivItemSheet extends ItemSheet {
     });
     html.find(".popout-editor .popout-editor-button").on("click", this._onPopoutEditor.bind(this));
 
-    // Active Effect management
-    html.find('.inventory-item, .empty-slot').on('drop', async event => {
-      event.preventDefault();
-
-      const targetPosition = event.currentTarget.dataset.itemPosition;
-      const targetItemId = event.currentTarget.dataset.itemId;
-
-      const draggedItemData = actor.items.get(draggedItem.id);
-
-      if (targetItemId) {
-        // Swap items if dropping on another item
-        const targetItemData = actor.items.get(targetItemId);
-        await draggedItemData.update({ 'system.position': targetPosition });
-        await targetItemData.update({ 'system.position': draggedItem.position });
-      } else {
-        // Move item to an empty slot
-        await draggedItemData.update({ 'system.position': targetPosition });
-      }
-
-      // Re-render the inventory after moving
-      app.render();
-    });
 
     //Tags
     html.on('change', '.select-tags', (event) => {
@@ -198,14 +186,10 @@ export class FfxivItemSheet extends ItemSheet {
         this.item.update({ "system.classes": classes });
         this.render();
       });
-      console.log("add class pre button")
       html.on('click', '.add-class', () => {
-        console.log("add class button")
         const classes = this.item.system.classes || [];
         classes.push("FFXIV.Classes.WarriorShort");
-        console.log("add class pushed")
         this.item.update({ "system.classes": classes });
-        console.log("add class updates")
         this.render();
       });
     }
@@ -252,6 +236,7 @@ export class FfxivItemSheet extends ItemSheet {
     html.on('click', '.quantity-form .delete', this._deleteItem.bind(this));
     html.on('click', '.quantity-form .item-qty-btn-rm', this._decreaseQuantity.bind(this));
     html.on('click', '.quantity-form .item-qty-btn-add', this._increaseQuantity.bind(this));
+    html.on('click', '.item-qty-btn.gear-equip', this._toggleEquip.bind(this))
 
     html.on('click', '.item-roll-button', this._rollItem.bind(this));
 
@@ -264,8 +249,13 @@ export class FfxivItemSheet extends ItemSheet {
   }
 
   async _rollItem(event){
+    if (this.item.type=="gear"){
+      var templatePath = "systems/ffxiv/templates/chat/gear-chat-card.hbs"
+    }else {
+      var templatePath = "systems/ffxiv/templates/chat/item-chat-card.hbs"
+    }
     ChatMessage.create({
-      content: await renderTemplate("systems/ffxiv/templates/chat/item-chat-card.hbs", { item: this.item }),
+      content: await renderTemplate(templatePath, { item: this.item }),
       flags: { core: { canParseHTML: true } },
       flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
     });
@@ -299,6 +289,49 @@ export class FfxivItemSheet extends ItemSheet {
       this.render(false);
     }
   }
+
+  _toggleEquip(event) {
+    let actor = game.actors.get(this.item.parent._id);
+
+    // Ensure equippedGear is initialized with category keys, not localized labels
+    let equippedGear = actor.system.equippedGear || Object.fromEntries(
+      Object.keys(CONFIG.FF_XIV.gear_subcategories).map(k => [k, ""])
+    );
+
+    console.log("Before:", equippedGear);
+
+    // Find the category key corresponding to this item's category (localized label)
+    let categoryKey = Object.keys(CONFIG.FF_XIV.gear_subcategories).find(
+      key => CONFIG.FF_XIV.gear_subcategories[key].label === this.item.system.category
+    );
+
+    if (!categoryKey) {
+      console.error(`Category not found for ${this.item.system.category}`);
+      return;
+    }
+
+    if (this.item.system.equipped) {
+      // Unequip item
+      equippedGear[categoryKey] = "";
+      this.item.update({ "system.equipped": false });
+    } else {
+      // Replace currently equipped gear in this category
+      const currentEquipped = equippedGear[categoryKey];
+      if (currentEquipped) {
+        let oldItem = actor.items.get(currentEquipped);
+        if (oldItem) {
+          oldItem.update({ "system.equipped": false });
+          ui.notifications.info(game.i18n.format("FFXIV.Notifications.ReplaceGear", { oldGear: oldItem.name, newGear: this.item.name }));
+        }
+      }
+      equippedGear[categoryKey] = this.item._id;
+      this.item.update({ "system.equipped": true });
+    }
+
+    console.log("After:", equippedGear);
+    actor.update({ "system.equippedGear": equippedGear });
+  }
+
 
   _onPopoutEditor(event) {
     event.preventDefault();

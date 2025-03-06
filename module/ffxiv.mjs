@@ -15,9 +15,10 @@ import { register_controls } from "./helpers/controls.js";
 /* -------------------------------------------- */
 /*  Init Hook                                   */
 /* -------------------------------------------- */
-console.log("FFXIV | Initilisation du Système")
+
 
 Hooks.once('init', function () {
+  console.log("FFXIV | Initilisation du Système")
   // Add utility classes to the global game object so that they're more easily
   // accessible in global contexts.
   game.ffxivttrpg = {
@@ -108,6 +109,19 @@ Handlebars.registerHelper('or', function(a, b) {
 Handlebars.registerHelper('and', function(a, b) {
   return a && b;
 });
+Handlebars.registerHelper('superior', function(a, b) {
+  return a > b;
+});
+Handlebars.registerHelper('inferior', function(a, b) {
+  return a < b;
+});
+Handlebars.registerHelper("mod", function (index, divisor, remainder) {
+  if (arguments.length === 3) {
+    return index % divisor === 0;
+  } else if (arguments.length === 4) {
+    return index % divisor === remainder;
+  }
+});
 Handlebars.registerHelper("array", function () {
   return Array.from(arguments).slice(0, arguments.length - 1);
 });
@@ -179,6 +193,31 @@ Handlebars.registerHelper("sortAbilities", function (items, order, type) {
 
 });
 
+Handlebars.registerHelper("gearBonuses", function (items) {
+    const gearLabels = Object.values(CONFIG.FF_XIV.gear_subcategories).map(g => g.label);
+    const getGearPosition = (category) => {
+      let index = gearLabels.indexOf(category);
+      return index !== -1 ? index : 999;
+    };
+
+    return items
+        .filter(item => item.system?.equipped)
+        .sort((a, b) => getGearPosition(a.system.category) - getGearPosition(b.system.category));
+});
+Handlebars.registerHelper("getAttributeBonus", function (gearItems, attrKey) {
+    if (!gearItems || gearItems.length === 0) return []; // Prevent errors
+    const modifiersList = Object.assign({},CONFIG.FF_XIV.attributes,CONFIG.FF_XIV.characteristics)
+    return gearItems.map(item => {
+        const modifierEntry = item.system?.modifiers?.find(mod => mod[0] === modifiersList[attrKey]?.label);
+        return modifierEntry ? modifierEntry[1] : "-";
+    });
+});
+Handlebars.registerHelper("attributeList", function () {
+    return Object.keys(Object.assign({},CONFIG.FF_XIV.attributes,CONFIG.FF_XIV.characteristics));
+});
+
+
+
 
 
 
@@ -202,7 +241,9 @@ Hooks.once('ready', function () {
 /*  Render Actor Sheet Hook                     */
 /* -------------------------------------------- */
 
+let isDraggingItem = false;
 Hooks.on('renderActorSheet', async (app, html, data) => {
+  if (isDraggingItem) return;
   const actor = app.actor;
   const items = actor.items.contents;
 
@@ -213,7 +254,7 @@ Hooks.on('renderActorSheet', async (app, html, data) => {
   // Iterate through the items and check for duplicates or invalid positions
   items.forEach(item => {
     if (FF_XIV.inventory_items.indexOf(item.type) > -1){
-        const position = item.system.position.toString() || 0;
+        const position = Number(item.system.position) || 0;
         if (occupiedPositions.has(position) || position === 0) {
           // Invalid or duplicate position, needs to be updated
           itemsToUpdate.push(item);
@@ -229,7 +270,7 @@ Hooks.on('renderActorSheet', async (app, html, data) => {
   itemsToUpdate.forEach(item => {
     if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1){
       // Find the next free position
-      while (occupiedPositions.has(nextFreePosition.toString())) {
+      while (occupiedPositions.has(nextFreePosition)) {
         nextFreePosition++;
       }
 
@@ -259,6 +300,7 @@ Hooks.on('renderActorSheet', (app, html, data) => {
       id: event.currentTarget.dataset.itemId,
       position: event.currentTarget.dataset.itemPosition
     };
+    isDraggingItem = true;
     const dragGhost = event.currentTarget.cloneNode(true);
     dragGhost.querySelector('.item-tooltip').style.display = 'none';
     dragGhost.querySelector('.item-quantity').style.display = 'none';

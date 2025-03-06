@@ -1,0 +1,79 @@
+<form class='{{cssClass}} limited-display' autocomplete='off'>
+  <div class="item-card">
+    <div class="item-card-info">
+      <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon">
+      <div class="item-dialog-header">
+        <div class="item-dialog-name text-rarity-{{ delabelize 'rarities' item.system.rarity }}">
+          {{item.name}}
+        </div>
+        <div class="item-dialog-right">
+          <div class="item-dialog-tags">
+              <span class="tag">{{ localize item.system.rarity }}</span>,
+              <span class="tag">{{ localize item.system.category }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="item-dialog-details">
+        {{#each system.classes as |class|}}
+          <span>{{localize class}}{{#unless @last}}, {{/unless}}</span>
+        {{/each}}
+        <div>
+          LV {{ system.level }}
+        </div>
+        <br>
+        {{#if (not (eq item.system.price.buy 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{item.system.price.buy}}{{#if item.system.price.denomination}} {{item.system.price.denomination}}{{/if}}</div>{{/if}}
+        {{#if (not (eq item.system.price.sell 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Sell" }}:</strong> {{item.system.price.sell}}{{#if item.system.price.denomination}} {{item.system.price.denomination}}{{/if}}</div>{{/if}}
+        {{#if item.system.weight}}<div class="detail"><strong>{{ localize "FFXIV.Item.Weight" }}:</strong> {{item.system.weight}}</div>{{/if}}
+
+      </div>
+
+
+      <div class="item-dialog-effects">
+        <table>
+          {{#each system.modifiers as |modifier index|}}
+            {{#if (mod index 3)}}
+              <tr>
+            {{/if}}
+              <td style="text-align: {{#if (mod index 3)}}left{{else}}{{#if (mod index 3 2)}}right{{else}}center{{/if}}{{/if}};">
+                {{localize modifier.[0]}} {{#if (superior modifier.[1] 0)}}+{{/if}}{{modifier.[1]}}
+              </td>
+            {{#if (mod index 3 2)}}
+              </tr>
+            {{/if}}
+          {{/each}}
+          {{#unless (mod system.modifiers.length 3)}}
+            {{#if (mod system.modifiers.length 3 1)}}
+              <td style="text-align: center;"></td>
+              <td style="text-align: right;"></td>
+            {{else}}
+              <td style="text-align: right;"></td>
+            {{/if}}
+            </tr>
+          {{/unless}}
+        </table>
+      </div>
+
+
+      {{#if system.description}}
+        <div class="item-dialog-description">
+          {{{system.description}}}
+        </div>
+      {{/if}}
+
+      <div class="quantity-form">
+        {{#if (not system.equipped)}}
+          <div class="detail"><strong>{{ localize "FFXIV.CharacterSheet.Equip" }} :</strong></div> <button class="item-qty-btn gear-equip fa fa-user"></button>
+        {{else}}
+          <div class="detail"><strong>{{ localize "FFXIV.CharacterSheet.Unequip" }} :</strong></div> <button class="item-qty-btn gear-equip fa fa-user"></button>
+        {{/if}}
+        <br>
+        <div class="detail"><strong>{{ localize "FFXIV.Item.Delete" }} :</strong></div> <button class="item-qty-btn fa fa-xmark delete"></button>
+      </div>
+
+
+
+      <button class="item-roll-button">{{ localize "FFXIV.CharacterSheet.Show" }}</button>
+    </div>
+  </div>
+</form>

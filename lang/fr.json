@@ -57,7 +57,9 @@
       "ActiveTitle": "Haut fait actif",
       "Roll": "Jet de dés !",
       "Show": "Afficher l'Objet",
-      "ShowModifiers": "Afficher Améliorations/Affaiblissements avant les jets de dés ?"
+      "ShowModifiers": "Afficher Améliorations/Affaiblissements avant les jets de dés ?",
+      "Equip": "Équiper",
+      "Unequip": "Déséquiper"
     },
     "Item":{
       "Name": "Nom",
@@ -204,7 +206,8 @@
     "Notifications":{
       "ItemDelete":"{itemName} a été supprimé/e.",
       "NewPlayer":"{playerName} a rejoint l'équipe.",
-      "NoSoundAvailable":"Aucun fichier son ne se trouve dans le répertoire des bruitages."
+      "NoSoundAvailable":"Aucun fichier son ne se trouve dans le répertoire des bruitages.",
+      "ReplaceGear":"{oldGear} a été remplacé par {newGear}."
     },
     "Chat":{
     },

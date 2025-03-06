@@ -57,7 +57,9 @@
       "ActiveTitle": "Active Title",
       "Roll": "Roll !",
       "Show": "Show Item",
-      "ShowModifiers": "Display Enhancements/Enfeeblement before rolls ?"
+      "ShowModifiers": "Display Enhancements/Enfeeblement before rolls ?",
+      "Equip": "Equip",
+      "Unequip": "Unequip"
     },
     "Item":{
       "Name": "Name",
@@ -101,7 +103,7 @@
       "character": "Character",
       "npc": "NPC"
     },
-    "Classes":{      
+    "Classes":{
       "Classes": "Classes",
       "BlackMage": "Black Mage",
       "BlackMageShort": "BLM",
@@ -204,7 +206,8 @@
     "Notifications":{
       "ItemDelete":"{itemName} has been removed.",
       "NewPlayer":"{playerName} has joined the party.",
-      "NoSoundAvailable":"No sound files found in the system soundboard directory."
+      "NoSoundAvailable":"No sound files found in the system soundboard directory.",
+      "ReplaceGear":"{oldGear} has been replaced with {newGear}."
     },
     "Chat":{
     },

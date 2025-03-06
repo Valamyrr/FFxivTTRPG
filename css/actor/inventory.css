@@ -172,3 +172,8 @@
   border: 1px solid #a3a3a3;
   border-radius: 3px;
 }
+
+/*Gears*/
+.ffxiv.actor td:not(:first-child) {
+  text-align: center;
+}

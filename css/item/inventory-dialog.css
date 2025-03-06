@@ -105,6 +105,9 @@
 .item-card .item-dialog-effects {
   padding: 5px;
 }
+.item-dialog-effects td{ /*modifiers table*/
+  width: 33.33%;
+}
 .item-card .effect {
   display: inline-block;
 }
@@ -149,6 +152,9 @@
   color: red;
   border-color: red;
   width: fit-content;
+}
+.gear-equip{
+  padding: 1px;
 }
 
 /* Roll button*/

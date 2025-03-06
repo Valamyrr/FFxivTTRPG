@@ -73,6 +73,37 @@
         </div>
 
       </div>
+      <div class="resources grid grid-2col">
+
+        <div class="resource flex-group-center">
+          <label for="system.price.buy" class="resource-label">{{ localize "FFXIV.Item.Buy" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.buy" type="number" value="{{item.system.price.buy}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.price.sell" class="resource-label">{{ localize "FFXIV.Item.Sell" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.sell" type="number" value="{{item.system.price.sell}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.price.denomination" class="resource-label">{{ localize "FFXIV.Item.Denomination" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.denomination" type="text" value="{{item.system.price.denomination}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.weight" class="resource-label">{{ localize "FFXIV.Item.Weight" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.weight" type="text" value="{{item.system.weight}}"/>
+          </div>
+        </div>
+
+      </div>
 
       <div class="tags-container">
         <label for="system.tags" class="resource-label">{{ localize "FFXIV.Classes.Classes" }}</label> <button type="button" class="add-class">+</button>
