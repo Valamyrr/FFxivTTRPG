@@ -1,0 +1,50 @@
+{
+  "folder": "ejcLK5glMJ9ylqFe",
+  "name": "Manafont",
+  "type": "secondary_ability",
+  "_id": "bQCV2kK1B1B9VgmS",
+  "img": "systems/ffxiv/assets/abilities/BLM/Manafont.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Secondary"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Restores 2 MP.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": "2"
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741411776004,
+    "modifiedTime": 1741411809069,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!bQCV2kK1B1B9VgmS"
+}

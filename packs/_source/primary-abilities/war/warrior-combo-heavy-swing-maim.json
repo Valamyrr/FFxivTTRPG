@@ -1,0 +1,51 @@
+{
+  "folder": "Cv2lYwDBSRqiJeog",
+  "name": "Warrior Combo (Heavy Swing + Maim)",
+  "type": "primary_ability",
+  "_id": "1bZTclZQ5Xloa0NB",
+  "img": "systems/ffxiv/assets/abilities/WAR/Heavy_Swing.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Physical"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "Single",
+    "range": "1",
+    "check": "FFXIV.Attributes.Strength.long",
+    "challenge": "Defense",
+    "trigger": "",
+    "base_effect": "Deals 2 damage inflicts Enmity on the target.",
+    "combo": "Storm's Path",
+    "direct_hit": "Deals an additional 1d6 damage.",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "1d20+@str",
+    "direct_formula": "1d6",
+    "base_formula": "2"
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741407752664,
+    "modifiedTime": 1741407838973,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!1bZTclZQ5Xloa0NB"
+}

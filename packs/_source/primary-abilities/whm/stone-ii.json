@@ -1,0 +1,53 @@
+{
+  "folder": "WN9Y9ojIp2tdh3Bo",
+  "name": "Stone II",
+  "type": "primary_ability",
+  "_id": "lr3jCr0rtGwJHTn3",
+  "img": "systems/ffxiv/assets/abilities/WHM/Stone_II.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Magic",
+      "FFXIV.Tags.EarthAspected",
+      "FFXIV.Tags.Invoked"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "1 MP",
+    "target": "Single",
+    "range": "10",
+    "check": "FFXIV.Attributes.Mind.long",
+    "challenge": "Magic Defense",
+    "trigger": "",
+    "base_effect": "Deals 2 damage to the target.",
+    "combo": "",
+    "direct_hit": "Deals an additional 1d6 damage.",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "1d20+@mnd",
+    "direct_formula": "1d6",
+    "base_formula": "2"
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741409135660,
+    "modifiedTime": 1741409230000,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!lr3jCr0rtGwJHTn3"
+}

@@ -1,0 +1,941 @@
+{
+  "folder": "J8oaEHQGqb186dzX",
+  "name": "WHM",
+  "type": "character",
+  "_id": "SvoZhuBa3PlaGkwO",
+  "img": "systems/ffxiv/assets/classes/whitemage.png",
+  "system": {
+    "biography": "",
+    "ability_order": [],
+    "primary_attributes": {
+      "strength": {
+        "value": 1,
+        "label": "FFXIV.Attributes.Strength.long"
+      },
+      "dexterity": {
+        "value": 1,
+        "label": "FFXIV.Attributes.Dexterity.long"
+      },
+      "vitality": {
+        "value": 2,
+        "label": "FFXIV.Attributes.Vitality.long"
+      },
+      "intelligence": {
+        "value": 3,
+        "label": "FFXIV.Attributes.Intelligence.long"
+      },
+      "mind": {
+        "value": 5,
+        "label": "FFXIV.Attributes.Mind.long"
+      }
+    },
+    "secondary_attributes": {
+      "defense": {
+        "value": 11,
+        "label": "FFXIV.Attributes.Defense"
+      },
+      "magic_defense": {
+        "value": 14,
+        "label": "FFXIV.Attributes.MagicDefense"
+      },
+      "vigilance": {
+        "value": 15,
+        "label": "FFXIV.Attributes.Vigilance"
+      },
+      "speed": {
+        "value": 5,
+        "unit": "squares",
+        "label": "FFXIV.Attributes.Speed"
+      }
+    },
+    "health": {
+      "value": 24,
+      "max": 24
+    },
+    "barrier": {
+      "value": 0,
+      "max": null
+    },
+    "mana": {
+      "value": 5,
+      "max": 5
+    },
+    "experience": {
+      "level": {
+        "value": 30,
+        "max": 100
+      },
+      "experience": {
+        "value": 0,
+        "total": 0,
+        "max": null,
+        "label": "XP"
+      }
+    },
+    "class": {
+      "name": "whitemage",
+      "role": ""
+    },
+    "activeTitle": "",
+    "showModifiers": true
+  },
+  "prototypeToken": {
+    "name": "DRG",
+    "displayName": 0,
+    "actorLink": false,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "systems/ffxiv/assets/classes/whitemage.png",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": null
+    },
+    "bar2": {
+      "attribute": null
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "items": [
+    {
+      "name": "Transcendent",
+      "type": "trait",
+      "_id": "noyAAG7fEfQcNkLG",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>While a character is under the effect of Transcendent, they are immune to damage and enfeeblements inflicted by enemy abilities, traits, and encounter mechanics. <strong>Transcendent</strong> is removed at the start of the character's turn, or when the character uses an ability.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enhancement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enhancements.Item.wGGdvjoxCfhIPajI",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410646360,
+        "modifiedTime": 1741410646360,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.noyAAG7fEfQcNkLG"
+    },
+    {
+      "name": "Weakness",
+      "type": "trait",
+      "_id": "RVYzs1ZO3qtIOEMt",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>A <strong>Weakened</strong> character incurs a -2 penalty on all checks. The <strong>Weakened</strong> enfeeblement does not wear off at the end of a phase, and can only be removed by completing a rest action, or by effects which specifically remove it.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enfeeblement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enhancements.Item.MXZpFzk2zIG08zUQ",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410648604,
+        "modifiedTime": 1741410648604,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.RVYzs1ZO3qtIOEMt"
+    },
+    {
+      "folder": "WN9Y9ojIp2tdh3Bo",
+      "name": "Cure II",
+      "type": "primary_ability",
+      "_id": "t7LpThi6O499KoJO",
+      "img": "systems/ffxiv/assets/abilities/WHM/Cure_II.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "2 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "FFXIV.Special",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Restores 2d6+7 HP to the target.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20",
+        "direct_formula": "",
+        "base_formula": "2d6+7"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.89WW29hfCD40B6TH",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410654502,
+        "modifiedTime": 1741410654502,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.t7LpThi6O499KoJO"
+    },
+    {
+      "folder": "WN9Y9ojIp2tdh3Bo",
+      "name": "Medica",
+      "type": "primary_ability",
+      "_id": "b1J2e3kYvGIPpBRh",
+      "img": "systems/ffxiv/assets/abilities/WHM/Medica.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "2 MP",
+        "target": "All allies within range",
+        "range": "A 5x5 area centered on this character",
+        "check": "FFXIV.Special",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Restores 1d6+3 HP to all targets.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20",
+        "direct_formula": "",
+        "base_formula": "1d6+3"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.oAn4A3eQmo4SDZsU",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410656354,
+        "modifiedTime": 1741410656354,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.b1J2e3kYvGIPpBRh"
+    },
+    {
+      "folder": "WN9Y9ojIp2tdh3Bo",
+      "name": "Raise",
+      "type": "primary_ability",
+      "_id": "7GT729Ca6seaynkl",
+      "img": "systems/ffxiv/assets/abilities/WHM/Raise.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "3 MP",
+        "target": "1 Knocked Out character",
+        "range": "5 squares*",
+        "check": "FFXIV.Special",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Removes the Knocked Out enfeeblement from the target, then restores 1d6+3 HP, grants Transcendent, and afflicts them with Weakness. *This ability can also target a character outside the encounter map. When doing so, move the character to an empty square within range after resolving the abilities effects.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.LfXmNjgvRXh8XaQS",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410657617,
+        "modifiedTime": 1741410657617,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.7GT729Ca6seaynkl"
+    },
+    {
+      "folder": "WN9Y9ojIp2tdh3Bo",
+      "name": "Stone II",
+      "type": "primary_ability",
+      "_id": "fw65cp7hVLWWU7Yc",
+      "img": "systems/ffxiv/assets/abilities/WHM/Stone_II.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.EarthAspected",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "1 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "FFXIV.Attributes.Mind.long",
+        "challenge": "Magic Defense",
+        "trigger": "",
+        "base_effect": "Deals 2 damage to the target.",
+        "combo": "",
+        "direct_hit": "Deals an additional 1d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@mnd",
+        "direct_formula": "1d6",
+        "base_formula": "2"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.lr3jCr0rtGwJHTn3",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410658690,
+        "modifiedTime": 1741410658690,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.fw65cp7hVLWWU7Yc"
+    },
+    {
+      "folder": "ABN9ISdlrFgxpMjd",
+      "name": "Repose",
+      "type": "primary_ability",
+      "_id": "dC1VYuomKeyWgp7K",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Repose.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "2 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "FFXIV.Attributes.Mind.long",
+        "challenge": "Magic Defense",
+        "trigger": "",
+        "base_effect": "The target incurs a -2 penalty on all checks. This effect lasts until the target takes damage or the phase ends.",
+        "combo": "",
+        "direct_hit": "Removes all markers generated by the target.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@mnd",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 100000,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.RGVd6X5rupqjcrSp",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410660504,
+        "modifiedTime": 1741410660504,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.dC1VYuomKeyWgp7K"
+    },
+    {
+      "folder": "T5MZqGq40kkSpbkt",
+      "name": "Cure",
+      "type": "secondary_ability",
+      "_id": "KXEY7Iar7oQQhcPf",
+      "img": "systems/ffxiv/assets/abilities/WHM/Cure.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "1 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "FFXIV.Special",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Restores 1d6+1 HP to the target.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20",
+        "direct_formula": "",
+        "base_formula": "1d6+1"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.GluKRyCj3Z7K6rmH",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410666437,
+        "modifiedTime": 1741410666437,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.KXEY7Iar7oQQhcPf"
+    },
+    {
+      "folder": "T5MZqGq40kkSpbkt",
+      "name": "Aero",
+      "type": "secondary_ability",
+      "_id": "FsJ7O9xGjjRVxBow",
+      "img": "systems/ffxiv/assets/abilities/WHM/Aero.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.WindAspected"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "1 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Inflicts a DOT (3) on the target.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.3Wcz2roFeqy6tM06",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410667382,
+        "modifiedTime": 1741410667382,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.FsJ7O9xGjjRVxBow"
+    },
+    {
+      "folder": "MBRps9Q8xhebEULG",
+      "name": "Esuna",
+      "type": "secondary_ability",
+      "_id": "uNntX660EGGrLo7B",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Esuna.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "1 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Removes a single enfeeblement of the target's choosing. Some enfeeblements, such as Knocked OUt or Weakness, cannot be removed by this effect.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.ScW1AjOMgM0KdNHc",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410669252,
+        "modifiedTime": 1741410669252,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.uNntX660EGGrLo7B"
+    },
+    {
+      "folder": "MBRps9Q8xhebEULG",
+      "name": "Lucid Dreaming",
+      "type": "secondary_ability",
+      "_id": "ctVqcncORpo35y3M",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Lucid_Dreaming.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Recover an additional 1 MP at the end of this round's [Adventurer's Step]. If no MP is recovered, this has no effect.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.a9Ha2r0wBoH8dhJv",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410670531,
+        "modifiedTime": 1741410670531,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.ctVqcncORpo35y3M"
+    },
+    {
+      "folder": "MBRps9Q8xhebEULG",
+      "name": "Presence of Mind",
+      "type": "secondary_ability",
+      "_id": "jrXsaWUxLSSgV6Kl",
+      "img": "systems/ffxiv/assets/abilities/WHM/Presence_of_Mind.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Immediately use one of your magic abilities.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.OFogglfNgTLhrENd",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410671496,
+        "modifiedTime": 1741410671496,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.jrXsaWUxLSSgV6Kl"
+    },
+    {
+      "folder": "52Ea9KZn23CP56Og",
+      "name": "Swiftcast",
+      "type": "instant_ability",
+      "_id": "jrXF2vCEOBhRr3CY",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Swiftcast.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "When any character finishes their turn",
+        "base_effect": "Immediately use one of your magic abilities.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.instant-abilities.Item.AiigluNBQX70vZUX",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410680700,
+        "modifiedTime": 1741410680700,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.jrXF2vCEOBhRr3CY"
+    },
+    {
+      "name": "Pulse of Life",
+      "type": "limit_break",
+      "_id": "Ogfbnk6nIQSDlB8q",
+      "img": "systems/ffxiv/assets/limit_break.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.LimitBreak",
+          "FFXIV.Tags.Magic"
+        ],
+        "source": "",
+        "level": 0,
+        "cost": "",
+        "target": "All allied adventurers within range",
+        "range": "The entire encounter map*",
+        "check": "None",
+        "challenge": "",
+        "trigger": "Any time",
+        "base_effect": "Remove all enfeeblements from all targets and fully restores their HP and MP. Pulse of Life can remove Knocked Out, Weakness, and Brink of Death. *This ability also targets characters not present on the encounter map. When doing so, place them in an empty square within 5 squares of you after resolving the abilities effects.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.limit-breaks.Item.zfvRxPIwcL5XkOJL",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741410684237,
+        "modifiedTime": 1741410684237,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.Ogfbnk6nIQSDlB8q"
+    },
+    {
+      "name": "DOT(3)",
+      "type": "trait",
+      "_id": "JZcOOtYt2LfwaULh",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>An enemy afflicted with DOT takes the damage specified at the end of each round's [Enemy Step].</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enfeeblement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enfeeblements.Item.r6cZyZPDmxamADFD",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741413372673,
+        "modifiedTime": 1741413372673,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!SvoZhuBa3PlaGkwO.JZcOOtYt2LfwaULh"
+    }
+  ],
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741410611606,
+    "modifiedTime": 1741412978221,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!actors!SvoZhuBa3PlaGkwO"
+}

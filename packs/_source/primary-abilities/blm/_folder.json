@@ -1,0 +1,21 @@
+{
+  "name": "BLM",
+  "sorting": "a",
+  "folder": null,
+  "type": "Item",
+  "_id": "w1n5tYJjaeNXjUII",
+  "description": "",
+  "sort": 0,
+  "color": null,
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741410706322,
+    "modifiedTime": 1741410706322,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!folders!w1n5tYJjaeNXjUII"
+}

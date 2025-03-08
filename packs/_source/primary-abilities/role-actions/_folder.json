@@ -1,0 +1,21 @@
+{
+  "name": "Role Actions",
+  "sorting": "a",
+  "folder": null,
+  "type": "Item",
+  "_id": "ABN9ISdlrFgxpMjd",
+  "description": "",
+  "sort": 0,
+  "color": null,
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741409679909,
+    "modifiedTime": 1741409679909,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!folders!ABN9ISdlrFgxpMjd"
+}

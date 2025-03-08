@@ -1,0 +1,21 @@
+{
+  "name": "WHM",
+  "sorting": "a",
+  "folder": null,
+  "type": "Item",
+  "_id": "T5MZqGq40kkSpbkt",
+  "description": "",
+  "sort": 0,
+  "color": null,
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741409703272,
+    "modifiedTime": 1741409703272,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!folders!T5MZqGq40kkSpbkt"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Transcendent",
+  "type": "trait",
+  "_id": "wGGdvjoxCfhIPajI",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>While a character is under the effect of Transcendent, they are immune to damage and enfeeblements inflicted by enemy abilities, traits, and encounter mechanics. <strong>Transcendent</strong> is removed at the start of the character's turn, or when the character uses an ability.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enhancement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": false,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741410228177,
+    "modifiedTime": 1741410308082,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!wGGdvjoxCfhIPajI"
+}

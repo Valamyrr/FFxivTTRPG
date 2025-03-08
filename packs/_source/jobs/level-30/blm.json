@@ -1,0 +1,1177 @@
+{
+  "folder": "J8oaEHQGqb186dzX",
+  "name": "BLM",
+  "type": "character",
+  "_id": "HaREEj4vahvNyAWX",
+  "img": "systems/ffxiv/assets/classes/blackmage.png",
+  "system": {
+    "biography": "",
+    "ability_order": [],
+    "primary_attributes": {
+      "strength": {
+        "value": 0,
+        "label": "FFXIV.Attributes.Strength.long"
+      },
+      "dexterity": {
+        "value": 2,
+        "label": "FFXIV.Attributes.Dexterity.long"
+      },
+      "vitality": {
+        "value": 1,
+        "label": "FFXIV.Attributes.Vitality.long"
+      },
+      "intelligence": {
+        "value": 5,
+        "label": "FFXIV.Attributes.Intelligence.long"
+      },
+      "mind": {
+        "value": 4,
+        "label": "FFXIV.Attributes.Mind.long"
+      }
+    },
+    "secondary_attributes": {
+      "defense": {
+        "value": 11,
+        "label": "FFXIV.Attributes.Defense"
+      },
+      "magic_defense": {
+        "value": 15,
+        "label": "FFXIV.Attributes.MagicDefense"
+      },
+      "vigilance": {
+        "value": 14,
+        "label": "FFXIV.Attributes.Vigilance"
+      },
+      "speed": {
+        "value": 5,
+        "unit": "squares",
+        "label": "FFXIV.Attributes.Speed"
+      }
+    },
+    "health": {
+      "value": 21,
+      "max": 21
+    },
+    "barrier": {
+      "value": 0,
+      "max": null
+    },
+    "mana": {
+      "value": 5,
+      "max": 5
+    },
+    "experience": {
+      "level": {
+        "value": 30,
+        "max": 100
+      },
+      "experience": {
+        "value": 0,
+        "total": 0,
+        "max": null,
+        "label": "XP"
+      }
+    },
+    "class": {
+      "name": "blackmage",
+      "role": ""
+    },
+    "activeTitle": "",
+    "showModifiers": true
+  },
+  "prototypeToken": {
+    "name": "BLM",
+    "displayName": 0,
+    "actorLink": false,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "systems/ffxiv/assets/classes/blackmage.png",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": null
+    },
+    "bar2": {
+      "attribute": null
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "items": [
+    {
+      "name": "DOT(3)",
+      "type": "trait",
+      "_id": "wnxXzlwfWhaE06MZ",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>An enemy afflicted with DOT takes the damage specified at the end of each round's [Enemy Step].</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enfeeblement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enfeeblements.Item.r6cZyZPDmxamADFD",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412807335,
+        "modifiedTime": 1741412807335,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.wnxXzlwfWhaE06MZ"
+    },
+    {
+      "name": "Astral Fire",
+      "type": "trait",
+      "_id": "c6LUAZSfcnv3N2zm",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>While under the effect of <strong>Astral Fire</strong>, your <em>fire-aspected</em> abilities deal an additional 1d6 damage and you do not recover MP at the end of the [Adventurer Step]. <strong>Astral Fire</strong> is removed when you are <strong>Knocked Out</strong>, or, if the effect is not renewed, at the end of your next turn. Being granted <strong>Umbral Ice</strong> removes this effect as well.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enhancement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": true,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enhancements.Item.I5Xyym6IlroZAlzg",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412815291,
+        "modifiedTime": 1741412815291,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.c6LUAZSfcnv3N2zm"
+    },
+    {
+      "name": "Umbral Ice",
+      "type": "trait",
+      "_id": "YReOZKFGEkSy3hJ5",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>While under the effect of <strong>Umbral Ice</strong>, recover an additional 2 MP at the end of [Adventurer Step]. <strong>Umbral Ice</strong> is removed when you are <strong>Knocked Out</strong>, or, if the effect is not renewed, at the end of your next turn. Being granted <strong>Astral Fire</strong> removes this effect as well.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enhancement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": true,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enhancements.Item.G6i4nWO2ukeekEe7",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412816875,
+        "modifiedTime": 1741412816875,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.YReOZKFGEkSy3hJ5"
+    },
+    {
+      "name": "Thaumaturgic Shock",
+      "type": "trait",
+      "_id": "51lBwh1F1tzx8ba8",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>You cannot use a <em>thunder spell</em> ability such as Thunder or Thunder II to inflict a DOT on a character already suffering from a DOT inflicted by one of your <em>thunder spell</em> abilities.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.traits.Item.hPP4TPmqryOA6CPB",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412827044,
+        "modifiedTime": 1741412827044,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.51lBwh1F1tzx8ba8"
+    },
+    {
+      "name": "Consecutive Invocation",
+      "type": "trait",
+      "_id": "VGk0EPYZx3oWDX3R",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>On your turn, after resolving the effects of an ability that enables this trait, you may forgo <strong>all</strong> standard movement until the end of your turn to use an additional <em>invoked primary</em> ability. You may choose a new target when using this additional ability. <strong>Consecutive Invocation</strong> can only be used once per turn, and does not prevent you from using focus to perform an additional secondary action.<strong> </strong></p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Trait"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.traits.Item.vSq6QrHKrK0SHdwS",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412828405,
+        "modifiedTime": 1741412828405,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.VGk0EPYZx3oWDX3R"
+    },
+    {
+      "folder": "w1n5tYJjaeNXjUII",
+      "name": "Blizzard",
+      "type": "primary_ability",
+      "_id": "v4ryU6oCX4HQ8UNz",
+      "img": "systems/ffxiv/assets/abilities/BLM/Blizzard.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.IceAspected",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "1 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "FFXIV.Attributes.Intelligence.long",
+        "challenge": "Magic Defense",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to the target, grants Umbral Ice, and enables Consecutive Invocation.",
+        "combo": "",
+        "direct_hit": "Deals an additional 1d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@int",
+        "direct_formula": "1d6",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.MHo3SiZ9JoOWHRef",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412834032,
+        "modifiedTime": 1741412834032,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.v4ryU6oCX4HQ8UNz"
+    },
+    {
+      "folder": "w1n5tYJjaeNXjUII",
+      "name": "Fire",
+      "type": "primary_ability",
+      "_id": "3Sql6qcZyhu2sVt2",
+      "img": "systems/ffxiv/assets/abilities/BLM/Fire.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.FireAspected",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "2 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "FFXIV.Attributes.Intelligence.long",
+        "challenge": "Magic Defense",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to the target, grants Astral Fire, and enabled Consecutive Invocation.",
+        "combo": "",
+        "direct_hit": "Deals an additional 1d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@int",
+        "direct_formula": "1d6",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.G0obfsITLNId67zo",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412837713,
+        "modifiedTime": 1741412837713,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.3Sql6qcZyhu2sVt2"
+    },
+    {
+      "folder": "w1n5tYJjaeNXjUII",
+      "name": "Fire II",
+      "type": "primary_ability",
+      "_id": "4R2GVSEcuWyBXJZp",
+      "img": "systems/ffxiv/assets/abilities/BLM/Fire_II.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.FireAspected",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "3 MP",
+        "target": "All enemies within range",
+        "range": "A 5x5 area within 10 squares of this character",
+        "check": "FFXIV.Attributes.Intelligence.long",
+        "challenge": "Magic Defense",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to all targets and grants Astral Fire.",
+        "combo": "",
+        "direct_hit": "Deals an additional 1d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@int",
+        "direct_formula": "1d6",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.KNG1FGX1GBTZWin9",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412853010,
+        "modifiedTime": 1741412853010,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.4R2GVSEcuWyBXJZp"
+    },
+    {
+      "folder": "w1n5tYJjaeNXjUII",
+      "name": "Thunder",
+      "type": "primary_ability",
+      "_id": "qJ86yVWY6PxU6IPT",
+      "img": "systems/ffxiv/assets/abilities/BLM/Thunder.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.LightningAspected",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "1 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Deals 3 damage and inflicts a DOT (3) on the target. Enables Consecutive Invocation. Whenever the DOT(3)s inflicted by this ability deal damage, roll a single d20. On a 19 or 20, the following proc effect triggers. Thundercloud: The next lightning-aspected ability you use this phase costs 0 MP and deals and additional 6 damage.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.RF6YTcDVdIrSlRQP",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412854996,
+        "modifiedTime": 1741412854996,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.qJ86yVWY6PxU6IPT"
+    },
+    {
+      "folder": "w1n5tYJjaeNXjUII",
+      "name": "Thunder II",
+      "type": "primary_ability",
+      "_id": "gXAZ7Htxja8MBtsR",
+      "img": "systems/ffxiv/assets/abilities/BLM/Thunder_II.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.LightningAspected",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "2 MP",
+        "target": "All enemies within range",
+        "range": "A 5x5 area within 10 squares of this character",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Inflicts a DOT (3) on all targets. Whenever the DOT(3)s inflicted by this ability deal damage, roll a single d20. On a 19 or 20, the following proc effect triggers. Thundercloud: The next lightning-aspected ability you use this phase costs 0 MP and deals an additional 6 damage.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.fYppdu4ZxO4wDIVw",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412856414,
+        "modifiedTime": 1741412856414,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.gXAZ7Htxja8MBtsR"
+    },
+    {
+      "folder": "ABN9ISdlrFgxpMjd",
+      "name": "Sleep",
+      "type": "primary_ability",
+      "_id": "ZMGm1GmMO7SlzBb7",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Sleep.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "2 MP",
+        "target": "All creatures within range",
+        "range": "A 5x5 area within 10 squares of this character",
+        "check": "FFXIV.Attributes.Intelligence.long",
+        "challenge": "Magic Defense",
+        "trigger": "",
+        "base_effect": "All targets incur a -2 penalty on all checks. This effect lasts until the targets take damage or the phase ends.",
+        "combo": "",
+        "direct_hit": "Removes all markers generated by all targets.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@int",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.ZF9tLaLEkoUAa2Tx",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412862926,
+        "modifiedTime": 1741412862926,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.ZMGm1GmMO7SlzBb7"
+    },
+    {
+      "folder": "ejcLK5glMJ9ylqFe",
+      "name": "Scathe",
+      "type": "secondary_ability",
+      "_id": "GqH7VX9TjgDgiF2e",
+      "img": "systems/ffxiv/assets/abilities/BLM/Scathe.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary",
+          "FFXIV.Tags.Magic"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "1 MP",
+        "target": "Single",
+        "range": "10",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to the target.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.KSp00MBU7tTi6Y6q",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412867422,
+        "modifiedTime": 1741412867422,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.GqH7VX9TjgDgiF2e"
+    },
+    {
+      "folder": "ejcLK5glMJ9ylqFe",
+      "name": "Transpose",
+      "type": "secondary_ability",
+      "_id": "zdcUjq2HnFUeqVro",
+      "img": "systems/ffxiv/assets/abilities/BLM/Transpose.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Removes Umbral Ice and grants Astral Fire, or removes Astral Fire and grants Umbral Ice. Transpose can only be used once per turn.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.XJIIaKqKv7GHIDCs",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412868475,
+        "modifiedTime": 1741412868475,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.zdcUjq2HnFUeqVro"
+    },
+    {
+      "folder": "ejcLK5glMJ9ylqFe",
+      "name": "Manaward",
+      "type": "secondary_ability",
+      "_id": "c6sFfMW7JefuQFzf",
+      "img": "systems/ffxiv/assets/abilities/BLM/Manaward.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Grants a barrier of 2 HP.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.By2DdUW7fPmtttF8",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412869881,
+        "modifiedTime": 1741412869881,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.c6sFfMW7JefuQFzf"
+    },
+    {
+      "folder": "ejcLK5glMJ9ylqFe",
+      "name": "Manafont",
+      "type": "secondary_ability",
+      "_id": "sVQUfjhZ2wDOFAph",
+      "img": "systems/ffxiv/assets/abilities/BLM/Manafont.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Restores 2 MP.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": "2"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.bQCV2kK1B1B9VgmS",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412870881,
+        "modifiedTime": 1741412870881,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.sVQUfjhZ2wDOFAph"
+    },
+    {
+      "folder": "MBRps9Q8xhebEULG",
+      "name": "Addle",
+      "type": "instant_ability",
+      "_id": "AUfmI38gjhT6Le6j",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Addle.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant",
+          "FFXIV.Tags.Magic"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "The enemy that triggered this ability",
+        "range": "5",
+        "check": "None",
+        "challenge": "",
+        "trigger": "Immediately before an ability used by an enemy is resolved",
+        "base_effect": "Reduces the damage dealt by the abilities of the enemy that triggered this ability by 2 until the end of this turn.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.FYRpEMC8W9FAA9m5",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412873105,
+        "modifiedTime": 1741412873105,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.AUfmI38gjhT6Le6j"
+    },
+    {
+      "folder": "52Ea9KZn23CP56Og",
+      "name": "Swiftcast",
+      "type": "instant_ability",
+      "_id": "fs9N15Vem8nGfYHC",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Swiftcast.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "When any character finishes their turn",
+        "base_effect": "Immediately use one of your magic abilities.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 700000,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.instant-abilities.Item.AiigluNBQX70vZUX",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741412897020,
+        "modifiedTime": 1741412897020,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.fs9N15Vem8nGfYHC"
+    },
+    {
+      "folder": "w1n5tYJjaeNXjUII",
+      "name": "Blizzard II",
+      "type": "primary_ability",
+      "_id": "8yXFGGbqWn3YyeF4",
+      "img": "systems/ffxiv/assets/abilities/BLM/Blizzard_II.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.IceAspected",
+          "FFXIV.Tags.Invoked"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "2 MP",
+        "target": "All enemies within range",
+        "range": "A 5x5 area within 10 squares",
+        "check": "FFXIV.Attributes.Intelligence.long",
+        "challenge": "Magic Defense",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to all targets and grants Umbral Ice. ",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@int",
+        "direct_formula": "",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.PZkdAoGdddOnDFiq",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741413214884,
+        "modifiedTime": 1741413214884,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.8yXFGGbqWn3YyeF4"
+    },
+    {
+      "folder": "MBRps9Q8xhebEULG",
+      "name": "Lucid Dreaming",
+      "type": "secondary_ability",
+      "_id": "hG27b6ITTWR7ZKpH",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Lucid_Dreaming.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Recover an additional 1 MP at the end of this round's [Adventurer's Step]. If no MP is recovered, this has no effect.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.a9Ha2r0wBoH8dhJv",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741413271430,
+        "modifiedTime": 1741413271430,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.hG27b6ITTWR7ZKpH"
+    },
+    {
+      "name": "Meteor",
+      "type": "limit_break",
+      "_id": "dr2JN8e53fref0Dq",
+      "img": "systems/ffxiv/assets/limit_break.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.LimitBreak",
+          "FFXIV.Tags.Magic",
+          "FFXIV.Tags.FireAspected"
+        ],
+        "source": "",
+        "level": 0,
+        "cost": "",
+        "target": "All enemies within range",
+        "range": "A 5x5 area within 10 squares of this character",
+        "check": "None",
+        "challenge": "",
+        "trigger": "Any time",
+        "base_effect": "Deals 4d6 damage to all targets. While under the effect of Astral Fire, Meteor deals and additional 1d6 damage.",
+        "combo": "",
+        "direct_hit": "4d6",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.limit-breaks.Item.f5cRr4HyRu6UxVna",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741413507930,
+        "modifiedTime": 1741413507930,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!HaREEj4vahvNyAWX.dr2JN8e53fref0Dq"
+    }
+  ],
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741412785510,
+    "modifiedTime": 1741412930482,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!actors!HaREEj4vahvNyAWX"
+}

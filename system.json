@@ -30,23 +30,198 @@
   ],
   "packs": [
     {
+      "name": "jobs",
+      "label": "Jobs",
+      "path": "packs/jobs",
+      "type": "Actor",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
       "name": "primary-abilities",
       "label": "Primary Abilities",
       "path": "packs/primary-abilities",
       "type": "Item",
       "system": "ffxiv",
       "ownership": {
-          "PLAYER": "OBSERVER",
-          "ASSISTANT": "OWNER"
-      }
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "secondary-abilities",
+      "label": "Secondary Abilities",
+      "path": "packs/secondary-abilities",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "instant-abilities",
+      "label": "Instant Abilities",
+      "path": "packs/instant-abilities",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "limit-breaks",
+      "label": "Limit Breaks",
+      "path": "packs/limit-breaks",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "consumables",
+      "label": "Consumables",
+      "path": "packs/consumables",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "gear",
+      "label": "Gear",
+      "path": "packs/gear",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "currency",
+      "label": "Currency",
+      "path": "packs/currency",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "titles",
+      "label": "Titles",
+      "path": "packs/titles",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "traits",
+      "label": "Traits",
+      "path": "packs/traits",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "enhancements",
+      "label": "Enhancements",
+      "path": "packs/enhancements",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
+    {
+      "name": "enfeeblements",
+      "label": "Enfeeblements",
+      "path": "packs/enfeeblements",
+      "type": "Item",
+      "system": "ffxiv",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     }
   ],
   "packFolders": [
     {
-      "name": "Abilities",
-      "sorting": "a",
+      "name": "FFXIV TTRPG Content",
+      "sorting": "m",
       "packs": [
-        "primary-abilities"
+        "jobs"
+      ],
+      "color": null,
+      "folders": [
+        {
+          "name": "Abilities",
+          "sorting": "m",
+          "packs": [
+            "primary-abilities",
+            "secondary-abilities",
+            "instant-abilities",
+            "limit-breaks"
+          ],
+          "color": null
+        },
+        {
+          "name": "Items",
+          "sorting": "m",
+          "packs": [
+            "consumables",
+            "gear",
+            "currency"
+          ],
+          "color": null
+        },
+        {
+          "name": "Character Details",
+          "sorting": "m",
+          "packs": [
+            "traits",
+            "titles"
+          ],
+          "color": null
+        },
+        {
+          "name": "Effects",
+          "sorting": "m",
+          "packs": [
+            "enhancements",
+            "enfeeblements"
+          ],
+          "color": null
+        }
       ]
     }
   ],

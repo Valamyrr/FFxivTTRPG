@@ -1,0 +1,35 @@
+{
+  "name": "Thaumaturgic Shock",
+  "type": "trait",
+  "_id": "hPP4TPmqryOA6CPB",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>You cannot use a <em>thunder spell</em> ability such as Thunder or Thunder II to inflict a DOT on a character already suffering from a DOT inflicted by one of your <em>thunder spell</em> abilities.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": false,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741412369096,
+    "modifiedTime": 1741412431362,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!hPP4TPmqryOA6CPB"
+}

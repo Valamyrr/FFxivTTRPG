@@ -1,0 +1,50 @@
+{
+  "name": "Lance Charge",
+  "type": "secondary_ability",
+  "_id": "rJoMzl5RMgPR0vpO",
+  "img": "systems/ffxiv/assets/abilities/DRG/Lance_Charge.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Secondary"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Your abilities deal an additional 2 damage until the end of this turn.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Twice per phase",
+    "limitations_status": [],
+    "limitations_max": 2,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "folder": "MfGKMJD4lasRW3Kj",
+  "sort": 100000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741401808384,
+    "modifiedTime": 1741401989923,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!rJoMzl5RMgPR0vpO"
+}

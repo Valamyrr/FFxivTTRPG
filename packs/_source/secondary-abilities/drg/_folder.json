@@ -1,0 +1,21 @@
+{
+  "name": "DRG",
+  "sorting": "a",
+  "folder": null,
+  "type": "Item",
+  "_id": "MfGKMJD4lasRW3Kj",
+  "description": "",
+  "sort": 0,
+  "color": null,
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741401983063,
+    "modifiedTime": 1741401983063,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!folders!MfGKMJD4lasRW3Kj"
+}

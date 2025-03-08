@@ -1,0 +1,53 @@
+{
+  "folder": "w1n5tYJjaeNXjUII",
+  "name": "Fire",
+  "type": "primary_ability",
+  "_id": "G0obfsITLNId67zo",
+  "img": "systems/ffxiv/assets/abilities/BLM/Fire.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Magic",
+      "FFXIV.Tags.FireAspected",
+      "FFXIV.Tags.Invoked"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "2 MP",
+    "target": "Single",
+    "range": "10",
+    "check": "FFXIV.Attributes.Intelligence.long",
+    "challenge": "Magic Defense",
+    "trigger": "",
+    "base_effect": "Deals 3 damage to the target, grants Astral Fire, and enabled Consecutive Invocation.",
+    "combo": "",
+    "direct_hit": "Deals an additional 1d6 damage.",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "1d20+@int",
+    "direct_formula": "1d6",
+    "base_formula": "3"
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741410919438,
+    "modifiedTime": 1741410983915,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!G0obfsITLNId67zo"
+}

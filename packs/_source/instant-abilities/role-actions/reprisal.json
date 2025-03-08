@@ -1,0 +1,50 @@
+{
+  "folder": "52Ea9KZn23CP56Og",
+  "name": "Reprisal",
+  "type": "instant_ability",
+  "_id": "FDQPe4mHQQsDsC7n",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Reprisal.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Instant"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "All enemies within range",
+    "range": "A 5x5 area centered on this character",
+    "check": "None",
+    "challenge": "",
+    "trigger": "Immediately before an ability used by an enemyt within 2 squares is resolved",
+    "base_effect": "Reduces the damage dealt by the abilities of all targets by 2 until the end of this round.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741413631229,
+    "modifiedTime": 1741413734378,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!FDQPe4mHQQsDsC7n"
+}

@@ -1,0 +1,51 @@
+{
+  "folder": "MBRps9Q8xhebEULG",
+  "name": "Low Blow",
+  "type": "secondary_ability",
+  "_id": "hX5An1DjUJhR0HLR",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Low_Blow.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Secondary",
+      "FFXIV.Tags.Physical"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "Single",
+    "range": "1",
+    "check": "None",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Stuns the target until the end of this turn. Any characters Strunned by this ability cannot be Stunned again during this encounter.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741408241522,
+    "modifiedTime": 1741408293999,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!hX5An1DjUJhR0HLR"
+}

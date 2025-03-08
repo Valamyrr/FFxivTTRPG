@@ -1,0 +1,35 @@
+{
+  "name": "Stun",
+  "type": "trait",
+  "_id": "vZlPwwvIYo6Xt6YD",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>A <strong>Stunned</strong> character cannot act during their turn or use <em>instant</em> abilities, and all markers for which they are the creator are removed. Characters receive one advantage die when making ability checks targeting a <strong>Stunned</strong> character.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enfeeblement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": false,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741408911688,
+    "modifiedTime": 1741408990186,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!vZlPwwvIYo6Xt6YD"
+}

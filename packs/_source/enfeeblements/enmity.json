@@ -1,0 +1,35 @@
+{
+  "name": "Enmity",
+  "type": "trait",
+  "_id": "ToIftipKBlb5tr8K",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>Enemies that have <strong>Enmity</strong> on incur a -5 penalty on all ability checks that do not target you. <strong>Enmity</strong> is removed at the end of the enemy's next turn, or when you are <strong>Knocked Out</strong>.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enfeeblement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": false,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741408828086,
+    "modifiedTime": 1741408890456,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!ToIftipKBlb5tr8K"
+}

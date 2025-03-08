@@ -1,0 +1,50 @@
+{
+  "folder": "52Ea9KZn23CP56Og",
+  "name": "Provoke",
+  "type": "instant_ability",
+  "_id": "xAsGIqbVXMD99y4B",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Provoke.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Instant"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "The enemy that triggered this ability",
+    "range": "10",
+    "check": "None",
+    "challenge": "",
+    "trigger": "When an enemy begins their turn",
+    "base_effect": "Inflicts Enmity on the target.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "sort": 500000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741408416449,
+    "modifiedTime": 1741412890020,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!xAsGIqbVXMD99y4B"
+}

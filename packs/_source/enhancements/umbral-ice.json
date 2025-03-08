@@ -1,0 +1,35 @@
+{
+  "name": "Umbral Ice",
+  "type": "trait",
+  "_id": "G6i4nWO2ukeekEe7",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>While under the effect of <strong>Umbral Ice</strong>, recover an additional 2 MP at the end of [Adventurer Step]. <strong>Umbral Ice</strong> is removed when you are <strong>Knocked Out</strong>, or, if the effect is not renewed, at the end of your next turn. Being granted <strong>Astral Fire</strong> removes this effect as well.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enhancement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": true,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741412449210,
+    "modifiedTime": 1741412544577,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!G6i4nWO2ukeekEe7"
+}

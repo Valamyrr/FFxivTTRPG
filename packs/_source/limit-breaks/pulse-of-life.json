@@ -1,0 +1,51 @@
+{
+  "name": "Pulse of Life",
+  "type": "limit_break",
+  "_id": "zfvRxPIwcL5XkOJL",
+  "img": "systems/ffxiv/assets/limit_break.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.LimitBreak",
+      "FFXIV.Tags.Magic"
+    ],
+    "source": "",
+    "level": 0,
+    "cost": "",
+    "target": "All allied adventurers within range",
+    "range": "The entire encounter map*",
+    "check": "None",
+    "challenge": "",
+    "trigger": "Any time",
+    "base_effect": "Remove all enfeeblements from all targets and fully restores their HP and MP. Pulse of Life can remove Knocked Out, Weakness, and Brink of Death. *This ability also targets characters not present on the encounter map. When doing so, place them in an empty square within 5 squares of you after resolving the abilities effects.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741410482546,
+    "modifiedTime": 1741410596971,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!zfvRxPIwcL5XkOJL"
+}
