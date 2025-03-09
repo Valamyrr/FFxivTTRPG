@@ -154,12 +154,26 @@ FF_XIV.roles = {
 }
 
 FF_XIV.classes = {
+  "paladin": {
+    "value":"paladin",
+    "label":"FFXIV.Classes.Paladin",
+    "labelShort":"FFXIV.Classes.PaladinShort",
+    "role":"tank",
+    "role_label":"FFXIV.Roles.Tank",
+  },
   "warrior": {
     "value":"warrior",
     "label":"FFXIV.Classes.Warrior",
     "labelshort": "FFXIV.Classes.WarriorShort",
     "role": "tank",
     "role_label": "FFXIV.Roles.Tank"
+  },
+  "darkknight": {
+    "value":"darkknight",
+    "label":"FFXIV.Classes.DarkKnight",
+    "labelShort":"FFXIV.Classes.DarkKnightShort",
+    "role":"tank",
+    "role_label":"FFXIV.Roles.Tank",
   },
   "whitemage":{
     "value":"whitemage",
@@ -168,6 +182,27 @@ FF_XIV.classes = {
     "role":"healer",
     "role_label": "FFXIV.Roles.Healer"
   },
+  "scholar": {
+    "value":"scholar",
+    "label":"FFXIV.Classes.Scholar",
+    "labelShort":"FFXIV.Classes.ScholarShort",
+    "role":"healer",
+    "role_label":"FFXIV.Roles.Healer",
+  },
+  "astrologian": {
+    "value":"astrologian",
+    "label":"FFXIV.Classes.Astrologian",
+    "labelShort":"FFXIV.Classes.Astrologian",
+    "role":"healer",
+    "role_label":"FFXIV.Roles.Healer",
+  },
+  "monk": {
+    "value":"monk",
+    "label":"FFXIV.Classes.Monk",
+    "labelShort":"FFXIV.Classes.MonkShort",
+    "role":"dps",
+    "role_label":"FFXIV.Roles.DPS",
+  },
   "dragoon":{
     "value":"dragoon",
     "label":"FFXIV.Classes.Dragoon",
@@ -175,12 +210,47 @@ FF_XIV.classes = {
     "role":"dps",
     "role_label": "FFXIV.Roles.DPS"
   },
+  "ninja": {
+    "value":"ninja",
+    "label":"FFXIV.Classes.Ninja",
+    "labelShort":"FFXIV.Classes.NinjaShort",
+    "role":"dps",
+    "role_label":"FFXIV.Roles.DPS",
+  },
+  "bard": {
+    "value":"bard",
+    "label":"FFXIV.Classes.Bard",
+    "labelShort":"FFXIV.Classes.BardShort",
+    "role":"dps",
+    "role_label":"FFXIV.Roles.DPS",
+  },
+  "machinist": {
+    "value":"machinist",
+    "label":"FFXIV.Classes.Machinist",
+    "labelShort":"FFXIV.Classes.MachinistShort",
+    "role":"dps",
+    "role_label":"FFXIV.Roles.DPS",
+  },
   "blackmage":{
     "value":"blackmage",
     "label":"FFXIV.Classes.BlackMage",
     "labelshort": "FFXIV.Classes.BlackMageShort",
     "role":"dps",
     "role_label": "FFXIV.Roles.DPS"
+  },
+  "summoner": {
+    "value":"summoner",
+    "label":"FFXIV.Classes.Summoner",
+    "labelShort":"FFXIV.Classes.SummonerShort",
+    "role":"dps",
+    "role_label":"FFXIV.Roles.DPS",
+  },
+  "pets": {
+    "value":"pets",
+    "label":"FFXIV.Classes.Pets",
+    "labelShort":"FFXIV.Classes.PetsShort",
+    "role":"",
+    "role_label":"FFXIV.Roles.Pets",
   }
 }
 
