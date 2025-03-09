@@ -1,0 +1,35 @@
+{
+  "name": "Weakness",
+  "type": "trait",
+  "_id": "MXZpFzk2zIG08zUQ",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>A <strong>Weakened</strong> character incurs a -2 penalty on all checks. The <strong>Weakened</strong> enfeeblement does not wear off at the end of a phase, and can only be removed by completing a rest action, or by effects which specifically remove it.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enfeeblement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": false,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741410361359,
+    "modifiedTime": 1741410464852,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!MXZpFzk2zIG08zUQ"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Combo",
+  "type": "trait",
+  "_id": "049dmr8bBVCEcioD",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>After resolving the effects of an ability with Combo, you may use one of the specified abilities at any point during your turn. You may move before doing so, and you may choose a new target when using this ability.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Trait"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": false,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741402779987,
+    "modifiedTime": 1741413841479,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!049dmr8bBVCEcioD"
+}

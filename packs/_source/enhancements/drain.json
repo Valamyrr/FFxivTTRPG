@@ -1,0 +1,35 @@
+{
+  "name": "Drain",
+  "type": "trait",
+  "_id": "E7M4uGTxqWpRxBZO",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>While under the effect of <strong>Drain</strong>, your abilities restore 2 HP each time they deal damage.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enhancement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": true,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741402946662,
+    "modifiedTime": 1741402977304,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!E7M4uGTxqWpRxBZO"
+}

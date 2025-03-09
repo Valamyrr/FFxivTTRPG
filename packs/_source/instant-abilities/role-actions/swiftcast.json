@@ -1,0 +1,50 @@
+{
+  "folder": "52Ea9KZn23CP56Og",
+  "name": "Swiftcast",
+  "type": "instant_ability",
+  "_id": "AiigluNBQX70vZUX",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Swiftcast.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Instant"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "When any character finishes their turn",
+    "base_effect": "Immediately use one of your magic abilities.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "sort": 700000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741410165119,
+    "modifiedTime": 1741412890020,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!AiigluNBQX70vZUX"
+}

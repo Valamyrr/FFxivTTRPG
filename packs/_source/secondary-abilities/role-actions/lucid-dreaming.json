@@ -1,0 +1,50 @@
+{
+  "folder": "MBRps9Q8xhebEULG",
+  "name": "Lucid Dreaming",
+  "type": "secondary_ability",
+  "_id": "a9Ha2r0wBoH8dhJv",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Lucid_Dreaming.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Secondary"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Recover an additional 1 MP at the end of this round's [Adventurer's Step]. If no MP is recovered, this has no effect.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741409942170,
+    "modifiedTime": 1741410003053,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!a9Ha2r0wBoH8dhJv"
+}

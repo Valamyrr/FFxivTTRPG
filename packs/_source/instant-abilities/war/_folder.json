@@ -1,0 +1,21 @@
+{
+  "name": "WAR",
+  "sorting": "a",
+  "folder": null,
+  "type": "Item",
+  "_id": "uYN1zYaO04LTEh32",
+  "description": "",
+  "sort": 0,
+  "color": null,
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741408674007,
+    "modifiedTime": 1741408674007,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!folders!uYN1zYaO04LTEh32"
+}

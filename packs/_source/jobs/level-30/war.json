@@ -1,0 +1,929 @@
+{
+  "folder": "J8oaEHQGqb186dzX",
+  "name": "WAR",
+  "type": "character",
+  "_id": "WqZzO5kD5bVv8TuW",
+  "img": "systems/ffxiv/assets/classes/warrior.png",
+  "system": {
+    "biography": "",
+    "ability_order": [],
+    "primary_attributes": {
+      "strength": {
+        "value": 4,
+        "label": "FFXIV.Attributes.Strength.long"
+      },
+      "dexterity": {
+        "value": 2,
+        "label": "FFXIV.Attributes.Dexterity.long"
+      },
+      "vitality": {
+        "value": 5,
+        "label": "FFXIV.Attributes.Vitality.long"
+      },
+      "intelligence": {
+        "value": 0,
+        "label": "FFXIV.Attributes.Intelligence.long"
+      },
+      "mind": {
+        "value": 1,
+        "label": "FFXIV.Attributes.Mind.long"
+      }
+    },
+    "secondary_attributes": {
+      "defense": {
+        "value": 15,
+        "label": "FFXIV.Attributes.Defense"
+      },
+      "magic_defense": {
+        "value": 12,
+        "label": "FFXIV.Attributes.MagicDefense"
+      },
+      "vigilance": {
+        "value": 11,
+        "label": "FFXIV.Attributes.Vigilance"
+      },
+      "speed": {
+        "value": 5,
+        "unit": "squares",
+        "label": "FFXIV.Attributes.Speed"
+      }
+    },
+    "health": {
+      "value": 35,
+      "max": 35
+    },
+    "barrier": {
+      "value": 0,
+      "max": null
+    },
+    "mana": {
+      "value": 5,
+      "max": 5
+    },
+    "experience": {
+      "level": {
+        "value": 30,
+        "max": 100
+      },
+      "experience": {
+        "value": 0,
+        "total": 0,
+        "max": null,
+        "label": "XP"
+      }
+    },
+    "class": {
+      "name": "warrior",
+      "role": ""
+    },
+    "activeTitle": "",
+    "showModifiers": true
+  },
+  "prototypeToken": {
+    "name": "WAR",
+    "displayName": 0,
+    "actorLink": false,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "systems/ffxiv/assets/classes/warrior.png",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": null
+    },
+    "bar2": {
+      "attribute": null
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "items": [
+    {
+      "name": "Land Waker",
+      "type": "limit_break",
+      "_id": "HlL0x0SgDII2JG8o",
+      "img": "systems/ffxiv/assets/limit_break.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.LimitBreak",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 0,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "Immediately before one or more allied adventurers take damage.",
+        "base_effect": "Makes you the sole target of all damage inflicted by the effect that triggered Land Waker and halves the damage you take (rounded up). If an ability triggered Land Waker, the character that used that ability suffers damage equal to the amount of HP you lost.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.limit-breaks.Item.KtJ1ZrdYSyG0XO4z",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409057511,
+        "modifiedTime": 1741409057511,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.HlL0x0SgDII2JG8o"
+    },
+    {
+      "folder": "52Ea9KZn23CP56Og",
+      "name": "Provoke",
+      "type": "instant_ability",
+      "_id": "3RzA6Ub9KrdsUpAM",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Provoke.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "The enemy that triggered this ability",
+        "range": "10",
+        "check": "None",
+        "challenge": "",
+        "trigger": "When an enemy begins their turn",
+        "base_effect": "Inflicts Enmity on the target.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.instant-abilities.Item.xAsGIqbVXMD99y4B",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409060564,
+        "modifiedTime": 1741409060564,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.3RzA6Ub9KrdsUpAM"
+    },
+    {
+      "folder": "52Ea9KZn23CP56Og",
+      "name": "Interject",
+      "type": "instant_ability",
+      "_id": "fZzO1ZjCvahexfDH",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Interject.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "The enemy that triggered this ability",
+        "range": "1",
+        "check": "None",
+        "challenge": "",
+        "trigger": "When an adjacent enemy uses an invoked ability, or is using an invoked ability to generate a marker",
+        "base_effect": "Interrupts the invoked ability that triggered this ability, negating it completely.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.instant-abilities.Item.otYoU3kTGgqRNRAR",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409063108,
+        "modifiedTime": 1741409063108,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.fZzO1ZjCvahexfDH"
+    },
+    {
+      "name": "Berserk",
+      "type": "secondary_ability",
+      "_id": "iHpeC7APWEomv6jX",
+      "img": "systems/ffxiv/assets/abilities/WAR/Berserk.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Your abilities deal an additional 2 damage until the end of the turn.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Three times per phase",
+        "limitations_status": [],
+        "limitations_max": 3,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.WyDL38osyECYpAWK",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409066237,
+        "modifiedTime": 1741409066237,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.iHpeC7APWEomv6jX"
+    },
+    {
+      "folder": "MBRps9Q8xhebEULG",
+      "name": "Low Blow",
+      "type": "secondary_ability",
+      "_id": "4SP3c6aTSySB0F5F",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Low_Blow.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "1",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Stuns the target until the end of this turn. Any characters Strunned by this ability cannot be Stunned again during this encounter.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.hX5An1DjUJhR0HLR",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409071021,
+        "modifiedTime": 1741409071021,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.4SP3c6aTSySB0F5F"
+    },
+    {
+      "folder": "Cv2lYwDBSRqiJeog",
+      "name": "Warrior Combo (Heavy Swing + Maim)",
+      "type": "primary_ability",
+      "_id": "Snvr4x3gunjZJIYt",
+      "img": "systems/ffxiv/assets/abilities/WAR/Heavy_Swing.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "1",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Deals 2 damage inflicts Enmity on the target.",
+        "combo": "Storm's Path",
+        "direct_hit": "Deals an additional 1d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@str",
+        "direct_formula": "1d6",
+        "base_formula": "2"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.1bZTclZQ5Xloa0NB",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409073795,
+        "modifiedTime": 1741409073795,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.Snvr4x3gunjZJIYt"
+    },
+    {
+      "folder": "Cv2lYwDBSRqiJeog",
+      "name": "Tomahawk",
+      "type": "primary_ability",
+      "_id": "hanrL32Luz73SVsS",
+      "img": "systems/ffxiv/assets/abilities/WAR/Tomahawk.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "5",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Deals 2 damage and inflicts Enmity on the target.",
+        "combo": "",
+        "direct_hit": "Deals an additional 1d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@str",
+        "direct_formula": "1d6",
+        "base_formula": "2"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.gxegfN5tr6gDkGLx",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409075228,
+        "modifiedTime": 1741409075228,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.hanrL32Luz73SVsS"
+    },
+    {
+      "folder": "Cv2lYwDBSRqiJeog",
+      "name": "Storm's Path",
+      "type": "primary_ability",
+      "_id": "g0aGiql4UgjbGfx5",
+      "img": "systems/ffxiv/assets/abilities/WAR/Storm%27s_Path.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "1",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Deals 2 damage and inflicts Enmity on the target. Restores 2 HP.",
+        "combo": "",
+        "direct_hit": "Deals an additional 1d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@str",
+        "direct_formula": "1d6",
+        "base_formula": "2"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.QWt1FaCQggtXEoFI",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409076399,
+        "modifiedTime": 1741409076399,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.g0aGiql4UgjbGfx5"
+    },
+    {
+      "folder": "Cv2lYwDBSRqiJeog",
+      "name": "Overpower",
+      "type": "primary_ability",
+      "_id": "zkTqbwyS45ORxJIP",
+      "img": "systems/ffxiv/assets/abilities/WAR/Overpower.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "All enemies within range",
+        "range": "A 5x5 area centered on this character",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Inflicts Enmity on all targets. ",
+        "combo": "",
+        "direct_hit": "Deals 2 damage to all targets.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@str",
+        "direct_formula": "2",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.V77ViSFaP1Tw8mTI",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741409078345,
+        "modifiedTime": 1741409078345,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.zkTqbwyS45ORxJIP"
+    },
+    {
+      "folder": "52Ea9KZn23CP56Og",
+      "name": "Reprisal",
+      "type": "instant_ability",
+      "_id": "W74ICygSajgMIWQk",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Reprisal.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "All enemies within range",
+        "range": "A 5x5 area centered on this character",
+        "check": "None",
+        "challenge": "",
+        "trigger": "Immediately before an ability used by an enemyt within 2 squares is resolved",
+        "base_effect": "Reduces the damage dealt by the abilities of all targets by 2 until the end of this round.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.instant-abilities.Item.FDQPe4mHQQsDsC7n",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741413753498,
+        "modifiedTime": 1741413753498,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.W74ICygSajgMIWQk"
+    },
+    {
+      "name": "Combo",
+      "type": "trait",
+      "_id": "tAYnJs5pd1hk71mE",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>After resolving the effects of an ability with Combo, you may use one of the specified abilities at any point during your turn. You may move before doing so, and you may choose a new target when using this ability.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.traits.Item.049dmr8bBVCEcioD",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741413803308,
+        "modifiedTime": 1741413803308,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.tAYnJs5pd1hk71mE"
+    },
+    {
+      "name": "Enmity",
+      "type": "trait",
+      "_id": "olO4arLud5G0UYv9",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>Enemies that have <strong>Enmity</strong> on incur a -5 penalty on all ability checks that do not target you. <strong>Enmity</strong> is removed at the end of the enemy's next turn, or when you are <strong>Knocked Out</strong>.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enfeeblement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enfeeblements.Item.ToIftipKBlb5tr8K",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741413815157,
+        "modifiedTime": 1741413815157,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.olO4arLud5G0UYv9"
+    },
+    {
+      "name": "Stun",
+      "type": "trait",
+      "_id": "weSAj1l0IzDj7tju",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>A <strong>Stunned</strong> character cannot act during their turn or use <em>instant</em> abilities, and all markers for which they are the creator are removed. Characters receive one advantage die when making ability checks targeting a <strong>Stunned</strong> character.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enfeeblement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enfeeblements.Item.vZlPwwvIYo6Xt6YD",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741413818965,
+        "modifiedTime": 1741413818965,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.weSAj1l0IzDj7tju"
+    },
+    {
+      "name": "Thrill of Battle",
+      "type": "instant_ability",
+      "_id": "GBNJweUhnceBonCJ",
+      "img": "systems/ffxiv/assets/abilities/WAR/Thrill_of_Battle.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "Immediately before you take damage",
+        "base_effect": "Restores 1d6 + 2 HP and grants a barrier equaling the amount of HP restored that exceeds your Max HP.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": "uYN1zYaO04LTEh32",
+      "sort": 100000,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.instant-abilities.Item.aIqk3WmfD3O53kbq",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741414476077,
+        "modifiedTime": 1741414476077,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.GBNJweUhnceBonCJ"
+    },
+    {
+      "folder": "MBRps9Q8xhebEULG",
+      "name": "Rampart",
+      "type": "secondary_ability",
+      "_id": "23n910T9dmCLCA5C",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Rampart.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Reduces the damage you take from all abilities by 2 until the start of your next turn.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.JYOmEwN5KNvxDLYO",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741414510032,
+        "modifiedTime": 1741414510032,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!WqZzO5kD5bVv8TuW.23n910T9dmCLCA5C"
+    }
+  ],
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741409019144,
+    "modifiedTime": 1741414708970,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!actors!WqZzO5kD5bVv8TuW"
+}

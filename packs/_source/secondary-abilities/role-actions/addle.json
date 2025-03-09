@@ -1,0 +1,51 @@
+{
+  "folder": "MBRps9Q8xhebEULG",
+  "name": "Addle",
+  "type": "instant_ability",
+  "_id": "FYRpEMC8W9FAA9m5",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Addle.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Instant",
+      "FFXIV.Tags.Magic"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "The enemy that triggered this ability",
+    "range": "5",
+    "check": "None",
+    "challenge": "",
+    "trigger": "Immediately before an ability used by an enemy is resolved",
+    "base_effect": "Reduces the damage dealt by the abilities of the enemy that triggered this ability by 2 until the end of this turn.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741411871613,
+    "modifiedTime": 1741412179526,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!FYRpEMC8W9FAA9m5"
+}

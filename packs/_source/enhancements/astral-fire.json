@@ -1,0 +1,35 @@
+{
+  "name": "Astral Fire",
+  "type": "trait",
+  "_id": "I5Xyym6IlroZAlzg",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>While under the effect of <strong>Astral Fire</strong>, your <em>fire-aspected</em> abilities deal an additional 1d6 damage and you do not recover MP at the end of the [Adventurer Step]. <strong>Astral Fire</strong> is removed when you are <strong>Knocked Out</strong>, or, if the effect is not renewed, at the end of your next turn. Being granted <strong>Umbral Ice</strong> removes this effect as well.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enhancement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": true,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741412558655,
+    "modifiedTime": 1741412670039,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!I5Xyym6IlroZAlzg"
+}

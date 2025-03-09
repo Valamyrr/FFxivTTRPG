@@ -1,0 +1,50 @@
+{
+  "name": "Life Surge",
+  "type": "secondary_ability",
+  "_id": "XY5I7rrqQygMPFlG",
+  "img": "systems/ffxiv/assets/abilities/DRG/Life_Surge.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Secondary"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Grants Drain until the end of this turn and one advantage die on your next ability check.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "folder": "MfGKMJD4lasRW3Kj",
+  "sort": 200000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741401740003,
+    "modifiedTime": 1741401991131,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!XY5I7rrqQygMPFlG"
+}

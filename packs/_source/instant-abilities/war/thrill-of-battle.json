@@ -1,0 +1,50 @@
+{
+  "name": "Thrill of Battle",
+  "type": "instant_ability",
+  "_id": "aIqk3WmfD3O53kbq",
+  "img": "systems/ffxiv/assets/abilities/WAR/Thrill_of_Battle.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Instant"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "Immediately before you take damage",
+    "base_effect": "Restores 1d6 + 2 HP and grants a barrier equaling the amount of HP restored that exceeds your Max HP.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "folder": "uYN1zYaO04LTEh32",
+  "sort": 100000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741408600829,
+    "modifiedTime": 1741414206756,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!aIqk3WmfD3O53kbq"
+}

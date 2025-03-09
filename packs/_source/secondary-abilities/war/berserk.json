@@ -1,0 +1,50 @@
+{
+  "name": "Berserk",
+  "type": "secondary_ability",
+  "_id": "WyDL38osyECYpAWK",
+  "img": "systems/ffxiv/assets/abilities/WAR/Berserk.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Secondary"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Your abilities deal an additional 2 damage until the end of the turn.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Three times per phase",
+    "limitations_status": [],
+    "limitations_max": 3,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "folder": "9XoNJCZrg0koWA9P",
+  "sort": 100000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741408125626,
+    "modifiedTime": 1741409696860,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!WyDL38osyECYpAWK"
+}

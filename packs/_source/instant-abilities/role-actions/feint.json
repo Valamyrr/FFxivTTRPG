@@ -1,0 +1,51 @@
+{
+  "folder": "52Ea9KZn23CP56Og",
+  "name": "Feint",
+  "type": "instant_ability",
+  "_id": "e9ZLWMH40bQ4ZZsD",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Feint.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Instant",
+      "FFXIV.Tags.Physical"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "The enemy that triggered this ability",
+    "range": "2",
+    "check": "None",
+    "challenge": "",
+    "trigger": "Immediately before an ability used by an enemy is resolved",
+    "base_effect": "Reduces the damage dealt by the abilities of the enemy that triggered this ability by 2 until the end of this turn.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "sort": 100000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741402034991,
+    "modifiedTime": 1741412890020,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!e9ZLWMH40bQ4ZZsD"
+}

@@ -1,0 +1,52 @@
+{
+  "folder": "WN9Y9ojIp2tdh3Bo",
+  "name": "Cure II",
+  "type": "primary_ability",
+  "_id": "89WW29hfCD40B6TH",
+  "img": "systems/ffxiv/assets/abilities/WHM/Cure_II.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Magic",
+      "FFXIV.Tags.Invoked"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "2 MP",
+    "target": "Single",
+    "range": "10",
+    "check": "FFXIV.Special",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Restores 2d6+7 HP to the target.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "1d20",
+    "direct_formula": "",
+    "base_formula": "2d6+7"
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741409238588,
+    "modifiedTime": 1741409658601,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!89WW29hfCD40B6TH"
+}

@@ -1,0 +1,52 @@
+{
+  "folder": "WN9Y9ojIp2tdh3Bo",
+  "name": "Raise",
+  "type": "primary_ability",
+  "_id": "LfXmNjgvRXh8XaQS",
+  "img": "systems/ffxiv/assets/abilities/WHM/Raise.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Magic",
+      "FFXIV.Tags.Invoked"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "3 MP",
+    "target": "1 Knocked Out character",
+    "range": "5 squares*",
+    "check": "FFXIV.Special",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Removes the Knocked Out enfeeblement from the target, then restores 1d6+3 HP, grants Transcendent, and afflicts them with Weakness. *This ability can also target a character outside the encounter map. When doing so, move the character to an empty square within range after resolving the abilities effects.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "1d20",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741409526859,
+    "modifiedTime": 1741409653424,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!LfXmNjgvRXh8XaQS"
+}
