@@ -244,13 +244,6 @@ FF_XIV.classes = {
     "labelShort":"FFXIV.Classes.SummonerShort",
     "role":"dps",
     "role_label":"FFXIV.Roles.DPS",
-  },
-  "pets": {
-    "value":"pets",
-    "label":"FFXIV.Classes.Pets",
-    "labelShort":"FFXIV.Classes.PetsShort",
-    "role":"",
-    "role_label":"FFXIV.Roles.Pets",
   }
 }
 
@@ -311,6 +304,10 @@ FF_XIV.tags_abilities = {
   "stationarymarker":{
     "value":"stationarymarker",
     "label":"FFXIV.Tags.StationaryMarker"
+  },
+  "pet":{
+    "value":"pet",
+    "label":"FFXIV.Tags.Pet"
   }
 }
 
@@ -355,6 +352,12 @@ FF_XIV.tags_consumables = {
     "label":"FFXIV.Tags.Other"
   }
 }
+
+FF_XIV.minion_types = [
+  "FFXIV.Tags.Minion",
+  "FFXIV.Tags.Mount"
+]
+
  FF_XIV.levels = {
   "1": { "EXP": 0, "Total": 0 },
   "2": { "EXP": 300, "Total": 300 },

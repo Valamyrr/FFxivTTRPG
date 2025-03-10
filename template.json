@@ -96,7 +96,7 @@
     }
   },
   "Item": {
-    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title","gear"],
+    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title","gear","pet","minion","pet"],
     "templates": {
       "physical_item":{
         "quantity": 1,
@@ -176,6 +176,21 @@
       "classes": [],
       "category": "",
       "subcategory": ""
+    },
+    "minion": {
+      "templates": ["core","ability"],
+      "traits": "",
+      "shop_tier": "",
+      "minion_type": ""
+    },
+    "pet": {
+      "templates": ["core","ability"],
+      "traits": "",
+      "ability_name": "",
+      "speed": {
+        "value": 5,
+        "unit": "squares"
+      }
     }
   }
 }

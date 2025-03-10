@@ -1,0 +1,87 @@
+<div class="pet-card">
+
+  <div class="pet-header">
+    <div class="pet-name">
+      {{name}}
+    </div>
+    <div class="pet-header-right">
+      <div class="pet-tag">
+        {{ localize "FFXIV.Tags.Pet" }}
+      </div>
+    </div>
+  </div>
+
+  <div class="pet-speed">
+    {{ localize "FFXIV.Attributes.Speed" }}: {{system.speed.value}} {{system.speed.unit}}
+  </div>
+
+  <div class="pet-traits">
+    <div class="effect">
+      <strong>{{ localize "FFXIV.Abilities.TraitsShort" }}:</strong>
+      {{{system.traits}}}
+    </div>
+  </div>
+
+  <div class="ability-card" data-item-id="{{_id}}">
+    <div class="ability-card-info">
+      <img src="{{img}}" alt="{{name}}" class="ability-icon" data-item-id="{{_id}}">
+      <div class="ability-header">
+        <div class="ability-name">
+          {{system.ability_name}}
+        </div>
+        <div class="ability-right">
+          <div class="ability-tags">
+            {{#each system.tags as |tag|}}
+              <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+            {{/each}}
+          </div>
+          <div class="ability-limitations">
+            {{#repeat system.limitations_max}}
+              <div class="limitation-wrapper">
+                <input type="checkbox" class="limitation"
+                  data-index={{index}} data-item-id={{../_id}}
+                  {{#if (lookup ../system.limitations_status index)}}checked {{/if}}>
+                <span class="checkmark"></span>
+              </div>
+            {{/repeat}}
+          </div>
+        </div>
+      </div>
+
+      <div class="ability-details">
+        {{#if system.cost}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Cost" }}:</strong> {{system.cost}}</div>{{/if}}
+        {{#if system.target}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{system.target}}</div>{{/if}}
+        {{#if system.range}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{system.range}}</div>{{/if}}
+        {{#if system.check}}
+          {{#if (not (eq system.check (localize "FFXIV.None")))}}
+          <div class="detail"><strong>{{ localize "FFXIV.Abilities.Check"}}:</strong>
+              {{localize system.check}}
+          </div>
+          {{/if}}
+        {{/if}}
+        {{#if system.challenge}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{system.challenge}}</div>{{/if}}
+        {{#if system.trigger}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{system.trigger}}</div>{{/if}}
+      </div>
+
+    </div>
+
+
+    <div class="ability-effects">
+      {{#if system.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{system.base_effect}}</div>{{/if}}
+      {{#if system.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{system.direct_hit}}</div>{{/if}}
+      {{#if system.limitations}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Limitations" }}:</strong> {{system.limitations}}</div>{{/if}}
+      {{#if system.marker_area}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{system.marker_area}}</div>{{/if}}
+      {{#if system.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{system.marker_trigger}}</div>{{/if}}
+      {{#if system.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{system.marker_effect}}</div>{{/if}}
+    </div>
+
+    {{#if system.description}}
+      <div class="ability-description">
+        <p>{{system.description}}</p>
+      </div>
+    {{/if}}
+
+    <button class="ability-roll-button" data-item-id={{_id}}>{{ localize "FFXIV.CharacterSheet.Roll" }}</button>
+
+  </div>
+</div>

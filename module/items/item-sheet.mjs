@@ -63,6 +63,12 @@ export class FfxivItemSheet extends ItemSheet {
     if (this.item.type == "title"){
       return `${path}/item-title-sheet.hbs`;
     }
+    if (this.item.type == "minion"){
+      return `${path}/item-minion-sheet.hbs`;
+    }
+    if (this.item.type == "pet"){
+      return `${path}/item-pet-sheet.hbs`;
+    }
     if (this.item.type == "gear"){
       if (game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null){
         return `${path}/item-sheet-dialog-gear.hbs`;
@@ -89,21 +95,21 @@ export class FfxivItemSheet extends ItemSheet {
     // Use a safe clone of the item data for further operations.
     const itemData = this.document.toObject(false);
 
-    // Enrich description info for display
-    // Enrichment turns text like `[[/r 1d20]]` into buttons
-    context.enrichedDescription = await TextEditor.enrichHTML(
-      this.item.system.description,
-      {
-        // Whether to show secret blocks in the finished html
-        secrets: this.document.isOwner,
-        // Necessary in v11, can be removed in v12
-        async: true,
-        // Data to fill in for inline rolls
-        rollData: this.item.getRollData(),
-        // Relative UUID resolution
-        relativeTo: this.item,
-      }
-    );
+    const fieldsToEnrich = {
+        description: this.item.system.description || "",
+        traits: this.item.system.traits || "", // Add other fields here
+    };
+
+    // Enrich each field separately
+    for (const [key, value] of Object.entries(fieldsToEnrich)) {
+        context[`enriched${key.charAt(0).toUpperCase() + key.slice(1)}`] =
+            await TextEditor.enrichHTML(value, {
+                secrets: this.document.isOwner,
+                async: true,
+                rollData: this.item.getRollData(),
+                relativeTo: this.item,
+            });
+    }
 
     // Add the item's data to context.data for easier access, as well as flags.
     context.system = itemData.system;
@@ -113,14 +119,13 @@ export class FfxivItemSheet extends ItemSheet {
     context.config = CONFIG.FF_XIV;
     // Prepare active effects for easier access
     context.effects = prepareActiveEffectCategories(this.item.effects);
-
     return context;
   }
 
   /* -------------------------------------------- */
 
   /** @override */
-  render(force, options) {
+  render(force, options={}) {
     super.render(force, options);
   }
 

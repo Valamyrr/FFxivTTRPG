@@ -22,6 +22,8 @@ body{
   --primary-color: #393939;
   --secondary-color: #a3a3a3;
 
+  --pet-color: #544f4f;
+
   --border-color-1: #999;
   --border-color-2: #999;
   --border-shadow-1: #444;
@@ -53,6 +55,8 @@ body{
 
   --primary-color: white;
   --secondary-color: #D2B48C;
+
+  --pet-color: #633;
 
   --border-color-1: #B0A89E;
   --border-color-2: #D4C7B0;

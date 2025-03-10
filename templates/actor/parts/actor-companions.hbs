@@ -1,0 +1,54 @@
+<div class="actor-abilities">
+  <div class="abilities-tab-content">
+    <!-- Sub-tab navigation for abilities -->
+    {{#if (eq actor.system.class.name "summoner")}}
+      <nav class="companions-sub-tabs" data-group="companions-sub-tabs">
+        <a class="companions-sub-tab active" data-tab="minions" title="{{localize 'FFXIV.CharacterSheet.Minions'}}">
+          {{localize 'FFXIV.CharacterSheet.Minions'}}
+          <div class="chip"></div>
+        </a>
+        <a class="companions-sub-tab" data-tab="pets" title="{{localize 'FFXIV.CharacterSheet.Pets'}}">
+          {{localize 'FFXIV.CharacterSheet.Pets'}}
+          <div class="chip"></div>
+        </a>
+      </nav>
+    {{/if}}
+
+    <!-- Sub-tab content -->
+    <section class="companions-sub-tab-content active" data-tab="minions">
+      {{!-- Mounts content here --}}
+      {{#each (sortAbilities items system.ability_order "minion")}}
+          <div class="ability-container">
+            {{> "systems/ffxiv/templates/actor/parts/actor-card-minion.hbs" this}}
+            <div class="move-buttons">
+              {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="minion">▲</button>{{/unless}}
+              {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="minion">▼</button>{{/unless}}
+            </div>
+          </div>
+      {{/each}}
+
+    </section>
+
+    {{#if (eq actor.system.class.name "summoner")}}
+      <section class="companions-sub-tab-content" data-tab="pets" style="display:none;">
+        {{!-- Pets summons content here --}}
+        {{#each (sortAbilities items system.ability_order "pet")}}
+            <div class="ability-container">
+              {{> "systems/ffxiv/templates/actor/parts/actor-card-pet.hbs" this}}
+              <div class="move-buttons">
+                {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
+                {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
+              </div>
+            </div>
+        {{/each}}
+
+      </section>
+    {{/if}}
+
+  </div>
+
+
+
+
+
+</div>

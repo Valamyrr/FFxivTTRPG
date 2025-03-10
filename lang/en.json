@@ -59,7 +59,10 @@
       "Show": "Show Item",
       "ShowModifiers": "Display Enhancements/Enfeeblement before rolls ?",
       "Equip": "Equip",
-      "Unequip": "Unequip"
+      "Unequip": "Unequip",
+      "Companions": "Companions",
+      "Pets": "Pets",
+      "Minions": "Minions"
     },
     "Item":{
       "Name": "Name",
@@ -73,7 +76,10 @@
       "Stack": "Stackability",
       "Delete": "Delete Item",
       "Modifiers": "Modifiers",
-      "Description": "Description"
+      "Description": "Description",
+      "ShopTier": "Shop Tier",
+      "MinionType": "Minion Type",
+      "AbilityName": "Pet's ability Name"
     },
     "GearCategories":{
       "Category": "Category",
@@ -97,7 +103,9 @@
       "trait": "Trait",
       "currency": "Currency",
       "title": "Title",
-      "gear": "Gear"
+      "gear": "Gear",
+      "minion": "Minion/Mount",
+      "pet": "Pet"
     },
     "ActorType":{
       "character": "Character",
@@ -185,9 +193,12 @@
       "IceAspected": "Ice-Aspected",
       "LightningAspected": "Lightning-Aspected",
       "StationaryMarker": "Stationary Marker",
+      "Pet": "Pet",
       "Medicine": "Medicine",
       "Meal": "Meal",
-      "Other": "Other"
+      "Other": "Other",
+      "Minion": "Minion",
+      "Mount": "Mount"
     },
     "Traits":{
       "Activable": "Activable",

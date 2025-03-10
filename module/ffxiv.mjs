@@ -66,7 +66,9 @@ Hooks.once('init', function () {
     trait: game.i18n.localize("FFXIV.ItemType.trait"),
     currency: game.i18n.localize("FFXIV.ItemType.currency"),
     title: game.i18n.localize("FFXIV.ItemType.title"),
-    gear: game.i18n.localize("FFXIV.ItemType.gear")
+    gear: game.i18n.localize("FFXIV.ItemType.gear"),
+    minion: game.i18n.localize("FFXIV.ItemType.minion"),
+    pet: game.i18n.localize("FFXIV.ItemType.pet")
   };
 
   CONFIG.Actor.typeLabels = {
@@ -132,6 +134,7 @@ Handlebars.registerHelper("characterTabs", function(settings){
   ];
   if (settings.showGear) items.push({ tab: "gear", label: game.i18n.localize("FFXIV.CharacterSheet.Gear"), icon: "gear" });
   items.push({ tab: "items", label: game.i18n.localize("FFXIV.CharacterSheet.Inventory"), icon: "inventory" })
+  items.push({ tab: "companions", label: game.i18n.localize("FFXIV.CharacterSheet.Companions"), icon: "companions" })
   items.push({ tab: "settings", label: game.i18n.localize("FFXIV.CharacterSheet.Config"), icon: "configuration" })
   return items;
 })

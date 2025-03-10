@@ -1,0 +1,85 @@
+
+.companions-sub-tabs {
+  margin-bottom: 10px;
+  width: 100%;
+  text-align: center;
+  filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+}
+
+.companions-sub-tab {
+  margin: 4px -2px 4px -2px;
+  width: 40%;
+  padding: 5px 10px !important;
+  cursor: pointer;
+  border-radius: 3px;
+  text-align: center;
+  height: 25px;
+  display: inline-block;
+  overflow: hidden;
+  clip-path: polygon(5% 0, 95% 0, 100% 30%, 95% 100%, 5% 100%, 0 70%);
+  background: var(--gradient-color-1);
+  background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+}
+
+.companions-sub-tab .chip{
+  position: absolute;
+  width: 10px;
+  height: 5px;
+  background: var(--chip-color);
+  margin: -6px -6px;
+  border-radius: 2px;
+  transform: rotate(35deg);
+}
+
+.companions-sub-tab.active .chip{
+  background: var(--chip-color-active);
+  /*background: radial-gradient(circle, rgba(237,210,99,1) 65%, rgba(255,255,255,0) 100%);*/
+}
+.companions-sub-tab.active {
+  filter: contrast(125%);
+}
+
+.companions-sub-tab-content {
+  display: none;
+}
+
+.companions-sub-tab-content.active {
+  display: block;
+}
+
+.pet-card {
+  padding: 10px 10px 0 10px;
+  box-shadow: 0px 0px 5px 0px #111;
+  border-radius: 7px;
+  background: var(--pet-color);
+  color: var(--text-color);
+  overflow: hidden;
+  margin-bottom: 15px;
+  flex:1;
+}
+
+.pet-header{
+  margin-left: 3px;
+}
+.pet-name{
+  font-size: 1.6em;
+  display: inline;
+}
+.pet-header-right{
+  float: right;
+}
+.pet-tag{
+  display: inline-block;
+}
+.pet-speed{
+  margin: 2px 0 5px 3px;
+}
+.pet-traits{
+  padding: 8px;
+  border: 2px solid var(--border-color-1);
+  border-radius: 7px;
+  background: var(--primary-color);
+  overflow: hidden;
+  margin-bottom: 8px;
+  flex:1;
+}

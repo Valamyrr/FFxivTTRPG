@@ -46,6 +46,7 @@ export class FfxivActorSheet extends ActorSheet {
         this._updateManaBar();
         this._updateHealthBar();
         this._applyStoredAbilityTab();
+        this._applyStoredCompanionTab();
       });
     };
   }
@@ -250,6 +251,7 @@ export class FfxivActorSheet extends ActorSheet {
     html.on('click', '.inventory-item', this._renderItem.bind(this));
 
     html.on('click', '.abilities-sub-tabs .sub-tab', this._displayAbilityTab.bind(this))
+    html.on('click', '.companions-sub-tabs .companions-sub-tab', this._displayCompanionTab.bind(this))
 
     html.on('mousedown', '.mana-bar', this._onClickManaBar.bind(this));
 
@@ -489,15 +491,30 @@ export class FfxivActorSheet extends ActorSheet {
     this.currentAbilityTab = tab
     this._switchAbilityTab(tab)
   }
+  _displayCompanionTab(event){
+    const tab = $(event.currentTarget).data('tab');
+    this.currentCompanionTab = tab
+    this._switchCompanionTab(tab)
+  }
   _applyStoredAbilityTab() {
     const tab = this.currentAbilityTab || 'primary';  // Default to primary if no tab is stored
     this._switchAbilityTab(tab)
+  }
+  _applyStoredCompanionTab() {
+    const tab = this.currentCompanionTab || 'minions';
+    this._switchCompanionTab(tab)
   }
   _switchAbilityTab(tab){
     $(`#FfxivActorSheet-Actor-${this.actor._id} .abilities-sub-tabs .sub-tab`).removeClass("active");
     $(`#FfxivActorSheet-Actor-${this.actor._id} .sub-tab-content`).removeClass('active').hide();
     $(`#FfxivActorSheet-Actor-${this.actor._id} .abilities-sub-tabs .sub-tab[data-tab=${tab}]`).addClass("active");
     $(`#FfxivActorSheet-Actor-${this.actor._id} .sub-tab-content[data-tab=${tab}]`).addClass('active').show();
+  }
+  _switchCompanionTab(tab){
+    $(`#FfxivActorSheet-Actor-${this.actor._id} .companions-sub-tabs .companions-sub-tab`).removeClass("active");
+    $(`#FfxivActorSheet-Actor-${this.actor._id} .companions-sub-tab-content`).removeClass('active').hide();
+    $(`#FfxivActorSheet-Actor-${this.actor._id} .companions-sub-tabs .companions-sub-tab[data-tab=${tab}]`).addClass("active");
+    $(`#FfxivActorSheet-Actor-${this.actor._id} .companions-sub-tab-content[data-tab=${tab}]`).addClass('active').show();
   }
 
   _toggleSidebar(event){

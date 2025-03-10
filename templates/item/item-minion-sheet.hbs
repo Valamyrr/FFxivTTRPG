@@ -1,0 +1,111 @@
+<form class='{{cssClass}}' autocomplete='off'>
+  <header class='sheet-header'>
+    <img
+      class='profile-img'
+      src='{{item.img}}'
+      data-edit='img'
+      title='{{item.name}}'
+    />
+    <div class='header-fields'>
+      <h1 class='charname'><input
+          name='name'
+          type='text'
+          value='{{item.name}}'
+          placeholder='Name'
+        /></h1>
+    </div>
+    <button class="item-delete fa fa-trash-can"></button>
+  </header>
+
+  {{! Sheet Tab Navigation }}
+  <nav class='sheet-tabs tabs' data-group='primary'>
+    <a class='item' data-tab='description'>{{ localize "FFXIV.Item.Description" }}</a>
+    <a class='item' data-tab='trait'>{{ localize "FFXIV.Abilities.TraitsShort" }}</a>
+    <a class='item' data-tab='attributes'>{{ localize "FFXIV.Attributes.Attributes" }}</a>
+  </nav>
+
+  {{! Sheet Body }}
+  <section class='sheet-body'>
+
+    {{! Description Tab }}
+    <div class='tab' data-group='primary' data-tab='description'>
+
+      {{editor
+        enrichedDescription
+        target='system.description'
+        engine='prosemirror'
+        button=true
+        editable=editable
+      }}
+    </div>
+    {{! Traits Tab }}
+    <div class='tab' data-group='primary' data-tab='trait'>
+      {{editor
+        enrichedTraits
+        target='system.traits'
+        engine='prosemirror'
+        button=true
+        editable=editable
+      }}
+    </div>
+    <div class='tab' data-group='primary' data-tab='attributes'>
+
+      <div class="resource flex-group-center">
+        <label for="system.minion_type" class="resource-label">{{ localize "FFXIV.Item.MinionType" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+          <select style="text-align: center;" name="system.minion_type">
+            {{#each this.config.minion_types as |t|}}
+            <option value="{{t}}" {{#if (eq t ../item.system.minion_types)}}selected {{/if}}>{{ localize t }}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+
+      <div class="resources grid grid-1col">
+        <div class="resource flex-group-center">
+          <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.rarity">
+              {{#each this.config.rarities as |a|}}
+              <option value="{{a.label}}" {{#if (eq a.label ../item.system.rarity)}}selected {{/if}}>{{ localize a.label }}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="resources grid grid-2col">
+        <div class="resource flex-group-center">
+          <label for="system.price.buy" class="resource-label">{{ localize "FFXIV.Item.Buy" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.buy" type="number" value="{{system.price.buy}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.price.sell" class="resource-label">{{ localize "FFXIV.Item.Sell" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.sell" type="number" value="{{system.price.sell}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.price.denomination" class="resource-label">{{ localize "FFXIV.Item.Denomination" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.denomination" type="text" value="{{system.price.denomination}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.shop_tier" class="resource-label">{{ localize "FFXIV.Item.ShopTier" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.shop_tier" type="text" value="{{system.shop_tier}}"/>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+</form>
