@@ -1,0 +1,51 @@
+{
+  "name": "Leg Sweep",
+  "type": "secondary_ability",
+  "_id": "yYom26PwfcrN7hvc",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Leg_Sweep.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Secondary",
+      "FFXIV.Tags.Physical"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "Single",
+    "range": "1",
+    "check": "None",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Stuns the target until the end of this turn. Any characters Stunned by this ability cannot be Stunned again during this encounter.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "folder": "MBRps9Q8xhebEULG",
+  "sort": 100000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741401921851,
+    "modifiedTime": 1741401998669,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!yYom26PwfcrN7hvc"
+}

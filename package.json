@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "CSS compiler for the Ffxiv system",
   "scripts": {
-    "build": "sass src/scss/ffxiv.scss css/ffxiv.css --style=expanded --no-source-map",
+    "build": "npm run build:css && npm run build:db",
+    "build:css": "sass src/scss/ffxiv.scss css/ffxiv.css --style=expanded --no-source-map",
+    "build:db": "node ./utils/packs.mjs package pack",
+    "build:json": "node ./utils/packs.mjs package unpack",
     "watch": "sass src/scss/ffxiv.scss css/ffxiv.css --style=expanded --source-map --watch"
   },
   "browserslist": [
@@ -13,6 +16,9 @@
   "license": "MIT",
   "private": true,
   "devDependencies": {
-    "sass": "^1.53.0"
+    "sass": "^1.53.0",
+    "fancy-log": "^2.0.0",
+    "yargs": "^17.7.2",
+    "@foundryvtt/foundryvtt-cli": "^1.0.4"
   }
 }

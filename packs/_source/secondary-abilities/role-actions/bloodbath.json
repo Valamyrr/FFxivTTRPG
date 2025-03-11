@@ -1,0 +1,50 @@
+{
+  "name": "Bloodbath",
+  "type": "secondary_ability",
+  "_id": "q3iUlB8RgPII1McZ",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Bloodbath.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Secondary"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "",
+    "base_effect": "Grants Drain until the end of this turn.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "folder": "MBRps9Q8xhebEULG",
+  "sort": 200000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741401864029,
+    "modifiedTime": 1741401999448,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!q3iUlB8RgPII1McZ"
+}

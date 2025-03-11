@@ -1,0 +1,51 @@
+{
+  "name": "Jump",
+  "type": "primary_ability",
+  "_id": "fv6YhDqPL76WR1Mm",
+  "img": "systems/ffxiv/assets/abilities/DRG/Jump.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Physical"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "Single",
+    "range": "5",
+    "check": "FFXIV.Attributes.Strength.long",
+    "challenge": "Defense",
+    "trigger": "",
+    "base_effect": "Deals 2d6 + 3 damage to the target.",
+    "combo": "",
+    "direct_hit": "Deals an additional 2d6 damage.",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "1d20+@str",
+    "direct_formula": "2d6",
+    "base_formula": "2d6+3"
+  },
+  "effects": [],
+  "folder": "nM8I9qBObbrO5WT5",
+  "sort": 150000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741401605177,
+    "modifiedTime": 1741401719882,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!fv6YhDqPL76WR1Mm"
+}
