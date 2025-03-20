@@ -59,7 +59,10 @@
       "Show": "Afficher l'Objet",
       "ShowModifiers": "Afficher Améliorations/Affaiblissements avant les jets de dés ?",
       "Equip": "Équiper",
-      "Unequip": "Déséquiper"
+      "Unequip": "Déséquiper",
+      "Companions": "Compagnons",
+      "Pets": "Familiers",
+      "Minions": "Mascottes"
     },
     "Item":{
       "Name": "Nom",
@@ -73,7 +76,10 @@
       "Stack": "Accumulable",
       "Delete": "Supprimer l'objet",
       "Modifiers": "Modificateurs",
-      "Description": "Description"
+      "Description": "Description",
+      "ShopTier": "Niveau de Vente",
+      "MinionType": "Type de Mascotte",
+      "AbilityName": "Nom de la compétence du Familier"
     },
     "GearCategories":{
       "Category": "Categorie",
@@ -97,7 +103,9 @@
       "trait": "Trait",
       "currency": "Devise",
       "title": "Haut Fait",
-      "gear": "Equipement"
+      "gear": "Equipement",
+      "minion": "Mascotte/Monture",
+      "pet": "Familier"
     },
     "ActorType":{
       "character": "Personnage",
@@ -105,7 +113,7 @@
     },
     "Classes":{
       "Classes": "Classes",
-      "Astrologian": "Astrologian",
+      "Astrologian": "Astromancien",
       "AstrologianSort": "AST",
       "Bard": "Barde",
       "BardShort": "BRD",
@@ -113,7 +121,7 @@
       "BlackMageShort": "MNO",
       "DarkKnight": "Chevalier Noir",
       "DarkKnightShort": "CHN",
-      "Dragoon": "Dragoon",
+      "Dragoon": "Chevalier Dragon",
       "DragoonShort": "DRG",
       "Machinist": "Machiniste",
       "MachinistShort": "MCH",
@@ -183,11 +191,14 @@
       "WindAspected": "Élément Vent",
       "FireAspected": "Élément Feu",
       "IceAspected": "Élément Glace",
-      "LightningAspected": "Élément Éclair",
+      "LightningAspected": "Élément Foudre",
       "StationaryMarker": "Marqueur Stationnaire",
+      "Pet": "Familier",
       "Medicine": "Potion",
       "Meal": "Plat",
-      "Other": "Autre"
+      "Other": "Autre",
+      "Minion": "Mascotte",
+      "Mount": "Monture"
     },
     "Traits":{
       "Activable": "Activable",
