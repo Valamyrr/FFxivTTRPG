@@ -332,48 +332,6 @@ export class FfxivActorSheet extends ActorSheet {
     }
   }
 
-  async _renderItemSimple(event) {
-    const itemId = event.currentTarget.dataset.itemId;
-    const item = this.actor.items.get(itemId);
-    if (item) {
-      // Render the custom template
-      const simplifiedHtml = await renderTemplate("systems/ffxiv/templates/item/item-sheet-dialog.hbs", item);
-
-      // Create a pop-up or modal to show the simplified template
-      const dialog = new Dialog({
-        title: item.name,
-        content: simplifiedHtml,
-        buttons: {},
-        render: (html) => {
-          html.find('.quantity-control.up').on('click', async () => {
-            const newQuantity = item.system.quantity + 1;
-            await item.update({ 'system.quantity': newQuantity });
-            this._refreshDialogContent(dialog, item);
-          });
-
-          // Handle quantity decrease
-          html.find('.quantity-control.down').on('click', async () => {
-            const newQuantity = Math.max(1, item.system.quantity - 1);
-            await item.update({ 'system.quantity': newQuantity });
-            this._refreshDialogContent(dialog, item);
-          });
-
-
-          html.find('.delete-item-btn').on('click', async () => {
-            const confirmDelete = confirm(`Are you sure you want to delete ${item.name}?`);
-            if (confirmDelete) {
-              await item.delete();
-              ui.notifications.info(`${item.name} has been deleted.`);
-              dialog.close();
-            }
-          });
-        }
-      });
-
-      dialog.render(true);
-    }
-  };
-
   async _rollItem(event){
     const itemId = event.currentTarget.dataset.itemId
     const item = this.actor.items.get(itemId);
@@ -475,11 +433,24 @@ export class FfxivActorSheet extends ActorSheet {
 
     if (item) {
       if (newQuantity < 0){
-        let confirmDelete = confirm(game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: item.name}));
-        if (confirmDelete) {
-          item.delete();
-          ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
-        }
+        Dialog.confirm({
+          title: game.i18n.format("FFXIV.Dialogs.DialogTitleConfirmation"),
+          content: game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}),
+          yes: () => {
+            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
+            this.item.delete();
+            if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
+              foundry.audio.AudioHelper.play({
+                src: "systems/ffxiv/assets/sounds/delete_item.wav", // Ensure this path is valid
+                volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+                autoplay: true,
+                loop: false
+              });
+            }
+          },
+          no: () => {},
+          defaultYes: false
+        });
       } else {
           item.update({ 'system.quantity': newQuantity });
       }
@@ -562,13 +533,19 @@ export class FfxivActorSheet extends ActorSheet {
   }
 
   _onDeleteTitle(event){
-    if(confirm(game.i18n.localize("FFXIV.Confirm"))){
-      const button = event.currentTarget
-      const itemId = button.dataset.itemId
-      const item = this.actor.items.get(itemId)
-      item.delete();
-      ui.notifications.info(`Item with ID ${itemId} has been removed.`);
-    }
+    Dialog.confirm({
+      title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation"),
+      content: game.i18n.localize("FFXIV.Confirm")),
+      yes: () => {
+        const button = event.currentTarget
+        const itemId = button.dataset.itemId
+        const item = this.actor.items.get(itemId)
+        item.delete();
+        ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
+      },
+      no: () => {},
+      defaultYes: false
+    });
   }
 
   async _moveAbility(direction, event){

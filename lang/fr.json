@@ -161,6 +161,7 @@
       "Check": "Test",
       "Challenge": "Niveau de Difficulté",
       "Trigger": "Déclencheur",
+      "Condition": "Condition",
       "BaseEffect": "Effet de Base",
       "BaseEffectRoll": "Jet pour l'Effet de Base",
       "Combo": "Combo",
@@ -228,6 +229,7 @@
       "SoundNotificationFFxivHintVolume":"Volume des Bruitages de FFXIV."
     },
     "Dialogs":{
+      "DialogTitleConfirmation": "Cette action n'est pas réversible",
       "Confirm":"Êtes-vous sûr de vouloir effectuer cette action ?",
       "ItemDelete":"Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?"
     },

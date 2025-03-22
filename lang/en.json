@@ -161,6 +161,7 @@
       "Check": "Check",
       "Challenge": "CR",
       "Trigger": "Trigger",
+      "Condition": "Condition",
       "BaseEffect": "Base Effect",
       "BaseEffectRoll": "Base Effect Roll",
       "Combo": "Combo",
@@ -228,6 +229,7 @@
       "SoundNotificationFFxivHintVolume":"Volume for Sound Notifications from FFXIV."
     },
     "Dialogs":{
+      "DialogTitleConfirmation": "Action is irreversible",
       "Confirm":"Are you sure you want to complete this action?",
       "ItemDelete":"Are you sure you want to delete this item : {itemName}?"
     },

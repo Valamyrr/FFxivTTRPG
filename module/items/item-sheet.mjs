@@ -280,19 +280,25 @@ export class FfxivItemSheet extends ItemSheet {
   }
 
   _deleteItem(event) {
-    if(confirm(game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}))){
-      this.item.delete();
-      ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
-      if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
-        foundry.audio.AudioHelper.play({
+    Dialog.confirm({
+      title: game.i18n.format("FFXIV.Dialogs.DialogTitleConfirmation"),
+      content: game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}),
+      yes: () => {
+        ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
+        this.item.delete();
+        if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
+          foundry.audio.AudioHelper.play({
             src: "systems/ffxiv/assets/sounds/delete_item.wav", // Ensure this path is valid
             volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
             autoplay: true,
             loop: false
-        });
-      }
-      this.render(false);
-    }
+          });
+        }
+        this.render(false)
+      },
+      no: () => {},
+      defaultYes: false
+    });
   }
 
   _toggleEquip(event) {
