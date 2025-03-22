@@ -104,7 +104,7 @@
         "price": {
           "buy": 0,
           "sell":0,
-          "denomination": "gils"
+          "denomination": "FFXIV.Item.Fortune"
         },
         "equipped": false,
         "position": 0,

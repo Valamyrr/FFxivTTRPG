@@ -18,8 +18,8 @@
 
       <div class="item-dialog-details">
 
-        {{#if (not (eq item.system.price.buy 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{item.system.price.buy}}{{#if item.system.price.denomination}} {{item.system.price.denomination}}{{/if}}</div>{{/if}}
-        {{#if (not (eq item.system.price.sell 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Sell" }}:</strong> {{item.system.price.sell}}{{#if item.system.price.denomination}} {{item.system.price.denomination}}{{/if}}</div>{{/if}}
+        {{#if (not (eq item.system.price.buy 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{item.system.price.buy}}{{#if item.system.price.denomination}} {{localize item.system.price.denomination}}{{/if}}</div>{{/if}}
+        {{#if (not (eq item.system.price.sell 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Sell" }}:</strong> {{item.system.price.sell}}{{#if item.system.price.denomination}} {{localize item.system.price.denomination}}{{/if}}</div>{{/if}}
         {{#if item.system.weight}}<div class="detail"><strong>{{ localize "FFXIV.Item.Weight" }}:</strong> {{item.system.weight}}</div>{{/if}}
 
       </div>
