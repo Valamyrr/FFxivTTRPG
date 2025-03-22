@@ -535,7 +535,7 @@ export class FfxivActorSheet extends ActorSheet {
   _onDeleteTitle(event){
     Dialog.confirm({
       title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation"),
-      content: game.i18n.localize("FFXIV.Confirm")),
+      content: game.i18n.localize("FFXIV.Confirm"),
       yes: () => {
         const button = event.currentTarget
         const itemId = button.dataset.itemId
