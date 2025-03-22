@@ -10,5 +10,6 @@ This project is opened to PR. I am the only maintainer of this project, so pleas
 - game icons from [ffxiv's fan kit](https://fr.finalfantasyxiv.com/lodestone/special/fankit/icon/)
 - game icons from [gamerescape's dictionary](https://ffxiv.gamerescape.com/wiki/Dictionary_of_Icons#Player_Icons)
 - banner.jpg is the official artwork by Sqare Enix for FFXIV TTRPG
+- status effects drawn and shared by Demonskunk on Discord
 - anvil-impact.png by Lorc under CC BY 3.0 from game-icons.net
 - meteor.png by Doctor-Cool from deviantart.com

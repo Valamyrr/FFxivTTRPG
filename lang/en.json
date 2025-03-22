@@ -177,6 +177,28 @@
       "HitFormula": "Hit Formula",
       "HitRoll": "Hit Roll"
     },
+    "Effects":{
+      "Ascendent": "Ascendent",
+      "Blind": "Blind",
+      "BrinkDeath": "Brink of Death",
+      "Comatose": "Comatose",
+      "CriticalUp": "Cricial Up",
+      "Death": "Death",
+      "DOT": "DOT",
+      "Drain": "Drain",
+      "Enmity": "Enmity",
+      "Heavy": "Heavy",
+      "KnockedOut": "Knocked Out",
+      "Paralysis": "Paralysis",
+      "Petrified": "Petrified",
+      "Prone": "Prone",
+      "Ready": "Ready",
+      "Revivify": "Revivify",
+      "Silence": "Silence",
+      "Sleep": "Sleep",
+      "Stun": "Stun",
+      "Weakness": "Weakness"
+    },
     "Tags":{
       "Tags": "Tags",
       "Primary": "Primary",

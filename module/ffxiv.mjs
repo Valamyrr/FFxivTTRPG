@@ -9,6 +9,7 @@ import { preloadHandlebarsTemplates } from './helpers/templates.mjs';
 import { FF_XIV } from './helpers/config.mjs';
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
+import { updateStatusEffects } from "./helpers/status_effects.mjs";
 import { LEVELS } from './helpers/levels.mjs';
 
 import { register_controls } from "./helpers/controls.js";
@@ -75,6 +76,8 @@ Hooks.once('init', function () {
     character: game.i18n.localize("FFXIV.ActorType.character"),
     npc: game.i18n.localize("FFXIV.ActorType.npc"),
   };
+
+  updateStatusEffects()
 
   // Preload Handlebars templates.
   return preloadHandlebarsTemplates();
