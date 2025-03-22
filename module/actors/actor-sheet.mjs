@@ -20,7 +20,7 @@ export class FfxivActorSheet extends ActorSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['ffxiv', 'sheet', 'actor', CONFIG.theme+'_theme'],
       width: 780,
-      height: 700,
+      height: 735,
       tabs: [
         {
           navSelector: '.sheet-tabs',

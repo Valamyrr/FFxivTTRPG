@@ -117,6 +117,9 @@
   width: 100%;
   border-radius: 3px;
 }
+.barrier-bar{
+  background: darkblue;
+}
 .health-bar.health-good{
   background: linear-gradient(to right, green, limegreen);
 }
@@ -126,7 +129,7 @@
 .health-bar.health-danger{
   background: linear-gradient(to right, darkred, red);
 }
-.ffxiv.actor .window-content input.health-input{
+.ffxiv.actor .window-content input.health-input,input.barrier-input{
   border:none;
   position: relative;
   background: transparent;

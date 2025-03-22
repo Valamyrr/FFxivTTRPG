@@ -10,7 +10,8 @@
     "Health": {
       "long": "Points de vie",
       "abbrv": "PV",
-      "max": "Max PV"
+      "max": "Max PV",
+      "barrier": "Barrière"
     },
     "Damages": "Dégâts",
     "Mana": {

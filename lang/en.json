@@ -10,7 +10,8 @@
     "Health": {
       "long": "Health",
       "abbrv": "HP",
-      "max": "Max HP"
+      "max": "Max HP",
+      "barrier": "Barrier"
     },
     "Mana": {
       "long": "Mana",
