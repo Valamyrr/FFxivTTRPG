@@ -281,6 +281,10 @@ FF_XIV.tags_abilities = {
     "value":"physical",
     "label":"FFXIV.Tags.Physical"
   },
+  "ranged":{
+    "value":"ranged",
+    "label":"FFXIV.Tags.Ranged"
+  },
   "earthaspected":{
     "value":"earthaspected",
     "label":"FFXIV.Tags.EarthAspected"
@@ -300,6 +304,14 @@ FF_XIV.tags_abilities = {
   "lightningaspected":{
     "value":"lightningaspected",
     "label":"FFXIV.Tags.LightningAspected"
+  },
+  "thunderspell":{
+    "value":"thunderspell",
+    "label":"FFXIV.Tags.ThunderSpell"
+  },
+  "jobresource":{
+    "value":"jobresource",
+    "label":"FFXIV.Tags.JobResource"
   },
   "stationarymarker":{
     "value":"stationarymarker",
