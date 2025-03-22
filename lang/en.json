@@ -247,6 +247,8 @@
       "ToggleGearHint":"Do you use homebrew rules for gear?",
       "Theme": "Theme",
       "ThemeHint": "Color palettes with which you want to display sheets.",
+      "UseRarity": "Do you use rarity property on Items?",
+      "UseRarityHint": "Rarity property replaces Shop Tier property on tags when this setting is activated",
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
       "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?",
       "SoundNotificationFFxiv":"Sound Notifications from FFXIV",

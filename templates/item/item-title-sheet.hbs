@@ -48,6 +48,7 @@
           </div>
         </div>
 
+        {{#if settings.useRarity}}
         <div class="resource flex-group-center">
           <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
@@ -58,6 +59,7 @@
             </select>
           </div>
         </div>
+        {{/if}}
 
       </div>
 

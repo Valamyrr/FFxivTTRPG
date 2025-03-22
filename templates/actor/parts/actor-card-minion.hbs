@@ -7,7 +7,7 @@
       </div>
       <div class="ability-right">
         <div class="ability-tags">
-          {{#if (not (eq system.rarity "FFXIV.Rarities.Basic"))}}<span class="tag">{{ localize system.rarity }}</span>{{#if system.minion_type}}, {{/if}}{{/if}}
+          {{#if settings.useRarity}}<span class="tag">{{ localize system.rarity }}</span>{{#if system.minion_type}}, {{/if}}{{/if}}
           {{#if system.minion_type}}<span class="tag">{{localize system.minion_type }}</span>{{#if system.tags }}, {{/if}}{{/if}}
           {{#each system.tags as |tag|}}
             <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>

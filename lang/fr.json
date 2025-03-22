@@ -247,6 +247,8 @@
       "ToggleGearHint":"Utilisez-vous des règles faites maison pour l'équipement ?",
       "Theme": "Thème",
       "ThemeHint": "La palette de couleur avec laquelle vous voulez rerésenter vos fiches.",
+      "UseRarity": "Utilisez-vous la propriété Rareté sur les Items ?",
+      "UseRarityHint": "La propriété Rareté remplace le Niveau de Vente dans les tags quand cette configuration est activée",
       "LimitedPhysicalItemsDialog": "Limiter la Boîte de dialogue",
       "LimitedPhysicalItemsDialogHint": "Afficher les objets avec des boîtes de dialogue réduites et des droits limités pour les joueurs ?",
       "SoundNotificationFFxiv":"Bruitages de FFXIV",

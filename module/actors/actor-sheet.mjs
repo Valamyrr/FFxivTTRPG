@@ -73,6 +73,7 @@ export class FfxivActorSheet extends ActorSheet {
 
     context.settings = {
       "showExperience": game.settings.get('ffxiv','toggleExperience'),
+      "useRarity": game.settings.get('ffxiv','useRarity'),
       "showGear": game.settings.get('ffxiv','toggleGear')
     }
 

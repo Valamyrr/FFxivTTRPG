@@ -22,6 +22,16 @@ export class SettingsHelpers {
       requiresReload: false
     });
 
+    game.settings.register("ffxiv", "useRarity", {
+      name: game.i18n.localize("FFXIV.Settings.UseRarity"),
+      hint: game.i18n.localize("FFXIV.Settings.UseRarityHint"),
+      scope: "world",
+      config: true,
+      default: false,
+      type: Boolean,
+      requiresReload: false
+    });
+
     game.settings.register("ffxiv", "limitedPhysicalItemsDialog", {
       name: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialog"),
       hint: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialogHint"),

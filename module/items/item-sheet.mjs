@@ -111,6 +111,10 @@ export class FfxivItemSheet extends ItemSheet {
             });
     }
 
+    context.settings = {
+      "useRarity": game.settings.get('ffxiv','useRarity')
+    }
+
     // Add the item's data to context.data for easier access, as well as flags.
     context.system = itemData.system;
     context.flags = itemData.flags;
@@ -260,7 +264,7 @@ export class FfxivItemSheet extends ItemSheet {
       var templatePath = "systems/ffxiv/templates/chat/item-chat-card.hbs"
     }
     ChatMessage.create({
-      content: await renderTemplate(templatePath, { item: this.item }),
+      content: await renderTemplate(templatePath, { item: this.item, useRarity: game.settings.get('ffxiv','useRarity')}),
       flags: { core: { canParseHTML: true } },
       flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
     });

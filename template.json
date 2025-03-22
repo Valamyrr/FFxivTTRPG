@@ -111,7 +111,8 @@
         "stack": false,
         "level": 0,
         "craft_level": 0,
-        "craft_job": ""
+        "craft_job": "",
+        "shop_tier": ""
       },
       "core":{
         "description": "",

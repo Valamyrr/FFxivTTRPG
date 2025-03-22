@@ -7,7 +7,7 @@
       </div>
       <div class="item-dialog-right">
         <div class="item-dialog-tags">
-            <span class="tag">{{ localize item.system.rarity }}</span>{{#if item.system.tags }}, {{/if}}
+          {{#if useRarity}}<span class="tag">{{ localize item.system.rarity }}</span>{{#if item.system.tags }}, {{/if}}{{/if}}
           {{#each item.system.tags as |tag|}}
             <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
           {{/each}}
