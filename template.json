@@ -129,6 +129,7 @@
         "trigger": "",
         "base_effect": "",
         "combo": "",
+        "condition": "",
         "direct_hit": "",
         "marker_area": "",
         "marker_trigger": "",

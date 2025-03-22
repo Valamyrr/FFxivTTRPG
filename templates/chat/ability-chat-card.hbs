@@ -20,6 +20,7 @@
       {{#if (and (not (eq item.system.check "None")) eq item.system.check) }}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Check" }}:</strong> {{localize item.system.check}}</div>{{/if}}
       {{#if item.system.challenge}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{item.system.challenge}}</div>{{/if}}
       {{#if item.system.trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{item.system.trigger}}</div>{{/if}}
+      {{#if item.system.condition}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{item.system.condition}}</div>{{/if}}
       {{#if item.system.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{item.system.direct_hit}}</div>{{/if}}
       {{#if item.system.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{item.system.marker_trigger}}</div>{{/if}}
       {{#if item.system.marker_area}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{item.system.marker_area}}</div>{{/if}}
