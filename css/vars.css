@@ -6,9 +6,9 @@ body{
   --rarity-relic: #7641af; /*#800080*/
   --rarity-unique: #FF0000; /*#FF0000*/
 
-  --tank: rgba(65,105,224,1);
-  --healer: rgba(43,204,74,1);
-  --dps: rgba(227,44,64,1);
+  --tank: rgba(35,85,234,1);
+  --healer: rgba(0,124,44,1);
+  --dps: rgba(147,24,35,1);
 }
 
 
