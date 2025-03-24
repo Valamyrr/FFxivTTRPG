@@ -51,6 +51,10 @@
   border-radius: 1000px;
   box-shadow: 0px 0px 0px 3px silver;
 }
+.roll-attribute{
+  cursor: pointer;
+}
+
 
 /* Secondary Attributes */
 .secondary-attributes{
