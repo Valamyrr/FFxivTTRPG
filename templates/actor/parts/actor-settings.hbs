@@ -20,9 +20,10 @@
     <div class="resource-content flexrow flex-center flex-between">
 
       <select style="text-align: center;" name="system.class.name">
-        {{#select system.class.name}} {{#each this.config.classes as |t|}}
-        <option value="{{t.value}}">{{ localize t.label }} - {{ localize (labelize 'roles' t.role) }}</option>
-        {{/each}} {{/select}}
+
+          {{#each this.config.classes as |t|}}
+            <option value="{{t.value}}" {{#if (eq t.value ../system.class.name)}}selected {{/if}} >{{ localize t.label }} - {{ localize (labelize 'roles' t.role) }}</option>
+          {{/each}}
       </select>
 
     </div>
