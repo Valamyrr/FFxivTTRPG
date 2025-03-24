@@ -266,6 +266,8 @@ export class FfxivActorSheet extends ActorSheet {
 
     html.on('change', '.ability-limitations .limitation', this._onChangeLimitations.bind(this))
 
+    html.on('change', '.ability-limitations .job_resource', this._onChangeJobResource.bind(this))
+
     html.on('change', '.ability-limitations .active', this._onChangeActiveTrait.bind(this))
 
     html.on('click', '.actor-titles .title-delete', this._onDeleteTitle.bind(this))
@@ -542,6 +544,21 @@ export class FfxivActorSheet extends ActorSheet {
 
     item.update({ 'system.limitations_status': limitations_status });
 
+  }
+
+  _onChangeJobResource(event){
+    const checkbox = event.currentTarget
+    const index = parseInt(checkbox.dataset.index, 10);
+    const itemId = checkbox.dataset.itemId;
+    const item = this.actor.items.get(itemId)
+
+    if (item.system.job_resource_status){
+      var job_resource_status = item.system.job_resource_status.slice(0, item.system.job_resources_max);
+    }else{
+      var job_resource_status = new Array(item.system.job_resources_max).fill(false)
+    }
+    job_resource_status[index] = checkbox.checked;
+    item.update({ 'system.job_resource_status': job_resource_status });
   }
 
   _onChangeActiveTrait(event){

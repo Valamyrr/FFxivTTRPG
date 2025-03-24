@@ -10,15 +10,25 @@
           {{#each system.tags as |tag|}}
             <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
           {{/each}}
+          {{#if (and system.tags system.job_resources_max)}}, {{/if}}
+          {{#if system.job_resources_max}}<span class="tag">{{localize "FFXIV.Abilities.JobResource"}}</span>{{/if}}
         </div>
         <div class="ability-limitations">
+          {{#repeat system.job_resources_max}}
+            <div class="limitation-wrapper">
+              <input type="checkbox" class="job_resource"
+                data-index={{index}} data-item-id={{../_id}}
+                {{#if (lookup ../system.job_resource_status index)}}checked {{/if}}>
+              <span class="checkmark"></span>
+            </div>
+          {{/repeat}}
           {{#if system.activable}}
-          <div class="limitation-wrapper">
-            <input type="checkbox" class="limitation active"
-              data-item-id={{_id}}
-              {{#if system.active}}checked {{/if}}>
-            <span class="checkmark"></span>
-          </div>
+            <div class="limitation-wrapper">
+              <input type="checkbox" class="limitation active"
+                data-item-id={{_id}}
+                {{#if system.active}}checked {{/if}}>
+              <span class="checkmark" style="border-color:orangered;"></span>
+            </div>
           {{/if}}
         </div>
       </div>

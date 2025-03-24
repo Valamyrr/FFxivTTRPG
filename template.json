@@ -164,7 +164,9 @@
     "trait": {
       "templates": ["core","modifiers"],
       "activable": false,
-      "active": false
+      "active": false,
+      "limitations_status": [],
+      "limitations_max": 0
     },
     "currency": {
       "templates": ["core"],

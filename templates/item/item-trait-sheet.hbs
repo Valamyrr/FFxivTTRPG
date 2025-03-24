@@ -38,6 +38,22 @@
           {{/each}}
         </ul>
       </div>
+      <div class="resources grid grid-1col">
+        <div class="resource flex-group-center">
+          <label for="system.job_resources_max" class="resource-label">{{ localize "FFXIV.Abilities.JobResourceMax" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.job_resources_max" type="number" min=0 value="{{item.system.job_resources_max}}"/>
+          </div>
+        </div>
+      </div>
+      <div class="resources grid grid-2col">
+        <div class="resource" style="margin:auto">
+          <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
+        </div>
+        <div class="resource-content">
+          <input name="system.activable" type="checkbox" {{#if item.system.activable}}checked {{/if}}/>
+        </div>
+      </div>
       <hr>
       {{! Modifiers}}
       <div class="tags-container">
@@ -58,17 +74,6 @@
             </li>
           {{/each}}
         </ul>
-      </div>
-
-      <hr>
-
-      <div class="resources grid grid-2col">
-        <div class="resource" style="margin:auto">
-          <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
-        </div>
-        <div class="resource-content">
-          <input name="system.activable" type="checkbox" {{#if item.system.activable}}checked {{/if}}/>
-        </div>
       </div>
 
       <hr>

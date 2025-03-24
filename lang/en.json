@@ -173,6 +173,8 @@
       "MarkerEffect": "Marker Effect",
       "Limitations":"Limitation",
       "Limitations_max":"Limitation Boxes Number",
+      "JobResource":"Job Resource",
+      "JobResourceMax":"Job Resource Boxes Number",
       "BaseFormula": "Base Effect Formula",
       "DirectFormula": "Direct Hit Formula",
       "HitFormula": "Hit Formula",
