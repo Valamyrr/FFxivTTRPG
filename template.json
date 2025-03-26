@@ -22,7 +22,7 @@
         }
       },
       "abilities": {
-        "ability_order": []
+        "ability_order": {}
       },
       "attributes": {
         "primary_attributes": {

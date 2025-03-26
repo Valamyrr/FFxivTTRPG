@@ -593,6 +593,7 @@ export class FfxivActorSheet extends ActorSheet {
     if (!actor || !abilityType || !itemId || !direction) return;
 
     let abilityOrder = foundry.utils.deepClone(actor.system.ability_order || {});
+    if (abilityOrder.constructor.name=="Array") abilityOrder = {} //Before 1.4, there was an issue with template.json creating arrays instead of objects
     if (!abilityOrder[abilityType]) abilityOrder[abilityType] = [];
 
     const allAbilities = actor.items.filter(i => i.type === abilityType).map(i => i.id);
