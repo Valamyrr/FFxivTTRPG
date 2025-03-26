@@ -48,6 +48,14 @@
       "Speed": "Speed"
     },
     "CharacterSheet":{
+      "Profile": "Profile",
+      "Appearance": "Appearance",
+      "Origin": "Origin",
+      "Motive": "Motive",
+      "Bond": "Bond",
+      "ProfileTrait": "Profile Trait",
+      "Effect": "Effect",
+      "Character": "Character",
       "Biography": "Biography",
       "Size": "Size",
       "Inventory": "Inventory",
@@ -64,7 +72,14 @@
       "Unequip": "Unequip",
       "Companions": "Companions",
       "Pets": "Pets",
-      "Minions": "Minions"
+      "Minions": "Minions",
+      "Race": "Race",
+      "Age": "Age",
+      "Gender": "Gender",
+      "Weight": "Weight",
+      "Hair": "Hair",
+      "Eyes": "Eyes",
+      "Skin": "Skin"
     },
     "Item":{
       "Name": "Name",

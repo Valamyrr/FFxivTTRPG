@@ -105,6 +105,15 @@ export class FfxivActorSheet extends ActorSheet {
         relativeTo: this.actor,
       }
     );
+    context.enrichedProfileTrait = await TextEditor.enrichHTML(
+      this.actor.system.profiletrait.effect,
+      {
+        secrets: this.document.isOwner,
+        async: true,
+        rollData: this.actor.getRollData(),
+        relativeTo: this.actor,
+      }
+    );
 
     // Prepare active effects
     context.effects = prepareActiveEffectCategories(

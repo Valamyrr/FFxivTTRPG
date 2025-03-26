@@ -106,35 +106,3 @@
   border-radius: 3px;
   flex:1
 }
-
-.actor-titles .actor-titles-box{
-  border:solid 1px var(--color-border-light-tertiary);
-  border-radius: 5px;
-  margin-top: 5px;
-}
-.actor-titles .actor-title-description{
-  padding: 10px;
-}
-.actor-titles .actor-title-data{
-  padding: 10px;
-  border-bottom: solid 1px var(--color-border-light-tertiary);
-  line-height: 22px;
-}
-.actor-titles .detail {
-  display: inline-block;
-  margin-right: 3px;
-}
-.actor-titles .detail strong{
-  color: var(--text-color-strong);
-}
-.actor-titles .title-delete{
-  height: 22px;
-  width: 22px;
-  background: red;
-  border: solid 1px white;
-  float: right;
-}
-
-.actor-biography .editor-content{
-  margin: 10px;
-}

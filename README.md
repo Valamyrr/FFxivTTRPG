@@ -17,8 +17,8 @@ Display those on any sheet if a character setting is checked, so even a custom j
 
 ### Augments
 
-### Portrait data
-Instead of putting everyting in the biography, there should be a space for portrait data as on official character sheets.
+### profile data
+Instead of putting everyting in the biography, there should be a space for profile data as on official character sheets.
 
 ### Custom jobs
 An option should be available to use a custom job, with a custom icon and custom color header.

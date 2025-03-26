@@ -134,7 +134,8 @@ Handlebars.registerHelper("array", function () {
 Handlebars.registerHelper("characterTabs", function(settings){
   let items = [
     { tab: "abilities", label: game.i18n.localize("FFXIV.Abilities.Abilities"), icon: "fight" },
-    { tab: "roleplay", label: game.i18n.localize("FFXIV.Attributes.Attributes"), icon: "character" },
+    { tab: "attributes", label: game.i18n.localize("FFXIV.Attributes.Attributes"), icon: "attributes" },
+    { tab: "roleplay", label: game.i18n.localize("FFXIV.CharacterSheet.Character"), icon: "character" },
   ];
   if (settings.showGear) items.push({ tab: "gear", label: game.i18n.localize("FFXIV.CharacterSheet.Gear"), icon: "gear" });
   items.push({ tab: "items", label: game.i18n.localize("FFXIV.CharacterSheet.Inventory"), icon: "inventory" })

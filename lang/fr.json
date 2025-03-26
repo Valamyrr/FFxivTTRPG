@@ -48,6 +48,14 @@
       "Speed": "Vitesse"
     },
     "CharacterSheet":{
+      "Profile": "Profil",
+      "Appearance": "Apparence",
+      "Origin": "Origine",
+      "Motive": "Motivation",
+      "Bond": "Lien",
+      "ProfileTrait": "Trait de profil",
+      "Effect": "Effet",
+      "Character": "Personnage",
       "Biography": "Biographie",
       "Size": "Taille",
       "Inventory": "Inventaire",
@@ -64,7 +72,14 @@
       "Unequip": "Déséquiper",
       "Companions": "Compagnons",
       "Pets": "Familiers",
-      "Minions": "Mascottes"
+      "Minions": "Mascottes",
+      "Race": "Race",
+      "Age": "Âge",
+      "Gender": "Genre",
+      "Weight": "Poids",
+      "Hair": "Cheveux",
+      "Eyes": "Yeux",
+      "Skin": "Peau"
     },
     "Item":{
       "Name": "Nom",

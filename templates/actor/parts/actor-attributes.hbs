@@ -99,44 +99,5 @@
     </div>
   </div>
 
-  <div class="actor-titles">
-    <h2>{{ localize "FFXIV.CharacterSheet.Titles"}}</h2>
-
-    <div class="actor-titles-box">
-      <div class="title-selector resource-content flexrow flex-center flex-between">
-        <select style="text-align: center;" name="system.activeTitle">
-          <option value="">
-            {{localize "FFXIV.None"}}
-          </option>
-          {{#each items}}
-            {{#if (eq type "title")}}
-              <option value="{{name}}" {{#if (eq name ../system.activeTitle)}}selected {{/if}}>
-                {{#if (eq name ../system.activeTitle)}}{{localize "FFXIV.CharacterSheet.ActiveTitle"}} : {{/if}}{{ name }}
-              </option>
-            {{/if}}
-          {{/each}}
-        </select>
-      </div>
-
-      {{#each items}}
-        {{#if (and (eq type "title") (eq name ../system.activeTitle))}}
-          <div class="actor-title-data">
-            <div class="detail"><strong>{{localize "FFXIV.Item.Name"}}:</strong> {{localize name}}</div>
-            {{#if (and system.rarity settings.useRarity)}}<div class="detail"><strong>{{localize "FFXIV.Item.Rarity"}}:</strong> {{localize system.rarity}}</div>{{/if}}
-            {{#if system.source}}<div class="detail"><strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}</div>{{/if}}
-            <button data-item-id="{{_id}}" class="title-delete fa fa-trash-can"></button>
-          </div>
-          <div class="actor-title-description">{{{ system.description }}}</div>
-        {{/if}}
-      {{/each}}
-    </div>
-  </div>
-
-  <div class="actor-biography">
-    <h2>{{ localize "FFXIV.CharacterSheet.Biography"}}</h2>
-    {{!-- Editors must receive enriched text data from getData to properly handle rolls --}}
-    <div class="actor-biography-content">
-      {{editor enrichedBiography target="system.biography" engine="prosemirror" button=true editable=editable}}
-    </div>
-  </div>
+  
 </div>

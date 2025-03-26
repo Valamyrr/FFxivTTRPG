@@ -7,6 +7,7 @@
 @import url("actor/npc.css");
 @import url("actor/companions.css");
 @import url("actor/augments.css");
+@import url("actor/profile.css");
 
 .ffxiv.actor .window-content{
   background: var(--background-color);

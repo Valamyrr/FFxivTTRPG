@@ -1,0 +1,142 @@
+<div class="actor-profile">
+
+  <div class="actor-titles">
+    <h2>{{ localize "FFXIV.CharacterSheet.Profile"}}</h2>
+
+    <div class="resources grid grid-2col">
+
+      <div class="resource flex-group-center">
+        <label for="system.origin" class="resource-label">{{ localize "FFXIV.CharacterSheet.Origin" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+          <input name="system.origin" type="text" value="{{system.origin}}"/>
+        </div>
+      </div>
+      <div class="resource flex-group-center">
+        <label for="system.motive" class="resource-label">{{ localize "FFXIV.CharacterSheet.Motive" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+          <input name="system.motive" type="text" value="{{system.motive}}"/>
+        </div>
+      </div>
+
+    </div>
+    <div class="resources grid grid-1col">
+      <div class="resource flex-group-center">
+        <label for="system.bond" class="resource-label">{{ localize "FFXIV.CharacterSheet.Bond" }}</label>
+        <div class="resource-content flexrow flex-center flex-between">
+          <input name="system.bond" type="text" value="{{system.bond}}"/>
+        </div>
+      </div>
+    </div>
+
+
+
+    <div class="actor-profiletrait">
+      <h2>{{ localize "FFXIV.CharacterSheet.ProfileTrait"}}</h2>
+      <div class="resources grid grid-1col">
+        <div class="resource flex-group-center">
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.profiletrait.name" type="text" value="{{system.profiletrait.name}}"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="actor-profiletrait-content">
+        {{editor enrichedProfileTrait target="system.profiletrait.effect" engine="prosemirror" button=true editable=editable}}
+      </div>
+    </div>
+
+
+    <h2>{{ localize "FFXIV.CharacterSheet.Titles"}}</h2>
+
+    <div class="actor-titles-box">
+      <div class="title-selector resource-content flexrow flex-center flex-between">
+        <select style="text-align: center;" name="system.activeTitle">
+          <option value="">
+            {{localize "FFXIV.None"}}
+          </option>
+          {{#each items}}
+            {{#if (eq type "title")}}
+              <option value="{{name}}" {{#if (eq name ../system.activeTitle)}}selected {{/if}}>
+                {{#if (eq name ../system.activeTitle)}}{{localize "FFXIV.CharacterSheet.ActiveTitle"}} : {{/if}}{{ name }}
+              </option>
+            {{/if}}
+          {{/each}}
+        </select>
+      </div>
+
+      {{#each items}}
+        {{#if (and (eq type "title") (eq name ../system.activeTitle))}}
+          <div class="actor-title-data">
+            <div class="detail"><strong>{{localize "FFXIV.Item.Name"}}:</strong> {{localize name}}</div>
+            {{#if (and system.rarity settings.useRarity)}}<div class="detail"><strong>{{localize "FFXIV.Item.Rarity"}}:</strong> {{localize system.rarity}}</div>{{/if}}
+            {{#if system.source}}<div class="detail"><strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}</div>{{/if}}
+            <button data-item-id="{{_id}}" class="title-delete fa fa-trash-can"></button>
+          </div>
+          <div class="actor-title-description">{{{ system.description }}}</div>
+        {{/if}}
+      {{/each}}
+    </div>
+  </div>
+
+
+  <h2>{{ localize "FFXIV.CharacterSheet.Appearance"}}</h2>
+
+  <div class="resources grid grid-3col">
+    <div class="resource flex-group-center">
+      <label for="system.appearance.race" class="resource-label">{{ localize "FFXIV.CharacterSheet.Race" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <input name="system.appearance.race" type="text" value="{{system.appearance.race}}"/>
+      </div>
+    </div>
+    <div class="resource flex-group-center">
+      <label for="system.appearance.size" class="resource-label">{{ localize "FFXIV.CharacterSheet.Size" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <input name="system.appearance.size" type="text" value="{{system.appearance.size}}"/>
+      </div>
+    </div>
+    <div class="resource flex-group-center">
+      <label for="system.appearance.age" class="resource-label">{{ localize "FFXIV.CharacterSheet.Age" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <input name="system.appearance.age" type="text" value="{{system.appearance.age}}"/>
+      </div>
+    </div>
+    <div class="resource flex-group-center">
+      <label for="system.appearance.gender" class="resource-label">{{ localize "FFXIV.CharacterSheet.Gender" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <input name="system.appearance.gender" type="text" value="{{system.appearance.gender}}"/>
+      </div>
+    </div>
+    <div class="resource flex-group-center">
+      <label for="system.appearance.weight" class="resource-label">{{ localize "FFXIV.CharacterSheet.Weight" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <input name="system.appearance.weight" type="text" value="{{system.appearance.weight}}"/>
+      </div>
+    </div>
+    <div class="resource flex-group-center">
+      <label for="system.appearance.hair" class="resource-label">{{ localize "FFXIV.CharacterSheet.Hair" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <input name="system.appearance.hair" type="text" value="{{system.appearance.hair}}"/>
+      </div>
+    </div>
+    <div class="resource flex-group-center">
+      <label for="system.appearance.eyes" class="resource-label">{{ localize "FFXIV.CharacterSheet.Eyes" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <input name="system.appearance.eyes" type="text" value="{{system.appearance.eyes}}"/>
+      </div>
+    </div>
+    <div class="resource flex-group-center">
+      <label for="system.appearance.skin" class="resource-label">{{ localize "FFXIV.CharacterSheet.Skin" }}</label>
+      <div class="resource-content flexrow flex-center flex-between">
+        <input name="system.appearance.skin" type="text" value="{{system.appearance.skin}}"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="actor-biography">
+    <h2>{{ localize "FFXIV.CharacterSheet.Biography"}}</h2>
+    {{!-- Editors must receive enriched text data from getData to properly handle rolls --}}
+    <div class="actor-biography-content">
+      {{editor enrichedBiography target="system.biography" engine="prosemirror" button=true editable=editable}}
+    </div>
+  </div>
+</div>

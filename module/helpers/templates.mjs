@@ -8,6 +8,7 @@ export const preloadHandlebarsTemplates = async function () {
     // Actor partials.
     'systems/ffxiv/templates/actor/parts/actor-abilities.hbs',
     'systems/ffxiv/templates/actor/parts/actor-attributes.hbs',
+    'systems/ffxiv/templates/actor/parts/actor-profile.hbs',
     'systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs',
     'systems/ffxiv/templates/actor/parts/actor-card-augment.hbs',
     'systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs',

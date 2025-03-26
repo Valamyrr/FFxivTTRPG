@@ -3,7 +3,11 @@
     "types": ["character", "npc"],
     "templates": {
       "biography": {
-        "biography": ""
+        "biography": "",
+        "origin": "",
+        "motive": "",
+        "bond": "",
+        "deity": ""
       },
       "health": {
         "health": {
@@ -87,7 +91,21 @@
         "role": ""
       },
       "activeTitle": "",
-      "showModifiers": true
+      "showModifiers": true,
+      "profileTrait":{
+        "name":"",
+        "effect": ""
+      },
+      "appearance":{
+        "race": "",
+        "size": "",
+        "age": "",
+        "gender": "",
+        "weight": "",
+        "hair": "",
+        "eyes": "",
+        "skin": ""
+      }
     },
     "npc":{
       "templates": ["biography","abilities","attributes","health"],
