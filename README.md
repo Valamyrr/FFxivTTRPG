@@ -5,20 +5,9 @@ There is a "[FFXIV TTRPG Fan](https://discord.gg/6EghsJdCbS)" Discord server whi
 
 ## Roadmap
 
-### Rollable Attributes
-When clicking next to attributes, it must roll a dice with right modifier.
-
-### Job resources checkboxes
-Some abilities could use both limitations and job resources, so there must be checkboxes for those as well.
-
 ### Pet Actors
 Instead of Items, the system should use Actors for Pet (to handle Token) and owners would have a link to the actor id.
 Display those on any sheet if a character setting is checked, so even a custom job can have them (currently, only Summoner).
-
-### Augments
-
-### profile data
-Instead of putting everyting in the biography, there should be a space for profile data as on official character sheets.
 
 ### Custom jobs
 An option should be available to use a custom job, with a custom icon and custom color header.
