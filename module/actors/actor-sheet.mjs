@@ -259,6 +259,7 @@ export class FfxivActorSheet extends ActorSheet {
     html.on('change', '.currency-quantity', this._updateCurrency.bind(this));
 
     html.on('click', '.ability-icon', this._renderItem.bind(this));
+    html.on('click', '.augment-icon', this._renderItem.bind(this));
     html.on('click', '.ability-roll-button', this._rollItem.bind(this));
     html.on('click', '.roll-attribute', this._rollAttribute.bind(this));
 
@@ -340,8 +341,17 @@ export class FfxivActorSheet extends ActorSheet {
     const itemId = event.currentTarget.dataset.itemId
     const item = this.actor.items.get(itemId);
     if(item){
+
+      let content = await renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: item });
+      if (item.system.granted_ability){ //For augment granting abilities
+        if (game.items.get(item.system.granted_ability)){
+          content = content + await renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: game.items.get(item.system.granted_ability) });
+        }else{
+          console.error("Granted ability must be a valid ID. Use `game.items.get(INSERT_ID)` to check your item's data.")
+        }
+      }
       ChatMessage.create({
-        content: await renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: item }),
+        content: content,
         flags: { core: { canParseHTML: true } },
         flavor: game.i18n.format("FFXIV.ItemType."+item.type)
       });

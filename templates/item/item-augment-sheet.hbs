@@ -1,0 +1,93 @@
+<form class='{{cssClass}}' autocomplete='off'>
+  <header class='sheet-header'>
+    <img
+      class='profile-img'
+      src='{{item.img}}'
+      data-edit='img'
+      title='{{item.name}}'
+    />
+    <div class='header-fields'>
+      <h1 class='charname'><input
+          name='name'
+          type='text'
+          value='{{item.name}}'
+          placeholder='Name'
+        /></h1>
+    </div>
+    <button class="item-delete fa fa-trash-can"></button>
+  </header>
+
+  <hr>
+
+  {{! Sheet Body }}
+  <section class='sheet-body'>
+
+    <div class='attributes'>
+
+      <div class="resources grid grid-2col">
+
+        <div class="resource flex-group-center">
+          <label for="system.price.buy" class="resource-label">{{ localize "FFXIV.Item.Buy" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.buy" type="number" value="{{item.system.price.buy}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.price.sell" class="resource-label">{{ localize "FFXIV.Item.Sell" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.sell" type="number" value="{{item.system.price.sell}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.price.denomination" class="resource-label">{{ localize "FFXIV.Item.Denomination" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.price.denomination" type="text" value="{{localize item.system.price.denomination}}"/>
+          </div>
+        </div>
+
+        {{#if settings.useRarity}}
+        <div class="resource flex-group-center">
+          <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.rarity">
+              {{#each this.config.rarities as |a|}}
+              <option value="{{a.label}}" {{#if (eq a.label ../item.system.rarity)}}selected {{/if}}>{{ localize a.label }}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        {{/if}}
+        <div class="resource flex-group-center">
+          <label for="item.system.shop_tier" class="resource-label">{{ localize "FFXIV.Item.ShopTier" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="item.system.shop_tier" type="number" value="{{item.system.shop_tier}}"/>
+          </div>
+        </div>
+
+      </div>
+
+
+      <hr>
+
+      <div class="resources grid grid-1col">
+        <div class="resource flex-group-center">
+          <label for="system.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.BaseEffect" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.base_effect" type="text" value="{{item.system.base_effect}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.granted_ability" class="resource-label">{{ localize "FFXIV.Item.GrantedAbility" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.granted_ability" type="text" value="{{item.system.granted_ability}}"/>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+</form>

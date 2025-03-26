@@ -69,7 +69,8 @@ Hooks.once('init', function () {
     title: game.i18n.localize("FFXIV.ItemType.title"),
     gear: game.i18n.localize("FFXIV.ItemType.gear"),
     minion: game.i18n.localize("FFXIV.ItemType.minion"),
-    pet: game.i18n.localize("FFXIV.ItemType.pet")
+    pet: game.i18n.localize("FFXIV.ItemType.pet"),
+    augment: game.i18n.localize("FFXIV.ItemType.augment")
   };
 
   CONFIG.Actor.typeLabels = {
@@ -221,10 +222,10 @@ Handlebars.registerHelper("getAttributeBonus", function (gearItems, attrKey) {
 Handlebars.registerHelper("attributeList", function () {
     return Object.keys(Object.assign({},CONFIG.FF_XIV.attributes,CONFIG.FF_XIV.characteristics));
 });
-
-
-
-
+Handlebars.registerHelper("hasItemType", function (items, type) {
+  if (!items) return false;
+  return items.some(item => item.type === type);
+});
 
 
 /* -------------------------------------------- */
@@ -376,7 +377,8 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
     const defaultImages = {
       limit_break: "systems/ffxiv/assets/default_img/limit_break.png",
       title: "systems/ffxiv/assets/default_img/default-title.png",
-      trait: "systems/ffxiv/assets/default_img/default-trait.png"
+      trait: "systems/ffxiv/assets/default_img/default-trait.png",
+      augment: "systems/ffxiv/assets/default_img/default-augment.png"
     };
     const defaultImg = defaultImages[itemData.type] || "icons/svg/item-bag.svg";
     itemData.updateSource({ img: defaultImg });

@@ -54,6 +54,7 @@
       "Gear": "Gear",
       "Config": "Configuration",
       "Currencies": "Currencies",
+      "Augments": "Augments",
       "Titles": "Titles",
       "ActiveTitle": "Active Title",
       "Roll": "Roll !",
@@ -81,7 +82,8 @@
       "Description": "Description",
       "ShopTier": "Shop Tier",
       "MinionType": "Minion Type",
-      "AbilityName": "Pet's ability Name"
+      "AbilityName": "Pet's ability Name",
+      "GrantedAbility": "Granted Ability's ID"
     },
     "GearCategories":{
       "Category": "Category",
@@ -107,7 +109,8 @@
       "title": "Title",
       "gear": "Gear",
       "minion": "Minion/Mount",
-      "pet": "Pet"
+      "pet": "Pet",
+      "augment": "Augment"
     },
     "ActorType":{
       "character": "Character",

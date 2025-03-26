@@ -69,6 +69,9 @@ export class FfxivItemSheet extends ItemSheet {
     if (this.item.type == "pet"){
       return `${path}/item-pet-sheet.hbs`;
     }
+    if (this.item.type == "augment"){
+      return `${path}/item-augment-sheet.hbs`;
+    }
     if (this.item.type == "gear"){
       if (game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null){
         return `${path}/item-sheet-dialog-gear.hbs`;

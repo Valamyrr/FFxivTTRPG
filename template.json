@@ -96,7 +96,7 @@
     }
   },
   "Item": {
-    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title","gear","pet","minion","pet"],
+    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title","gear","pet","minion","pet","augment"],
     "templates": {
       "physical_item":{
         "quantity": 1,
@@ -186,6 +186,10 @@
       "traits": "",
       "shop_tier": "",
       "minion_type": ""
+    },
+    "augment":{
+      "templates": ["core","physical_item","ability"],
+      "granted_ability": ""
     },
     "pet": {
       "templates": ["core","ability"],
