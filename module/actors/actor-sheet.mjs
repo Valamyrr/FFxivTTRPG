@@ -106,16 +106,19 @@ export class FfxivActorSheet extends ActorSheet {
         relativeTo: this.actor,
       }
     );
-    const effect = this.actor.system.profile_trait.effect || "";
-    context.enrichedProfileTrait = await TextEditor.enrichHTML(
-      effect,
-      {
-        secrets: this.document.isOwner,
-        async: true,
-        rollData: this.actor.getRollData(),
-        relativeTo: this.actor,
-      }
-    );
+    if (this.actor.system.profile_trait){
+      const effect = this.actor.system.profile_trait.effect || "";
+      context.enrichedProfileTrait = await TextEditor.enrichHTML(
+        effect,
+        {
+          secrets: this.document.isOwner,
+          async: true,
+          rollData: this.actor.getRollData(),
+          relativeTo: this.actor,
+        }
+      );
+    }
+
 
     // Prepare active effects
     context.effects = prepareActiveEffectCategories(
