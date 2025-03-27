@@ -92,8 +92,9 @@ export class FfxivActorSheet extends ActorSheet {
 
     // Enrich biography info for display
     // Enrichment turns text like `[[/r 1d20]]` into buttons
+    const biography = this.actor.system.biography || "";
     context.enrichedBiography = await TextEditor.enrichHTML(
-      this.actor.system.biography,
+      biography,
       {
         // Whether to show secret blocks in the finished html
         secrets: this.document.isOwner,
@@ -105,8 +106,9 @@ export class FfxivActorSheet extends ActorSheet {
         relativeTo: this.actor,
       }
     );
+    const effect = this.actor.system.profile_trait.effect || "";
     context.enrichedProfileTrait = await TextEditor.enrichHTML(
-      this.actor.system.profiletrait.effect,
+      effect,
       {
         secrets: this.document.isOwner,
         async: true,
