@@ -15,14 +15,23 @@
           <h1>{{actor.name}}</h1>
         </div>
         <div class="header-info">
-          <img class="class-icon" src="systems/ffxiv/assets/classes/{{system.class.name}}.png" alt="class icon">
+          {{#if (eq "custom" system.class.name)}}
+            <img class="class-icon" src="{{system.class.customIcon}}" alt="class icon">
+          {{else}}
+            <img class="class-icon" src="systems/ffxiv/assets/classes/{{system.class.name}}.png" alt="class icon">
+          {{/if}}
           <div class="class-info">
             <div class="level">{{system.experience.level.value}}</div>
             <div class="class-name">
-                <span>{{ localize (labelize 'classes' system.class.name)}}</span>{{#if (not (eq system.activeTitle ""))}}<span> - {{system.activeTitle}}</span>{{/if}}
-                {{#if settings.showExperience}}
-                <div class="experience-border"><div class="experience-bar" style="width:{{system.experiencePercentage}}%;"></div></div>
-                {{/if}}
+              {{#if (eq "custom" system.class.name)}}
+                <span>{{ localize (labelize 'classes' system.class.name_custom)}}</span>
+              {{else}}
+                <span>{{ localize (labelize 'classes' system.class.name)}}</span>
+              {{/if}}
+              {{#if (not (eq system.activeTitle ""))}}<span> - {{system.activeTitle}}</span>{{/if}}
+              {{#if settings.showExperience}}
+              <div class="experience-border"><div class="experience-bar" style="width:{{system.experiencePercentage}}%;"></div></div>
+              {{/if}}
             </div>
         </div>
       </div>

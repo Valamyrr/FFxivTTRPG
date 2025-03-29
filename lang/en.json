@@ -2,7 +2,7 @@
   "FFXIV":{
     "Name": "Name",
     "Level": "Level",
-    "Class": "Class",
+    "Class": "Job",
     "Experience": {
       "Exp": "Experience",
       "Total": "Total Experience"
@@ -18,6 +18,7 @@
       "abbrv": "MP"
     },
     "Damages": "Damages",
+    "Custom": "Custom",
     "Attributes":{
       "Attributes": "Attributes",
       "Primary": "Primary Attributes",
@@ -79,7 +80,10 @@
       "Weight": "Weight",
       "Hair": "Hair",
       "Eyes": "Eyes",
-      "Skin": "Skin"
+      "Skin": "Skin",
+      "CustomClassName": "Custom Job Name",
+      "CustomClassRole": "Custom Job Role",
+      "CustomClassIcon": "Custom Job Icon"
     },
     "Item":{
       "Name": "Name",

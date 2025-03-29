@@ -56,3 +56,12 @@
   background: var(--background-color);
   color: var(--text-color-input);
 }
+
+.ffxiv.actor .settings .class-icon{
+  max-height: 64px;
+  max-width: 64px;
+  height: 64px;
+  width: 64px;
+  margin: auto;
+  margin-top: 3px;
+}

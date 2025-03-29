@@ -18,18 +18,45 @@
   <div class="resource flex-group-center">
     <label for="system.class.name" class="resource-label">{{ localize "FFXIV.Class" }}</label>
     <div class="resource-content flexrow flex-center flex-between">
-
       <select style="text-align: center;" name="system.class.name">
-
-          {{#each this.config.classes as |t|}}
-            <option value="{{t.value}}" {{#if (eq t.value ../system.class.name)}}selected {{/if}} >{{ localize t.label }} - {{ localize (labelize 'roles' t.role) }}</option>
-          {{/each}}
+        {{#each this.config.classes as |t|}}
+          <option value="{{t.value}}" {{#if (eq t.value ../system.class.name)}}selected {{/if}} >{{ localize t.label }} - {{ localize (labelize 'roles' t.role) }}</option>
+        {{/each}}
+          <option value="custom" {{#if (eq "custom" system.class.name)}}selected {{/if}} >{{ localize "FFXIV.Custom" }}</option>
       </select>
 
     </div>
   </div>
 
 </div>
+
+{{#if (eq "custom" system.class.name)}}
+<div class="resources grid grid-3col">
+  <div class="resource flex-group-center">
+    <label for="system.class.name_custom" class="resource-label">{{ localize "FFXIV.CharacterSheet.CustomClassName" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+      <input name="system.class.name_custom" type="text" value="{{system.class.name_custom}}" placeholder="Name"/>
+    </div>
+  </div>
+  <div class="resource flex-group-center">
+    <label for="system.class.role" class="resource-label">{{ localize "FFXIV.CharacterSheet.CustomClassRole" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+      <select style="text-align: center;" name="system.class.role">
+        {{#each this.config.roles as |r|}}
+          <option value="{{r.value}}" {{#if (eq r.value ../system.class.role)}}selected {{/if}} >{{ localize r.label }}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+  <div class="resource flex-group-center">
+    <label for="system.class.customIcon" class="resource-label">{{ localize "FFXIV.CharacterSheet.CustomClassIcon" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+      <img name="system.class.customIcon" class="class-icon" src="{{actor.system.class.customIcon}}" data-edit="system.class.customIcon"/>
+    </div>
+  </div>
+</div>
+{{/if}}
+
 {{#if settings.showExperience }}
 <hr>
 <div class="resources grid grid-2col">

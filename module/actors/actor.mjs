@@ -52,7 +52,7 @@ export class FfxivActor extends Actor {
    */
   _prepareCharacterData(actorData) {
     if (actorData.type !== 'character') return;
-    if (actorData.system.class.name != ""){
+    if (actorData.system.class.name != "" && actorData.system.class.name != "custom"){
       actorData.system.class.role = CONFIG.FF_XIV.classes[actorData.system.class.name].role
     }
     const expToNextLevel = CONFIG.FF_XIV.levels[actorData.system.experience.level.value.toString()]["EXP"];
