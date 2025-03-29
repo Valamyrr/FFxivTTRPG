@@ -217,6 +217,8 @@ export class FfxivActorSheet extends ActorSheet {
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
+    console.log("Listeners activated for:", this.actor.name);
+    console.log(html)
 
     html.find("input, textarea").on("keydown", (event) => {
       if (event.key === "Enter") {
@@ -433,7 +435,13 @@ export class FfxivActorSheet extends ActorSheet {
 
   _updateManaBar() {
       const currentMana = this.actor.system.mana.value;
-      const characterSheet = document.getElementById(`FfxivActorSheet-Actor-${this.actor._id}`);
+      let characterSheet;
+      if (this.token){
+        characterSheet =  document.getElementById(`FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`);
+      }else{
+        characterSheet = document.getElementById(`FfxivActorSheet-Actor-${this.actor._id}`);
+      }
+
 
       if (characterSheet) {
           const manaBarSlots = characterSheet.querySelectorAll('.mana-slot');
@@ -465,7 +473,13 @@ export class FfxivActorSheet extends ActorSheet {
   _updateHealthBar() {
     const currentHealth = this.actor.system.health.value;
     const maxHealth = this.actor.system.health.max;
-    const characterSheet = document.getElementById(`FfxivActorSheet-Actor-${this.actor._id}`);
+    let characterSheet;
+    if (this.token){
+      characterSheet =  document.getElementById(`FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`);
+    }else{
+      characterSheet = document.getElementById(`FfxivActorSheet-Actor-${this.actor._id}`);
+    }
+
     const healthPercentage = Math.min(100,Math.max(0,(currentHealth / maxHealth) * 100));
     if (characterSheet) {
 
@@ -533,16 +547,28 @@ export class FfxivActorSheet extends ActorSheet {
     this._switchCompanionTab(tab)
   }
   _switchAbilityTab(tab){
-    $(`#FfxivActorSheet-Actor-${this.actor._id} .abilities-sub-tabs .sub-tab`).removeClass("active");
-    $(`#FfxivActorSheet-Actor-${this.actor._id} .sub-tab-content`).removeClass('active').hide();
-    $(`#FfxivActorSheet-Actor-${this.actor._id} .abilities-sub-tabs .sub-tab[data-tab=${tab}]`).addClass("active");
-    $(`#FfxivActorSheet-Actor-${this.actor._id} .sub-tab-content[data-tab=${tab}]`).addClass('active').show();
+    let characterSheet;
+    if (this.token){
+      characterSheet = `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
+    }else{
+      characterSheet = `FfxivActorSheet-Actor-${this.actor._id}`;
+    }
+    $(`#${characterSheet} .abilities-sub-tabs .sub-tab`).removeClass("active");
+    $(`#${characterSheet} .sub-tab-content`).removeClass('active').hide();
+    $(`#${characterSheet} .abilities-sub-tabs .sub-tab[data-tab=${tab}]`).addClass("active");
+    $(`#${characterSheet} .sub-tab-content[data-tab=${tab}]`).addClass('active').show();
   }
   _switchCompanionTab(tab){
-    $(`#FfxivActorSheet-Actor-${this.actor._id} .companions-sub-tabs .companions-sub-tab`).removeClass("active");
-    $(`#FfxivActorSheet-Actor-${this.actor._id} .companions-sub-tab-content`).removeClass('active').hide();
-    $(`#FfxivActorSheet-Actor-${this.actor._id} .companions-sub-tabs .companions-sub-tab[data-tab=${tab}]`).addClass("active");
-    $(`#FfxivActorSheet-Actor-${this.actor._id} .companions-sub-tab-content[data-tab=${tab}]`).addClass('active').show();
+    let characterSheet;
+    if (this.token){
+      characterSheet = `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
+    }else{
+      characterSheet = `FfxivActorSheet-Actor-${this.actor._id}`;
+    }
+    $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab`).removeClass("active");
+    $(`#${characterSheet} .companions-sub-tab-content`).removeClass('active').hide();
+    $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab[data-tab=${tab}]`).addClass("active");
+    $(`#${characterSheet} .companions-sub-tab-content[data-tab=${tab}]`).addClass('active').show();
   }
 
   _toggleSidebar(event){
@@ -550,8 +576,14 @@ export class FfxivActorSheet extends ActorSheet {
     this._applySidebarPreference()
   }
   _applySidebarPreference(){
-    const wrapper = $(`#FfxivActorSheet-Actor-${this.actor._id} .sheet-body-wrapper`);
-    const arrow = $(`#FfxivActorSheet-Actor-${this.actor._id} .arrow-sidebar .fa`);
+    let characterSheet;
+    if (this.token){
+      characterSheet = `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
+    }else{
+      characterSheet = `FfxivActorSheet-Actor-${this.actor._id}`;
+    }
+    const wrapper = $(`#${characterSheet} .sheet-body-wrapper`);
+    const arrow = $(`#${characterSheet} .arrow-sidebar .fa`);
     if (this.hidingSidebar) {
         wrapper.addClass("full-width");
         arrow.removeClass("fa-left").addClass("fa-right");

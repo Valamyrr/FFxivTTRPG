@@ -218,5 +218,8 @@
         "unit": "squares"
       }
     }
+  },
+  "Token": {
+    "actorLink": true
   }
 }
