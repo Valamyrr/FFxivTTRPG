@@ -309,6 +309,10 @@ FF_XIV.tags_abilities = {
     "value":"thunderspell",
     "label":"FFXIV.Tags.ThunderSpell"
   },
+  "song":{
+    "value":"song",
+    "label":"FFXIV.Tags.Song"
+  },
   "jobresource":{
     "value":"jobresource",
     "label":"FFXIV.Tags.JobResource"
