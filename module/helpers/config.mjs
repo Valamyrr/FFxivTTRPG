@@ -339,6 +339,10 @@ FF_XIV.tags_traits = {
   "enfeeblement":{
     "value":"enfeeblement",
     "label":"FFXIV.Tags.Enfeeblement"
+  },
+  "song":{
+    "value":"song",
+    "label":"FFXIV.Tags.Song"
   }
 }
 
