@@ -55,6 +55,10 @@
 
 /*Health & Mana bars*/
 
+.stat-bars{
+  margin-top: 15px;
+}
+
 .stat-bar {
   height: 30px;
   display: flex;
