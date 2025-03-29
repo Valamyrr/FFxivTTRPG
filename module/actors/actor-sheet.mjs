@@ -377,11 +377,14 @@ export class FfxivActorSheet extends ActorSheet {
         flavor: game.i18n.format("FFXIV.ItemType."+item.type)
       });
       if(item.type !="trait" && this.actor.system.showModifiers){
-        ChatMessage.create({
-          content: await renderTemplate("systems/ffxiv/templates/chat/modifiers-chat-card.hbs", { items: this.actor.items }),
-          flags: { core: { canParseHTML: true } },
-          flavor: game.i18n.localize("FFXIV.Traits.Modifiers")
-        });
+
+        if (this.actor.items.some(item => item.system.active == true)){
+          ChatMessage.create({
+            content: await renderTemplate("systems/ffxiv/templates/chat/modifiers-chat-card.hbs", { items: this.actor.items }),
+            flags: { core: { canParseHTML: true } },
+            flavor: game.i18n.localize("FFXIV.Traits.Modifiers") + " | " + game.i18n.localize("FFXIV.Traits.TraitsOnly")
+          });
+        }
       }
       item.roll(event);
     }else{

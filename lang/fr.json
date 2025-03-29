@@ -251,7 +251,8 @@
     },
     "Traits":{
       "Activable": "Activable",
-      "Modifiers": "Modificateurs"
+      "Modifiers": "Modificateurs",
+      "TraitsOnly": "Uniquement traits actifs"
     },
     "Rarities":{
       "Basic": "Basique",
