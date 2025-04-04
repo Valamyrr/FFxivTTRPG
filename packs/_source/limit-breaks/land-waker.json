@@ -1,0 +1,51 @@
+{
+  "name": "Land Waker",
+  "type": "limit_break",
+  "_id": "KtJ1ZrdYSyG0XO4z",
+  "img": "systems/ffxiv/assets/limit_break.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.LimitBreak",
+      "FFXIV.Tags.Physical"
+    ],
+    "source": "",
+    "level": 0,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "Immediately before one or more allied adventurers take damage.",
+    "base_effect": "Makes you the sole target of all damage inflicted by the effect that triggered Land Waker and halves the damage you take (rounded up). If an ability triggered Land Waker, the character that used that ability suffers damage equal to the amount of HP you lost.",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": ""
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741408697287,
+    "modifiedTime": 1741408804154,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!KtJ1ZrdYSyG0XO4z"
+}

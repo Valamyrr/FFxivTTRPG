@@ -1,0 +1,51 @@
+{
+  "folder": "Cv2lYwDBSRqiJeog",
+  "name": "Storm's Path",
+  "type": "primary_ability",
+  "_id": "QWt1FaCQggtXEoFI",
+  "img": "systems/ffxiv/assets/abilities/WAR/Storm%27s_Path.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Physical"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "Single",
+    "range": "1",
+    "check": "FFXIV.Attributes.Strength.long",
+    "challenge": "Defense",
+    "trigger": "",
+    "base_effect": "Deals 2 damage and inflicts Enmity on the target. Restores 2 HP.",
+    "combo": "",
+    "direct_hit": "Deals an additional 1d6 damage.",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "1d20+@str",
+    "direct_formula": "1d6",
+    "base_formula": "2"
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741407854342,
+    "modifiedTime": 1741407920036,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!QWt1FaCQggtXEoFI"
+}

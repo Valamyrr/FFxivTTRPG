@@ -1,0 +1,40 @@
+{
+  "name": "Power Surge",
+  "type": "trait",
+  "_id": "YY1uckorTQc4ipcK",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>While under the effect of <strong>Power Surge</strong>, your abilities deal an additional 2 damage. <strong>Power Surge</strong> is removed when you are <strong>Knocked Out</strong>.</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enhancement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [
+      [
+        "FFXIV.Damages",
+        2
+      ]
+    ],
+    "activable": true,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741402876924,
+    "modifiedTime": 1741402936826,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!YY1uckorTQc4ipcK"
+}

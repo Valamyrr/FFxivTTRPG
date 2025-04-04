@@ -1,0 +1,50 @@
+{
+  "folder": "52Ea9KZn23CP56Og",
+  "name": "Second Wind",
+  "type": "instant_ability",
+  "_id": "Hxq3jdZvZsAaXPNB",
+  "img": "systems/ffxiv/assets/abilities/Role%20Actions/Second_Wind.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Instant"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "",
+    "target": "",
+    "range": "",
+    "check": "None",
+    "challenge": "",
+    "trigger": "When any character finishes their turn",
+    "base_effect": "Restores 1d6+2 HP",
+    "combo": "",
+    "direct_hit": "",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "Once per phase",
+    "limitations_status": [],
+    "limitations_max": 1,
+    "hit_formula": "",
+    "direct_formula": "",
+    "base_formula": "1d6+2"
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741414964634,
+    "modifiedTime": 1741415049596,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!Hxq3jdZvZsAaXPNB"
+}

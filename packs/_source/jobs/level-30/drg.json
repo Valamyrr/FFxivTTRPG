@@ -1,0 +1,982 @@
+{
+  "folder": "J8oaEHQGqb186dzX",
+  "name": "DRG",
+  "type": "character",
+  "_id": "URcuN7joLMTgV2sq",
+  "img": "systems/ffxiv/assets/classes/dragoon.png",
+  "system": {
+    "biography": "",
+    "ability_order": [],
+    "primary_attributes": {
+      "strength": {
+        "value": 5,
+        "label": "FFXIV.Attributes.Strength.long"
+      },
+      "dexterity": {
+        "value": 3,
+        "label": "FFXIV.Attributes.Dexterity.long"
+      },
+      "vitality": {
+        "value": 2,
+        "label": "FFXIV.Attributes.Vitality.long"
+      },
+      "intelligence": {
+        "value": 1,
+        "label": "FFXIV.Attributes.Intelligence.long"
+      },
+      "mind": {
+        "value": 1,
+        "label": "FFXIV.Attributes.Mind.long"
+      }
+    },
+    "secondary_attributes": {
+      "defense": {
+        "value": 14,
+        "label": "FFXIV.Attributes.Defense"
+      },
+      "magic_defense": {
+        "value": 11,
+        "label": "FFXIV.Attributes.MagicDefense"
+      },
+      "vigilance": {
+        "value": 11,
+        "label": "FFXIV.Attributes.Vigilance"
+      },
+      "speed": {
+        "value": 5,
+        "unit": "squares",
+        "label": "FFXIV.Attributes.Speed"
+      }
+    },
+    "health": {
+      "value": 26,
+      "max": 26
+    },
+    "barrier": {
+      "value": 0,
+      "max": null
+    },
+    "mana": {
+      "value": 5,
+      "max": 5
+    },
+    "experience": {
+      "level": {
+        "value": 30,
+        "max": 100
+      },
+      "experience": {
+        "value": 0,
+        "total": 0,
+        "max": null,
+        "label": "XP"
+      }
+    },
+    "class": {
+      "name": "dragoon",
+      "role": ""
+    },
+    "activeTitle": "",
+    "showModifiers": true
+  },
+  "prototypeToken": {
+    "name": "DRG",
+    "displayName": 0,
+    "actorLink": false,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "systems/ffxiv/assets/classes/dragoon.png",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": null
+    },
+    "bar2": {
+      "attribute": null
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "items": [
+    {
+      "name": "True Thrust",
+      "type": "primary_ability",
+      "_id": "h2nO6MmH5gHR2fPw",
+      "img": "systems/ffxiv/assets/abilities/DRG/True_Thrust.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "1",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to the target.",
+        "combo": "Dragoon Combo or Disembowel",
+        "direct_hit": "Deals 2d6 damage to the target.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@str",
+        "direct_formula": "2d6",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "folder": "nM8I9qBObbrO5WT5",
+      "sort": 112500,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "duplicateSource": null,
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.DHG4ftmiwx80IEBG",
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403198347,
+        "modifiedTime": 1741403198347,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.h2nO6MmH5gHR2fPw"
+    },
+    {
+      "name": "Jump",
+      "type": "primary_ability",
+      "_id": "YOWJ9qFNP828i83j",
+      "img": "systems/ffxiv/assets/abilities/DRG/Jump.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "5",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Deals 2d6 + 3 damage to the target.",
+        "combo": "",
+        "direct_hit": "Deals an additional 2d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "1d20+@str",
+        "direct_formula": "2d6",
+        "base_formula": "2d6+3"
+      },
+      "effects": [],
+      "folder": "nM8I9qBObbrO5WT5",
+      "sort": 150000,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.fv6YhDqPL76WR1Mm",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403200903,
+        "modifiedTime": 1741403200903,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.YOWJ9qFNP828i83j"
+    },
+    {
+      "name": "Piercing Talon",
+      "type": "primary_ability",
+      "_id": "61bTDIEiEkXyg74Y",
+      "img": "systems/ffxiv/assets/abilities/DRG/Piercing_Talon.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "5",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to the target.",
+        "combo": "",
+        "direct_hit": "Deals an additional 2d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20+@str",
+        "direct_formula": "2d6",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "folder": "nM8I9qBObbrO5WT5",
+      "sort": 125000,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.og3nvxbL95fD9ftO",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403204060,
+        "modifiedTime": 1741403204060,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.61bTDIEiEkXyg74Y"
+    },
+    {
+      "name": "Disembowel",
+      "type": "primary_ability",
+      "_id": "hwYKtliRv422kFig",
+      "img": "systems/ffxiv/assets/abilities/DRG/Disembowel.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "1",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to the target and grants Power Surge.",
+        "combo": "",
+        "direct_hit": "Deals an additional 1d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20 + @str",
+        "direct_formula": "1d6",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "folder": "nM8I9qBObbrO5WT5",
+      "sort": 100000,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.FcScqICdHbRFNPQm",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403207162,
+        "modifiedTime": 1741403207162,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.hwYKtliRv422kFig"
+    },
+    {
+      "name": "Power Surge",
+      "type": "trait",
+      "_id": "i6UyoSmxLmRjg8sp",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>While under the effect of <strong>Power Surge</strong>, your abilities deal an additional 2 damage. <strong>Power Surge</strong> is removed when you are <strong>Knocked Out</strong>.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enhancement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [
+          [
+            "FFXIV.Damages",
+            2
+          ]
+        ],
+        "activable": true,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enhancements.Item.YY1uckorTQc4ipcK",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403249265,
+        "modifiedTime": 1741403249265,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.i6UyoSmxLmRjg8sp"
+    },
+    {
+      "name": "Drain",
+      "type": "trait",
+      "_id": "MtswDHeWR5SmrmLm",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>While under the effect of <strong>Drain</strong>, your abilities restore 2 HP each time they deal damage.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enhancement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": true,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enhancements.Item.E7M4uGTxqWpRxBZO",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403253547,
+        "modifiedTime": 1741403253547,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.MtswDHeWR5SmrmLm"
+    },
+    {
+      "name": "Combo",
+      "type": "trait",
+      "_id": "uBJ9I1vGzi69D0zu",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>After resolving the effects of an ability with Combo, you may use one of the specified abilities at any point during your turn. You may move before doing so, and you may choose a new target when using this ability.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.traits.Item.049dmr8bBVCEcioD",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403262493,
+        "modifiedTime": 1741403262493,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.uBJ9I1vGzi69D0zu"
+    },
+    {
+      "name": "Lance Charge",
+      "type": "secondary_ability",
+      "_id": "9nE2J1mQizCWXjfg",
+      "img": "systems/ffxiv/assets/abilities/DRG/Lance_Charge.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Your abilities deal an additional 2 damage until the end of this turn.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Twice per phase",
+        "limitations_status": [],
+        "limitations_max": 2,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": "MfGKMJD4lasRW3Kj",
+      "sort": 100000,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.rJoMzl5RMgPR0vpO",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403268100,
+        "modifiedTime": 1741403268100,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.9nE2J1mQizCWXjfg"
+    },
+    {
+      "name": "Life Surge",
+      "type": "secondary_ability",
+      "_id": "Hvp1yHpLBRu2CuHO",
+      "img": "systems/ffxiv/assets/abilities/DRG/Life_Surge.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Grants Drain until the end of this turn and one advantage die on your next ability check.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": "MfGKMJD4lasRW3Kj",
+      "sort": 200000,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.XY5I7rrqQygMPFlG",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403269210,
+        "modifiedTime": 1741403269210,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.Hvp1yHpLBRu2CuHO"
+    },
+    {
+      "name": "Bloodbath",
+      "type": "secondary_ability",
+      "_id": "6boYedJyyAEqd5d0",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Bloodbath.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Grants Drain until the end of this turn.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": "MBRps9Q8xhebEULG",
+      "sort": 200000,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.q3iUlB8RgPII1McZ",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403270886,
+        "modifiedTime": 1741403270886,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.6boYedJyyAEqd5d0"
+    },
+    {
+      "name": "Leg Sweep",
+      "type": "secondary_ability",
+      "_id": "cxEH8Jf06nq3cPFC",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Leg_Sweep.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Secondary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "1",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "Stuns the target until the end of this turn. Any characters Stunned by this ability cannot be Stunned again during this encounter.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": "MBRps9Q8xhebEULG",
+      "sort": 100000,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.secondary-abilities.Item.yYom26PwfcrN7hvc",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403271955,
+        "modifiedTime": 1741403271955,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.cxEH8Jf06nq3cPFC"
+    },
+    {
+      "folder": "52Ea9KZn23CP56Og",
+      "name": "Feint",
+      "type": "instant_ability",
+      "_id": "ZSZlOv47nFDJONr8",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Feint.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "The enemy that triggered this ability",
+        "range": "2",
+        "check": "None",
+        "challenge": "",
+        "trigger": "Immediately before an ability used by an enemy is resolved",
+        "base_effect": "Reduces the damage dealt by the abilities of the enemy that triggered this ability by 2 until the end of this turn.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.instant-abilities.Item.e9ZLWMH40bQ4ZZsD",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403276128,
+        "modifiedTime": 1741403276128,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.ZSZlOv47nFDJONr8"
+    },
+    {
+      "name": "Dragonsong Dive",
+      "type": "limit_break",
+      "_id": "F4IQyn8e8hT441P4",
+      "img": "systems/ffxiv/assets/limit_break.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.LimitBreak",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 0,
+        "cost": "",
+        "target": "Single",
+        "range": "5",
+        "check": "None",
+        "challenge": "",
+        "trigger": "Any time",
+        "base_effect": "Deals 6d6 damage to the target, then move to an empty square adjacent to the target if one is available. This ability can be used to evade enemy attacks.",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "HKJYJ31F5WFleI0h": 3,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.limit-breaks.Item.eZLVYbfiFXqb1rmW",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741403288953,
+        "modifiedTime": 1741403288953,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.F4IQyn8e8hT441P4"
+    },
+    {
+      "name": "Dragoon Combo (Vorpal Thrust + Full Thrust)",
+      "type": "primary_ability",
+      "_id": "OK2UGlbodZ4gbXsW",
+      "img": "systems/ffxiv/assets/abilities/DRG/Vorpal_Thrust.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Primary",
+          "FFXIV.Tags.Physical"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "Single",
+        "range": "1",
+        "check": "FFXIV.Attributes.Strength.long",
+        "challenge": "Defense",
+        "trigger": "",
+        "base_effect": "Deals 3 damage to the target.",
+        "combo": "",
+        "direct_hit": "Deals an additional 2d6 damage.",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "1d20 + @str",
+        "direct_formula": "2d6",
+        "base_formula": "3"
+      },
+      "effects": [],
+      "folder": "nM8I9qBObbrO5WT5",
+      "sort": 200000,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "duplicateSource": null,
+        "compendiumSource": "Compendium.ffxiv.primary-abilities.Item.JJ6mYkSsvBn50Gfk",
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741414776087,
+        "modifiedTime": 1741414776087,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.OK2UGlbodZ4gbXsW"
+    },
+    {
+      "name": "Stun",
+      "type": "trait",
+      "_id": "CsjJpZmnhIv5atzo",
+      "img": "systems/ffxiv/assets/default_img/default-trait.png",
+      "system": {
+        "description": "<p>A <strong>Stunned</strong> character cannot act during their turn or use <em>instant</em> abilities, and all markers for which they are the creator are removed. Characters receive one advantage die when making ability checks targeting a <strong>Stunned</strong> character.</p>",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Enfeeblement"
+        ],
+        "source": "",
+        "level": 0,
+        "modifiers": [],
+        "activable": false,
+        "active": false
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "hq9tp1fvkJUpKnNl": 3
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": "Compendium.ffxiv.enfeeblements.Item.vZlPwwvIYo6Xt6YD",
+        "duplicateSource": null,
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741414834255,
+        "modifiedTime": 1741414834255,
+        "lastModifiedBy": "hq9tp1fvkJUpKnNl"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.CsjJpZmnhIv5atzo"
+    },
+    {
+      "folder": "52Ea9KZn23CP56Og",
+      "name": "Second Wind",
+      "type": "instant_ability",
+      "_id": "1vX6xWXc6I4r3myz",
+      "img": "systems/ffxiv/assets/abilities/Role%20Actions/Second_Wind.png",
+      "system": {
+        "description": "",
+        "rarity": "",
+        "tags": [
+          "FFXIV.Tags.Instant"
+        ],
+        "source": "",
+        "level": 30,
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "When any character finishes their turn",
+        "base_effect": "Restores 1d6+2 HP",
+        "combo": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "Once per phase",
+        "limitations_status": [],
+        "limitations_max": 1,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": "1d6+2"
+      },
+      "effects": [],
+      "sort": 0,
+      "ownership": {
+        "default": 0,
+        "k7iu0I6HY50CVbqW": 3
+      },
+      "flags": {},
+      "_stats": {
+        "duplicateSource": null,
+        "compendiumSource": "Compendium.ffxiv.instant-abilities.Item.Hxq3jdZvZsAaXPNB",
+        "coreVersion": "12.331",
+        "systemId": "ffxiv",
+        "systemVersion": "1.1",
+        "createdTime": 1741415939291,
+        "modifiedTime": 1741415939291,
+        "lastModifiedBy": "k7iu0I6HY50CVbqW"
+      },
+      "_key": "!actors.items!URcuN7joLMTgV2sq.1vX6xWXc6I4r3myz"
+    }
+  ],
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741403189549,
+    "modifiedTime": 1741415503465,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!actors!URcuN7joLMTgV2sq"
+}

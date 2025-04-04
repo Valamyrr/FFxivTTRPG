@@ -1,0 +1,53 @@
+{
+  "folder": "w1n5tYJjaeNXjUII",
+  "name": "Fire II",
+  "type": "primary_ability",
+  "_id": "KNG1FGX1GBTZWin9",
+  "img": "systems/ffxiv/assets/abilities/BLM/Fire_II.png",
+  "system": {
+    "description": "",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Magic",
+      "FFXIV.Tags.FireAspected",
+      "FFXIV.Tags.Invoked"
+    ],
+    "source": "",
+    "level": 30,
+    "cost": "3 MP",
+    "target": "All enemies within range",
+    "range": "A 5x5 area within 10 squares of this character",
+    "check": "FFXIV.Attributes.Intelligence.long",
+    "challenge": "Magic Defense",
+    "trigger": "",
+    "base_effect": "Deals 3 damage to all targets and grants Astral Fire.",
+    "combo": "",
+    "direct_hit": "Deals an additional 1d6 damage.",
+    "marker_area": "",
+    "marker_trigger": "",
+    "marker_effect": "",
+    "limitations": "",
+    "limitations_status": [],
+    "limitations_max": 0,
+    "hit_formula": "1d20+@int",
+    "direct_formula": "1d6",
+    "base_formula": "3"
+  },
+  "effects": [],
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741410995870,
+    "modifiedTime": 1741411069131,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!KNG1FGX1GBTZWin9"
+}

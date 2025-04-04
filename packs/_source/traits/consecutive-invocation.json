@@ -1,0 +1,35 @@
+{
+  "name": "Consecutive Invocation",
+  "type": "trait",
+  "_id": "vSq6QrHKrK0SHdwS",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>On your turn, after resolving the effects of an ability that enables this trait, you may forgo <strong>all</strong> standard movement until the end of your turn to use an additional <em>invoked primary</em> ability. You may choose a new target when using this additional ability. <strong>Consecutive Invocation</strong> can only be used once per turn, and does not prevent you from using focus to perform an additional secondary action.<strong> </strong></p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Trait"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": false,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741412205623,
+    "modifiedTime": 1741412344235,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!vSq6QrHKrK0SHdwS"
+}

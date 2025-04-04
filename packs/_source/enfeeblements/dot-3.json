@@ -1,0 +1,35 @@
+{
+  "name": "DOT(3)",
+  "type": "trait",
+  "_id": "r6cZyZPDmxamADFD",
+  "img": "systems/ffxiv/assets/default_img/default-trait.png",
+  "system": {
+    "description": "<p>An enemy afflicted with DOT takes the damage specified at the end of each round's [Enemy Step].</p>",
+    "rarity": "",
+    "tags": [
+      "FFXIV.Tags.Enfeeblement"
+    ],
+    "source": "",
+    "level": 0,
+    "modifiers": [],
+    "activable": false,
+    "active": false
+  },
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "ffxiv",
+    "systemVersion": "1.1",
+    "createdTime": 1741412715317,
+    "modifiedTime": 1741412753167,
+    "lastModifiedBy": "ffxivttrpgbuilde"
+  },
+  "_key": "!items!r6cZyZPDmxamADFD"
+}
