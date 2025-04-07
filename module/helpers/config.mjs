@@ -308,7 +308,7 @@ FF_XIV.tags_abilities = {
   "wateraspected":{
     "value":"wateraspected",
     "label":"FFXIV.Tags.WaterAspected"
-  }
+  },
   "thunderspell":{
     "value":"thunderspell",
     "label":"FFXIV.Tags.ThunderSpell"
