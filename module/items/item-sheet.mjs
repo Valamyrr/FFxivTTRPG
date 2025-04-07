@@ -177,7 +177,11 @@ export class FfxivItemSheet extends ItemSheet {
     });
     html.on('click', '.add-tag', () => {
       const tags = this.item.system.tags || [];
-      tags.push("FFXIV.Tags.Primary"); // Add an empty tag
+      if(this.item.type == "trait"){
+        tags.push("FFXIV.Tags.Trait")
+      }else{
+        tags.push("FFXIV.Tags.Primary")
+      };
       this.item.update({ "system.tags": tags });
       this.render(); // Re-render to show the new field
     });
