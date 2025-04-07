@@ -148,7 +148,15 @@
         </div>
 
       </div>
-      <div class="resources grid grid-3col">
+      <hr>
+      <div class="resources grid grid-2col">
+
+        <div class="resource flex-group-center">
+          <label for="system.origin" class="resource-label">{{ localize "FFXIV.Abilities.Origin" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.origin" type="text" value="{{item.system.origin}}"/>
+          </div>
+        </div>
 
         <div class="resource flex-group-center">
           <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
