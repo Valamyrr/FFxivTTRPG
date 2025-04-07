@@ -39,9 +39,23 @@ export class FfxivActorSheet extends ActorSheet {
   /** @override */
   render(force, options) {
     super.render(force, options);
-    this._applySidebarPreference();
 
+    let characterSheet;
+    if (this.token){
+      if(!this.token.actorLink){ //If no actor data linked but token sheet is used
+          characterSheet =  `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
+      }
+    }
+    if(!characterSheet){
+       characterSheet = `FfxivActorSheet-Actor-${this.actor._id}`;
+    }
+    this.characterSheet = characterSheet
+
+
+    this._applySidebarPreference();
+    console.log(this.characterSheet)
     if(this.actor.type == "character"){
+
       Hooks.once('renderActorSheet', () => {
         this._updateManaBar();
         this._updateHealthBar();
@@ -218,7 +232,6 @@ export class FfxivActorSheet extends ActorSheet {
   activateListeners(html) {
     super.activateListeners(html);
     console.log("Listeners activated for:", this.actor.name);
-    console.log(html)
 
     html.find("input, textarea").on("keydown", (event) => {
       if (event.key === "Enter") {
@@ -435,16 +448,9 @@ export class FfxivActorSheet extends ActorSheet {
 
   _updateManaBar() {
       const currentMana = this.actor.system.mana.value;
-      let characterSheet;
-      if (this.token){
-        characterSheet =  document.getElementById(`FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`);
-      }else{
-        characterSheet = document.getElementById(`FfxivActorSheet-Actor-${this.actor._id}`);
-      }
-
-
-      if (characterSheet) {
-          const manaBarSlots = characterSheet.querySelectorAll('.mana-slot');
+      let cs = document.getElementById(this.characterSheet)
+      if (cs) {
+          const manaBarSlots = cs.querySelectorAll('.mana-slot');
           // Update each slot based on the current mana value
           manaBarSlots.forEach((slot, index) => {
               if (index < currentMana) {
@@ -473,17 +479,12 @@ export class FfxivActorSheet extends ActorSheet {
   _updateHealthBar() {
     const currentHealth = this.actor.system.health.value;
     const maxHealth = this.actor.system.health.max;
-    let characterSheet;
-    if (this.token){
-      characterSheet =  document.getElementById(`FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`);
-    }else{
-      characterSheet = document.getElementById(`FfxivActorSheet-Actor-${this.actor._id}`);
-    }
 
     const healthPercentage = Math.min(100,Math.max(0,(currentHealth / maxHealth) * 100));
-    if (characterSheet) {
+    let cs = document.getElementById(this.characterSheet);
+    if (cs) {
 
-      const healthBar = characterSheet.querySelectorAll('.health-bar');
+      const healthBar = cs.querySelectorAll('.health-bar');
       if(healthBar.length > 0){
         healthBar[0].style.width = `${healthPercentage}%`
         if (healthPercentage >= 70) {
@@ -547,22 +548,28 @@ export class FfxivActorSheet extends ActorSheet {
     this._switchCompanionTab(tab)
   }
   _switchAbilityTab(tab){
-    let characterSheet;
+    /*let characterSheet;
     if (this.token){
-      characterSheet = `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
-    }else{
-      characterSheet = `FfxivActorSheet-Actor-${this.actor._id}`;
+      if(!this.token.actorLink){ //If no actor data linked but token sheet is used
+          characterSheet =  `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
+      }
     }
-    $(`#${characterSheet} .abilities-sub-tabs .sub-tab`).removeClass("active");
-    $(`#${characterSheet} .sub-tab-content`).removeClass('active').hide();
-    $(`#${characterSheet} .abilities-sub-tabs .sub-tab[data-tab=${tab}]`).addClass("active");
-    $(`#${characterSheet} .sub-tab-content[data-tab=${tab}]`).addClass('active').show();
+    if(!characterSheet){
+      characterSheet = `FfxivActorSheet-Actor-${this.actor._id}`;
+    }*/
+    $(`#${this.characterSheet} .abilities-sub-tabs .sub-tab`).removeClass("active");
+    $(`#${this.characterSheet} .sub-tab-content`).removeClass('active').hide();
+    $(`#${this.characterSheet} .abilities-sub-tabs .sub-tab[data-tab=${tab}]`).addClass("active");
+    $(`#${this.characterSheet} .sub-tab-content[data-tab=${tab}]`).addClass('active').show();
   }
   _switchCompanionTab(tab){
     let characterSheet;
     if (this.token){
-      characterSheet = `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
-    }else{
+      if(!this.token.actorLink){ //If no actor data linked but token sheet is used
+          characterSheet =  `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
+      }
+    }
+    if(!characterSheet){
       characterSheet = `FfxivActorSheet-Actor-${this.actor._id}`;
     }
     $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab`).removeClass("active");
@@ -578,8 +585,11 @@ export class FfxivActorSheet extends ActorSheet {
   _applySidebarPreference(){
     let characterSheet;
     if (this.token){
-      characterSheet = `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
-    }else{
+      if(!this.token.actorLink){ //If no actor data linked but token sheet is used
+          characterSheet =  `FfxivActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
+      }
+    }
+    if(!characterSheet){
       characterSheet = `FfxivActorSheet-Actor-${this.actor._id}`;
     }
     const wrapper = $(`#${characterSheet} .sheet-body-wrapper`);
