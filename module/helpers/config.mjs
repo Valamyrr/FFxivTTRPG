@@ -305,6 +305,10 @@ FF_XIV.tags_abilities = {
     "value":"lightningaspected",
     "label":"FFXIV.Tags.LightningAspected"
   },
+  "wateraspected":{
+    "value":"wateraspected",
+    "label":"FFXIV.Tags.WaterAspected"
+  }
   "thunderspell":{
     "value":"thunderspell",
     "label":"FFXIV.Tags.ThunderSpell"
@@ -312,6 +316,22 @@ FF_XIV.tags_abilities = {
   "song":{
     "value":"song",
     "label":"FFXIV.Tags.Song"
+  },
+  "flurry":{
+    "value":"flurry",
+    "label":"FFXIV.Tags.Flurry"
+  },
+  "poison":{
+    "value":"poison",
+    "label":"FFXIV.Tags.poison"
+  },
+  "ninjutsu":{
+    "value":"ninjutsu",
+    "label":"FFXIV.Tags.Ninjutsu"
+  },
+  "gem":{
+    "value":"gem",
+    "label":"FFXIV.Tags.Gem"
   },
   "jobresource":{
     "value":"jobresource",
