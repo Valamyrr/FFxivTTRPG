@@ -6,6 +6,11 @@ export const updateStatusEffects = () => {
       icon: "systems/ffxiv/assets/effects/Ascendent.png"
     },
     {
+      id: "bind",
+      label: game.i18n.localize("FFXIV.Effects.Bind"),
+      icon: "systems/ffxiv/assets/effects/Bind.png"
+    },
+    {
       id: "blind",
       label: game.i18n.localize("FFXIV.Effects.Blind"),
       icon: "systems/ffxiv/assets/effects/Blind.png"

@@ -204,6 +204,7 @@
     },
     "Effects": {
       "Ascendent": "Ascendant",
+      "Bind": "Bind",
       "Blind": "Aveugle",
       "BrinkDeath": "Aux portes de la mort",
       "Comatose": "Comateux",

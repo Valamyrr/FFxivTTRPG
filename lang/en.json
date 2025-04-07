@@ -204,6 +204,7 @@
     },
     "Effects":{
       "Ascendent": "Ascendent",
+      "Bind": "Bind",
       "Blind": "Blind",
       "BrinkDeath": "Brink of Death",
       "Comatose": "Comatose",
