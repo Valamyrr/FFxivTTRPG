@@ -21,7 +21,7 @@
 }
 
 .ffxiv.actor .sheet-body {
-  flex: 1;
+  flex: auto;
   padding: 10px;
   min-width: calc(100% - 230px);
   transition: all 0.8s ease;
