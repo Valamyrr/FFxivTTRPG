@@ -1,0 +1,32 @@
+<div class="item-card">
+  <div class="item-card-info">
+    <img src="{{pet.img}}" alt="{{pet.name}}" class="item-dialog-icon">
+    <div class="item-dialog-header">
+      <div class="item-dialog-name text-rarity-{{ delabelize 'rarities' pet.system.rarity }}">
+        {{pet.name}}
+      </div>
+      <div class="item-dialog-right">
+        <div class="item-dialog-tags">
+          {{#each pet.system.tags as |tag|}}
+            <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+    <div class="item-dialog-effects">
+      {{#if pet.system.pet_ability.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{pet.system.pet_ability.base_effect}}</div>{{/if}}
+      {{#if pet.system.pet_ability.target}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{pet.system.pet_ability.target}}</div>{{/if}}
+      {{#if pet.system.pet_ability.range}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{pet.system.pet_ability.range}}</div>{{/if}}
+      {{#if (and (not (eq pet.system.pet_ability.check "None")) eq pet.system.check) }}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Check" }}:</strong> {{localize pet.system.check}}</div>{{/if}}
+      {{#if pet.system.pet_ability.challenge}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{pet.system.pet_ability.challenge}}</div>{{/if}}
+      {{#if pet.system.pet_ability.trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{pet.system.pet_ability.trigger}}</div>{{/if}}
+      {{#if pet.system.pet_ability.combo}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Combo" }}:</strong> {{pet.system.pet_ability.combo}}</div>{{/if}}
+      {{#if pet.system.pet_ability.condition}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{pet.system.pet_ability.condition}}</div>{{/if}}
+      {{#if pet.system.pet_ability.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{pet.system.pet_ability.direct_hit}}</div>{{/if}}
+      {{#if pet.system.pet_ability.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{pet.system.pet_ability.marker_trigger}}</div>{{/if}}
+      {{#if pet.system.pet_ability.marker_area}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{pet.system.pet_ability.marker_area}}</div>{{/if}}
+      {{#if pet.system.pet_ability.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{pet.system.pet_ability.marker_effect}}</div>{{/if}}
+      {{#if pet.system.description}}<div class="effect">{{{pet.system.description}}}</div>{{/if}}
+    </div>
+  </div>
+</div>

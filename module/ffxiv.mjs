@@ -76,6 +76,7 @@ Hooks.once('init', function () {
   CONFIG.Actor.typeLabels = {
     character: game.i18n.localize("FFXIV.ActorType.character"),
     npc: game.i18n.localize("FFXIV.ActorType.npc"),
+    pet: game.i18n.localize("FFXIV.ActorType.pet")
   };
 
   updateStatusEffects()
@@ -199,6 +200,21 @@ Handlebars.registerHelper("sortAbilities", function (items, order, type) {
     return (indexA === -1 ? 9999 : indexA) - (indexB === -1 ? 9999 : indexB);
   });
 
+});
+
+Handlebars.registerHelper("sortPets", function (pets, order) {
+  if (!order || !Array.isArray(order)) {
+    return pets
+  }
+  return pets
+  .sort((a, b) => {
+    const indexA = order.indexOf(a);
+    const indexB = order.indexOf(b);
+    return (indexA === -1 ? 9999 : indexA) - (indexB === -1 ? 9999 : indexB);
+  });
+});
+Handlebars.registerHelper("getActor", function (actorId) {
+  return game.actors?.get(actorId)?.toObject();
 });
 
 Handlebars.registerHelper("gearBonuses", function (items) {

@@ -1,6 +1,6 @@
 {
   "Actor": {
-    "types": ["character", "npc"],
+    "types": ["character", "npc", "pet"],
     "templates": {
       "biography": {
         "biography": "",
@@ -26,7 +26,8 @@
         }
       },
       "abilities": {
-        "ability_order": {}
+        "ability_order": {},
+        "pet_order": []
       },
       "attributes": {
         "primary_attributes": {
@@ -106,16 +107,49 @@
         "hair": "",
         "eyes": "",
         "skin": ""
-      }
+      },
+      "pets": [],
+      "showPets": "true"
     },
     "npc":{
       "templates": ["biography","abilities","attributes","health"],
       "size": "",
       "specie": ""
+    },
+    "pet":{
+      "templates": [],
+      "traits": "",
+      "tags": [],
+      "pet_ability": {
+        "ability_name": "",
+        "cost": "",
+        "target": "",
+        "range": "",
+        "check": "None",
+        "challenge": "",
+        "trigger": "",
+        "base_effect": "",
+        "combo": "",
+        "condition": "",
+        "direct_hit": "",
+        "marker_area": "",
+        "marker_trigger": "",
+        "marker_effect": "",
+        "limitations": "",
+        "limitations_status": [],
+        "limitations_max": 0,
+        "hit_formula": "",
+        "direct_formula": "",
+        "base_formula": ""
+      },
+      "speed": {
+        "value": 5,
+        "unit": "squares"
+      }
     }
   },
   "Item": {
-    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title","gear","pet","minion","pet","augment"],
+    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title","gear","pet","minion","augment"],
     "templates": {
       "physical_item":{
         "quantity": 1,
@@ -209,15 +243,6 @@
     "augment":{
       "templates": ["core","physical_item","ability"],
       "granted_ability": ""
-    },
-    "pet": {
-      "templates": ["core","ability"],
-      "traits": "",
-      "ability_name": "",
-      "speed": {
-        "value": 5,
-        "unit": "squares"
-      }
     }
   },
   "Token": {

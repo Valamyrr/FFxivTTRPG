@@ -28,6 +28,17 @@
     </div>
   </div>
 
+  <div class="resource flex-group-center">
+    <label for="system.showPets" class="resource-label">{{ localize "FFXIV.CharacterSheet.ShowPets" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+      <select style="text-align: center;" name="system.showPets">
+          <option value="true" {{#if (eq "true" system.showPets)}}selected {{/if}} >{{ localize "FFXIV.True" }}</option>
+          <option value="false" {{#if (eq "false" system.showPets)}}selected {{/if}} >{{ localize "FFXIV.False" }}</option>
+      </select>
+
+    </div>
+  </div>
+
 </div>
 
 {{#if (eq "custom" system.class.name)}}

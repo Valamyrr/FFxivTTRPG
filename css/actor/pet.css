@@ -1,0 +1,69 @@
+.pet .profile-img{
+  width: 100%;
+  height: auto;
+  border: none;
+}
+
+.ffxiv .pet .tags-container{
+  margin-bottom: 15px;
+}
+
+.ffxiv .pet .tags-container li{
+  list-style-type: none
+}
+
+.ffxiv .pet .tags-container button{
+  width: 34px;
+  height: 34px;
+}
+
+.ffxiv .pet .tags-container .add-tag{
+  display: inline;
+}
+
+.ffxiv .pet hr{
+  border-top: solid 2px #393939;
+  margin: 15px 0 15px 0;
+}
+
+
+
+.pet-card .pet-roll-button {
+  background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text-color-strong);
+  transition: color 2s ease;
+  position: relative;
+  z-index: 1;
+}
+.pet-card .pet-roll-button:hover{
+  color: var(--invert-text-color) !important;
+}
+
+.pet-card .pet-roll-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0,0,0,0) 100%);
+  z-index: -1;
+  transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
+}
+.pet-card .pet-roll-button:hover::before {
+  width: 150%;
+}
+
+.pet-card .pet-roll-button:hover{
+  box-shadow: none;
+}
+.pet-card .pet-roll-button:focus{
+  box-shadow: none;
+}
+.pet-card .pet-roll-button:active{
+  box-shadow: none;
+}

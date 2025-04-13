@@ -53,7 +53,6 @@ export class FfxivActorSheet extends ActorSheet {
 
 
     this._applySidebarPreference();
-    console.log(this.characterSheet)
     if(this.actor.type == "character"){
 
       Hooks.once('renderActorSheet', () => {
@@ -99,9 +98,25 @@ export class FfxivActorSheet extends ActorSheet {
     }
 
     // Prepare NPC data and items.
-    if (actorData.type == 'simple') {
+    if (actorData.type == 'npc') {
       this._prepareItems(context);
       this._prepareSharedData(context);
+    }
+
+    if (actorData.type == 'pet') {
+      this._prepareItems(context);
+      this._prepareSharedData(context);
+      const traits = this.actor.system.traits || "";
+      context.enrichedTraits = await TextEditor.enrichHTML(
+        traits,
+        {
+          secrets: this.document.isOwner,
+          async: true,
+          rollData: this.actor.getRollData(),
+          relativeTo: this.actor,
+        }
+      );
+
     }
 
     // Enrich biography info for display
@@ -161,6 +176,12 @@ export class FfxivActorSheet extends ActorSheet {
    * @param {object} context The context object to mutate
    */
   _prepareCharacterData(context) {
+    let pets = this.actor.system.pets || [];
+    const validIds = pets.filter(id => game.actors.get(id));
+    if (validIds.length !== pets.length) {
+      this.actor.update({ "system.pets": validIds });
+      this.render(true)
+    }
 
   }
 
@@ -233,6 +254,8 @@ export class FfxivActorSheet extends ActorSheet {
     super.activateListeners(html);
     console.log("Listeners activated for:", this.actor.name);
 
+    if(this.actor.type=="pet") this.setPosition({ width: 500, height:735 });
+
     html.find("input, textarea").on("keydown", (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -285,6 +308,33 @@ export class FfxivActorSheet extends ActorSheet {
       });
     }
 
+    if (this.actor.type=="pet") { //Pet ability's tags
+      html.on('change', '.select-tags', (event) => {
+        const index = $(event.currentTarget).closest('li').index();
+        const value = $(event.currentTarget).val();
+        const tags = this.actor.system.tags || [];
+        tags[index] = value;
+        this.actor.update({ "system.tags": tags });
+      });
+      html.on('click', '.remove-tag', (event) => {
+        const index = event.currentTarget.dataset.index;
+        const tags = this.actor.system.tags || [];
+        tags.splice(index, 1);
+        this.actor.update({ "system.tags": tags });
+        this.render();
+      });
+      html.on('click', '.add-tag', () => {
+        const tags = this.actor.system.tags || [];
+        if(this.actor.type == "trait"){
+          tags.push("FFXIV.Tags.Trait")
+        }else{
+          tags.push("FFXIV.Tags.Primary")
+        };
+        this.actor.update({ "system.tags": tags });
+        this.render();
+      });
+    }
+
     html.on('click', '.inventory-item', this._renderItem.bind(this));
 
     html.on('click', '.abilities-sub-tabs .sub-tab', this._displayAbilityTab.bind(this))
@@ -297,6 +347,8 @@ export class FfxivActorSheet extends ActorSheet {
     html.on('click', '.ability-icon', this._renderItem.bind(this));
     html.on('click', '.augment-icon', this._renderItem.bind(this));
     html.on('click', '.ability-roll-button', this._rollItem.bind(this));
+    html.on('click', '.pet-roll-button', this._rollPet.bind(this));
+
     html.on('click', '.roll-attribute', this._rollAttribute.bind(this));
 
     html.on('click', '.arrow-sidebar', this._toggleSidebar.bind(this))
@@ -311,6 +363,9 @@ export class FfxivActorSheet extends ActorSheet {
 
     html.on('click', '.move-up', this._moveAbility.bind(this, -1));
     html.on('click', '.move-down', this._moveAbility.bind(this, 1))
+    html.on('click', '.pet-move-up', this._movePet.bind(this, -1));
+    html.on('click', '.pet-move-down', this._movePet.bind(this, 1))
+
 
   }
 
@@ -407,6 +462,23 @@ export class FfxivActorSheet extends ActorSheet {
       console.error(event.currentTarget)
     }
 
+  }
+
+  async _rollPet(event){
+    const petId = event.currentTarget.dataset.itemId
+    const pet = game.actors.get(petId);
+    if(pet){
+
+      let content = await renderTemplate("systems/ffxiv/templates/chat/pet-chat-card.hbs", { pet: pet });
+      ChatMessage.create({
+        content: content,
+        flags: { core: { canParseHTML: true } },
+        flavor: game.i18n.format("FFXIV.CharacterSheet.Pets")
+      });
+    }else{
+      console.error("Roll Error : No pet found.")
+      console.error(event.currentTarget)
+    }
   }
 
   async _rollAttribute(event){
@@ -691,6 +763,54 @@ export class FfxivActorSheet extends ActorSheet {
     [abilityOrder[abilityType][index], abilityOrder[abilityType][newIndex]] =
     [abilityOrder[abilityType][newIndex], abilityOrder[abilityType][index]];
     await actor.update({ "system.ability_order": abilityOrder });
+  }
+
+
+  async _movePet(direction, event){
+    const actor = this.actor;
+    const petId = event.currentTarget.dataset.itemId;
+    if (!actor || !petId || !direction) return;
+    let petOrder = foundry.utils.deepClone(actor.system.pet_order || []);
+    if (petOrder.constructor.name=="Object") petOrder = []
+
+    const allPets = actor.system.pets;
+    petOrder = petOrder.filter(id => allPets.includes(id));
+
+    allPets.forEach(id => { // add new items
+      if (!petOrder.includes(id)) {
+          petOrder.push(id);
+      }
+    });
+
+    const index = petOrder.indexOf(petId);
+    if (index === -1) return;
+
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= petOrder.length) return; //fail if out of bounds
+
+    [petOrder[index], petOrder[newIndex]] =
+    [petOrder[newIndex], petOrder[index]];
+    await actor.update({ "system.pet_order": petOrder });
+  }
+
+
+  async _onDrop(event) {
+    const data = await TextEditor.getDragEventData(event);
+    // Handle dropping an Actor
+    if (data?.type === "Actor") {
+      const droppedActor = game.actors.get(data.uuid.split(".")[1]);
+      if (!droppedActor || droppedActor.type !== "pet") return;
+
+      const pets = foundry.utils.duplicate(this.actor.system.pets || []);
+      if (!pets.includes(droppedActor.id)) {
+        pets.push(droppedActor.id);
+        await this.actor.update({ "system.pets": pets });
+      }
+      return;
+    }
+
+    // Default behavior for other drops (like items)
+    return super._onDrop(event);
   }
 
 

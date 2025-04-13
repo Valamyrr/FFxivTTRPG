@@ -37,6 +37,7 @@ export class FfxivActor extends Actor {
     this._prepareSharedData(this)
     this._prepareCharacterData(this);
     this._prepareNpcData(this);
+    this._preparePetData(this);
   }
 
   /**
@@ -63,6 +64,10 @@ export class FfxivActor extends Actor {
 
   _prepareNpcData(actorData) {
     if (actorData.type !== 'npc') return;
+  }
+
+  _preparePetData(actorData) {
+    if (actorData.type !== 'pet') return;
   }
 
 

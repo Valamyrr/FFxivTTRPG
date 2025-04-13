@@ -1,7 +1,7 @@
 <div class="actor-abilities">
   <div class="abilities-tab-content">
     <!-- Sub-tab navigation for abilities -->
-    {{#if (eq actor.system.class.name "summoner")}}
+    {{#if (eq actor.system.showPets "true")}}
       <nav class="companions-sub-tabs" data-group="companions-sub-tabs">
         <a class="companions-sub-tab active" data-tab="minions" title="{{localize 'FFXIV.CharacterSheet.Minions'}}">
           {{localize 'FFXIV.CharacterSheet.Minions'}}
@@ -29,15 +29,15 @@
 
     </section>
 
-    {{#if (eq actor.system.class.name "summoner")}}
+    {{#if (eq actor.system.showPets "true")}}
       <section class="companions-sub-tab-content" data-tab="pets" style="display:none;">
         {{!-- Pets summons content here --}}
-        {{#each (sortAbilities items system.ability_order "pet")}}
+        {{#each (sortPets system.pets system.pet_order)}}
             <div class="ability-container">
-              {{> "systems/ffxiv/templates/actor/parts/actor-card-pet.hbs" this}}
+              {{> "systems/ffxiv/templates/actor/parts/actor-card-pet.hbs" (getActor this)}}
               <div class="move-buttons">
-                {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
-                {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
+                {{#unless @first}}<button class="pet-move-up" data-item-id="{{this}}" data-type="pet">▲</button>{{/unless}}
+                {{#unless @last}}<button class="pet-move-down" data-item-id="{{this}}" data-type="pet">▼</button>{{/unless}}
               </div>
             </div>
         {{/each}}

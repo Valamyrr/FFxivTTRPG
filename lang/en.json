@@ -83,7 +83,8 @@
       "Skin": "Skin",
       "CustomClassName": "Custom Job Name",
       "CustomClassRole": "Custom Job Role",
-      "CustomClassIcon": "Custom Job Icon"
+      "CustomClassIcon": "Custom Job Icon",
+      "ShowPets": "Show Pets Tab"
     },
     "Item":{
       "Name": "Name",
@@ -133,7 +134,8 @@
     },
     "ActorType":{
       "character": "Character",
-      "npc": "NPC"
+      "npc": "NPC",
+      "pet": "Pet"
     },
     "Classes":{
       "Classes": "Classes",
@@ -309,6 +311,8 @@
     "None": "None",
     "Special": "Special",
     "Dark": "Dark",
-    "Light": "Light"
+    "Light": "Light",
+    "True": "True",
+    "False": "False"
   }
 }
