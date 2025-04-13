@@ -454,3 +454,30 @@ Hooks.on("getSceneControlButtons", (controls) => {
   }
   register_controls(controls);
 });
+
+Hooks.on("ready", function(){
+  const categories = [
+    { configKey: "customAbilityTags", configTarget: "tags_abilities"},
+    { configKey: "customTraitTags", configTarget: "tags_traits"},
+    { configKey: "customConsumableTags", configTarget: "tags_consumables"}
+  ];
+
+  CONFIG.FF_XIV = CONFIG.FF_XIV || {};
+
+  for (let { configKey, configTarget, labelPrefix } of categories) {
+    CONFIG.FF_XIV[configTarget] = CONFIG.FF_XIV[configTarget] || {};
+
+    const raw = game.settings.get("ffxiv", configKey);
+    const tags = raw.split(",").map(t => t.trim()).filter(Boolean);
+
+    for (let tag of tags) {
+      const key = tag.replace(/\s+/g, "-");
+      if (!CONFIG.FF_XIV[configTarget][key]) {
+        CONFIG.FF_XIV[configTarget][key] = {
+          value: key,
+          label: key
+        };
+      }
+    }
+  }
+})

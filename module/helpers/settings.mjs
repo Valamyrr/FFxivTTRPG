@@ -32,6 +32,37 @@ export class SettingsHelpers {
       requiresReload: false
     });
 
+    game.settings.register("ffxiv", "customAbilityTags", {
+      name: game.i18n.localize("FFXIV.Settings.CustomAbilityTags"),
+      hint: game.i18n.localize("FFXIV.Settings.CustomTagsHint"),
+      scope: "world",
+      config: true,
+      type: String,
+      default: "",
+      requiresReload: true
+    });
+
+    game.settings.register("ffxiv", "customTraitTags", {
+      name: game.i18n.localize("FFXIV.Settings.CustomTraitTags"),
+      hint: game.i18n.localize("FFXIV.Settings.CustomTagsHint"),
+      scope: "world",
+      config: true,
+      type: String,
+      default: "",
+      requiresReload: true
+    });
+
+    game.settings.register("ffxiv", "customConsumableTags", {
+      name: game.i18n.localize("FFXIV.Settings.CustomConsumableTags"),
+      hint: game.i18n.localize("FFXIV.Settings.CustomTagsHint"),
+      scope: "world",
+      config: true,
+      type: String,
+      default: "",
+      requiresReload: true
+    });
+
+
     game.settings.register("ffxiv", "limitedPhysicalItemsDialog", {
       name: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialog"),
       hint: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialogHint"),
