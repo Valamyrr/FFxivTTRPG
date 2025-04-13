@@ -323,7 +323,7 @@ FF_XIV.tags_abilities = {
   },
   "poison":{
     "value":"poison",
-    "label":"FFXIV.Tags.poison"
+    "label":"FFXIV.Tags.Poison"
   },
   "ninjutsu":{
     "value":"ninjutsu",
