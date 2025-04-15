@@ -95,6 +95,7 @@
       },
       "activeTitle": "",
       "showModifiers": true,
+      "altbanner": false,
       "profile_trait":{
         "name":"",
         "effect": ""

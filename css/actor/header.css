@@ -18,17 +18,23 @@
 }
 
 /*Header's background depengind on characters' class*/
+:root {
+  --banner-img: url("/systems/ffxiv/assets/banner.jpg");
+}
+.alt-banner {
+  --banner-img: url("/systems/ffxiv/assets/banner-alt.png");
+}
 .tank-header{
-  background: linear-gradient(90deg, var(--tank) 0%, rgba(255,255,255,0) 100%), url("/systems/ffxiv/assets/banner.jpg")
+  background: linear-gradient(90deg, var(--tank) 0%, rgba(255,255,255,0) 100%), var(--banner-img)
 }
 .healer-header{
-  background: linear-gradient(90deg, var(--healer) 0%, rgba(255,255,255,0) 100%), url("/systems/ffxiv/assets/banner.jpg")
+  background: linear-gradient(90deg, var(--healer) 0%, rgba(255,255,255,0) 100%), var(--banner-img)
 }
 .dps-header{
-  background: linear-gradient(90deg, var(--dps) 0%, rgba(255,255,255,0) 100%), url("/systems/ffxiv/assets/banner.jpg")
+  background: linear-gradient(90deg, var(--dps) 0%, rgba(255,255,255,0) 100%), var(--banner-img)
 }
 .-header{
-  background: linear-gradient(90deg, silver 0%, rgba(255,255,255,0) 100%), url("/systems/ffxiv/assets/banner.jpg")
+  background: linear-gradient(90deg, silver 0%, rgba(255,255,255,0) 100%), var(--banner-img)
 }
 
 /*Character Name*/
