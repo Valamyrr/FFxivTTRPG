@@ -120,7 +120,7 @@
     },
     "ItemType":{
       "ItemType":"Type d'Objet",
-      "consumable": "Consommable",
+      "consumable": "Objet",
       "limit_break": "Transcendance",
       "primary_ability": "Compétence Primaire",
       "secondary_ability": "Compétence Secondaire",

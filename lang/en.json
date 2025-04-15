@@ -120,7 +120,7 @@
     },
     "ItemType":{
       "ItemType":"Item Type",
-      "consumable": "Consumable",
+      "consumable": "Item",
       "limit_break": "Limit Break",
       "primary_ability": "Primary Ability",
       "secondary_ability": "Secondary Ability",
