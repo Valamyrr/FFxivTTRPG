@@ -372,7 +372,7 @@ FF_XIV.tags_consumables = {
     "label":"FFXIV.Tags.Primary"
   },
   "secondary":{
-    "value":"enhancement",
+    "value":"secondary",
     "label":"FFXIV.Tags.Secondary"
   },
   "instant":{
@@ -386,6 +386,10 @@ FF_XIV.tags_consumables = {
   "meal":{
     "value":"meal",
     "label":"FFXIV.Tags.Meal"
+  },
+  "utility":{
+    "value":"utility",
+    "label":"FFXIV.Tags.Utility"
   },
   "other":{
     "value":"other",

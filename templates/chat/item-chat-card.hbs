@@ -25,6 +25,7 @@
 
 
     <div class="item-dialog-effects">
+      {{#if item.system.condition}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{item.system.condition}}</div>{{/if}}
       {{#if item.system.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{item.system.base_effect}}</div>{{/if}}
       {{#if item.system.target}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{item.system.target}}</div>{{/if}}
       {{#if item.system.range}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{item.system.range}}</div>{{/if}}

@@ -116,6 +116,12 @@
 
       <div class="resources grid grid-1col">
         <div class="resource flex-group-center">
+          <label for="system.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.Condition" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.condition" type="text" value="{{item.system.condition}}"/>
+          </div>
+        </div>
+        <div class="resource flex-group-center">
           <label for="system.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.BaseEffect" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <input name="system.base_effect" type="text" value="{{item.system.base_effect}}"/>
