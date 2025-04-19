@@ -98,9 +98,24 @@ export class FfxivItem extends Item {
     });
   }
 
+  async _rollAlternate(){
+    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
+    const user = game.user.id
+    const rollData = this.getRollData()
+    const roll = new Roll(rollData.alternate_formula, rollData);
+    await roll.evaluate();
+    ChatMessage.create({
+      user: user,
+      speaker: speaker,
+      rolls: [roll],
+      flavor: game.i18n.format("FFXIV.Abilities.BaseEffectRoll")
+    });
+  }
+
   _getRollButtons(){
     let buttons = "<div style='display:flex'>"
     if(this.system.base_formula) buttons += `<button class="ffxiv-roll-base" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollBaseEffectFormula")}</button>`
+    if(this.system.alternate_formula) buttons += `<button class="ffxiv-roll-alternate" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollAlternateFormula")}</button>`
     if(this.system.hit_formula) buttons += `<button class="ffxiv-roll-hit" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollHitFormula")}</button>`
     if(this.type !="trait" && this.parent.system.showModifiers) buttons += `<button class="ffxiv-show-modifiers" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.ShowModifiers")}</button>`
     return buttons+"</div>"

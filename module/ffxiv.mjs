@@ -490,6 +490,13 @@ Hooks.on("renderChatMessage", (message, html, data) => {
     if (item) item._rollBase(ev);
   });
 
+  html.find(".ffxiv-roll-alternate").on("click", async ev => {
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const item = actor?.items?.get(itemId);
+    if (item) item._rollAlternate(ev);
+  });
+
   html.find(".ffxiv-roll-hit").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);

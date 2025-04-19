@@ -315,6 +315,7 @@
     },
     "Chat":{
       "RollHitFormula": "Jet de Toucher",
+      "RollAlternateFormula": "Jet Alternatif",
       "RollBaseEffectFormula": "Effet de base",
       "RollDirectHitFormula": "Attaque Directe",
       "ShowModifiers": "Modificateurs"

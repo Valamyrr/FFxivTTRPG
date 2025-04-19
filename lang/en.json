@@ -203,6 +203,7 @@
       "JobResource":"Job Resource",
       "JobResourceMax":"Job Resource Boxes Number",
       "BaseFormula": "Base Effect Formula",
+      "AlternateFormula": "Alternate Formula",
       "DirectFormula": "Direct Hit Formula",
       "HitFormula": "Hit Formula",
       "HitRoll": "Hit Roll"
@@ -315,6 +316,7 @@
     },
     "Chat":{
       "RollHitFormula": "Hit",
+      "RollAlternateFormula": "Alternate Roll",
       "RollBaseEffectFormula": "Base Effect",
       "RollDirectHitFormula": "Direct Hit",
       "ShowModifiers": "Show Modifiers"
