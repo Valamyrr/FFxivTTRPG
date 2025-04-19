@@ -195,6 +195,10 @@
       "DirectHit": "Attaque Directe",
       "DirectHitRoll": "Jet d'Attaque Directe",
       "Origin": "Origine",
+      "StatusEffect": "Effet de status",
+      "StatusAction": "Action sur l'Effet",
+      "StatusAdd": "Ajouter",
+      "StatusRemove": "Retirer",
       "MarkerArea": "Marqueur de Zone",
       "MarkerTrigger": "Marqueur de Cible",
       "MarkerEffect": "Marqueur d'Effet",
@@ -203,13 +207,14 @@
       "JobResource":"Ressource de Job",
       "JobResourceMax":"Nombre de cases pour cette Ressource",
       "BaseFormula": "Formule de l'Effet de Base",
+      "AlternateFormula": "Formule Alternative",
       "DirectFormula": "Formule d'Attaque Directe",
       "HitFormula": "Formule d'Attaque",
       "HitRoll": "Jet d'Attaque"
     },
     "Effects": {
       "Ascendent": "Ascendant",
-      "Bind": "Bind",
+      "Bind": "Lié",
       "Blind": "Aveugle",
       "BrinkDeath": "Aux portes de la mort",
       "Comatose": "Comateux",
@@ -308,6 +313,10 @@
       "Soundboard":"Bruitages"
     },
     "Notifications":{
+      "NoTarget": "Aucune cible sélectionée.",
+      "EffectApplied": "Effet \"{effect}\" appliqué à {actor}.",
+      "EffectRequest": "{playerName} demande d'appliquer l'effet \"{effect}\" aux cibles suivantes :",
+      "SendSocket": "Demande envoyée au Maître du jeu.",
       "ItemDelete":"{itemName} a été supprimé/e.",
       "NewPlayer":"{playerName} a rejoint l'équipe.",
       "NoSoundAvailable":"Aucun fichier son ne se trouve dans le répertoire des bruitages.",

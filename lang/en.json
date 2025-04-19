@@ -195,6 +195,10 @@
       "DirectHit": "Direct Hit",
       "DirectHitRoll": "Direct Hit Roll",
       "Origin": "Origin",
+      "StatusEffect": "Status Effect",
+      "StatusAction": "Action on Status Effect",
+      "StatusAdd": "Add",
+      "StatusRemove": "Remove",
       "MarkerArea": "Marker Area",
       "MarkerTrigger": "Marker Trigger",
       "MarkerEffect": "Marker Effect",
@@ -309,6 +313,10 @@
       "Soundboard":"Soundboard"
     },
     "Notifications":{
+      "NoTarget": "No target selected.",
+      "EffectApplied": "Effect \"{effect}\" applied to {actor}.",
+      "EffectRequest": "{playerName} asks to apply effect \"{effect}\" to the following targets:",
+      "SendSocket": "Request sent to Gamemaster.",
       "ItemDelete":"{itemName} has been removed.",
       "NewPlayer":"{playerName} has joined the party.",
       "NoSoundAvailable":"No sound files found in the system soundboard directory.",

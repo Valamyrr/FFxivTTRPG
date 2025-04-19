@@ -187,6 +187,8 @@
         "combo": "",
         "condition": "",
         "direct_hit": "",
+        "status_effect": "",
+        "status_action": true,
         "marker_area": "",
         "marker_trigger": "",
         "marker_effect": "",

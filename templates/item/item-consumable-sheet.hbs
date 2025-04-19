@@ -212,7 +212,43 @@
         </div>
 
       </div>
-      <div class="resources grid grid-3col">
+      <hr>
+      <div class="resources grid grid-2col">
+
+        <div class="resource flex-group-center">
+          <label for="system.status_effect" class="resource-label">{{ localize "FFXIV.Abilities.StatusEffect" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.status_effect">
+              <option value="" {{#unless item.system.status_effect}} selected {{/unless}}>{{ localize "FFXIV.None" }}</option>
+              {{#each statusEffects as |effect|}}
+                <option value="{{effect.id}}" {{#if (eq effect.id ../item.system.status_effect)}}selected{{/if}}>
+                  {{localize effect.label}}
+                </option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.status_action" class="resource-label">{{ localize "FFXIV.Abilities.StatusAction" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.status_action">
+              <option value="true" {{#if (eq item.system.status_action true)}}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusAdd" }}</option>
+              <option value="false" {{#if (eq item.system.status_action false)}}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusRemove" }}</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+      <hr>
+      <div class="resources grid grid-2col">
+
+        <div class="resource flex-group-center">
+          <label for="system.origin" class="resource-label">{{ localize "FFXIV.Abilities.Origin" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.origin" type="text" value="{{item.system.origin}}"/>
+          </div>
+        </div>
 
         <div class="resource flex-group-center">
           <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>

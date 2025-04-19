@@ -480,6 +480,52 @@ Hooks.on("ready", function(){
       }
     }
   }
+
+
+  // Seulement si MJ
+  if (game.user.isGM) {
+    game.socket.on("system.ffxiv", async (params) => {
+      console.log("get socket")
+      const {type, data, userName } = params;
+      switch (type) {
+        case "applyEffect":
+
+          const actors = data.actorIds.map(id => game.actors.get(id)).filter(Boolean);
+          const effect = data.effect
+
+          if (!actors || !effect) return;
+
+          new Dialog({
+            title: "Demande d'effet de statut",
+            content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest",{playerName:userName, effect: game.i18n.localize(effect.label)})}</p>
+                <ul>${actors.map(a => `<li>${a.name}</li>`).join("")}</ul>`,
+            buttons: {
+              yes: {
+                label: "Appliquer",
+                callback: async () => {
+
+                  for (const actor of actors) {
+                    actor.toggleStatusEffect(effect.id, {active: data.active});
+                    ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(effect.label), actor: actor.name }));
+                  }
+
+
+                }
+              },
+              no: {
+                label: "Refuser",
+                callback: () => {}
+              }
+            }
+          }).render(true);
+
+          break;
+        default:
+
+      }
+    });
+  }
+
 })
 
 Hooks.on("renderChatMessage", (message, html, data) => {
@@ -519,4 +565,47 @@ Hooks.on("renderChatMessage", (message, html, data) => {
     console.log(actor)
     if (actor) actor._showModifiers(ev);
   });
+
+  html.find(".ffxiv-apply-status").on("click", async ev => {
+    const status_effect = CONFIG.statusEffects.find(e => e.id === ev.currentTarget.dataset.effectId);
+    const targets = Array.from(game.user.targets);
+
+    if (targets.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
+      return;
+    }
+
+    const ownActors = [];
+    const actorsNeedingGM = [];
+
+    for (const token of targets) {
+      const actor = token.actor;
+      if (actor.testUserPermission(game.user, "OWNER")) {
+        ownActors.push(actor);
+      } else {
+        actorsNeedingGM.push(actor);
+      }
+    }
+
+    for (const actor of ownActors) {
+      await actor.toggleStatusEffect(status_effect.id, { active: true });
+      ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(status_effect.label), actor: actor.name }));
+    }
+
+    if (actorsNeedingGM.length > 0) {
+      console.log("Send socket to GM","applyEffect",status_effect)
+      game.socket.emit("system.ffxiv", {
+        type: "applyEffect",
+        data: {
+          actorIds: actorsNeedingGM.map(a => a.id),
+          effect: status_effect,
+          active: ev.currentTarget.dataset.action === 'true'
+        },
+        userName: game.user.name
+      });
+      ui.notifications.info(game.i18n.localize("FFXIV.Notifications.SendSocket"))
+    }
+
+  });
+
 });

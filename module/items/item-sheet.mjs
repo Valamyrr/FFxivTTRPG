@@ -124,6 +124,7 @@ export class FfxivItemSheet extends ItemSheet {
 
     // Adding a pointer to CONFIG.FF_XIV
     context.config = CONFIG.FF_XIV;
+    context.statusEffects = CONFIG.statusEffects
     // Prepare active effects for easier access
     context.effects = prepareActiveEffectCategories(this.item.effects);
     return context;
