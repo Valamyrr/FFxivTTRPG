@@ -314,6 +314,10 @@
       "ReplaceGear":"{oldGear} a été remplacé par {newGear}."
     },
     "Chat":{
+      "RollHitFormula": "Jet de Toucher",
+      "RollBaseEffectFormula": "Effet de base",
+      "RollDirectHitFormula": "Attaque Directe",
+      "ShowModifiers": "Modificateurs"
     },
     "None": "Aucun",
     "Special": "Spécial",

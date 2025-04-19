@@ -132,4 +132,15 @@ export class FfxivActor extends Actor {
     return data;
   }
 
+  async _showModifiers(){
+    console.log("showModifiers")
+    if (this.items.some(item => item.system.active == true)){
+      ChatMessage.create({
+        content: await renderTemplate("systems/ffxiv/templates/chat/modifiers-chat-card.hbs", { items: this.items }),
+        flags: { core: { canParseHTML: true } },
+        flavor: game.i18n.localize("FFXIV.Traits.Modifiers") + " | " + game.i18n.localize("FFXIV.Traits.TraitsOnly")
+      });
+    }
+  }
+
 }

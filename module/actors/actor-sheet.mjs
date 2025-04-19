@@ -432,30 +432,6 @@ export class FfxivActorSheet extends ActorSheet {
     const itemId = event.currentTarget.dataset.itemId
     const item = this.actor.items.get(itemId);
     if(item){
-
-      let content = await renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: item });
-      if (item.system.granted_ability){ //For augment granting abilities
-        if (game.items.get(item.system.granted_ability)){
-          content = content + await renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: game.items.get(item.system.granted_ability) });
-        }else{
-          console.error("Granted ability must be a valid ID. Use `game.items.get(INSERT_ID)` to check your item's data.")
-        }
-      }
-      ChatMessage.create({
-        content: content,
-        flags: { core: { canParseHTML: true } },
-        flavor: game.i18n.format("FFXIV.ItemType."+item.type)
-      });
-      if(item.type !="trait" && this.actor.system.showModifiers){
-
-        if (this.actor.items.some(item => item.system.active == true)){
-          ChatMessage.create({
-            content: await renderTemplate("systems/ffxiv/templates/chat/modifiers-chat-card.hbs", { items: this.actor.items }),
-            flags: { core: { canParseHTML: true } },
-            flavor: game.i18n.localize("FFXIV.Traits.Modifiers") + " | " + game.i18n.localize("FFXIV.Traits.TraitsOnly")
-          });
-        }
-      }
       item.roll(event);
     }else{
       console.error("Roll Error : No item found.")

@@ -481,3 +481,35 @@ Hooks.on("ready", function(){
     }
   }
 })
+
+Hooks.on("renderChatMessage", (message, html, data) => {
+  html.find(".ffxiv-roll-base").on("click", async ev => {
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const item = actor?.items?.get(itemId);
+    if (item) item._rollBase(ev);
+  });
+
+  html.find(".ffxiv-roll-hit").on("click", async ev => {
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const item = actor?.items?.get(itemId);
+    if (item) item._rollHit(ev);
+  });
+
+  html.find(".ffxiv-roll-direct").on("click", async ev => {
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const item = actor?.items?.get(itemId);
+    if (item) item._rollDirect(ev);
+  });
+
+  html.find(".ffxiv-show-modifiers").on("click", async ev => {
+    console.log("call show modifiers")
+    const itemId = ev.currentTarget.dataset.itemId;
+    console.log(itemId)
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    console.log(actor)
+    if (actor) actor._showModifiers(ev);
+  });
+});

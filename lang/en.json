@@ -314,6 +314,10 @@
       "ReplaceGear":"{oldGear} has been replaced with {newGear}."
     },
     "Chat":{
+      "RollHitFormula": "Hit",
+      "RollBaseEffectFormula": "Base Effect",
+      "RollDirectHitFormula": "Direct Hit",
+      "ShowModifiers": "Show Modifiers"
     },
     "None": "None",
     "Special": "Special",
