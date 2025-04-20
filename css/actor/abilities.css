@@ -135,7 +135,7 @@
   display: inline-block;
 }
 
-.actor-abilities .ability-roll-button {
+.actor-abilities .ability-roll-button,.pet-ability-roll-button {
   background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
   border: none;
   border-radius: 0;
@@ -146,11 +146,11 @@
   position: relative;
   z-index: 1;
 }
-.actor-abilities .ability-roll-button:hover{
+.actor-abilities .ability-roll-button:hover,.pet-ability-roll-button:hover{
   color: var(--invert-text-color) !important;
 }
 
-.actor-abilities .ability-roll-button::before {
+.actor-abilities .ability-roll-button::before,.pet-ability-roll-button::before {
   content: '';
   position: absolute;
   top: 0;
@@ -161,17 +161,17 @@
   z-index: -1;
   transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
 }
-.actor-abilities .ability-roll-button:hover::before {
+.actor-abilities .ability-roll-button:hover::before,.pet-ability-roll-button:hover::before {
   width: 150%;
 }
 
-.actor-abilities .ability-roll-button:hover{
+.actor-abilities .ability-roll-button:hover,.pet-ability-roll-button:hover{
   box-shadow: none;
 }
-.actor-abilities .ability-roll-button:focus{
+.actor-abilities .ability-roll-button:focus,.pet-ability-roll-button:focus{
   box-shadow: none;
 }
-.actor-abilities .ability-roll-button:active{
+.actor-abilities .ability-roll-button:active,.pet-ability-roll-button:active{
   box-shadow: none;
 }
 

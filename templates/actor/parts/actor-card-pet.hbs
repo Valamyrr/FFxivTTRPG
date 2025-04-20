@@ -22,66 +22,19 @@
     </div>
   </div>
 
-  <div class="ability-card" data-item-id="{{_id}}">
-    <div class="ability-card-info">
-      <img src="{{img}}" alt="{{name}}" class="ability-icon" data-item-id="{{_id}}">
-      <div class="ability-header">
-        <div class="ability-name">
-          {{system.pet_ability.ability_name}}
-        </div>
-        <div class="ability-right">
-          <div class="ability-tags">
-            {{#each system.tags as |tag|}}
-              <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
-            {{/each}}
-          </div>
-          <div class="ability-limitations">
-            {{#repeat system.limitations_max}}
-              <div class="limitation-wrapper">
-                <input type="checkbox" class="limitation"
-                  data-index={{index}} data-item-id={{../_id}}
-                  {{#if (lookup ../system.limitations_status index)}}checked {{/if}}>
-                <span class="checkmark"></span>
-              </div>
-            {{/repeat}}
-          </div>
-        </div>
-      </div>
-
-      <div class="ability-details">
-        {{#if system.pet_ability.cost}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Cost" }}:</strong> {{system.pet_ability.cost}}</div>{{/if}}
-        {{#if system.pet_ability.target}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{system.pet_ability.target}}</div>{{/if}}
-        {{#if system.pet_ability.range}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{system.pet_ability.range}}</div>{{/if}}
-        {{#if system.pet_ability.check}}
-          {{#if (not (eq system.pet_ability.check (localize "FFXIV.None")))}}
-          <div class="detail"><strong>{{ localize "FFXIV.Abilities.Check"}}:</strong>
-              {{localize system.pet_ability.check}}
-          </div>
-          {{/if}}
-        {{/if}}
-        {{#if system.pet_ability.challenge}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{system.pet_ability.challenge}}</div>{{/if}}
-        {{#if system.pet_ability.trigger}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{system.pet_ability.trigger}}</div>{{/if}}
-      </div>
-
-    </div>
-
-
-    <div class="ability-effects">
-      {{#if system.pet_ability.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{system.pet_ability.base_effect}}</div>{{/if}}
-      {{#if system.pet_ability.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{system.pet_ability.direct_hit}}</div>{{/if}}
-      {{#if system.pet_ability.limitations}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Limitations" }}:</strong> {{system.pet_ability.limitations}}</div>{{/if}}
-      {{#if system.pet_ability.marker_area}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{system.pet_ability.marker_area}}</div>{{/if}}
-      {{#if system.pet_ability.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{system.pet_ability.marker_trigger}}</div>{{/if}}
-      {{#if system.pet_ability.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{system.pet_ability.marker_effect}}</div>{{/if}}
-    </div>
-
-    {{#if system.description}}
-      <div class="ability-description">
-        <p>{{system.description}}</p>
-      </div>
+  {{#each system.abilities as |item|}}
+    {{#if (eq item.type "primary_ability")}}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" this}}
     {{/if}}
+    {{#if (eq item.type "secondary_ability")}}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" this}}
+    {{/if}}
+    {{#if (eq item.type "instant_ability")}}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" this}}
+    {{/if}}
+    {{#if (eq item.type "trait")}}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" this}}
+    {{/if}}
+  {{/each}}
 
-    <button class="pet-roll-button" data-item-id={{_id}}>{{ localize "FFXIV.CharacterSheet.Show" }}</button>
-
-  </div>
 </div>

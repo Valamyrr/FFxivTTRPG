@@ -10,6 +10,7 @@ export const preloadHandlebarsTemplates = async function () {
     'systems/ffxiv/templates/actor/parts/actor-attributes.hbs',
     'systems/ffxiv/templates/actor/parts/actor-profile.hbs',
     'systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs',
+    'systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs',
     'systems/ffxiv/templates/actor/parts/actor-card-augment.hbs',
     'systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs',
     'systems/ffxiv/templates/actor/parts/actor-card-minion.hbs',

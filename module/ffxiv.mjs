@@ -213,7 +213,7 @@ Handlebars.registerHelper("sortPets", function (pets, order) {
   });
 });
 Handlebars.registerHelper("getActor", function (actorId) {
-  return game.actors?.get(actorId)?.toObject();
+  return game.actors?.get(actorId)
 });
 
 Handlebars.registerHelper("gearBonuses", function (items) {

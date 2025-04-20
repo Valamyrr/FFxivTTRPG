@@ -68,6 +68,7 @@ export class FfxivActor extends Actor {
 
   _preparePetData(actorData) {
     if (actorData.type !== 'pet') return;
+    actorData.system.abilities = Array.from(this.items) //to duplicate complete items data
   }
 
 

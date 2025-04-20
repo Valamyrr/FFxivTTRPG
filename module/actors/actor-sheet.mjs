@@ -182,7 +182,6 @@ export class FfxivActorSheet extends ActorSheet {
       this.actor.update({ "system.pets": validIds });
       this.render(true)
     }
-
   }
 
 
@@ -347,7 +346,7 @@ export class FfxivActorSheet extends ActorSheet {
     html.on('click', '.ability-icon', this._renderItem.bind(this));
     html.on('click', '.augment-icon', this._renderItem.bind(this));
     html.on('click', '.ability-roll-button', this._rollItem.bind(this));
-    html.on('click', '.pet-roll-button', this._rollPet.bind(this));
+    html.on('click', '.pet-ability-roll-button', this._rollPet.bind(this));
 
     html.on('click', '.roll-attribute', this._rollAttribute.bind(this));
 
@@ -442,16 +441,12 @@ export class FfxivActorSheet extends ActorSheet {
   }
 
   async _rollPet(event){
-    const petId = event.currentTarget.dataset.itemId
+    const petId = event.currentTarget.dataset.petId
+    const itemId = event.currentTarget.dataset.itemId
     const pet = game.actors.get(petId);
-    if(pet){
-
-      let content = await renderTemplate("systems/ffxiv/templates/chat/pet-chat-card.hbs", { pet: pet });
-      ChatMessage.create({
-        content: content,
-        flags: { core: { canParseHTML: true } },
-        flavor: game.i18n.format("FFXIV.CharacterSheet.Pets")
-      });
+    const item = pet.items.get(itemId);
+    if(pet && item){
+      item.roll(event);
     }else{
       console.error("Roll Error : No pet found.")
       console.error(event.currentTarget)
