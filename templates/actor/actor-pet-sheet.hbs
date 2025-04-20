@@ -47,21 +47,6 @@
     <div class="tab info" data-group="primary" data-tab="info">
       <div class='attributes'>
         <div class="pet-attributes-container">
-          <div class="tags-container">
-            <label for="actor.system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
-            <ul class="tag-list">
-              {{#each actor.system.tags as |tag index|}}
-                <li>
-                  <select style="text-align: center;" class="select-tags">
-                    {{#each ../config.tags_abilities as |t|}}
-                    <option value="{{t.label}}" {{#if (eq t.label tag)}}selected {{/if}}>{{ localize t.label }}</option>
-                    {{/each}}
-                  </select>
-                  <button type="button" class="remove-tag" data-index="{{index}}">x</button>
-                </li>
-              {{/each}}
-            </ul>
-          </div>
 
           <div class="s-attribute-card">
             <div class="s-attribute-header">
@@ -74,7 +59,6 @@
             </div>
           </div>
 
-          <hr>
           <div class="resources grid grid-1col">
 
             <div class="resource flex-group-center">
