@@ -69,7 +69,6 @@ Hooks.once('init', function () {
     title: game.i18n.localize("FFXIV.ItemType.title"),
     gear: game.i18n.localize("FFXIV.ItemType.gear"),
     minion: game.i18n.localize("FFXIV.ItemType.minion"),
-    pet: game.i18n.localize("FFXIV.ItemType.pet"),
     augment: game.i18n.localize("FFXIV.ItemType.augment")
   };
 

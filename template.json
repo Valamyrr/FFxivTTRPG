@@ -151,7 +151,7 @@
     }
   },
   "Item": {
-    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title","gear","pet","minion","augment"],
+    "types": ["consumable","limit_break","primary_ability","secondary_ability","instant_ability","trait","currency","title","gear","minion","augment"],
     "templates": {
       "physical_item":{
         "quantity": 1,
