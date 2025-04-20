@@ -84,3 +84,7 @@
   flex:1;
   padding: 5px;
 }
+
+.ffxiv .pet-remove.fa.fa-trash-can{
+  line-height: 28px;
+}

@@ -365,6 +365,7 @@ export class FfxivActorSheet extends ActorSheet {
     html.on('click', '.move-down', this._moveAbility.bind(this, 1))
     html.on('click', '.pet-move-up', this._movePet.bind(this, -1));
     html.on('click', '.pet-move-down', this._movePet.bind(this, 1))
+    html.on('click', '.pet-remove', this._removePet.bind(this))
 
 
   }
@@ -787,6 +788,22 @@ export class FfxivActorSheet extends ActorSheet {
 
     // Default behavior for other drops (like items)
     return super._onDrop(event);
+  }
+
+  async _removePet(event){
+    const petId = event.currentTarget.dataset.itemId;
+    let pets = foundry.utils.duplicate(this.actor.system.pets || []);
+    console.log(pets)
+    const index = pets.indexOf(petId)
+    console.log(index)
+    if(index==-1){
+      console.error(`No pet "${petId}" in pets array from:`,this.actor.system.pets)
+      return;
+    }
+    pets.splice(index, 1);
+    await this.actor.update({"system.pets":pets})
+
+
   }
 
 
