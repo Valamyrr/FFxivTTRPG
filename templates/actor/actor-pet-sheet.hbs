@@ -16,214 +16,82 @@
     </div>
   </header>
 
+
+  {{!-- Sheet Tab Navigation --}}
+  <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
+    <a class="sub-tab" data-tab="fight">{{ localize "FFXIV.Abilities.Abilities" }}<div class="chip"></div></a>
+    <a class="sub-tab" data-tab="info">{{ localize "FFXIV.CharacterSheet.Info" }}<div class="chip"></div></a>
+  </nav>
+
   {{! Sheet Body }}
   <section class='sheet-body'>
 
-    <div class='attributes'>
-      <div class="pet-attributes-container">
-        <div class="tags-container">
-          <label for="actor.system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
-          <ul class="tag-list">
-            {{#each actor.system.tags as |tag index|}}
-              <li>
-                <select style="text-align: center;" class="select-tags">
-                  {{#each ../config.tags_abilities as |t|}}
-                  <option value="{{t.label}}" {{#if (eq t.label tag)}}selected {{/if}}>{{ localize t.label }}</option>
-                  {{/each}}
-                </select>
-                <button type="button" class="remove-tag" data-index="{{index}}">x</button>
-              </li>
-            {{/each}}
-          </ul>
-        </div>
-
-        <div class="s-attribute-card">
-          <div class="s-attribute-header">
-            <img src="systems/ffxiv/assets/properties/speed.png">
-            <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Speed" }}</div>
-          </div>
-          <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.speed.value" value="{{ system.speed.value }}">
-            <input type="text" class="s-attribute-value" name="system.speed.unit" value="{{ system.speed.unit }}">
-          </div>
-        </div>
-
-        <hr>
-        <div class="resources grid grid-1col">
-
-
-
-          <div class="resource flex-group-center">
-            <label class="resource-label">{{ localize "FFXIV.Abilities.TraitsShort" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              {{editor
-                enrichedTraits
-                target='system.traits'
-                engine='prosemirror'
-                button=true
-                editable=editable
-              }}
-            </div>
-          </div>
-
-          <div class="resource flex-group-center">
-            <label for="system.pet_ability.ability_name" class="resource-label">{{ localize "FFXIV.Item.AbilityName" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.pet_ability.ability_name" type="text" value="{{system.pet_ability.ability_name}}"/>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <hr>
-
-      <div class="resources grid grid-3col">
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.cost" class="resource-label">{{ localize "FFXIV.Abilities.Cost" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.cost" type="text" value="{{system.pet_ability.cost}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.target" class="resource-label">{{ localize "FFXIV.Abilities.Target" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.target" type="text" value="{{system.pet_ability.target}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.range" class="resource-label">{{ localize "FFXIV.Abilities.Range" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.range" type="text" value="{{system.pet_ability.range}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.check" class="resource-label">{{ localize "FFXIV.Abilities.Check" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <select style="text-align: center;" name="system.pet_ability.check">
-              <option value="{{localize "FFXIV.None"}}">{{localize "FFXIV.None"}}</option>
-              {{#each this.config.attributes as |a|}}
-              <option value="{{a.label}}" {{#if (eq a.label ../actor.system.pet_ability.check)}}selected {{/if}}>{{ localize a.label }}</option>
-              {{/each}}
-              <option value="FFXIV.Special" {{#if (eq "FFXIV.Special" actor.system.pet_ability.check)}}selected {{/if}}>{{localize "FFXIV.Special"}}</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.challenge" class="resource-label">{{ localize "FFXIV.Abilities.Challenge" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.challenge" type="text" value="{{system.pet_ability.challenge}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.trigger" class="resource-label">{{ localize "FFXIV.Abilities.Trigger" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.trigger" type="text" value="{{system.pet_ability.trigger}}"/>
-          </div>
-        </div>
-
-      </div>
-      <hr>
-
-      <div class="resources grid grid-1col">
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.hit_formula" class="resource-label">{{ localize "FFXIV.Abilities.HitFormula" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.hit_formula" type="text" value="{{system.pet_ability.hit_formula}}"/>
-          </div>
-        </div>
-      </div>
-
-      <div class="resources grid grid-2col">
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.BaseEffect" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.base_effect" type="text" value="{{system.pet_ability.base_effect}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.base_formula" class="resource-label">{{ localize "FFXIV.Abilities.BaseFormula" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.base_formula" type="text" value="{{system.pet_ability.base_formula}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.direct_hit" class="resource-label">{{ localize "FFXIV.Abilities.DirectHit" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.direct_hit" type="text" value="{{system.pet_ability.direct_hit}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.direct_formula" class="resource-label">{{ localize "FFXIV.Abilities.DirectFormula" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.direct_formula" type="text" value="{{system.pet_ability.direct_formula}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.combo" class="resource-label">{{ localize "FFXIV.Abilities.Combo" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.combo" type="text" value="{{system.pet_ability.combo}}"/>
-          </div>
-        </div>
-
-      </div>
-      <div class="resources grid grid-3col">
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.marker_trigger" type="text" value="{{system.pet_ability.marker_trigger}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.marker_area" type="text" value="{{system.pet_ability.marker_area}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.marker_effect" type="text" value="{{system.pet_ability.marker_effect}}"/>
-          </div>
-        </div>
-
-
-
-      </div>
-
-      <hr>
-      <div class="resources grid grid-2col">
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.limitations" class="resource-label">{{ localize "FFXIV.Abilities.Limitations" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.limitations" type="text" value="{{system.pet_ability.limitations}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.pet_ability.limitations_max" class="resource-label">{{ localize "FFXIV.Abilities.Limitations_max" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.pet_ability.limitations_max" type="number" min=0 value="{{system.pet_ability.limitations_max}}"/>
-          </div>
-        </div>
-
-      </div>
-
+    <div class="tab fight actor-abilities" data-group="primary" data-tab="fight">
+      {{#each (reverse items)}}
+        {{#if (eq type "primary_ability")}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+        {{/if}}
+      {{/each}}
+      {{#each (reverse items)}}
+        {{#if (eq type "secondary_ability")}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+        {{/if}}
+      {{/each}}
+      {{#each (reverse items)}}
+        {{#if (eq type "instant_ability")}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+        {{/if}}
+      {{/each}}
     </div>
 
+    <div class="tab info" data-group="primary" data-tab="info">
+      <div class='attributes'>
+        <div class="pet-attributes-container">
+          <div class="tags-container">
+            <label for="actor.system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
+            <ul class="tag-list">
+              {{#each actor.system.tags as |tag index|}}
+                <li>
+                  <select style="text-align: center;" class="select-tags">
+                    {{#each ../config.tags_abilities as |t|}}
+                    <option value="{{t.label}}" {{#if (eq t.label tag)}}selected {{/if}}>{{ localize t.label }}</option>
+                    {{/each}}
+                  </select>
+                  <button type="button" class="remove-tag" data-index="{{index}}">x</button>
+                </li>
+              {{/each}}
+            </ul>
+          </div>
+
+          <div class="s-attribute-card">
+            <div class="s-attribute-header">
+              <img src="systems/ffxiv/assets/properties/speed.png">
+              <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Speed" }}</div>
+            </div>
+            <div class="s-attribute-info">
+              <input type="number" class="s-attribute-value" name="system.speed.value" value="{{ system.speed.value }}">
+              <input type="text" class="s-attribute-value" name="system.speed.unit" value="{{ system.speed.unit }}">
+            </div>
+          </div>
+
+          <hr>
+          <div class="resources grid grid-1col">
+
+            <div class="resource flex-group-center">
+              <label class="resource-label">{{ localize "FFXIV.Abilities.TraitsShort" }}</label>
+              <div class="resource-content flexrow flex-center flex-between">
+                {{editor
+                  enrichedTraits
+                  target='system.traits'
+                  engine='prosemirror'
+                  button=true
+                  editable=editable
+                }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 </form>
