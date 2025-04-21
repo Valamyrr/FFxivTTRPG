@@ -5,20 +5,7 @@ There is a "[FFXIV TTRPG Fan](https://discord.gg/6EghsJdCbS)" Discord server whi
 
 ## Roadmap
 
-### Pet Actors
-Instead of Items, the system should use Actors for Pet (to handle Token) and owners would have a link to the actor id.
-Display those on any sheet if a character setting is checked, so even a custom job can have them (currently, only Summoner).
-
-### Custom jobs
-An option should be available to use a custom job, with a custom icon and custom color header.
-
-### Update Wiki
-
-### Macro to assign Abilities
-Make available a tool to "learn" all abilities of a specific level for one's job
-
-### Inline Rolls
-On chat rolls, buttons for ability in chat to display damage or even automatically apply effects on target. Inspiration from PF2.
+Everything planned as been developed. Feel free to send me a message through Discord if you have any feature request though!
 
 ## Contributing
 This project is opened to PR. I am the only maintainer of this project, so please understand that you might need to send me messages on Discord if your PR does not get attention. It's entirely possible I miss notifications.
