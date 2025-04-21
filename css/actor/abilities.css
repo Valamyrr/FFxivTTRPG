@@ -41,7 +41,8 @@
   /*background: radial-gradient(circle, rgba(237,210,99,1) 65%, rgba(255,255,255,0) 100%);*/
 }
 .sub-tab.active {
-  filter: contrast(125%);
+  filter: var(--subtabactive-filter);
+  background: var(--subtabactive-background);
 }
 
 .sub-tab-content {

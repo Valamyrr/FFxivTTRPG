@@ -54,7 +54,7 @@
   color: var(--text-color-input);
 }
 .ffxiv.actor .window-content option{
-  background: var(--background-color);
+  background: var(--option-background-color);
   color: var(--text-color-input);
 }
 

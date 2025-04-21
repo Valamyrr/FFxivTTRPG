@@ -299,6 +299,8 @@
       "CustomTagsHint": "Liste de tags séparés par des virgules de tags à ajouter aux listes pré-existantes",
       "LimitedPhysicalItemsDialog": "Limiter la Boîte de dialogue",
       "LimitedPhysicalItemsDialogHint": "Afficher les objets avec des boîtes de dialogue réduites et des droits limités pour les joueurs ?",
+      "OverrideColorScheme": "Palette de couleur bleue",
+      "OverrideColorSchemeHint": "Remplacer le paramètre de thème de couleur par un bleu inspiré de celui du jeu vidéo.",
       "SoundNotificationFFxiv":"Bruitages de FFXIV",
       "SoundNotificationFFxivHint":"Ajoute quelques bruitages déclenchés par des actions telles que la connexion d'un autre joueur, l'ouverture/fermeture de votre feuille de personnage, le déplacement d'objets dans votre inventaire, etc.",
       "SoundNotificationFFxivVolume":"Volume des Bruitages",

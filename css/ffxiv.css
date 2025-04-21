@@ -386,3 +386,7 @@
 .ffxiv .prosemirror menu .pm-dropdown:hover i{
   color: var(--text-color);
 }
+
+.ffxiv input::placeholder{
+  color: var(--placeholder-color);
+}

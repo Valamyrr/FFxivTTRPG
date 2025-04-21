@@ -13,6 +13,7 @@ body{
 
 
 .dark_theme {
+  --option-background-color: #2C2C2C;
   --background-color: #2C2C2C;
   --text-color: white;
   --text-color-input: white;
@@ -44,9 +45,14 @@ body{
 
   --chip-color: grey;
   --chip-color-active: rgb(237,210,99);
+
+  --placeholder-color:;
+  --subtabactive-background:;
+  --subtabactive-filter:contrast(125%);
 }
 
 .light_theme {
+  --option-background-color: #F5F0E8;
   --background-color: #F5F0E8;
   --text-color: #2C2C2C;
   --text-color-input: #2C2C2C;
@@ -78,4 +84,58 @@ body{
 
   --chip-color: rgb(220,202,179);
   --chip-color-active: darkorange;
+
+  --placeholder-color:;
+  --subtabactive-background:;
+  --subtabactive-filter:contrast(125%);
+}
+
+.blue_theme {
+  /*--background-color: linear-gradient(42deg,rgba(90, 188, 196, 1) 0%, rgba(87, 139, 199, 1) 80%, rgba(87, 100, 199, 1) 100%);*/
+  --option-background-color: #425894;
+  --background-color: linear-gradient(45deg,rgba(67, 113, 205, 1) 0%, rgba(32, 54, 109, 1) 80%, rgba(26, 39, 72, 1) 100%);
+  --text-color: white;
+  --text-color-input: white;
+  --invert-text-color: black;
+  /*
+  --text-color-strong: #999;
+
+  --primary-color: #182335;
+  --secondary-color: #2478E8;*/
+  --text-color-strong: #009;
+
+  --primary-color: #3488f8;
+  --secondary-color: #1D2638;
+
+  --pet-color: #6179B5;
+
+  --border-color-1: #999;
+  --border-color-2: #999;
+  --border-shadow-1: #444;
+
+  /*--gradient-color-1: #283653;
+  --gradient-color-2: rgb(58,58,58);
+  --gradient-color-3: #3C4E70;
+  --gradient-color-4: #596EA1;*/
+  --gradient-color-1: #2471DB;
+  --gradient-color-2: ;
+  --gradient-color-3: #2471DB;
+  --gradient-color-4: #425994;
+  --gradient-stats-sidebar: linear-gradient(180deg, rgba(117,140,159,1) 0%, rgba(42,70,92,1) 30%, rgba(25,50,70,1) 100%);
+
+  --shadow-color-top: rgb(150,150,150);
+  --shadow-color-bottom: rgb(0,0,0);
+  --shadow-improve-readability-white: 0px 0px 5px rgba(0,0,0,0.4);
+  --shadow-improve-readability-light: 0px 0px 5px rgba(0,0,0,0.4);
+  --shadow-improve-readability-dark: 1px 0px 2px rgba(0,0,0,0.2), -1px 0px 2px rgba(0,0,0,0.2);
+
+  --tooltip: rgba(0, 0, 0, 0.6);
+
+  --chip-color: linear-gradient(355deg,rgba(79, 96, 136, 1) 0%, rgba(53, 62, 100, 1) 80%, rgba(40, 43, 73, 1) 100%);;
+  --chip-color-active: rgb(237,210,99);
+
+  --placeholder-color:#A6A8C4;
+  --subtabactive-background:#10285A;
+  --subtabactive-filter:;
+
 }

@@ -299,6 +299,8 @@
       "CustomTagsHint": "Comma-separated list of tags to add to this category",
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
       "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?",
+      "OverrideColorScheme": "Blue color theme",
+      "OverrideColorSchemeHint": "Override core setting light/dark color scheme with a blue color scheme inspired from FFXIV in-game blue color scheme.",
       "SoundNotificationFFxiv":"Sound Notifications from FFXIV",
       "SoundNotificationFFxivHint":"Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your iventory, etc.",
       "SoundNotificationFFxivVolume":"Volume from Sound Notifications",

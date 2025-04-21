@@ -62,7 +62,6 @@ export class SettingsHelpers {
       requiresReload: true
     });
 
-
     game.settings.register("ffxiv", "limitedPhysicalItemsDialog", {
       name: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialog"),
       hint: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialogHint"),
@@ -71,6 +70,16 @@ export class SettingsHelpers {
       default: true,
       type: Boolean,
       requiresReload: false
+    });
+
+    game.settings.register("ffxiv", "overrideColorScheme", {
+      name: game.i18n.localize("FFXIV.Settings.OverrideColorScheme"),
+      hint: game.i18n.localize("FFXIV.Settings.OverrideColorSchemeHint"),
+      scope: "client",
+      config: true,
+      default: false,
+      type: Boolean,
+      requiresReload: true
     });
 
     game.settings.register("ffxiv", "soundNotificationFFxiv", {

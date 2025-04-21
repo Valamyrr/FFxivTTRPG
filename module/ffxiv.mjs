@@ -253,11 +253,16 @@ Hooks.once('ready', function () {
   Hooks.on('hotbarDrop', (bar, data, slot) => createItemMacro(data, slot));
 
   // Color Scheme to use with css variables
-  if (game.settings.get("core", "colorScheme") == "") {
-    CONFIG.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (game.settings.get("ffxiv", "overrideColorScheme")){
+      CONFIG.theme = "blue"
   }else{
-    CONFIG.theme = game.settings.get("core", "colorScheme")
+    if (game.settings.get("core", "colorScheme") == "") {
+      CONFIG.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }else{
+      CONFIG.theme = game.settings.get("core", "colorScheme")
+    }
   }
+
 });
 
 /* -------------------------------------------- */
