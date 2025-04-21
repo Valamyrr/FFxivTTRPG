@@ -46,7 +46,7 @@ body{
   --chip-color: grey;
   --chip-color-active: rgb(237,210,99);
 
-  --placeholder-color:;
+  --placeholder-color: var(--color-text-dark-secondary);
   --subtabactive-background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);;
   --subtabactive-filter:contrast(125%);
 }
@@ -85,7 +85,7 @@ body{
   --chip-color: rgb(220,202,179);
   --chip-color-active: darkorange;
 
-  --placeholder-color:;
+  --placeholder-color: var(--color-text-dark-secondary);
   --subtabactive-background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);;
   --subtabactive-filter:contrast(125%);
 }
