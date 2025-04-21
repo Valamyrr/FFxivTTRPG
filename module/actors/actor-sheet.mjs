@@ -459,17 +459,7 @@ export class FfxivActorSheet extends ActorSheet {
       ui.notifications.error("No attribute specified to roll for.");
       return;
     }
-    const attributeValue = foundry.utils.getProperty(this.actor.system, `primary_attributes.${attribute}.value`) || 0
-    const attributeString = attribute.charAt(0).toUpperCase() + attribute.slice(1)
-    let roll = new Roll(`1d20 + ${attributeValue}`);
-    roll.toMessage({
-      speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-      flavor: `<i class="fa-solid fa-dice-d20"></i> ${game.i18n.localize(`FFXIV.Attributes.${attributeString}.long`) || attribute}`,
-      content: `${roll.total} (${roll.formula})`,
-      rollMode: game.settings.get('core', 'rollMode'),
-      flags: { core: { canParseHTML: true } }
-    });
-    return roll;
+    this.actor._rollAttribute(attribute);
   }
 
   async _renderItem(event){

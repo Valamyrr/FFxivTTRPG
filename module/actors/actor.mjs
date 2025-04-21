@@ -144,4 +144,33 @@ export class FfxivActor extends Actor {
     }
   }
 
+  async _rollAttribute(attribute) {
+    const attributeCapitalized = attribute.charAt(0).toUpperCase() + attribute.slice(1);
+    const abbreviationEntry = CONFIG.FF_XIV.attributesAbbreviations[attributeCapitalized];
+
+    if (!abbreviationEntry) {
+      ui.notifications.warn(`Unknown attribute: ${attribute}`);
+      return;
+    }
+
+    const attrKey = abbreviationEntry.value;
+    const attributeValue = foundry.utils.getProperty(this.system, `primary_attributes.${attribute}.value`) || 0;
+
+    const rollData = this.getRollData();
+    const modifiers = rollData[attrKey] ?? 0;
+    const roll = new Roll(`1d20 + ${modifiers}`, rollData);
+    await roll.evaluate({ async: true });
+
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: `<i class="fa-solid fa-dice-d20"></i> ${game.i18n.localize(`FFXIV.Attributes.${attributeCapitalized}.long`) || attribute}`,
+      content: `${roll.total} (${roll.formula})`,
+      rollMode: game.settings.get('core', 'rollMode'),
+      flags: { core: { canParseHTML: true } }
+    });
+
+    return roll;
+  }
+
+
 }

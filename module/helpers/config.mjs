@@ -50,24 +50,24 @@ FF_XIV.characteristics = {
 
 FF_XIV.attributesAbbreviations = {
   "Strength":{
-    "value":"STR",
+    "value":"str",
     "label":"FFXIV.CharacterSheet.Attributes.Strength.abbrv"
   },
   "Dexterity":{
-    "value":"DEX",
+    "value":"dex",
     "label":"FFXIV.CharacterSheet.Attributes.Dexterity.abbrv"
   },
   "Vitality":{
-    "value":"VIT",
+    "value":"vit",
     "label":"FFXIV.CharacterSheet.Attributes.Vitality.abbrv"
   },
   "Intelligence":{
-    "value":"INT",
+    "value":"int",
     "label":"FFXIV.CharacterSheet.Attributes.Intelligence.abbrv"
   },
   "Mind":{
-      "value":"MND",
-      "label":"FFXIV.CharacterSheet.Attributes.Mind.abbrv"
+    "value":"mnd",
+    "label":"FFXIV.CharacterSheet.Attributes.Mind.abbrv"
   }
 };
 
