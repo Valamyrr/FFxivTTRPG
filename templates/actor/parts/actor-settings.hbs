@@ -92,17 +92,28 @@
 {{/if}}
 <hr>
 <div class="resources grid grid-2col">
-  <div class="resource" style="margin:auto">
+
+  <div class="resource flex-group-center">
     <label for="system.showModifiers" class="resource-label">{{ localize "FFXIV.CharacterSheet.ShowModifiers" }}</label>
-  </div>
-  <div class="resource-content">
-    <input type="checkbox" name="system.showModifiers" {{#if system.showModifiers}}checked {{/if}}>
+    <div class="resource-content flexrow flex-center flex-between">
+      <select style="text-align: center;" name="system.showModifiers">
+          <option value="true" {{#if (eq "true" system.showModifiers)}}selected {{/if}} >{{ localize "FFXIV.True" }}</option>
+          <option value="false" {{#if (eq "false" system.showModifiers)}}selected {{/if}} >{{ localize "FFXIV.False" }}</option>
+      </select>
+
+    </div>
   </div>
 
-  <div class="resource" style="margin:auto">
+  <div class="resource flex-group-center">
     <label for="system.altbanner" class="resource-label">{{ localize "FFXIV.CharacterSheet.AltBanner" }}</label>
+    <div class="resource-content flexrow flex-center flex-between">
+      <select style="text-align: center;" name="system.altbanner">
+          <option value="true" {{#if (eq "true" system.altbanner)}}selected {{/if}} >{{ localize "FFXIV.True" }}</option>
+          <option value="false" {{#if (eq "false" system.altbanner)}}selected {{/if}} >{{ localize "FFXIV.False" }}</option>
+      </select>
+
+    </div>
   </div>
-  <div class="resource-content">
-    <input type="checkbox" name="system.altbanner" {{#if system.altbanner}}checked {{/if}}>
-  </div>
+
+
 </div>
