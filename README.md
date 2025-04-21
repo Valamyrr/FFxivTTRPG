@@ -11,7 +11,7 @@ Everything planned as been developed. Feel free to send me a message through Dis
 This project is opened to PR. I am the only maintainer of this project, so please understand that you might need to send me messages on Discord if your PR does not get attention. It's entirely possible I miss notifications.
 
 ## Attributions
-- game icons from [ffxiv's fan kit](https://fr.finalfantasyxiv.com/lodestone/special/fankit/icon/)
+- game icons from [ffxiv's fan kit](https://fr.finalfantasyxiv.com/lodestone/special/fankit/icon/). © SQUARE ENIX
 - game icons from [gamerescape's dictionary](https://ffxiv.gamerescape.com/wiki/Dictionary_of_Icons#Player_Icons)
 - banner.jpg is the official artwork by Sqare Enix for FFXIV TTRPG
 - status effects drawn and shared by Demonskunk on Discord
