@@ -176,6 +176,8 @@ export class FfxivActorSheet extends ActorSheet {
    * @param {object} context The context object to mutate
    */
   _prepareCharacterData(context) {
+    context.rollData = this.actor.getRollData()
+
     let pets = this.actor.system.pets || [];
     const validIds = pets.filter(id => game.actors.get(id));
     if (validIds.length !== pets.length) {
