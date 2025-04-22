@@ -368,6 +368,8 @@ export class FfxivActorSheet extends ActorSheet {
     html.on('click', '.pet-move-down', this._movePet.bind(this, 1))
     html.on('click', '.pet-remove', this._removePet.bind(this))
 
+    html.on('click', '.pet-name', this._openPet.bind(this))
+
 
   }
 
@@ -791,6 +793,16 @@ export class FfxivActorSheet extends ActorSheet {
     await this.actor.update({"system.pets":pets})
 
 
+  }
+
+  async _openPet(event){
+    const petId = event.currentTarget.dataset.petId;
+    const pet = game.actors.get(petId)
+    if(pet){
+      pet.sheet.render(true);
+    }else{
+      console.error(`No pet found for ${petId}`);
+    }
   }
 
 
