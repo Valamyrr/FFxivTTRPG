@@ -445,9 +445,15 @@ Hooks.on("closeActorSheet", (hookEvent, html) => {
 })
 
 Hooks.on("renderChatLog", (app, html) => {
-  let theme = game.settings.get("core", "colorScheme")
-  if (theme == "") {
-    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  let theme;
+  if (game.settings.get("ffxiv", "overrideColorScheme")){
+      theme = "blue"
+  }else{
+    if (game.settings.get("core", "colorScheme") == "") {
+      theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }else{
+      theme = game.settings.get("core", "colorScheme")
+    }
   }
   $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(theme+'_theme')
 });
