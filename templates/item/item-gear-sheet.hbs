@@ -120,7 +120,7 @@
           {{#each system.classes as |class index|}}
             <li>
               <select style="text-align: center;" class="select-classes">
-                {{#each ../config.classes as |c|}}
+                {{#each ../settings.jobsAbbrv as |c|}}
                 <option value="{{c.labelshort}}" {{#if (eq c.labelshort class)}}selected {{/if}}>{{ localize c.labelshort }}</option>
                 {{/each}}
               </select>

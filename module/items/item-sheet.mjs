@@ -115,7 +115,8 @@ export class FfxivItemSheet extends ItemSheet {
     }
 
     context.settings = {
-      "useRarity": game.settings.get('ffxiv','useRarity')
+      "useRarity": game.settings.get('ffxiv','useRarity'),
+      "jobsAbbrv": game.settings.get('ffxiv','jobsAbbrv')
     }
 
     // Add the item's data to context.data for easier access, as well as flags.
