@@ -206,6 +206,9 @@
       "Stun": "Étourdissement",
       "Weakness": "Faiblesse"
     },
+    "Tags":{
+      "Tags": "Tags"
+    },
     "Traits":{
       "Activable": "Activable",
       "Modifiers": "Modificateurs",

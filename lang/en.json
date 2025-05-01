@@ -237,6 +237,9 @@
       "Stun": "Stun",
       "Weakness": "Weakness"
     },
+    "Tags":{
+      "Tags": "Tags"
+    },
     "Traits":{
       "Activable": "Activable",
       "Modifiers": "Modifiers",
