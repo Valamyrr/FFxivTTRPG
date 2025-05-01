@@ -69,8 +69,8 @@ export class FfxivItem extends Item {
 
     let content = "<div style='display:flex'>"
     if(this.system.base_formula) content += `<button class="ffxiv-roll-base" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollBaseEffectFormula")}</button>`
-    content += `<button class="ffxiv-roll-direct" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollCriticalHitFormula")}</button>`
-    content += `<button class="ffxiv-roll-critical" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`
+    content += `<button class="ffxiv-roll-direct" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`
+    content += `<button class="ffxiv-roll-critical" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollCriticalHitFormula")}</button>`
     content += "</div>"
 
     ChatMessage.create({
@@ -85,7 +85,8 @@ export class FfxivItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
-    const roll = new Roll(this._doubleDiceCounts(rollData.direct_formula), rollData);
+    const roll = new Roll(rollData.direct_formula, rollData);
+    console.log(roll)
     await roll.evaluate();
     ChatMessage.create({
       user: user,
@@ -99,13 +100,14 @@ export class FfxivItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
-    const roll = new Roll(rollData.direct_formula, rollData);
+    let roll = new Roll(rollData.direct_formula, rollData);
+    roll._formula = this._doubleDiceCounts(roll._formula)
     await roll.evaluate();
     ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
-      flavor: game.i18n.format("FFXIV.Abilities.DirectHitRoll")
+      flavor: game.i18n.format("FFXIV.Abilities.CriticalHitRoll")
     });
   }
 

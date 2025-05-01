@@ -196,6 +196,7 @@
       "Combo": "Combo",
       "DirectHit": "Direct Hit",
       "DirectHitRoll": "Direct Hit Roll",
+      "CriticalHitRoll": "Critical Hit Roll",
       "Origin": "Origin",
       "StatusEffect": "Status Effect",
       "StatusAction": "Action on Status Effect",

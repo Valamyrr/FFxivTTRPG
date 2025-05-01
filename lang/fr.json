@@ -165,6 +165,7 @@
       "Combo": "Combo",
       "DirectHit": "Attaque Directe",
       "DirectHitRoll": "Jet d'Attaque Directe",
+      "CriticalHitRoll": "Jet d'Attaque Critique",
       "Origin": "Origine de la zone d'effet",
       "StatusEffect": "Effet du statut",
       "StatusAction": "Action sur l'Effet",
