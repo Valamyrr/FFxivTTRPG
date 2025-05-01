@@ -157,14 +157,19 @@ Handlebars.registerHelper("labelize", function ( category, value ) {
   return configValue ? configValue.label : value
 });
 Handlebars.registerHelper("delabelize", function ( category, label ) {
-  const configCategory = FF_XIV[category]
-  for (const key in configCategory) {
-    if (configCategory[key].label === label) {
-        return configCategory[key].value;
+  if(game.settings.get('ffxiv','useRarity')){
+    const configCategory = FF_XIV[category]
+    for (const key in configCategory) {
+      if (configCategory[key].label === label) {
+          return configCategory[key].value;
+      }
     }
+    console.error("FFXIV | cannot find label for "+label+" in "+category)
+    return "label error"
+  }else{
+    return ""
   }
-  console.error("FFXIV | cannot find label for "+label+" in "+category)
-  return "label error"
+
 });
 
 Handlebars.registerHelper('buildInventoryGrid', function(items, gridSize) {
