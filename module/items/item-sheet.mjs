@@ -180,9 +180,9 @@ export class FfxivItemSheet extends ItemSheet {
     html.on('click', '.add-tag', () => {
       const tags = this.item.system.tags || [];
       if(this.item.type == "trait"){
-        tags.push("FFXIV.Tags.Trait")
+        tags.push("FFXIV.Tags.Default")
       }else{
-        tags.push("FFXIV.Tags.Primary")
+        tags.push("FFXIV.Tags.Default")
       };
       this.item.update({ "system.tags": tags });
       this.render(); // Re-render to show the new field

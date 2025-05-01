@@ -328,9 +328,9 @@ export class FfxivActorSheet extends ActorSheet {
       html.on('click', '.add-tag', () => {
         const tags = this.actor.system.tags || [];
         if(this.actor.type == "trait"){
-          tags.push("FFXIV.Tags.Trait")
+          tags.push("FFXIV.Tags.Default")
         }else{
-          tags.push("FFXIV.Tags.Primary")
+          tags.push("FFXIV.Tags.Default")
         };
         this.actor.update({ "system.tags": tags });
         this.render();

@@ -207,7 +207,9 @@
       "Weakness": "Faiblesse"
     },
     "Tags":{
-      "Tags": "Tags"
+      "Tags": "Tags",
+      "Default": "Défaut",
+      "Pet": "Companion"
     },
     "Traits":{
       "Activable": "Activable",

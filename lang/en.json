@@ -238,7 +238,9 @@
       "Weakness": "Weakness"
     },
     "Tags":{
-      "Tags": "Tags"
+      "Tags": "Tags",
+      "Default": "Default",
+      "Pet": "Pet"
     },
     "Traits":{
       "Activable": "Activable",
