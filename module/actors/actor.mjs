@@ -138,6 +138,9 @@ export class FfxivActor extends Actor {
         flags: { core: { canParseHTML: true } },
         flavor: game.i18n.localize("FFXIV.Traits.Modifiers") + " | " + game.i18n.localize("FFXIV.Traits.TraitsOnly")
       });
+    }else{
+      console.error("No modifier to display",this.items)
+      ui.notifications.warn(game.i18n.localize("FFXIV.Chat.NoModifiers"));
     }
   }
 

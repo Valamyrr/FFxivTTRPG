@@ -277,7 +277,8 @@
       "RollAlternateFormula": "Jet Alternatif",
       "RollBaseEffectFormula": "Effet de base",
       "RollDirectHitFormula": "Attaque Directe",
-      "ShowModifiers": "Modificateurs"
+      "ShowModifiers": "Modificateurs",
+      "NoModifiers": "Pas de modificateurs à montrer."
     },
     "None": "Aucun",
     "Special": "Spécial",
