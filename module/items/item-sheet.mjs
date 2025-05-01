@@ -226,7 +226,7 @@ export class FfxivItemSheet extends ItemSheet {
     });
     html.on('change', '.modifier-value', (event) => {
       const index = event.currentTarget.dataset.index;
-      const value = parseInt(event.currentTarget.value) || 0;
+      const value = event.currentTarget.value || 0;
       const modifiers = this.item.system.modifiers || [];
       if (modifiers[index]) {
         modifiers[index][1] = value; // Update value
