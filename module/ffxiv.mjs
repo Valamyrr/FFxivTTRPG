@@ -10,9 +10,7 @@ import { FF_XIV } from './helpers/config.mjs';
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
 import { updateStatusEffects } from "./helpers/status_effects.mjs";
-import { LEVELS } from './helpers/levels.mjs';
 
-import { register_controls } from "./helpers/controls.js";
 /* -------------------------------------------- */
 /*  Init Hook                                   */
 /* -------------------------------------------- */
@@ -54,9 +52,6 @@ Hooks.once('init', function () {
 
   SettingsHelpers.initSettings()
 
-  if(game.settings.get('ffxiv', 'toggleExperience')){
-    CONFIG.LEVELS = LEVELS;
-  }
 
   CONFIG.Item.typeLabels = {
     consumable: game.i18n.localize("FFXIV.ItemType.consumable"),
@@ -133,14 +128,14 @@ Handlebars.registerHelper("array", function () {
 });
 Handlebars.registerHelper("characterTabs", function(settings){
   let items = [
-    { tab: "abilities", label: game.i18n.localize("FFXIV.Abilities.Abilities"), icon: "fight" },
-    { tab: "attributes", label: game.i18n.localize("FFXIV.Attributes.Attributes"), icon: "attributes" },
-    { tab: "roleplay", label: game.i18n.localize("FFXIV.CharacterSheet.Character"), icon: "character" },
+    { tab: "abilities", label: game.i18n.localize("FFXIV.Abilities.Abilities"), icon: game.settings.get("ffxiv", "imgTabAbilities") },
+    { tab: "attributes", label: game.i18n.localize("FFXIV.Attributes.Attributes"), icon: game.settings.get("ffxiv", "imgTabAttributes") },
+    { tab: "roleplay", label: game.i18n.localize("FFXIV.CharacterSheet.Character"), icon: game.settings.get("ffxiv", "imgTabRoleplay") },
   ];
-  if (settings.showGear) items.push({ tab: "gear", label: game.i18n.localize("FFXIV.CharacterSheet.Gear"), icon: "gear" });
-  items.push({ tab: "items", label: game.i18n.localize("FFXIV.CharacterSheet.Inventory"), icon: "inventory" })
-  items.push({ tab: "companions", label: game.i18n.localize("FFXIV.CharacterSheet.Companions"), icon: "companions" })
-  items.push({ tab: "settings", label: game.i18n.localize("FFXIV.CharacterSheet.Config"), icon: "configuration" })
+  if (settings.showGear) items.push({ tab: "gear", label: game.i18n.localize("FFXIV.CharacterSheet.Gear"), icon: game.settings.get("ffxiv", "imgTabGear") });
+  items.push({ tab: "items", label: game.i18n.localize("FFXIV.CharacterSheet.Inventory"), icon: game.settings.get("ffxiv", "imgTabItems") })
+  items.push({ tab: "companions", label: game.i18n.localize("FFXIV.CharacterSheet.Companions"), icon: game.settings.get("ffxiv", "imgTabCompanions") })
+  items.push({ tab: "settings", label: game.i18n.localize("FFXIV.CharacterSheet.Config"), icon: game.settings.get("ffxiv", "imgTabSettings") })
   return items;
 })
 Handlebars.registerHelper('repeat', function(n, options) {
@@ -377,14 +372,6 @@ Hooks.on('renderActorSheet', (app, html, data) => {
       await draggedItemData.update({ 'system.position': targetPosition });
     }
 
-    if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
-      foundry.audio.AudioHelper.play({
-          src: "systems/ffxiv/assets/sounds/move_inventory.wav", // Ensure this path is valid
-          volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-          autoplay: true,
-          loop: false
-      });
-    }
 
     // Re-render the inventory after dropping
     app.render();
@@ -396,10 +383,7 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
   //Default Images for Items
   if (!itemData.img || itemData.img === "icons/svg/item-bag.svg") {
     const defaultImages = {
-      limit_break: "systems/ffxiv/assets/default_img/limit_break.png",
-      title: "systems/ffxiv/assets/default_img/default-title.png",
-      trait: "systems/ffxiv/assets/default_img/default-trait.png",
-      augment: "systems/ffxiv/assets/default_img/default-augment.png"
+
     };
     const defaultImg = defaultImages[itemData.type] || "icons/svg/item-bag.svg";
     itemData.updateSource({ img: defaultImg });
@@ -409,39 +393,15 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
 Hooks.on("userConnected", (player, login, data) => {
   if(login && !game.paused){ //If the game is paused or the player logouts, do not play anything
     ui.notifications.info(game.i18n.format("FFXIV.Notifications.NewPlayer", {playerName: player.name}));
-    if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
-      foundry.audio.AudioHelper.play({
-          src: "systems/ffxiv/assets/sounds/enter_chat.wav", // Ensure this path is valid
-          volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-          autoplay: true,
-          loop: false
-      });
-    }
   }
 });
 
 Hooks.on("renderActorSheet", (hookEvent, actorData, sheetData) => {
-  if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && !hookEvent.actor._sheetOpened){
-    foundry.audio.AudioHelper.play({
-        src: "systems/ffxiv/assets/sounds/sheet_open.wav", // Ensure this path is valid
-        volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-        autoplay: true,
-        loop: false
-    });
-    hookEvent.actor._sheetOpened = true;
-  }
+
 });
 
 Hooks.on("closeActorSheet", (hookEvent, html) => {
-  if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
-    foundry.audio.AudioHelper.play({
-        src: "systems/ffxiv/assets/sounds/sheet_close.wav", // Ensure this path is valid
-        volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-        autoplay: true,
-        loop: false
-    });
-    hookEvent.actor._sheetOpened = false;
-  }
+
 })
 
 Hooks.on("renderChatLog", (app, html) => {
@@ -458,12 +418,6 @@ Hooks.on("renderChatLog", (app, html) => {
   $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(theme+'_theme')
 });
 
-Hooks.on("getSceneControlButtons", (controls) => {
-  if (!game.user.isGM) {
-      return;
-  }
-  register_controls(controls);
-});
 
 Hooks.on("ready", function(){
   const categories = [

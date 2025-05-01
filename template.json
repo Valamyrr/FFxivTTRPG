@@ -89,13 +89,12 @@
         }
       },
       "class":{
-        "name": "",
+        "name": "Custom",
         "role": "",
-        "customIcon": "systems/ffxiv/assets/classes/bard.png"
+        "customIcon": ""
       },
       "activeTitle": "",
       "showModifiers": true,
-      "altbanner": false,
       "profile_trait":{
         "name":"",
         "effect": ""

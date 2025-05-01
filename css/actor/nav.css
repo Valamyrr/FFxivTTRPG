@@ -28,21 +28,30 @@
 
 
 /*Redder active button*/
-.ffxiv.actor nav.nav-tank .item img{
+.ffxiv.actor nav.nav-tank.hue .item img{
   filter: hue-rotate(215deg) brightness(120%);
 }
-.ffxiv.actor nav.nav-tank .item.active img{
+.ffxiv.actor nav.nav-tank.hue .item.active img{
   filter: hue-rotate(215deg) saturate(20%);
 }
-.ffxiv.actor nav.nav-healer .item img{
+.ffxiv.actor nav.nav-healer.hue .item img{
   filter: hue-rotate(105deg) brightness(120%);
 }
-.ffxiv.actor nav.nav-healer .item.active img{
+.ffxiv.actor nav.nav-healer.hue .item.active img{
   filter: hue-rotate(105deg) saturate(20%);
 }
-.ffxiv.actor nav.nav-dps .item img{
+.ffxiv.actor nav.nav-dps.hue .item img{
   filter: hue-rotate(0deg);
 }
-.ffxiv.actor nav.nav-dps .item.active img{
+.ffxiv.actor nav.nav-dps.hue .item.active img{
+  filter: hue-rotate(0deg) saturate(20%);
+}
+.ffxiv.actor nav.nav-dps.hue .item img{
+  filter: hue-rotate(0deg);
+}
+.ffxiv.actor nav.no-hue .item img{
+  filter: hue-rotate(0deg);
+}
+.ffxiv.actor nav.no-hue .item.active img{
   filter: hue-rotate(0deg) saturate(20%);
 }

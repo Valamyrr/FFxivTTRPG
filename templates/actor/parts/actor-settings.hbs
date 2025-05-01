@@ -68,29 +68,6 @@
 </div>
 {{/if}}
 
-{{#if settings.showExperience }}
-<hr>
-<div class="resources grid grid-2col">
-
-
-  <div class="resource flex-group-center">
-    <label for="system.experience.experience.value" class="resource-label">{{ localize "FFXIV.Experience.Exp" }}</label>
-    <div class="resource-content flexrow flex-center flex-between">
-    <input type="text" name="system.experience.experience.value" value="{{system.experience.experience.value}}" data-dtype="Number"/>
-    </div>
-  </div>
-
-  <div class="resource flex-group-center">
-    <label for="system.experience.experience.total" class="resource-label">{{ localize "FFXIV.Experience.Total" }}</label>
-    <div class="resource-content flexrow flex-center flex-between">
-    <input type="text" name="system.experience.experience.total" value="{{system.experience.experience.total}}" data-dtype="Number"/>
-    </div>
-  </div>
-
-
-</div>
-{{/if}}
-<hr>
 <div class="resources grid grid-2col">
 
   <div class="resource flex-group-center">
@@ -105,15 +82,15 @@
   </div>
 
   <div class="resource flex-group-center">
-    <label for="system.altbanner" class="resource-label">{{ localize "FFXIV.CharacterSheet.AltBanner" }}</label>
+    <label for="system.banner" class="resource-label">{{ localize "FFXIV.CharacterSheet.Banner" }}</label>
     <div class="resource-content flexrow flex-center flex-between">
-      <select style="text-align: center;" name="system.altbanner">
-          <option value="true" {{#if (eq "true" system.altbanner)}}selected {{/if}} >{{ localize "FFXIV.True" }}</option>
-          <option value="false" {{#if (eq "false" system.altbanner)}}selected {{/if}} >{{ localize "FFXIV.False" }}</option>
-      </select>
-
+      <div class="form-fields" style="display:flex">
+        <input class="image" type="text" name="system.banner" value="{{system.banner}}" placeholder="path/to/file.ext" data-dtype="String"/>
+        <button type="button" class="file-picker" data-type="imagevideo" data-target="system.banner">
+          <i class="fa-solid fa-file-import fa-fw"></i>
+        </button>
+      </div>
     </div>
   </div>
-
 
 </div>

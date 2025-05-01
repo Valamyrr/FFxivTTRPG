@@ -85,9 +85,10 @@ export class FfxivActorSheet extends ActorSheet {
     context.config = CONFIG.FF_XIV;
 
     context.settings = {
-      "showExperience": game.settings.get('ffxiv','toggleExperience'),
       "useRarity": game.settings.get('ffxiv','useRarity'),
-      "showGear": game.settings.get('ffxiv','toggleGear')
+      "showGear": game.settings.get('ffxiv','toggleGear'),
+      "attributesImg": game.settings.get('ffxiv','attributesImg'),
+      "tabHue": game.settings.get('ffxiv','hueTabsIcons')
     }
 
     // Prepare character data and items.
@@ -549,14 +550,6 @@ export class FfxivActorSheet extends ActorSheet {
           yes: () => {
             ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
             this.item.delete();
-            if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
-              foundry.audio.AudioHelper.play({
-                src: "systems/ffxiv/assets/sounds/delete_item.wav", // Ensure this path is valid
-                volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-                autoplay: true,
-                loop: false
-              });
-            }
           },
           no: () => {},
           defaultYes: false

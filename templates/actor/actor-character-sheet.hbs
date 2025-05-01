@@ -1,6 +1,6 @@
 <form class="{{cssClass}} {{actor.type}} flexcol" autocomplete="off">
   {{!-- Sheet Header --}}
-  <header class="sheet-header {{system.class.role}}-header{{#if system.altbanner}} alt-banner{{/if}}">
+  <header class="sheet-header" style="background: linear-gradient(90deg, var(--{{system.class.role}}) 0%, rgba(255,255,255,0) 100%), url('{{system.banner}}');background-size: cover;background-position: top 20% left 40%;">
 {{!--
 <img class="class-img" src="systems/ffxiv/assets/classes/{{system.class.name}}.png" alt="class icon">
 <div class="class-level">
@@ -29,9 +29,7 @@
                 <span>{{ localize (labelize 'classes' system.class.name)}}</span>
               {{/if}}
               {{#if (not (eq system.activeTitle ""))}}<span> - {{system.activeTitle}}</span>{{/if}}
-              {{#if settings.showExperience}}
-              <div class="experience-border"><div class="experience-bar" style="width:{{system.experiencePercentage}}%;"></div></div>
-              {{/if}}
+
             </div>
         </div>
       </div>

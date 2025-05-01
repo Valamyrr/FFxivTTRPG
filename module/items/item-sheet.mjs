@@ -298,14 +298,6 @@ export class FfxivItemSheet extends ItemSheet {
       yes: () => {
         ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
         this.item.delete();
-        if(game.settings.get('ffxiv', 'soundNotificationFFxiv')){
-          foundry.audio.AudioHelper.play({
-            src: "systems/ffxiv/assets/sounds/delete_item.wav", // Ensure this path is valid
-            volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-            autoplay: true,
-            loop: false
-          });
-        }
         this.render(false)
       },
       no: () => {},
