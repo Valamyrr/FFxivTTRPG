@@ -69,7 +69,8 @@ export class FfxivItem extends Item {
 
     let content = "<div style='display:flex'>"
     if(this.system.base_formula) content += `<button class="ffxiv-roll-base" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollBaseEffectFormula")}</button>`
-    content += `<button class="ffxiv-roll-direct" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`
+    content += `<button class="ffxiv-roll-direct" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollCricialHitFormula")}</button>`
+    content += `<button class="ffxiv-roll-critical" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`
     content += "</div>"
 
     ChatMessage.create({
@@ -81,6 +82,20 @@ export class FfxivItem extends Item {
   }
 
   async _rollDirect(){
+    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
+    const user = game.user.id
+    const rollData = this.getRollData()
+    const roll = new Roll(this._doubleDiceCounts(rollData.direct_formula), rollData);
+    await roll.evaluate();
+    ChatMessage.create({
+      user: user,
+      speaker: speaker,
+      rolls: [roll],
+      flavor: game.i18n.format("FFXIV.Abilities.DirectHitRoll")
+    });
+  }
+
+  async _rollCritical(){
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
@@ -130,5 +145,11 @@ export class FfxivItem extends Item {
     if(this.system.hit_formula) buttons += `<button class="ffxiv-roll-hit" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollHitFormula")}</button>`
     if(this.type !="trait" && this.parent.system.showModifiers) buttons += `<button class="ffxiv-show-modifiers" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.ShowModifiers")}</button>`
     return buttons+"</div>"
+  }
+
+  _doubleDiceCounts(input) {
+    return input.replace(/(\d+)(?=[dD])/g, (match) => {
+      return String(Number(match) * 2);
+    });
   }
 }

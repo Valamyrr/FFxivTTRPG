@@ -526,6 +526,13 @@ Hooks.on("renderChatMessage", (message, html, data) => {
     if (item) item._rollDirect(ev);
   });
 
+  html.find(".ffxiv-roll-critical").on("click", async ev => {
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const item = actor?.items?.get(itemId);
+    if (item) item._rollCritical(ev);
+  });
+
   html.find(".ffxiv-show-modifiers").on("click", async ev => {
     console.log("call show modifiers")
     const itemId = ev.currentTarget.dataset.itemId;
