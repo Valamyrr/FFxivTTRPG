@@ -94,6 +94,77 @@ export class SettingsHelpers {
       requiresReload: true
     });
 
+    game.settings.register("ffxiv", "soundNotificationFFxiv", {
+      name: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxiv"),
+      hint: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivHint"),
+      scope: "client",
+      config: true,
+      default: true,
+      type: Boolean,
+      requiresReload: false
+    });
+    game.settings.register("ffxiv", "soundNotificationFFxivVolume", {
+      name: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivVolume"),
+      hint: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivHintVolume"),
+      scope: "client",
+      config: true,
+      type: Number,
+      default: 0.5,
+      range: {min: 0, max: 1, step: 0.01},
+      requiresReload: false
+    });
+
+    game.settings.register("ffxiv", "soundNotificationFFxiv_deleteItem", {
+      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_deleteItem"),
+      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media"
+    });
+    game.settings.register("ffxiv", "soundNotificationFFxiv_moveItem", {
+      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_moveItem"),
+      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media"
+    });
+    game.settings.register("ffxiv", "soundNotificationFFxiv_enterChat", {
+      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_enterChat"),
+      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media"
+    });
+    game.settings.register("ffxiv", "soundNotificationFFxiv_openSheet", {
+      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_openSheet"),
+      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media"
+    });
+    game.settings.register("ffxiv", "soundNotificationFFxiv_closeSheet", {
+      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_closeSheet"),
+      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media"
+    });
+
     game.settings.register("ffxiv", "hueTabsIcons", {
       name: game.i18n.localize("FFXIV.Settings.HueTabsIcons"),
       hint: game.i18n.localize("FFXIV.Settings.HueTabsIconsHint"),

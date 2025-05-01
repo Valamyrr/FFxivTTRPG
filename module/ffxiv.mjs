@@ -377,6 +377,14 @@ Hooks.on('renderActorSheet', (app, html, data) => {
       await draggedItemData.update({ 'system.position': targetPosition });
     }
 
+    if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_moveItem')){
+      foundry.audio.AudioHelper.play({
+        src: game.settings.get('ffxiv', 'soundNotificationFFxiv_moveItem'),
+        volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+        autoplay: true,
+        loop: false
+      });
+    }
 
     // Re-render the inventory after dropping
     app.render();
@@ -398,15 +406,37 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
 Hooks.on("userConnected", (player, login, data) => {
   if(login && !game.paused){ //If the game is paused or the player logouts, do not play anything
     ui.notifications.info(game.i18n.format("FFXIV.Notifications.NewPlayer", {playerName: player.name}));
+    if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_enterChat')){
+      foundry.audio.AudioHelper.play({
+        src: game.settings.get('ffxiv', 'soundNotificationFFxiv_enterChat'),
+        volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+        autoplay: true,
+        loop: false
+      });
+    }
   }
 });
 
 Hooks.on("renderActorSheet", (hookEvent, actorData, sheetData) => {
-
+  if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_openSheet')){
+    foundry.audio.AudioHelper.play({
+      src: game.settings.get('ffxiv', 'soundNotificationFFxiv_openSheet'),
+      volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+      autoplay: true,
+      loop: false
+    });
+  }
 });
 
 Hooks.on("closeActorSheet", (hookEvent, html) => {
-
+  if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_closeSheet')){
+    foundry.audio.AudioHelper.play({
+      src: game.settings.get('ffxiv', 'soundNotificationFFxiv_closeSheet'),
+      volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+      autoplay: true,
+      loop: false
+    });
+  }
 })
 
 Hooks.on("renderChatLog", (app, html) => {

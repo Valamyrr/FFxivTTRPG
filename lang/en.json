@@ -284,7 +284,13 @@
       "TabCompanionsImg": "Companions Tab Icon",
       "TabCompanionsImgHint": "Choose an image file to use as the icon for the Companions tab.",
       "TabSettingsImg": "Settings Tab Icon",
-      "TabSettingsImgHint": "Choose an image file to use as the icon for the Settings tab."
+      "TabSettingsImgHint": "Choose an image file to use as the icon for the Settings tab.",
+      "soundNotificationFFxiv_Hint": "Select a sound file to play when this event is triggered. Leave empty to never play this.",
+      "soundNotificationFFxiv_deleteItem":"Sound when deleting an Item from character sheet",
+      "soundNotificationFFxiv_moveItem":"Sound when moving an Item in an Actor's inventory",
+      "soundNotificationFFxiv_enterChat":"Sound when another player joins the game",
+      "soundNotificationFFxiv_openSheet":"Sound when opening an Actor's sheet",
+      "soundNotificationFFxiv_closeSheet":"Sound when closing an Actor's sheet"
     },
     "Dialogs":{
       "DialogTitleConfirmation": "Action is irreversible",

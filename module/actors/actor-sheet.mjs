@@ -550,6 +550,14 @@ export class FfxivActorSheet extends ActorSheet {
           yes: () => {
             ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
             this.item.delete();
+            if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem')){
+              foundry.audio.AudioHelper.play({
+                src: game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem'),
+                volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+                autoplay: true,
+                loop: false
+              });
+            }
           },
           no: () => {},
           defaultYes: false

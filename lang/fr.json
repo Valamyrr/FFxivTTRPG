@@ -251,7 +251,13 @@
       "TabCompanionsImg": "Icône de l’onglet Compagnons",
       "TabCompanionsImgHint": "Choisissez une image à utiliser comme icône pour l’onglet Compagnons.",
       "TabSettingsImg": "Icône de l’onglet Paramètres",
-      "TabSettingsImgHint": "Choisissez une image à utiliser comme icône pour l’onglet Paramètres."
+      "TabSettingsImgHint": "Choisissez une image à utiliser comme icône pour l’onglet Paramètres.",
+      "soundNotificationFFxiv_Hint": "Sélectionner un fichier son à jouer lorsque l'événement est activé. Laisser vider pour ne jamais le jouer.",
+      "soundNotificationFFxiv_deleteItem":"Son à la suppression d'un objet",
+      "soundNotificationFFxiv_moveItem":"Son au déplacement d'un objet dans un inventaire",
+      "soundNotificationFFxiv_enterChat":"Son quand un joueur rejoint la partie",
+      "soundNotificationFFxiv_openSheet":"Son à l'ouverture d'une feuille de personnage",
+      "soundNotificationFFxiv_closeSheet":"Son à la fermeture d'une feuille de personnage"
     },
     "Dialogs":{
       "DialogTitleConfirmation": "Cette action n'est pas réversible",

@@ -284,6 +284,14 @@ export class FfxivItemSheet extends ItemSheet {
     const newQuantity = this.item.system.quantity - 1;
       if (newQuantity < 1){
         this._deleteItem(event)
+        if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem')){
+          foundry.audio.AudioHelper.play({
+            src: game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem'),
+            volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+            autoplay: true,
+            loop: false
+          });
+        }
       } else {
           this.item.update({ 'system.quantity': newQuantity });
       }
