@@ -122,8 +122,8 @@ export class FfxivActor extends Actor {
            if (modName == CONFIG.FF_XIV.attributes.MagicDefense.label) data.mdef += modValue;
            if (modName == CONFIG.FF_XIV.attributes.Vigilance.label) data.vigilance += modValue;
          }
-         data.dmg = data.dmg || 0;
-         if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += modValue;
+         data.dmg = data.dmg || "";
+         if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += "+"+modValue;
 
        }
      }
