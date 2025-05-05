@@ -96,7 +96,7 @@ body{
   --background-color: linear-gradient(45deg,rgba(67, 113, 205, 1) 0%, rgba(32, 54, 109, 1) 80%, rgba(26, 39, 72, 1) 100%);
   --text-color: white;
   --text-color-input: white;
-  --invert-text-color: black;
+  --invert-text-color: white;
   /*
   --text-color-strong: #999;
 
