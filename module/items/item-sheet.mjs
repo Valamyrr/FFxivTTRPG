@@ -226,9 +226,12 @@ export class FfxivItemSheet extends ItemSheet {
     });
     html.on('change', '.modifier-value', (event) => {
       const index = event.currentTarget.dataset.index;
-      const value = event.currentTarget.value || 0;
+      let value = event.currentTarget.value || 0;
       const modifiers = this.item.system.modifiers || [];
       if (modifiers[index]) {
+        if (modifiers[index][0] != "FFXIV.Damages"){
+          value = parseInt(value)
+        }
         modifiers[index][1] = value; // Update value
         this.item.update({ "system.modifiers": modifiers });
       }

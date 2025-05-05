@@ -98,6 +98,9 @@ Handlebars.registerHelper('isOccupied', function(items, position) {
 Handlebars.registerHelper('add', function(a, b) {
   return a + b;
 });
+Handlebars.registerHelper('sub', function(a, b) {
+  return a - b;
+});
 Handlebars.registerHelper('eq', function(a, b) {
   return a === b;
 });
