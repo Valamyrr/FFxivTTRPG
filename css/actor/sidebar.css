@@ -33,6 +33,7 @@
   padding-top: 10px;
   transition: all 0.8s ease;
   transform: translateX(0);
+  max-height: 555px;
 }
 
 .ffxiv.actor .fixed-part .resources.grid-1col{
