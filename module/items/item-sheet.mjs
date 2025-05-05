@@ -106,7 +106,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
     // Enrich each field separately
     for (const [key, value] of Object.entries(fieldsToEnrich)) {
         context[`enriched${key.charAt(0).toUpperCase() + key.slice(1)}`] =
-            await TextEditor.enrichHTML(value, {
+            await foundry.applications.ux.TextEditor.implementation.enrichHTML(value, {
                 secrets: this.document.isOwner,
                 async: true,
                 rollData: this.item.getRollData(),

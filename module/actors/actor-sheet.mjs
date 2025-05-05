@@ -108,7 +108,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
       this._prepareItems(context);
       this._prepareSharedData(context);
       const traits = this.actor.system.traits || "";
-      context.enrichedTraits = await TextEditor.enrichHTML(
+      context.enrichedTraits = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
         traits,
         {
           secrets: this.document.isOwner,
@@ -123,7 +123,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     // Enrich biography info for display
     // Enrichment turns text like `[[/r 1d20]]` into buttons
     const biography = this.actor.system.biography || "";
-    context.enrichedBiography = await TextEditor.enrichHTML(
+    context.enrichedBiography = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
       biography,
       {
         // Whether to show secret blocks in the finished html
@@ -138,7 +138,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     );
     if (this.actor.system.profile_trait){
       const effect = this.actor.system.profile_trait.effect || "";
-      context.enrichedProfileTrait = await TextEditor.enrichHTML(
+      context.enrichedProfileTrait = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
         effect,
         {
           secrets: this.document.isOwner,
@@ -762,7 +762,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
 
 
   async _onDrop(event) {
-    const data = await TextEditor.getDragEventData(event);
+    const data = await foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
     // Handle dropping an Actor
     if (data?.type === "Actor") {
       const droppedActor = game.actors.get(data.uuid.split(".")[1]);
