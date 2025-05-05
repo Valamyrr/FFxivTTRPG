@@ -39,13 +39,13 @@ Hooks.once('init', function () {
 
   // Register sheet application classes
   console.log("FFXIV | Enregistrement des feuilles")
-  Actors.unregisterSheet('core', ActorSheet);
-  Actors.registerSheet('ffxiv', FfxivActorSheet, {
+  foundry.documents.collections.Actors.unregisterSheet('core', foundry.appv1.sheets.ActorSheet);
+  foundry.documents.collections.Actors.registerSheet('ffxiv', FfxivActorSheet, {
     makeDefault: true,
     label: 'FF_XIV.SheetLabels.Actor',
   });
-  Items.unregisterSheet('core', ItemSheet);
-  Items.registerSheet('ffxiv', FfxivItemSheet, {
+  foundry.documents.collections.Items.unregisterSheet('core', foundry.appv1.sheets.ItemSheet);
+  foundry.documents.collections.Items.registerSheet('ffxiv', FfxivItemSheet, {
     makeDefault: true,
     label: 'FF_XIV.SheetLabels.Item',
   });
