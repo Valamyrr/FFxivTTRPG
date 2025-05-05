@@ -1,9 +1,5 @@
 .chat-ffxiv{
-  background-color: #282c34;
-  color: white;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+
 }
 .chat-ffxiv .item-card .item-dialog-icon{
   width: 45px;
@@ -20,4 +16,9 @@
 }
 .chat-ffxiv .item-card .item-dialog-header.modifier{
   width:100%
+}
+.chat-ffxiv .message-content button{
+  flex:1;
+  color: var(--text-color);
+  background: var(--primary-color);
 }
