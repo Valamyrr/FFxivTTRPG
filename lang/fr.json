@@ -107,7 +107,8 @@
       "ShopTier": "Niveau de Vente",
       "MinionType": "Type de Mascotte",
       "AbilityName": "Nom de la compétence du Familier",
-      "GrantedAbility": "ID de la compétence octroyée"
+      "GrantedAbility": "ID de la compétence octroyée",
+      "JobRequirement": "Pré-requis de Job"
     },
     "GearCategories":{
       "Category": "Categorie",

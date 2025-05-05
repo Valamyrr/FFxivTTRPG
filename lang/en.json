@@ -107,7 +107,8 @@
       "ShopTier": "Shop Tier",
       "MinionType": "Minion Type",
       "AbilityName": "Pet's ability Name",
-      "GrantedAbility": "Granted Ability's ID"
+      "GrantedAbility": "Granted Ability's ID",
+      "JobRequirement": "Job Requirement"
     },
     "GearCategories":{
       "Category": "Category",
