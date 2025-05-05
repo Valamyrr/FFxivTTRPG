@@ -228,6 +228,8 @@
     "Settings":{
       "ToggleGear":"Afficher l'onglet d'équipements",
       "ToggleGearHint":"Utilisez-vous des règles faites maison pour l'équipement ?",
+      "JobsAbbrv":"List of abbreviations for jobs",
+      "JobsAbbrvHint":"Only used for Gear select input of jobs requirements",
       "Theme": "Thème",
       "ThemeHint": "La palette de couleur avec laquelle vous voulez rerésenter vos fiches.",
       "UseRarity": "Utilisez-vous la propriété Rareté sur les Items ?",
