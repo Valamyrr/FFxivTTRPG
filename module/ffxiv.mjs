@@ -522,43 +522,44 @@ Hooks.on("ready", function(){
 
 })
 
-Hooks.on("renderChatMessage", (message, html, data) => {
-  $(html).find(".ffxiv-roll-base").on("click", async ev => {
+Hooks.on("renderChatMessageHTML", (message, html, data) => {
+  const jqueryhtml = $(html)
+  jqueryhtml.find(".ffxiv-roll-base").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const item = actor?.items?.get(itemId);
     if (item) item._rollBase(ev);
   });
 
-  $(html).find(".ffxiv-roll-alternate").on("click", async ev => {
+  jqueryhtml.find(".ffxiv-roll-alternate").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const item = actor?.items?.get(itemId);
     if (item) item._rollAlternate(ev);
   });
 
-  $(html).find(".ffxiv-roll-hit").on("click", async ev => {
+  jqueryhtml.find(".ffxiv-roll-hit").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const item = actor?.items?.get(itemId);
     if (item) item._rollHit(ev);
   });
 
-  html.find(".ffxiv-roll-direct").on("click", async ev => {
+  jqueryhtml.find(".ffxiv-roll-direct").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const item = actor?.items?.get(itemId);
     if (item) item._rollDirect(ev);
   });
 
-  html.find(".ffxiv-roll-critical").on("click", async ev => {
+  jqueryhtml.find(".ffxiv-roll-critical").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const item = actor?.items?.get(itemId);
     if (item) item._rollCritical(ev);
   });
 
-  html.find(".ffxiv-show-modifiers").on("click", async ev => {
+  jqueryhtml.find(".ffxiv-show-modifiers").on("click", async ev => {
     console.log("call show modifiers")
     const itemId = ev.currentTarget.dataset.itemId;
     console.log(itemId)
@@ -567,7 +568,7 @@ Hooks.on("renderChatMessage", (message, html, data) => {
     if (actor) actor._showModifiers(ev);
   });
 
-  html.find(".ffxiv-apply-status").on("click", async ev => {
+  jqueryhtml.find(".ffxiv-apply-status").on("click", async ev => {
     const status_effect = CONFIG.statusEffects.find(e => e.id === ev.currentTarget.dataset.effectId);
     const targets = Array.from(game.user.targets);
 
