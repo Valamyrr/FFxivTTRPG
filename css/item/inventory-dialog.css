@@ -107,6 +107,15 @@
 }
 .item-dialog-effects td{ /*modifiers table*/
   width: 33.33%;
+  padding: 1px;
+}
+.item-card .item-dialog-effects table{
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border-color-1);
+  border-bottom: 1px solid var(--border-color-1);
+  margin: 0.5em 0;
 }
 .item-card .effect {
   display: inline-block;
