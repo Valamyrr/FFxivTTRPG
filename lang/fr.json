@@ -240,8 +240,8 @@
       "CustomTagsHint": "Liste de tags séparés par des virgules de tags à ajouter aux listes pré-existantes",
       "LimitedPhysicalItemsDialog": "Limiter la Boîte de dialogue",
       "LimitedPhysicalItemsDialogHint": "Afficher les objets avec des boîtes de dialogue réduites et des droits limités pour les joueurs ?",
-      "OverrideColorScheme": "Palette de couleur bleue",
-      "OverrideColorSchemeHint": "Remplacer le paramètre de thème de couleur par un bleu inspiré de celui du jeu vidéo.",
+      "ColorScheme": "Palette de couleur à utiliser",
+      "ColorSchemeHint": "Thème de couleur pour les feuilles de tout type. N'influence pas l'interface Core de FoundryVTT.",
       "AttributesImg": "Bordure de caractéristique primaire",
       "AttributesImgHint": "Sur une feuille de personnage, les caractéristiques primaires utilisent une image comme bordure, qui est déterminé par ce champs.",
       "HueTabsIcons": "Changer la couleur des onglets de feuille de personnage",
@@ -273,7 +273,10 @@
       "soundNotificationFFxiv_moveItem":"Son au déplacement d'un objet dans un inventaire",
       "soundNotificationFFxiv_enterChat":"Son quand un joueur rejoint la partie",
       "soundNotificationFFxiv_openSheet":"Son à l'ouverture d'une feuille de personnage",
-      "soundNotificationFFxiv_closeSheet":"Son à la fermeture d'une feuille de personnage"
+      "soundNotificationFFxiv_closeSheet":"Son à la fermeture d'une feuille de personnage",
+      "Dark": "Sombre",
+      "Light": "Clair",
+      "Blue": "Bleu"
     },
     "Dialogs":{
       "DialogTitleConfirmation": "Cette action n'est pas réversible",

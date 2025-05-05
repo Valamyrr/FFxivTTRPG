@@ -240,8 +240,8 @@
       "CustomTagsHint": "Comma-separated list of tags to add to this category",
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
       "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?",
-      "OverrideColorScheme": "Blue color theme",
-      "OverrideColorSchemeHint": "Override core setting light/dark color scheme with a blue color scheme inspired from FFXIV in-game blue color scheme.",
+      "ColorScheme": "Color Preferences",
+      "ColorSchemeHint": "Color Theme for sheets of any type. Does not change FoundryVTT core interfaces.",
       "AttributesImg": "Primary attributes border image",
       "AttributesImgHint": "On a character sheet, primary attributes use an image as a border, which can be changed here to any image you upload.",
       "HueTabsIcons": "Change tabs icons color depending on Role",
@@ -273,7 +273,10 @@
       "soundNotificationFFxiv_moveItem":"Sound when moving an Item in an Actor's inventory",
       "soundNotificationFFxiv_enterChat":"Sound when another player joins the game",
       "soundNotificationFFxiv_openSheet":"Sound when opening an Actor's sheet",
-      "soundNotificationFFxiv_closeSheet":"Sound when closing an Actor's sheet"
+      "soundNotificationFFxiv_closeSheet":"Sound when closing an Actor's sheet",
+      "Dark": "Dark",
+      "Light": "Light",
+      "Blue": "Blue"
     },
     "Dialogs":{
       "DialogTitleConfirmation": "Action is irreversible",

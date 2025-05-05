@@ -256,14 +256,10 @@ Hooks.once('ready', function () {
   Hooks.on('hotbarDrop', (bar, data, slot) => createItemMacro(data, slot));
 
   // Color Scheme to use with css variables
-  if (game.settings.get("ffxiv", "overrideColorScheme")){
-      CONFIG.theme = "blue"
+  if (game.settings.get("ffxiv", "colorScheme")){
+    CONFIG.theme = game.settings.get("ffxiv", "colorScheme")
   }else{
-    if (game.settings.get("core", "colorScheme") == "") {
-      CONFIG.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }else{
-      CONFIG.theme = game.settings.get("core", "colorScheme")
-    }
+    CONFIG.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
 
 });
@@ -444,14 +440,10 @@ Hooks.on("closeActorSheet", (hookEvent, html) => {
 
 Hooks.on("renderChatLog", (app, html) => {
   let theme;
-  if (game.settings.get("ffxiv", "overrideColorScheme")){
-      theme = "blue"
+  if (game.settings.get("ffxiv", "colorScheme")){
+    theme = game.settings.get("ffxiv", "colorScheme")
   }else{
-    if (game.settings.get("core", "colorScheme") == "") {
-      theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }else{
-      theme = game.settings.get("core", "colorScheme")
-    }
+    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
   $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(theme+'_theme')
 });
