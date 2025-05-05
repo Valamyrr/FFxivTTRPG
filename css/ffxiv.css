@@ -11,6 +11,10 @@
   font-family: "Roboto", sans-serif;
 }
 
+input:disabled{
+  transition: none;
+}
+
 .rollable:hover, .rollable:focus {
   color: #000;
   text-shadow: 0 0 10px red;
