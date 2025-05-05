@@ -206,7 +206,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       });
       html.on('click', '.add-class', () => {
         const classes = this.item.system.classes || [];
-        classes.push("FFXIV.Classes.WarriorShort");
+        classes.push("");
         this.item.update({ "system.classes": classes });
         this.render();
       });

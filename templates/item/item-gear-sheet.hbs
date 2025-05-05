@@ -100,6 +100,7 @@
         {{#each system.classes as |class index|}}
           <li>
             <select style="text-align: center;" class="select-classes">
+              <option value="" {{#if (eq "" class)}}selected {{/if}}>{{ localize "FFXIV.Tags.Default" }}</option>
               {{#each ../settings.jobsAbbrv as |c|}}
               <option value="{{c}}" {{#if (eq c class)}}selected {{/if}}>{{ localize c }}</option>
               {{/each}}
