@@ -186,6 +186,47 @@ export class SettingsHelpers {
       filePicker: "image"
     });
 
+    game.settings.register("ffxiv", "attributesImgDefense", {
+      name: game.i18n.localize("FFXIV.Settings.AttributesImgDefense"),
+      hint: "",
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "image"
+    });
+    game.settings.register("ffxiv", "attributesImgMagicDefense", {
+      name: game.i18n.localize("FFXIV.Settings.AttributesImgMagicDefense"),
+      hint: "",
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "image"
+    });
+    game.settings.register("ffxiv", "attributesImgVigilance", {
+      name: game.i18n.localize("FFXIV.Settings.AttributesImgVigilance"),
+      hint: "",
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "image"
+    });
+    game.settings.register("ffxiv", "attributesImgSpeed", {
+      name: game.i18n.localize("FFXIV.Settings.AttributesImgSpeed"),
+      hint: "",
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "image"
+    });
+
     game.settings.register("ffxiv", "imgTabAbilities", {
       name: game.i18n.localize("FFXIV.Settings.TabAbilitiesImg"),
       hint: game.i18n.localize("FFXIV.Settings.TabAbilitiesImgHint"),
@@ -193,7 +234,7 @@ export class SettingsHelpers {
       config: true,
       type: String,
       default: "icons/weapons/swords/swords-short.webp",
-      filePicker: false
+      filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabAttributes", {
       name: game.i18n.localize("FFXIV.Settings.TabAttributesImg"),
@@ -202,7 +243,7 @@ export class SettingsHelpers {
       config: true,
       type: String,
       default: "icons/creatures/eyes/human-single-brown.webp",
-      filePicker: false
+      filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabGear", {
       name: game.i18n.localize("FFXIV.Settings.TabGearImg"),
@@ -211,7 +252,7 @@ export class SettingsHelpers {
       config: true,
       type: String,
       default: "icons/equipment/chest/breastplate-cuirass-steel-grey.webp",
-      filePicker: false
+      filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabRoleplay", {
       name: game.i18n.localize("FFXIV.Settings.TabRoleplayImg"),
@@ -220,7 +261,7 @@ export class SettingsHelpers {
       config: true,
       type: String,
       default: "icons/sundries/documents/document-official-capital.webp",
-      filePicker: false
+      filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabItems", {
       name: game.i18n.localize("FFXIV.Settings.TabItemsImg"),
@@ -229,7 +270,7 @@ export class SettingsHelpers {
       config: true,
       type: String,
       default: "icons/containers/bags/pack-leather-gold-brown.webp",
-      filePicker: false
+      filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabCompanions", {
       name: game.i18n.localize("FFXIV.Settings.TabCompanionsImg"),
@@ -238,7 +279,7 @@ export class SettingsHelpers {
       config: true,
       type: String,
       default: "icons/creatures/mammals/rabbit-movement-glowing-green.webp",
-      filePicker: false
+      filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabSettings", {
       name: game.i18n.localize("FFXIV.Settings.TabSettingsImg"),
@@ -247,7 +288,7 @@ export class SettingsHelpers {
       config: true,
       type: String,
       default: "icons/tools/fasteners/washer-hex-copper-brown.webp",
-      filePicker: false
+      filePicker: "image"
     });
 
 
