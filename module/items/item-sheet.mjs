@@ -280,7 +280,6 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       flags: { core: { canParseHTML: true } },
       flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
     });
-    this.item.roll(event);
   }
 
   _decreaseQuantity(event){
