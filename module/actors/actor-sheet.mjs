@@ -546,10 +546,10 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
       if (newQuantity < 0){
         Dialog.confirm({
           title: game.i18n.format("FFXIV.Dialogs.DialogTitleConfirmation"),
-          content: game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}),
+          content: game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: item.name}),
           yes: () => {
-            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
-            this.item.delete();
+            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
+            item.delete();
             if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem')){
               foundry.audio.AudioHelper.play({
                 src: game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem'),
@@ -694,7 +694,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
         const itemId = button.dataset.itemId
         const item = this.actor.items.get(itemId)
         item.delete();
-        ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
+        ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
       },
       no: () => {},
       defaultYes: false
