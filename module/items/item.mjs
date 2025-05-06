@@ -101,7 +101,7 @@ export class FfxivItem extends Item {
     const user = game.user.id
     const rollData = this.getRollData()
     let roll = new Roll(rollData.direct_formula, rollData);
-    roll._formula = this._doubleDiceCounts(roll._formula)
+    roll = new Roll(this._doubleDiceCounts(roll._formula), rollData);
     await roll.evaluate();
     ChatMessage.create({
       user: user,
