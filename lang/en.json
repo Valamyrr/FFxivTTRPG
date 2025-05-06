@@ -48,6 +48,10 @@
       "Vigilance": "Vigilance",
       "Speed": "Speed"
     },
+    "SheetLabels":{
+      "Actor": "FFXIV Custom Actor Sheet",
+      "Item": "FFXIV Custom Item Sheet"
+    },
     "CharacterSheet":{
       "Profile": "Profile",
       "Appearance": "Appearance",

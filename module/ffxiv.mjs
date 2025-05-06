@@ -42,12 +42,12 @@ Hooks.once('init', function () {
   foundry.documents.collections.Actors.unregisterSheet('core', foundry.appv1.sheets.ActorSheet);
   foundry.documents.collections.Actors.registerSheet('ffxiv', FfxivActorSheet, {
     makeDefault: true,
-    label: 'FF_XIV.SheetLabels.Actor',
+    label: 'FFXIV.SheetLabels.Actor',
   });
   foundry.documents.collections.Items.unregisterSheet('core', foundry.appv1.sheets.ItemSheet);
   foundry.documents.collections.Items.registerSheet('ffxiv', FfxivItemSheet, {
     makeDefault: true,
-    label: 'FF_XIV.SheetLabels.Item',
+    label: 'FFXIV.SheetLabels.Item',
   });
 
   SettingsHelpers.initSettings()

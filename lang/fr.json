@@ -48,6 +48,10 @@
       "Vigilance": "Vigilance",
       "Speed": "Vitesse"
     },
+    "SheetLabels":{
+      "Actor": "FFXIV Feuille de personnage personnalisée",
+      "Item": "FFXIV Feuille d'objet personnalisée"
+    },
     "CharacterSheet":{
       "Profile": "Profil",
       "Appearance": "Apparence",
