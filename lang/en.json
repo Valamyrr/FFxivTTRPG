@@ -270,7 +270,7 @@
       "AttributesImgVigilance": "Choose an image file for Vigilance (optional)",
       "AttributesImgSpeed": "Choose an image file for Speed (optional)",
       "SoundNotificationFFxiv":"Sound Notifications from FFXIV",
-      "SoundNotificationFFxivHint":"Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your iventory, etc.",
+      "SoundNotificationFFxivHint":"Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your inventory, etc.",
       "SoundNotificationFFxivVolume":"Volume from Sound Notifications",
       "SoundNotificationFFxivHintVolume":"Volume for Sound Notifications from FFXIV.",
       "soundNotificationFFxiv_Hint": "Select a sound file to play when this event is triggered. Leave empty to never play this.",
