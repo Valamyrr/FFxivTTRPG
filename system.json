@@ -4,7 +4,7 @@
   "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
   "background": "systems/ffxiv/assets/banner.jpg",
   "compatibility": {
-    "minimum": "12.331",
+    "minimum": "13.342",
     "verified": "13.342"
   },
   "media": [
