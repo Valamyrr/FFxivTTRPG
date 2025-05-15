@@ -87,12 +87,25 @@
       "Hair": "Cheveux",
       "Eyes": "Yeux",
       "Skin": "Peau",
-      "AdventuringRank": "Rang d'Aventurier",
+      "AdventuringRanks": "Rangs d'Aventurier",
       "CustomClassName": "Nom du Job personnalisé",
       "CustomClassRole": "Rôle du Job personnalisé",
       "CustomClassIcon": "Icône du Job personnalisé",
       "ShowPets": "Montrer l'onglet des Familiers",
       "Banner": "Bannière"
+    },
+    "Disciples":{
+      "Miner": "Mineur",
+      "Botanist": "Botaniste",
+      "Fisher": "Pêcheur",
+      "Carpenter": "Menuisier",
+      "Blacksmith": "Forgeron",
+      "Armorer": "Armurier",
+      "Goldsmith": "Orfèvre",
+      "Leatherworker": "Tanneur",
+      "Weaver": "Couturier",
+      "Alchemist": "Alchimiste",
+      "Culinarian": "Cuisinier"
     },
     "Item":{
       "Name": "Nom",

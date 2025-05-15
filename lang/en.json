@@ -87,12 +87,25 @@
       "Hair": "Hair",
       "Eyes": "Eyes",
       "Skin": "Skin",
-      "AdventuringRank": "Adventuring Rank",
+      "AdventuringRanks": "Adventuring Ranks",
       "CustomClassName": "Custom Job Name",
       "CustomClassRole": "Custom Job Role",
       "CustomClassIcon": "Custom Job Icon",
       "ShowPets": "Show Pets Tab",
       "Banner": "Header"
+    },
+    "Disciples":{
+      "Miner": "Miner",
+      "Botanist": "Botanist",
+      "Fisher": "Fisher",
+      "Carpenter": "Carpenter",
+      "Blacksmith": "Blacksmith",
+      "Armorer": "Armorer",
+      "Goldsmith": "Goldsmith",
+      "Leatherworker": "Leatherworker",
+      "Weaver": "Weaver",
+      "Alchemist": "Alchemist",
+      "Culinarian": "Culinarian"
     },
     "Item":{
       "Name": "Name",

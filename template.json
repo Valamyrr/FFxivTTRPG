@@ -8,7 +8,19 @@
         "motive": "",
         "bond": "",
         "deity": "",
-        "adventuring_rank": 1
+        "adventuring_rank": {
+          "miner": 0,
+          "botanist": 0,
+          "fisher": 0,
+          "carpenter": 0,
+          "blacksmith": 0,
+          "armorer": 0,
+          "goldsmith": 0,
+          "leatherworker": 0,
+          "weaver": 0,
+          "alchemist": 0,
+          "culinarian": 0
+        }
       },
       "health": {
         "health": {
