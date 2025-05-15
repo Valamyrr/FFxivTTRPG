@@ -300,7 +300,12 @@
       "ItemDelete":"{itemName} has been removed.",
       "NewPlayer":"{playerName} has joined the party.",
       "NoSoundAvailable":"No sound files found in the system soundboard directory.",
-      "ReplaceGear":"{oldGear} has been replaced with {newGear}."
+      "ReplaceGear":"{oldGear} has been replaced with {newGear}.",
+      "StatusChangeRequest": "Request to change status effect"
+    },
+    "Sockets":{
+      "Accept": "Accept",
+      "Decline": "Decline"
     },
     "Chat":{
       "RollHitFormula": "Hit",

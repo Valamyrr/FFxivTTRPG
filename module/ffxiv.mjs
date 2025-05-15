@@ -490,12 +490,12 @@ Hooks.on("ready", function(){
           if (!actors || !effect) return;
 
           new Dialog({
-            title: "Demande d'effet de statut",
+            title: game.i18n.localize("FFXIV.Notifications.StatusChangeRequest"),
             content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest",{playerName:userName, effect: game.i18n.localize(effect.label)})}</p>
                 <ul>${actors.map(a => `<li>${a.name}</li>`).join("")}</ul>`,
             buttons: {
               yes: {
-                label: "Appliquer",
+                label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 callback: async () => {
 
                   for (const actor of actors) {
@@ -507,7 +507,7 @@ Hooks.on("ready", function(){
                 }
               },
               no: {
-                label: "Refuser",
+                label: game.i18n.localize("FFXIV.Sockets.Decline"),
                 callback: () => {}
               }
             }

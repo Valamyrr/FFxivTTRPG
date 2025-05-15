@@ -300,7 +300,12 @@
       "ItemDelete":"{itemName} a été supprimé/e.",
       "NewPlayer":"{playerName} a rejoint l'équipe.",
       "NoSoundAvailable":"Aucun fichier son ne se trouve dans le répertoire des bruitages.",
-      "ReplaceGear":"{oldGear} a été remplacé par {newGear}."
+      "ReplaceGear":"{oldGear} a été remplacé par {newGear}.",
+      "StatusChangeRequest": "Demande d'effet de statut"
+    },
+    "Sockets":{
+      "Accept": "Accepter",
+      "Decline": "Refuser"
     },
     "Chat":{
       "RollHitFormula": "Jet de Touche",
