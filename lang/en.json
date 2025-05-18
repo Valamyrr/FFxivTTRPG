@@ -92,7 +92,8 @@
       "CustomClassRole": "Custom Job Role",
       "CustomClassIcon": "Custom Job Icon",
       "ShowPets": "Show Pets Tab",
-      "Banner": "Header"
+      "Banner": "Header",
+      "CriticalRange": "Treshold to score Critical Hits"
     },
     "Disciples":{
       "Miner": "Miner",
@@ -296,6 +297,7 @@
       "soundNotificationFFxiv_enterChat":"Sound when another player joins the game",
       "soundNotificationFFxiv_openSheet":"Sound when opening an Actor's sheet",
       "soundNotificationFFxiv_closeSheet":"Sound when closing an Actor's sheet",
+      "soundNotificationFFxiv_critical":"Sound when rolling a critical hit",
       "Dark": "Dark",
       "Light": "Light",
       "Blue": "Blue"

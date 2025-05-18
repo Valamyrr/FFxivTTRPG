@@ -67,6 +67,26 @@ export class FfxivItem extends Item {
     const roll = new Roll(rollData.hit_formula, rollData);
     await roll.evaluate();
 
+
+      if(!this.parent.system.criticalRange){
+        this.parent.update({"system.criticalRange":20})
+      }
+      console.log("critrange",this.parent.system.criticalRange)
+      const d20 = roll.dice.find(die => die.faces === 20);
+      console.log("d20",d20)
+      const isCritical = d20?.results?.[0]?.result >= this.parent.system.criticalRange;
+      const isCriticalFailure = d20?.results?.[0]?.result === 1;
+      console.log("crit",isCritical)
+      console.log("critfail",isCriticalFailure)
+      if(isCritical && game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_critical')){
+        foundry.audio.AudioHelper.play({
+          src: game.settings.get('ffxiv', 'soundNotificationFFxiv_critical'),
+          volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+          autoplay: true,
+          loop: false
+        });
+      }
+
     let content = "<div style='display:flex'>"
     if(this.system.base_formula) content += `<button class="ffxiv-roll-base" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollBaseEffectFormula")}</button>`
     content += `<button class="ffxiv-roll-direct" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`
@@ -74,11 +94,19 @@ export class FfxivItem extends Item {
     if(this.system.alternate_formula_critical) content += `<button class="ffxiv-roll-critical-alternate" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollAlternateCriticalHitFormula")}</button>`
     content += "</div>"
 
+    let rollJquery = $("<div>"+await roll.render()+"</div>")
+    if(isCritical){
+      rollJquery.find(".dice-total").css({"color":"blue"})
+    }
+    if(isCriticalFailure){
+      rollJquery.find(".dice-total").css({"color":"red"})
+    }
+
     ChatMessage.create({
       user: user,
       speaker: speaker,
       flavor: game.i18n.format("FFXIV.Abilities.HitRoll"),
-      content: `${await roll.render()} ${content}`
+      content: `${rollJquery.html()} ${content}`
     });
   }
 
