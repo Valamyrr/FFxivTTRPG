@@ -24,6 +24,9 @@
   font-weight: bold;
 }
 
+.npc input.npc-specie{
+  width: fit-content !important;
+}
 
 .statblock-header{
   background: linear-gradient(0deg, var(--gradient-color-3) 20%, var(--gradient-color-2) 50%, var(--gradient-color-3) 80%);
