@@ -127,6 +127,18 @@ export class FfxivActor extends Actor {
 
        }
      }
+    //Add adventuring ranks
+    data.arank_min = data.adventuring_rank.miner
+    data.arank_bot = data.adventuring_rank.botanist
+    data.arank_fis = data.adventuring_rank.fisher
+    data.arank_car = data.adventuring_rank.carpenter
+    data.arank_bla = data.adventuring_rank.blacksmith
+    data.arank_arm = data.adventuring_rank.armorer
+    data.arank_gol = data.adventuring_rank.goldsmith
+    data.arank_lea = data.adventuring_rank.leatherworker
+    data.arank_wea = data.adventuring_rank.weaver
+    data.arank_alc = data.adventuring_rank.alchemist
+    data.arank_cul = data.adventuring_rank.culinarian
     return data;
   }
 
