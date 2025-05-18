@@ -331,6 +331,7 @@
       "RollBaseEffectFormula": "Base Effect",
       "RollDirectHitFormula": "Direct Hit",
       "RollCriticalHitFormula": "Critical",
+      "RollAlternateCriticalHitFormula": "Alternate Critical",
       "ShowModifiers": "Show Modifiers",
       "NoModifiers": "No modifiers to show."
     },
