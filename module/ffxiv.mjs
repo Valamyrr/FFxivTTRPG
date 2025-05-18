@@ -270,8 +270,9 @@ Hooks.once('ready', function () {
 
 let isDraggingItem = false;
 Hooks.on('renderActorSheet', async (app, html, data) => {
-  if (isDraggingItem) return;
   const actor = app.actor;
+  const isOwner = actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+  if (isDraggingItem && !isOwner) return;
   const items = actor.items.contents;
 
   // Step 1: Get all current positions and identify invalid ones
@@ -317,6 +318,8 @@ let draggedItem = null;
 
 Hooks.on('renderActorSheet', (app, html, data) => {
   const actor = app.actor;
+  const isOwner = actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+  if(!isOwner) return;
 
   html.find('.inventory-item').off('dragstart drop dragover');
 
@@ -416,7 +419,7 @@ Hooks.on("userConnected", (player, login, data) => {
   }
 });
 
-Hooks.on("renderActorSheet", (hookEvent, actorData, sheetData) => {
+Hooks.on("renderActorSheet", (app, html, data) => {
   if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_openSheet')){
     foundry.audio.AudioHelper.play({
       src: game.settings.get('ffxiv', 'soundNotificationFFxiv_openSheet'),
@@ -425,6 +428,10 @@ Hooks.on("renderActorSheet", (hookEvent, actorData, sheetData) => {
       loop: false
     });
   }
+  const actorSheet = app.actor.sheet;
+  html.on('click', '.abilities-sub-tabs .sub-tab', actorSheet._displayAbilityTab.bind(actorSheet))
+  html.on('click', '.companions-sub-tabs .companions-sub-tab', actorSheet._displayCompanionTab.bind(actorSheet))
+
 });
 
 Hooks.on("closeActorSheet", (hookEvent, html) => {

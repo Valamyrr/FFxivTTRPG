@@ -339,8 +339,6 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
 
     html.on('click', '.inventory-item', this._renderItem.bind(this));
 
-    html.on('click', '.abilities-sub-tabs .sub-tab', this._displayAbilityTab.bind(this))
-    html.on('click', '.companions-sub-tabs .companions-sub-tab', this._displayCompanionTab.bind(this))
 
     html.on('mousedown', '.mana-bar', this._onClickManaBar.bind(this));
 
