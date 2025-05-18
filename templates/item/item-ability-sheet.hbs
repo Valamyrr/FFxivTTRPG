@@ -148,9 +148,23 @@
         </div>
 
         <div class="resource flex-group-center">
+          <label for="system.hpcost" class="resource-label">{{ localize "FFXIV.Abilities.HPCost" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.hpcost" type="text" value="{{item.system.hpcost}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
           <label for="system.alternate_formula" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <input name="system.alternate_formula" type="text" value="{{item.system.alternate_formula}}"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.alternate_formula_critical" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormulaCritical" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.alternate_formula_critical" type="text" value="{{item.system.alternate_formula_critical}}"/>
           </div>
         </div>
 

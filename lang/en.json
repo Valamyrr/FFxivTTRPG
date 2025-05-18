@@ -200,7 +200,9 @@
       "AlternateFormula": "Alternate Formula",
       "DirectFormula": "Direct Hit Formula",
       "HitFormula": "Hit Formula",
-      "HitRoll": "Hit Roll"
+      "HitRoll": "Hit Roll",
+      "HPCost": "HP Cost",
+      "AlternateFormulaCritical": "Alternate Formula (Critical)"
     },
     "Effects":{
       "Ascendent": "Ascendent",

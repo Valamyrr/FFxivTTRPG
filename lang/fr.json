@@ -200,7 +200,9 @@
       "AlternateFormula": "Formule Alternative",
       "DirectFormula": "Formule d'Attaque Directe",
       "HitFormula": "Formule d'Attaque",
-      "HitRoll": "Jet d'Attaque"
+      "HitRoll": "Jet d'Attaque",
+      "HPCost": "Coût PV",
+      "AlternateFormulaCritical": "Formule Alternative (Critique)"
     },
     "Effects": {
       "Ascendent": "Transcendant",
