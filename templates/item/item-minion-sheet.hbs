@@ -18,10 +18,11 @@
   </header>
 
   {{! Sheet Tab Navigation }}
-  <nav class='sheet-tabs tabs' data-group='primary'>
-    <a class='item' data-tab='description'>{{ localize "FFXIV.Item.Description" }}</a>
-    <a class='item' data-tab='trait'>{{ localize "FFXIV.Abilities.TraitsShort" }}</a>
-    <a class='item' data-tab='attributes'>{{ localize "FFXIV.Attributes.Attributes" }}</a>
+
+  <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
+    <a class="sub-tab" data-tab="description">{{ localize "FFXIV.Item.Description" }}<div class="chip"></div></a>
+    <a class="sub-tab" data-tab="trait">{{ localize "FFXIV.Abilities.TraitsShort" }}<div class="chip"></div></a>
+    <a class="sub-tab" data-tab="attributes">{{ localize "FFXIV.Attributes.Attributes" }}<div class="chip"></div></a>
   </nav>
 
   {{! Sheet Body }}
