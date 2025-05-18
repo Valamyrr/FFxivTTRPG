@@ -228,6 +228,8 @@
     "Tags":{
       "Tags": "Tags",
       "Default": "Default",
+      "Minion": "Minion",
+      "Mount": "Mount",
       "Pet": "Pet"
     },
     "Traits":{

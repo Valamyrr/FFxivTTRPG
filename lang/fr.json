@@ -228,6 +228,8 @@
     "Tags":{
       "Tags": "Tags",
       "Default": "Défaut",
+      "Minion": "Sbire",
+      "Mount": "Monture",
       "Pet": "Companion"
     },
     "Traits":{
