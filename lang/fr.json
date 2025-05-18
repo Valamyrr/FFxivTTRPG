@@ -318,7 +318,8 @@
       "NewPlayer":"{playerName} a rejoint l'équipe.",
       "NoSoundAvailable":"Aucun fichier son ne se trouve dans le répertoire des bruitages.",
       "ReplaceGear":"{oldGear} a été remplacé par {newGear}.",
-      "StatusChangeRequest": "Demande d'effet de statut"
+      "StatusChangeRequest": "Demande d'effet de statut",
+      "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)"
     },
     "Sockets":{
       "Accept": "Accepter",

@@ -318,7 +318,8 @@
       "NewPlayer":"{playerName} has joined the party.",
       "NoSoundAvailable":"No sound files found in the system soundboard directory.",
       "ReplaceGear":"{oldGear} has been replaced with {newGear}.",
-      "StatusChangeRequest": "Request to change status effect"
+      "StatusChangeRequest": "Request to change status effect",
+      "NotEnoughHP": "Not Enough HP to cast this ability (HP Cost)"
     },
     "Sockets":{
       "Accept": "Accept",

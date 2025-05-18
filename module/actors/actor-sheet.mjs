@@ -435,6 +435,14 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     const itemId = event.currentTarget.dataset.itemId
     const item = this.actor.items.get(itemId);
     if(item){
+      if(item.system.hpcost){
+        const currentHP = this.actor.system.health.value
+        if(currentHP - item.system.hpcost < 1){
+          ui.notifications.warning(game.i18n.localize("FFXIV.Notifications.NotEnoughHP"))
+          return;
+        }
+        this.actor.update({"system.health.value": currentHP - item.system.hpcost})
+      }
       item.roll(event);
     }else{
       console.error("Roll Error : No item found.")
