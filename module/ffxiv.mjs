@@ -566,6 +566,13 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     if (item) item._rollCritical(ev);
   });
 
+  jqueryhtml.find(".ffxiv-roll-critical-alternate").on("click", async ev => {
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const item = actor?.items?.get(itemId);
+    if (item) item._rollCriticalAlternate(ev);
+  });
+
   jqueryhtml.find(".ffxiv-show-modifiers").on("click", async ev => {
     console.log("call show modifiers")
     const itemId = ev.currentTarget.dataset.itemId;

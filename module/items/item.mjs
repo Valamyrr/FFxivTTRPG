@@ -71,6 +71,7 @@ export class FfxivItem extends Item {
     if(this.system.base_formula) content += `<button class="ffxiv-roll-base" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollBaseEffectFormula")}</button>`
     content += `<button class="ffxiv-roll-direct" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`
     content += `<button class="ffxiv-roll-critical" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollCriticalHitFormula")}</button>`
+    if(this.system.alternate_formula_critical) content += `<button class="ffxiv-roll-critical-alternate" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollAlternateCriticalHitFormula")}</button>`
     content += "</div>"
 
     ChatMessage.create({
@@ -102,6 +103,20 @@ export class FfxivItem extends Item {
     const rollData = this.getRollData()
     let roll = new Roll(rollData.direct_formula, rollData);
     roll = new Roll(this._doubleDiceCounts(roll._formula), rollData);
+    await roll.evaluate();
+    ChatMessage.create({
+      user: user,
+      speaker: speaker,
+      rolls: [roll],
+      flavor: game.i18n.format("FFXIV.Abilities.CriticalHitRoll")
+    });
+  }
+
+  async _rollCriticalAlternate(){
+    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
+    const user = game.user.id
+    const rollData = this.getRollData()
+    let roll = new Roll(rollData.alternate_formula_critical, rollData);
     await roll.evaluate();
     ChatMessage.create({
       user: user,

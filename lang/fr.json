@@ -331,6 +331,7 @@
       "RollBaseEffectFormula": "Effet de base",
       "RollDirectHitFormula": "Attaque Directe",
       "RollCriticalHitFormula": "Critique",
+      "RollAlternateCriticalHitFormula": "Critique Alternatif",
       "ShowModifiers": "Modificateurs",
       "NoModifiers": "Pas de modificateurs à montrer."
     },
