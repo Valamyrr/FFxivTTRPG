@@ -55,7 +55,7 @@
         <div class="resource-content flexrow flex-center flex-between">
           <select style="text-align: center;" name="system.minion_type">
             {{#each this.config.minion_types as |t|}}
-            <option value="{{t}}" {{#if (eq t ../item.system.minion_types)}}selected {{/if}}>{{ localize t }}</option>
+            <option value="{{t}}" {{#if (eq t ../system.minion_type)}}selected {{/if}}>{{ localize t }}</option>
             {{/each}}
           </select>
         </div>
@@ -68,7 +68,7 @@
           <div class="resource-content flexrow flex-center flex-between">
             <select style="text-align: center;" name="system.rarity">
               {{#each this.config.rarities as |a|}}
-              <option value="{{a.label}}" {{#if (eq a.label ../item.system.rarity)}}selected {{/if}}>{{ localize a.label }}</option>
+              <option value="{{a.label}}" {{#if (eq a.label ../system.rarity)}}selected {{/if}}>{{ localize a.label }}</option>
               {{/each}}
             </select>
           </div>
