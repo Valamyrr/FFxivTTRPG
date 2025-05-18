@@ -13,7 +13,7 @@
       "thumbnail": "systems/ffxiv/assets/meteor.png"
     }
   ],
-  "version": "2.2.1",
+  "version": "2.2.2",
   "esmodules": ["module/ffxiv.mjs"],
   "styles": ["css/ffxiv.css"],
   "languages": [
