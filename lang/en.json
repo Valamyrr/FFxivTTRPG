@@ -1,5 +1,5 @@
 {
-  "FFXIV":{
+  "FFXIV": {
     "Name": "Name",
     "Level": "Level",
     "Class": "Job",
@@ -19,27 +19,27 @@
     },
     "Damages": "Damages",
     "Custom": "Custom",
-    "Attributes":{
+    "Attributes": {
       "Attributes": "Attributes",
       "Primary": "Primary Attributes",
       "Secondary": "Secondary Attributes",
-      "Strength":{
+      "Strength": {
         "long": "Strength",
         "abbrv": "STR"
       },
-      "Dexterity":{
+      "Dexterity": {
         "long": "Dexterity",
         "abbrv": "DEX"
       },
-      "Vitality":{
+      "Vitality": {
         "long": "Vitality",
         "abbrv": "VIT"
       },
-      "Intelligence":{
+      "Intelligence": {
         "long": "Intelligence",
         "abbrv": "INT"
       },
-      "Mind":{
+      "Mind": {
         "long": "Mind",
         "abbrv": "MND"
       },
@@ -48,11 +48,11 @@
       "Vigilance": "Vigilance",
       "Speed": "Speed"
     },
-    "SheetLabels":{
+    "SheetLabels": {
       "Actor": "FFXIV Custom Actor Sheet",
       "Item": "FFXIV Custom Item Sheet"
     },
-    "CharacterSheet":{
+    "CharacterSheet": {
       "Profile": "Profile",
       "Appearance": "Appearance",
       "Origin": "Origin",
@@ -95,7 +95,7 @@
       "Banner": "Header",
       "CriticalRange": "Treshold to score Critical Hits"
     },
-    "Disciples":{
+    "Disciples": {
       "Miner": "Miner",
       "Botanist": "Botanist",
       "Fisher": "Fisher",
@@ -108,7 +108,7 @@
       "Alchemist": "Alchemist",
       "Culinarian": "Culinarian"
     },
-    "Item":{
+    "Item": {
       "Name": "Name",
       "Source": "Source",
       "Rarity": "Rarity",
@@ -128,7 +128,7 @@
       "GrantedAbility": "Granted Ability's ID",
       "JobRequirement": "Job Requirement"
     },
-    "GearCategories":{
+    "GearCategories": {
       "Category": "Category",
       "SubCategory": "Sub-category",
       "Armor": "Armor",
@@ -140,8 +140,8 @@
       "Ring": "Ring",
       "Necklace": "Necklace"
     },
-    "ItemType":{
-      "ItemType":"Item Type",
+    "ItemType": {
+      "ItemType": "Item Type",
       "consumable": "Item",
       "limit_break": "Limit Break",
       "primary_ability": "Primary Ability",
@@ -155,17 +155,17 @@
       "pet": "Pet",
       "augment": "Augment"
     },
-    "ActorType":{
+    "ActorType": {
       "character": "Character",
       "npc": "NPC",
       "pet": "Pet"
     },
-    "Roles":{
+    "Roles": {
       "DPS": "DPS",
       "Healer": "Healer",
       "Tank": "Tank"
     },
-    "Abilities":{
+    "Abilities": {
       "Primary": "Primary Abilities",
       "Secondary": "Secondary Abilities",
       "Instant": "Instant Abilities",
@@ -173,7 +173,7 @@
       "Traits": "Traits & Other Effects",
       "Abilities": "Abilities",
       "Cost": "Cost",
-      "Target" :"Target",
+      "Target": "Target",
       "Range": "Range",
       "Check": "Check",
       "Challenge": "CR",
@@ -193,10 +193,10 @@
       "MarkerArea": "Marker Area",
       "MarkerTrigger": "Marker Trigger",
       "MarkerEffect": "Marker Effect",
-      "Limitations":"Limitation",
-      "Limitations_max":"Limitation Boxes Number",
-      "JobResource":"Job Resource",
-      "JobResourceMax":"Job Resource Boxes Number",
+      "Limitations": "Limitation",
+      "Limitations_max": "Limitation Boxes Number",
+      "JobResource": "Job Resource",
+      "JobResourceMax": "Job Resource Boxes Number",
       "BaseFormula": "Base Effect Formula",
       "AlternateFormula": "Alternate Formula",
       "DirectFormula": "Direct Hit Formula",
@@ -205,7 +205,7 @@
       "HPCost": "HP Cost",
       "AlternateFormulaCritical": "Alternate Formula (Critical)"
     },
-    "Effects":{
+    "Effects": {
       "Ascendent": "Ascendent",
       "Bind": "Bind",
       "Blind": "Blind",
@@ -228,19 +228,19 @@
       "Stun": "Stun",
       "Weakness": "Weakness"
     },
-    "Tags":{
+    "Tags": {
       "Tags": "Tags",
       "Default": "Default",
       "Minion": "Minion",
       "Mount": "Mount",
       "Pet": "Pet"
     },
-    "Traits":{
+    "Traits": {
       "Activable": "Activable",
       "Modifiers": "Modifiers",
       "TraitsOnly": "Only active traits"
     },
-    "Rarities":{
+    "Rarities": {
       "Basic": "Basic",
       "Aetherial": "Aetherial",
       "Green": "Green",
@@ -248,11 +248,11 @@
       "Relic": "Relic",
       "Unique": "Unique"
     },
-    "Settings":{
-      "ToggleGear":"Display gear tab on character sheet",
-      "ToggleGearHint":"Do you use homebrew rules for gear?",
-      "JobsAbbrv":"List of abbreviations for jobs",
-      "JobsAbbrvHint":"Only used for Gear select input of jobs requirements",
+    "Settings": {
+      "ToggleGear": "Display gear tab on character sheet",
+      "ToggleGearHint": "Do you use homebrew rules for gear?",
+      "JobsAbbrv": "List of abbreviations for jobs",
+      "JobsAbbrvHint": "Only used for Gear select input of jobs requirements",
       "Theme": "Theme",
       "ThemeHint": "Color palettes with which you want to display sheets.",
       "UseRarity": "Do you use rarity property on Items?",
@@ -287,47 +287,47 @@
       "AttributesImgMagicDefense": "Choose an image file for Magic Defense (optional)",
       "AttributesImgVigilance": "Choose an image file for Vigilance (optional)",
       "AttributesImgSpeed": "Choose an image file for Speed (optional)",
-      "SoundNotificationFFxiv":"Sound Notifications from FFXIV",
-      "SoundNotificationFFxivHint":"Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your inventory, etc.",
-      "SoundNotificationFFxivVolume":"Volume from Sound Notifications",
-      "SoundNotificationFFxivHintVolume":"Volume for Sound Notifications from FFXIV.",
+      "SoundNotificationFFxiv": "Sound Notifications from FFXIV",
+      "SoundNotificationFFxivHint": "Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your inventory, etc.",
+      "SoundNotificationFFxivVolume": "Volume from Sound Notifications",
+      "SoundNotificationFFxivHintVolume": "Volume for Sound Notifications from FFXIV.",
       "soundNotificationFFxiv_Hint": "Select a sound file to play when this event is triggered. Leave empty to never play this.",
-      "soundNotificationFFxiv_deleteItem":"Sound when deleting an Item from character sheet",
-      "soundNotificationFFxiv_moveItem":"Sound when moving an Item in an Actor's inventory",
-      "soundNotificationFFxiv_enterChat":"Sound when another player joins the game",
-      "soundNotificationFFxiv_openSheet":"Sound when opening an Actor's sheet",
-      "soundNotificationFFxiv_closeSheet":"Sound when closing an Actor's sheet",
-      "soundNotificationFFxiv_critical":"Sound when rolling a critical hit",
+      "soundNotificationFFxiv_deleteItem": "Sound when deleting an Item from character sheet",
+      "soundNotificationFFxiv_moveItem": "Sound when moving an Item in an Actor's inventory",
+      "soundNotificationFFxiv_enterChat": "Sound when another player joins the game",
+      "soundNotificationFFxiv_openSheet": "Sound when opening an Actor's sheet",
+      "soundNotificationFFxiv_closeSheet": "Sound when closing an Actor's sheet",
+      "soundNotificationFFxiv_critical": "Sound when rolling a critical hit",
       "Dark": "Dark",
       "Light": "Light",
       "Blue": "Blue"
     },
-    "Dialogs":{
+    "Dialogs": {
       "DialogTitleConfirmation": "Action is irreversible",
-      "Confirm":"Are you sure you want to complete this action?",
-      "ItemDelete":"Are you sure you want to delete this item : {itemName}?"
+      "Confirm": "Are you sure you want to complete this action?",
+      "ItemDelete": "Are you sure you want to delete this item : {itemName}?"
     },
-    "Controls":{
-      "FFXIVTools":"FF XIV Tools",
-      "Soundboard":"Soundboard"
+    "Controls": {
+      "FFXIVTools": "FF XIV Tools",
+      "Soundboard": "Soundboard"
     },
-    "Notifications":{
+    "Notifications": {
       "NoTarget": "No target selected.",
       "EffectApplied": "Effect \"{effect}\" applied to {actor}.",
       "EffectRequest": "{playerName} asks to apply effect \"{effect}\" to the following targets:",
       "SendSocket": "Request sent to Gamemaster.",
-      "ItemDelete":"{itemName} has been removed.",
-      "NewPlayer":"{playerName} has joined the party.",
-      "NoSoundAvailable":"No sound files found in the system soundboard directory.",
-      "ReplaceGear":"{oldGear} has been replaced with {newGear}.",
+      "ItemDelete": "{itemName} has been removed.",
+      "NewPlayer": "{playerName} has joined the party.",
+      "NoSoundAvailable": "No sound files found in the system soundboard directory.",
+      "ReplaceGear": "{oldGear} has been replaced with {newGear}.",
       "StatusChangeRequest": "Request to change status effect",
       "NotEnoughHP": "Not Enough HP to cast this ability (HP Cost)"
     },
-    "Sockets":{
+    "Sockets": {
       "Accept": "Accept",
       "Decline": "Decline"
     },
-    "Chat":{
+    "Chat": {
       "RollHitFormula": "Hit",
       "RollAlternateFormula": "Alternate Roll",
       "RollBaseEffectFormula": "Base Effect",
@@ -342,6 +342,25 @@
       "FlatModifier": "Flat Modifier",
       "Preview": "Roll Preview",
       "HitRollOptions": "Hit Roll Options"
+    },
+    "MarkerPlacement": {
+      "Title": "Marker Placement",
+      "Instructions": {
+        "ClickToPlace": "Click on the canvas to place the marker."
+      },
+      "Errors": {
+        "NoScene": "No active scene.",
+        "TileFailed": "Failed to create tile. See console."
+      },
+      "Dialog": {
+        "Title": "Marker Type",
+        "Description": "Choose marker type:",
+        "Enemy": "Enemy (red)",
+        "Ally": "Ally (blue)",
+        "Button": {
+          "Place": "Place"
+        }
+      }
     },
     "None": "None",
     "Special": "Special",

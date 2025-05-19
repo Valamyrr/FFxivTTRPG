@@ -460,6 +460,114 @@ Hooks.on("renderChatLog", (app, html) => {
   $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(theme+'_theme')
 });
 
+Hooks.on("getSceneControlButtons", (controls) => {
+  if (!controls.tiles?.tools) return;
+
+  controls.tiles.tools.ffxivMarker = {
+    name: "ffxivMarker",
+    title: game.i18n.localize("FFXIV.MarkerPlacement.Title"),
+    icon: "fas fa-map-marker-alt",
+    visible: game.user.isGM,
+    button: true,
+    onChange: async (event, active) => {
+      if (!active) return;
+
+      const ASSET_GRID_SIZE = 300;
+      const gridSize = canvas.grid.size;
+
+      if (!canvas.scene) {
+        ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"));
+        return;
+      }
+
+      ui.notifications.info(game.i18n.localize("FFXIV.MarkerPlacement.Instructions.ClickToPlace"));
+
+      const getClick = () =>
+        new Promise((resolve) => {
+          const handler = (event) => {
+            canvas.stage.off("mousedown", handler);
+            const pos = event.data.getLocalPosition(canvas.stage);
+            const snappedX = Math.floor(pos.x / gridSize) * gridSize;
+            const snappedY = Math.floor(pos.y / gridSize) * gridSize;
+            resolve({ x: snappedX, y: snappedY });
+          };
+          canvas.stage.once("mousedown", handler);
+        });
+
+      const { x, y } = await getClick();
+
+      const iconPackModule = game.modules.get("ffxiv-ttrpg-icons-pack");
+      const defaultDirectory = iconPackModule?.active
+        ? "modules/ffxiv-ttrpg-icons-pack/ffxiv/markers"
+        : "";
+
+      const FilePickerImpl = foundry.applications.apps.FilePicker.implementation;
+
+      new FilePickerImpl({
+        type: "image",
+        current: defaultDirectory,
+        callback: async (path) => {
+          try {
+            const tex = await foundry.canvas.loadTexture(path);
+            const nativeWidth = tex.width;
+            const nativeHeight = tex.height;
+
+            const widthGrids = Math.round(nativeWidth / ASSET_GRID_SIZE);
+            const heightGrids = Math.round(nativeHeight / ASSET_GRID_SIZE);
+            const tileWidth = widthGrids * gridSize;
+            const tileHeight = heightGrids * gridSize;
+
+            new foundry.applications.api.DialogV2({
+              window: { title: game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Title") },
+              content: `
+                <p>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Description")}</p>
+                <form>
+                  <label><input type="radio" name="marker" value="enemy" checked>
+                    ${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Enemy")}
+                  </label><br/>
+                  <label><input type="radio" name="marker" value="ally">
+                    ${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Ally")}
+                  </label><br/>
+                </form>
+              `,
+              buttons: [{
+                action: "place",
+                label: game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Button.Place"),
+                icon: "fas fa-check",
+                default: true,
+                callback: (event, button) => button.form.elements.marker.value
+              }],
+              submit: async (role) => {
+                const isAlly = role === "ally";
+                const tintColor = isAlly ? "#00ccff" : null;
+
+                const tileData = {
+                  texture: { src: path, tint: tintColor },
+                  x,
+                  y,
+                  width: tileWidth,
+                  height: tileHeight,
+                  z: 100,
+                  rotation: 0,
+                  hidden: false,
+                  locked: false
+                };
+
+                const result = await canvas.scene.createEmbeddedDocuments("Tile", [tileData]);
+                if (!result.length) throw new Error("No tile was created.");
+              }
+            }).render(true);
+
+          } catch (err) {
+            console.error("Tile creation failed:", err);
+            ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.TileFailed"));
+          }
+        }
+      }).render(true);
+    }
+  };
+});
+
 
 Hooks.on("ready", function(){
   const categories = [
