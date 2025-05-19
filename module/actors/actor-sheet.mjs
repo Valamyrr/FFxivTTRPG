@@ -334,6 +334,14 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
         this.render();
       });
     }
+		
+    // Add linebreaks to rich text ability descriptions.
+    // Since for whatever reason, it seems to hate including those when saving the descriptions.
+    // Inserts a <br> tag after every <p> except the last.
+    html.find(".ability-description p:not(:last-of-type)").each(function () {
+      $(this).after("<br>");
+    });
+
 
     html.on('click', '.inventory-item', this._renderItem.bind(this));
 
