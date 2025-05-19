@@ -92,7 +92,8 @@
       "CustomClassRole": "Rôle du Job personnalisé",
       "CustomClassIcon": "Icône du Job personnalisé",
       "ShowPets": "Montrer l'onglet des Familiers",
-      "Banner": "Bannière"
+      "Banner": "Bannière",
+      "CriticalRange": "Limite pour Coups Critiques"
     },
     "Disciples":{
       "Miner": "Mineur",
@@ -296,6 +297,7 @@
       "soundNotificationFFxiv_enterChat":"Son quand un joueur rejoint la partie",
       "soundNotificationFFxiv_openSheet":"Son à l'ouverture d'une feuille de personnage",
       "soundNotificationFFxiv_closeSheet":"Son à la fermeture d'une feuille de personnage",
+      "soundNotificationFFxiv_critical":"Son lors d'un score critique",
       "Dark": "Sombre",
       "Light": "Clair",
       "Blue": "Bleu"

@@ -127,6 +127,16 @@ export class SettingsHelpers {
       filePicker: "image"
     });
 
+    game.settings.register("ffxiv", "soundNotificationFFxiv_critical", {
+      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_critical"),
+      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+      scope: "world",
+      config: true,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media"
+    });
     game.settings.register("ffxiv", "soundNotificationFFxiv_deleteItem", {
       name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_deleteItem"),
       hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
