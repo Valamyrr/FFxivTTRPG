@@ -491,7 +491,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
   };
 
   async _refreshDialogContent(dialog, item) {
-    const newHtml = await renderTemplate("systems/ffxiv/templates/item/item-sheet-dialog.hbs", item);
+    const newHtml = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/item/item-sheet-dialog.hbs", item);
     dialog.data.content = newHtml;
     dialog.render(true);
   };

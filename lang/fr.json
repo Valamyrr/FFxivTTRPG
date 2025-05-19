@@ -337,6 +337,12 @@
       "ShowModifiers": "Modificateurs",
       "NoModifiers": "Pas de modificateurs à montrer."
     },
+    "RollDialog": {
+      "AdvantageDice": "Dés d’avantage",
+      "FlatModifier": "Modificateur fixe",
+      "Preview": "Aperçu du jet",
+      "HitRollOptions": "Options de jet de touche"
+    }
     "None": "Aucun",
     "Special": "Spécial",
     "Dark": "Sombre",

@@ -337,6 +337,12 @@
       "ShowModifiers": "Show Modifiers",
       "NoModifiers": "No modifiers to show."
     },
+    "RollDialog": {
+      "AdvantageDice": "Advantage Dice",
+      "FlatModifier": "Flat Modifier",
+      "Preview": "Roll Preview",
+      "HitRollOptions": "Hit Roll Options"
+    },
     "None": "None",
     "Special": "Special",
     "Dark": "Dark",

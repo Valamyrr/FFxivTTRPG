@@ -276,7 +276,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       var templatePath = "systems/ffxiv/templates/chat/item-chat-card.hbs"
     }
     ChatMessage.create({
-      content: await renderTemplate(templatePath, { item: this.item, useRarity: game.settings.get('ffxiv','useRarity')}),
+      content: await foundry.applications.handlebars.renderTemplate(templatePath, { item: this.item, useRarity: game.settings.get('ffxiv','useRarity')}),
       flags: { core: { canParseHTML: true } },
       flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
     });
