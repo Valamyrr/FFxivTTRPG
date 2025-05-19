@@ -68,6 +68,20 @@
   box-shadow: none;
 }
 
+.ability-effects .effect p,
+.ability-description p,
+.pet-traits .effect p {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+.ability-effects .effect,
+.ability-description,
+.pet-traits .effect {
+  margin-bottom: 0.5em;
+}
+
+
 /*Nav*/
 .pet nav.nav-sub-tabs {
   padding-top: 10px;

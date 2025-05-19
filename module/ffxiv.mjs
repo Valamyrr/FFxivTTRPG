@@ -141,6 +141,11 @@ Handlebars.registerHelper("characterTabs", function(settings){
   items.push({ tab: "settings", label: game.i18n.localize("FFXIV.CharacterSheet.Config"), icon: game.settings.get("ffxiv", "imgTabSettings") })
   return items;
 })
+
+Handlebars.registerHelper("getPetData", function(pets, id) {
+  return pets.find(p => p._id === id);
+});
+
 Handlebars.registerHelper('repeat', function(n, options) {
     let content = '';
     for (let i = 0; i < n; i++) {

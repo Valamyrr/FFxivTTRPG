@@ -58,7 +58,8 @@
 
       {{#if system.description}}
         <div class="item-dialog-description">
-          {{{system.description}}}
+          {{{enrichedDescription}}}
+          {{^enrichedDescription}}{{item.system.description}}{{/enrichedDescription}}
         </div>
       {{/if}}
 
