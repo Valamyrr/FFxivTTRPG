@@ -87,7 +87,8 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
       "useRarity": game.settings.get('ffxiv','useRarity'),
       "showGear": game.settings.get('ffxiv','toggleGear'),
       "attributesImg": game.settings.get('ffxiv','attributesImg'),
-      "tabHue": game.settings.get('ffxiv','hueTabsIcons')
+      "tabHue": game.settings.get('ffxiv','hueTabsIcons'),
+      "attributesImgSpeed": game.settings.get("ffxiv", "attributesImgSpeed")
     }
 
     // Prepare character data and items.
