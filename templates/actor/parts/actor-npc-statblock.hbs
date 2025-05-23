@@ -8,7 +8,7 @@
             {{#if (eq ../system.size.text label)}}selected
             {{else if (and (not ../system.size.text) (eq label "Medium"))}}selected
             {{/if}}>
-            {{label}}
+            {{localize (concat "FFXIV.SizeCategories." label)}}
           </option>
         {{/each}}
       </select>

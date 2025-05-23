@@ -362,6 +362,13 @@
         }
       }
     },
+    "SizeCategories": {
+      "Small": "Petit",
+      "Medium": "Moyen",
+      "Large": "Grand",
+      "Huge": "Énorme",
+      "Colossal": "Colossal"
+    },
     "None": "Aucun",
     "Special": "Spécial",
     "Dark": "Sombre",
