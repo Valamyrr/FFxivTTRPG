@@ -56,6 +56,11 @@ export const updateStatusEffects = () => {
       icon: "systems/ffxiv/assets/effects/Heavy.png"
     },
     {
+      id: "invoking",
+      label: game.i18n.localize("FFXIV.Effects.Invoking"),
+      icon: "systems/ffxiv/assets/effects/Invoking.png"
+    },
+    {
       id: "knocked_out",
       label: game.i18n.localize("FFXIV.Effects.KnockedOut"),
       icon: "systems/ffxiv/assets/effects/Knocked Out.png"
