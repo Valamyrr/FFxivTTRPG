@@ -306,6 +306,7 @@
     "Dialogs": {
       "DialogTitleConfirmation": "Action is irreversible",
       "Confirm": "Are you sure you want to complete this action?",
+      "Cancel": "Cancel",
       "ItemDelete": "Are you sure you want to delete this item : {itemName}?"
     },
     "Controls": {
@@ -342,7 +343,11 @@
       "AdvantageDice": "Advantage Dice",
       "FlatModifier": "Flat Modifier",
       "Preview": "Roll Preview",
-      "HitRollOptions": "Hit Roll Options"
+      "HitRollOptions": "Hit Roll Options",
+      "ButtonRoll": "Roll",
+      "Warning": {
+        "NoD20AdvantageIgnored": "No d20 in formula — advantage dice ignored."
+      }
     },
     "MarkerPlacement": {
       "Title": "Marker Placement",

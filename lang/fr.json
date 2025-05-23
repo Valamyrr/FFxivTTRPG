@@ -217,7 +217,7 @@
       "Drain": "Drainé",
       "Enmity": "Provoqué",
       "Heavy": "Lourd",
-      "Invoking": "Invoquer",
+      "Invoking": "Conjurer",
       "KnockedOut": "Inconscient",
       "Paralysis": "Paralysie",
       "Petrified": "Pétrifié",
@@ -306,6 +306,7 @@
     "Dialogs": {
       "DialogTitleConfirmation": "Cette action n'est pas réversible",
       "Confirm": "Êtes-vous sûr de vouloir effectuer cette action ?",
+      "Cancel": "Annuler",
       "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?"
     },
     "Controls": {
@@ -342,7 +343,11 @@
       "AdvantageDice": "Dés d’avantage",
       "FlatModifier": "Modificateur fixe",
       "Preview": "Aperçu du jet",
-      "HitRollOptions": "Options de jet d'attaque"
+      "HitRollOptions": "Options de jet d'attaque",
+      "ButtonRoll": "Jet de dés",
+      "Warning": {
+        "NoD20AdvantageIgnored": "Pas de d20 dans la formule de jet - dés d’avantage ignoré"
+      }
     },
     "MarkerPlacement": {
       "Title": "Placement de Marqueur",
