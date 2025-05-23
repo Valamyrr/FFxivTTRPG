@@ -334,6 +334,27 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
         this.render();
       });
     }
+    
+    if (this.actor.type=="npc") {
+      // Scale NPC tokens based on size category.
+      html.find('select[name="system.size.text"]').on("change", async (event) => {
+        const SIZE_DIMENSIONS = {
+          "Small": [1, 1],
+          "Medium": [1, 1],
+          "Large": [2, 2],
+          "Huge": [3, 3],
+          "Colossal": [4, 4]
+        };
+
+        const newSize = event.currentTarget.value;
+        const [width, height] = SIZE_DIMENSIONS[newSize] || [1, 1];
+
+        await this.actor.update({
+          "prototypeToken.width": width,
+          "prototypeToken.height": height
+        });
+      });
+    }
 		
     // Add linebreaks to rich text ability descriptions.
     // Since for whatever reason, it seems to hate including those when saving the descriptions.

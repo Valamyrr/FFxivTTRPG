@@ -1,7 +1,23 @@
 <div class="npc-statblock">
   <div class="statblock-header">
     <div class="statblock-header-left">
-      {{ localize "FFXIV.CharacterSheet.Size" }}: <input class="input-transparent" type="text" name="system.size.text" value="{{ system.size.text }}" placeholder="Medium"/> (<input class="input-transparent input-size-numbers" type="text" name="system.size.numbers" value="{{ system.size.numbers }}" placeholder="1x1"/>) - <input class="input-transparent npc-specie" type="text" name="system.specie" value="{{ system.specie }}" placeholder="Humanoid"/>
+      {{ localize "FFXIV.CharacterSheet.Size" }}:
+      <select name="system.size.text" class="input-transparent" style="width: auto;">
+        {{#each (array "Small" "Medium" "Large" "Huge" "Colossal") as |label|}}
+          <option value="{{label}}"
+            {{#if (eq ../system.size.text label)}}selected
+            {{else if (and (not ../system.size.text) (eq label "Medium"))}}selected
+            {{/if}}>
+            {{label}}
+          </option>
+        {{/each}}
+      </select>
+      (
+      <input type="number" class="input-transparent input-size-numbers" name="prototypeToken.width" value="{{ actor.prototypeToken.width }}" min="1" style="width: 1.5em; text-align: center;" />
+      x
+      <input type="number" class="input-transparent input-size-numbers" name="prototypeToken.height" value="{{ actor.prototypeToken.height }}" min="1" style="width: 1.5em; text-align: center;" />
+      )
+      <input class="input-transparent npc-specie" type="text" name="system.specie" value="{{ system.specie }}" placeholder="Hyur"/>
     </div>
     <div class="statblock-header-right">
       {{ localize "FFXIV.Attributes.Vigilance" }}: <input class="input-window" type="text" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}"/>
