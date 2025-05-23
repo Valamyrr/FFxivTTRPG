@@ -147,6 +147,12 @@
   padding: 10px;
 }
 
+.item-dialog-description p {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
 /* Quantity buttons */
 
 .quantity-form{

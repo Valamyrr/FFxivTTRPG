@@ -28,12 +28,12 @@
 
 
   <div class="ability-effects">
-    {{#if system.traits}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.TraitsShort" }}:</strong> {{{system.traits}}}</div>{{/if}}
+    {{#if system.traits}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.TraitsShort" }}:</strong> {{{enriched.traits}}}</div>{{/if}}
   </div>
 
   {{#if system.description}}
   <div class="ability-description">
-    {{{system.description}}}
+    {{{enriched.description}}}
   </div>
   {{/if}}
 

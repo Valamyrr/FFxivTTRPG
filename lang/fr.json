@@ -1,5 +1,5 @@
 {
-  "FFXIV":{
+  "FFXIV": {
     "Name": "Nom",
     "Level": "Niveau",
     "Class": "Job",
@@ -19,27 +19,27 @@
       "long": "Mana",
       "abbrv": "PM"
     },
-    "Attributes":{
+    "Attributes": {
       "Attributes": "Caractéristiques",
       "Primary": "Caractéristiques primaires",
       "Secondary": "Caractéristiques secondaires",
-      "Strength":{
+      "Strength": {
         "long": "Force",
         "abbrv": "FOR"
       },
-      "Dexterity":{
+      "Dexterity": {
         "long": "Dextérité",
         "abbrv": "DEX"
       },
-      "Vitality":{
+      "Vitality": {
         "long": "Vitalité",
         "abbrv": "VIT"
       },
-      "Intelligence":{
+      "Intelligence": {
         "long": "Intelligence",
         "abbrv": "INT"
       },
-      "Mind":{
+      "Mind": {
         "long": "Esprit",
         "abbrv": "ESP"
       },
@@ -48,11 +48,11 @@
       "Vigilance": "Vigilance",
       "Speed": "Vitesse"
     },
-    "SheetLabels":{
+    "SheetLabels": {
       "Actor": "FFXIV Feuille de personnage personnalisée",
       "Item": "FFXIV Feuille d'objet personnalisée"
     },
-    "CharacterSheet":{
+    "CharacterSheet": {
       "Profile": "Profil",
       "Appearance": "Apparence",
       "Origin": "Origine",
@@ -95,7 +95,7 @@
       "Banner": "Bannière",
       "CriticalRange": "Limite pour Coups Critiques"
     },
-    "Disciples":{
+    "Disciples": {
       "Miner": "Mineur",
       "Botanist": "Botaniste",
       "Fisher": "Pêcheur",
@@ -108,7 +108,7 @@
       "Alchemist": "Alchimiste",
       "Culinarian": "Cuisinier"
     },
-    "Item":{
+    "Item": {
       "Name": "Nom",
       "Source": "Source",
       "Rarity": "Rareté",
@@ -128,7 +128,7 @@
       "GrantedAbility": "ID de la compétence octroyée",
       "JobRequirement": "Pré-requis de Job"
     },
-    "GearCategories":{
+    "GearCategories": {
       "Category": "Categorie",
       "SubCategory": "Sous-Catégorie",
       "Armor": "Armures",
@@ -140,8 +140,8 @@
       "Ring": "Bague",
       "Necklace": "Collier"
     },
-    "ItemType":{
-      "ItemType":"Type d'Objet",
+    "ItemType": {
+      "ItemType": "Type d'Objet",
       "consumable": "Objet",
       "limit_break": "Transcendance",
       "primary_ability": "Compétence Primaire",
@@ -155,17 +155,17 @@
       "pet": "Familier",
       "augment": "Amélioration"
     },
-    "ActorType":{
+    "ActorType": {
       "character": "Personnage",
       "npc": "PNJ",
       "pet": "Familier"
     },
-    "Roles":{
+    "Roles": {
       "DPS": "DPS",
       "Healer": "Soigneur",
       "Tank": "Tank"
     },
-    "Abilities":{
+    "Abilities": {
       "Primary": "Compétences Primaires",
       "Secondary": "Compétences Secondaires",
       "Instant": "Compétences Instantanées",
@@ -173,7 +173,7 @@
       "Traits": "Traits & Autres Effets",
       "Abilities": "Compétences",
       "Cost": "Coût",
-      "Target" :"Cible",
+      "Target": "Cible",
       "Range": "Portée",
       "Check": "Test",
       "Challenge": "Niveau de Difficulté",
@@ -193,10 +193,10 @@
       "MarkerArea": "Taille de la zone d'effet",
       "MarkerTrigger": "Temps avant activation",
       "MarkerEffect": "Effets de la zone",
-      "Limitations":"Restrictions",
-      "Limitations_max":"Nombre d'utilisation",
-      "JobResource":"Ressource de Job",
-      "JobResourceMax":"Nombre de cases pour cette Ressource",
+      "Limitations": "Restrictions",
+      "Limitations_max": "Nombre d'utilisation",
+      "JobResource": "Ressource de Job",
+      "JobResourceMax": "Nombre de cases pour cette Ressource",
       "BaseFormula": "Formule de l'Effet de Base",
       "AlternateFormula": "Formule Alternative",
       "DirectFormula": "Formule d'Attaque Directe",
@@ -217,6 +217,7 @@
       "Drain": "Drainé",
       "Enmity": "Provoqué",
       "Heavy": "Lourd",
+      "Invoking": "Conjurer",
       "KnockedOut": "Inconscient",
       "Paralysis": "Paralysie",
       "Petrified": "Pétrifié",
@@ -228,19 +229,19 @@
       "Stun": "Étourdissement",
       "Weakness": "Faiblesse"
     },
-    "Tags":{
+    "Tags": {
       "Tags": "Tags",
       "Default": "Défaut",
       "Minion": "Sbire",
       "Mount": "Monture",
       "Pet": "Companion"
     },
-    "Traits":{
+    "Traits": {
       "Activable": "Activable",
       "Modifiers": "Modificateurs",
       "TraitsOnly": "Uniquement traits actifs"
     },
-    "Rarities":{
+    "Rarities": {
       "Basic": "Basique",
       "Aetherial": "Aethéré",
       "Green": "Vert",
@@ -248,11 +249,11 @@
       "Relic": "Relique",
       "Unique": "Unique"
     },
-    "Settings":{
-      "ToggleGear":"Afficher l'onglet d'équipements",
-      "ToggleGearHint":"Utilisez-vous des règles faites maison pour l'équipement ?",
-      "JobsAbbrv":"List of abbreviations for jobs",
-      "JobsAbbrvHint":"Only used for Gear select input of jobs requirements",
+    "Settings": {
+      "ToggleGear": "Afficher l'onglet d'équipements",
+      "ToggleGearHint": "Utilisez-vous des règles faites maison pour l'équipement ?",
+      "JobsAbbrv": "List of abbreviations for jobs",
+      "JobsAbbrvHint": "Only used for Gear select input of jobs requirements",
       "Theme": "Thème",
       "ThemeHint": "La palette de couleur avec laquelle vous voulez rerésenter vos fiches.",
       "UseRarity": "Utilisez-vous la propriété Rareté sur les Items ?",
@@ -287,47 +288,48 @@
       "AttributesImgMagicDefense": "Choisissez une image pour l'attribut Défense Magique (facultatif)",
       "AttributesImgVigilance": "Choisissez une image pour l'attribut Vigilance (facultatif)",
       "AttributesImgSpeed": "Choisissez une image pour l'attribut Vitesse (facultatif)",
-      "SoundNotificationFFxiv":"Bruitages de FFXIV",
-      "SoundNotificationFFxivHint":"Ajoute quelques bruitages déclenchés par des actions telles que la connexion d'un autre joueur, l'ouverture/fermeture de votre feuille de personnage, le déplacement d'objets dans votre inventaire, etc.",
-      "SoundNotificationFFxivVolume":"Volume des Bruitages",
-      "SoundNotificationFFxivHintVolume":"Volume des Bruitages de FFXIV.",
+      "SoundNotificationFFxiv": "Bruitages de FFXIV",
+      "SoundNotificationFFxivHint": "Ajoute quelques bruitages déclenchés par des actions telles que la connexion d'un autre joueur, l'ouverture/fermeture de votre feuille de personnage, le déplacement d'objets dans votre inventaire, etc.",
+      "SoundNotificationFFxivVolume": "Volume des Bruitages",
+      "SoundNotificationFFxivHintVolume": "Volume des Bruitages de FFXIV.",
       "soundNotificationFFxiv_Hint": "Sélectionner un fichier son à jouer lorsque l'événement est activé. Laisser vider pour ne jamais le jouer.",
-      "soundNotificationFFxiv_deleteItem":"Son à la suppression d'un objet",
-      "soundNotificationFFxiv_moveItem":"Son au déplacement d'un objet dans un inventaire",
-      "soundNotificationFFxiv_enterChat":"Son quand un joueur rejoint la partie",
-      "soundNotificationFFxiv_openSheet":"Son à l'ouverture d'une feuille de personnage",
-      "soundNotificationFFxiv_closeSheet":"Son à la fermeture d'une feuille de personnage",
-      "soundNotificationFFxiv_critical":"Son lors d'un score critique",
+      "soundNotificationFFxiv_deleteItem": "Son à la suppression d'un objet",
+      "soundNotificationFFxiv_moveItem": "Son au déplacement d'un objet dans un inventaire",
+      "soundNotificationFFxiv_enterChat": "Son quand un joueur rejoint la partie",
+      "soundNotificationFFxiv_openSheet": "Son à l'ouverture d'une feuille de personnage",
+      "soundNotificationFFxiv_closeSheet": "Son à la fermeture d'une feuille de personnage",
+      "soundNotificationFFxiv_critical": "Son lors d'un score critique",
       "Dark": "Sombre",
       "Light": "Clair",
       "Blue": "Bleu"
     },
-    "Dialogs":{
+    "Dialogs": {
       "DialogTitleConfirmation": "Cette action n'est pas réversible",
-      "Confirm":"Êtes-vous sûr de vouloir effectuer cette action ?",
-      "ItemDelete":"Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?"
+      "Confirm": "Êtes-vous sûr de vouloir effectuer cette action ?",
+      "Cancel": "Annuler",
+      "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?"
     },
-    "Controls":{
-      "FFXIVTools":"Outils FF XIV",
-      "Soundboard":"Bruitages"
+    "Controls": {
+      "FFXIVTools": "Outils FF XIV",
+      "Soundboard": "Bruitages"
     },
-    "Notifications":{
+    "Notifications": {
       "NoTarget": "Aucune cible sélectionée.",
       "EffectApplied": "Effet \"{effect}\" appliqué à {actor}.",
       "EffectRequest": "{playerName} demande d'appliquer l'effet \"{effect}\" aux cibles suivantes :",
       "SendSocket": "Demande envoyée au Maître du jeu.",
-      "ItemDelete":"{itemName} a été supprimé/e.",
-      "NewPlayer":"{playerName} a rejoint l'équipe.",
-      "NoSoundAvailable":"Aucun fichier son ne se trouve dans le répertoire des bruitages.",
-      "ReplaceGear":"{oldGear} a été remplacé par {newGear}.",
+      "ItemDelete": "{itemName} a été supprimé/e.",
+      "NewPlayer": "{playerName} a rejoint l'équipe.",
+      "NoSoundAvailable": "Aucun fichier son ne se trouve dans le répertoire des bruitages.",
+      "ReplaceGear": "{oldGear} a été remplacé par {newGear}.",
       "StatusChangeRequest": "Demande d'effet de statut",
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)"
     },
-    "Sockets":{
+    "Sockets": {
       "Accept": "Accepter",
       "Decline": "Refuser"
     },
-    "Chat":{
+    "Chat": {
       "RollHitFormula": "Jet de Touche",
       "RollAlternateFormula": "Jet Alternatif",
       "RollBaseEffectFormula": "Effet de base",
@@ -336,6 +338,42 @@
       "RollAlternateCriticalHitFormula": "Critique Alternatif",
       "ShowModifiers": "Modificateurs",
       "NoModifiers": "Pas de modificateurs à montrer."
+    },
+    "RollDialog": {
+      "AdvantageDice": "Dés d’avantage",
+      "FlatModifier": "Modificateur fixe",
+      "Preview": "Aperçu du jet",
+      "HitRollOptions": "Options de jet d'attaque",
+      "ButtonRoll": "Jet de dés",
+      "Warning": {
+        "NoD20AdvantageIgnored": "Pas de d20 dans la formule de jet - dés d’avantage ignoré"
+      }
+    },
+    "MarkerPlacement": {
+      "Title": "Placement de Marqueur",
+      "Instructions": {
+        "ClickToPlace": "Cliquez sur la scène pour placer le marqueur."
+      },
+      "Errors": {
+        "NoScene": "Aucune scène active.",
+        "TileFailed": "Échec de la création de la tuile. Voir la console pour les détails."
+      },
+      "Dialog": {
+        "Title": "Type de Marqueur",
+        "Description": "Choisissez le type de marqueur:",
+        "Enemy": "Ennemi (rouge)",
+        "Ally": "Allié (bleu)",
+        "Button": {
+          "Place": "Placer"
+        }
+      }
+    },
+    "SizeCategories": {
+      "Small": "Petit",
+      "Medium": "Moyen",
+      "Large": "Grand",
+      "Huge": "Énorme",
+      "Colossal": "Colossal"
     },
     "None": "Aucun",
     "Special": "Spécial",

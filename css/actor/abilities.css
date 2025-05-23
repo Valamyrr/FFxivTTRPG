@@ -132,9 +132,13 @@
 .actor-abilities .ability-effects {
   padding: 5px;
 }
+
 .actor-abilities .effect {
-  display: inline-block;
+  display: block;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
 }
+
 
 .actor-abilities .ability-roll-button,.pet-ability-roll-button {
   background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);

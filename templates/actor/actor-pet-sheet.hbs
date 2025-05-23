@@ -16,7 +16,6 @@
     </div>
   </header>
 
-
   {{!-- Sheet Tab Navigation --}}
   <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
     <a class="sub-tab" data-tab="fight">{{ localize "FFXIV.Abilities.Abilities" }}<div class="chip"></div></a>
@@ -27,20 +26,34 @@
   <section class='sheet-body'>
 
     <div class="tab fight actor-abilities" data-group="primary" data-tab="fight">
-      {{#each (reverse items)}}
-        {{#if (eq type "primary_ability")}}
+      {{#each (sortAbilities items system.ability_order "primary_ability")}}
+        <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-        {{/if}}
+          <div class="move-buttons">
+            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="primary_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="primary_ability">▼</button>{{/unless}}
+          </div>
+        </div>
       {{/each}}
-      {{#each (reverse items)}}
-        {{#if (eq type "secondary_ability")}}
+
+      {{#each (sortAbilities items system.ability_order "secondary_ability")}}
+        <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-        {{/if}}
+          <div class="move-buttons">
+            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="secondary_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="secondary_ability">▼</button>{{/unless}}
+          </div>
+        </div>
       {{/each}}
-      {{#each (reverse items)}}
-        {{#if (eq type "instant_ability")}}
+
+      {{#each (sortAbilities items system.ability_order "instant_ability")}}
+        <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-        {{/if}}
+          <div class="move-buttons">
+            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
+          </div>
+        </div>
       {{/each}}
     </div>
 
@@ -50,7 +63,7 @@
 
           <div class="s-attribute-card">
             <div class="s-attribute-header">
-              <img src="systems/ffxiv/assets/properties/speed.png">
+              <img src="{{settings.attributesImgSpeed}}">
               <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Speed" }}</div>
             </div>
             <div class="s-attribute-info">
@@ -60,12 +73,11 @@
           </div>
 
           <div class="resources grid grid-1col">
-
             <div class="resource flex-group-center">
               <label class="resource-label">{{ localize "FFXIV.Abilities.TraitsShort" }}</label>
               <div class="resource-content flexrow flex-center flex-between">
                 {{editor
-                  enrichedTraits
+                  enriched.traits
                   target='system.traits'
                   engine='prosemirror'
                   button=true
@@ -74,6 +86,7 @@
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>

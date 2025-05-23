@@ -113,7 +113,7 @@
       </div>
 
       <div class="actor-profiletrait-content">
-        {{editor enrichedProfileTrait target="system.profile_trait.effect" engine="prosemirror" button=true editable=editable}}
+        {{editor enriched.profile_trait.effect target="system.profile_trait.effect" engine="prosemirror" button=true editable=editable}}
       </div>
     </div>
 
@@ -144,7 +144,7 @@
             {{#if system.source}}<div class="detail"><strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}</div>{{/if}}
             <button data-item-id="{{_id}}" class="title-delete fa fa-trash-can"></button>
           </div>
-          <div class="actor-title-description">{{{ system.description }}}</div>
+          <div class="actor-title-description">{{{ enriched.description }}}</div>
         {{/if}}
       {{/each}}
     </div>
@@ -208,7 +208,7 @@
     <h2>{{ localize "FFXIV.CharacterSheet.Biography"}}</h2>
     {{!-- Editors must receive enriched text data from getData to properly handle rolls --}}
     <div class="actor-biography-content">
-      {{editor enrichedBiography target="system.biography" engine="prosemirror" button=true editable=editable}}
+      {{editor enriched.biography target="system.biography" engine="prosemirror" button=true editable=editable}}
     </div>
   </div>
 </div>

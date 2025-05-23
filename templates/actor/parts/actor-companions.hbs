@@ -34,7 +34,7 @@
         {{!-- Pets summons content here --}}
         {{#each (sortPets system.pets system.pet_order)}}
             <div class="ability-container">
-              {{> "systems/ffxiv/templates/actor/parts/actor-card-pet.hbs" (getActor this)}}
+              {{> "systems/ffxiv/templates/actor/parts/actor-card-pet.hbs" (getPetData ../pets this)}}
               <div class="move-buttons">
                 {{#unless @first}}<button class="pet-move-up" data-item-id="{{this}}" data-type="pet">▲</button>{{/unless}}
                 <button class="pet-remove fa fa-trash-can" data-item-id="{{this}}" data-type="pet"></button>
