@@ -82,18 +82,18 @@ export class SettingsHelpers {
       scope: "world",
       config: true,
       type: String,
-      default: "",
-      requiresReload: false
+      default: "Physical,Ranged,Magic,Unique,Primary,Secondary,Instant,Invoked,Gem,Wind-Aspected,Fire-Aspected,Earth-Aspected,Water-Aspected,Lightning-Aspected,Ice-Aspected,Thunder Spell,Flurry,Poison,Song,Ninjutsu,Technique,Pet,Limit Break,Stationary Marker,Mobile Marker",
+      requiresReload: true
     });
-
+    
     game.settings.register("ffxiv", "customTraitTags", {
       name: game.i18n.localize("FFXIV.Settings.CustomTraitTags"),
       hint: game.i18n.localize("FFXIV.Settings.CustomTagsHint"),
       scope: "world",
       config: true,
       type: String,
-      default: "",
-      requiresReload: false
+      default: "Trait,Enhancement,Job Resource,Machine",
+      requiresReload: true
     });
 
     game.settings.register("ffxiv", "customConsumableTags", {
@@ -102,8 +102,8 @@ export class SettingsHelpers {
       scope: "world",
       config: true,
       type: String,
-      default: "",
-      requiresReload: false
+      default: "Primary,Secondary,Instant,Physical,Consumable,Meal,Rest,Utility,Wind-Aspected,Fire-Aspected,Earth-Aspected,Water-Aspected,Lightning-Aspected,Ice-Aspected",
+      requiresReload: true
     });
 
     game.settings.register("ffxiv", "jobsAbbrv", {
@@ -111,9 +111,9 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.JobsAbbrvHint"),
       scope: "world",
       config: true,
-      default: "",
+      default: "MNK,DRG,NIN,BRD,MCH,BLM,SMN,WHM,SCH,AST,DRK,WAR,PLD",
       type: String,
-      requiresReload: false
+      requiresReload: true
     });
 
     game.settings.register("ffxiv", "attributesImg", {
