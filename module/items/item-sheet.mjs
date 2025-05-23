@@ -179,14 +179,26 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
     });
     html.on('click', '.add-tag', () => {
       const tags = this.item.system.tags || [];
-      if(this.item.type == "trait"){
-        tags.push("FFXIV.Tags.Default")
-      }else{
-        tags.push("FFXIV.Tags.Default")
+
+      const configMap = {
+        primary_ability: "tags_abilities",
+        secondary_ability: "tags_abilities",
+        instant_ability: "tags_abilities",
+        trait: "tags_traits",
+        consumable: "tags_consumables"
       };
-      this.item.update({ "system.tags": tags });
-      this.render(); // Re-render to show the new field
+
+      const configKey = configMap[this.item.type];
+      const tagPool = CONFIG.FF_XIV[configKey] || {};
+      const defaultTag = Object.values(tagPool)[0]?.label || "";
+      console.log(defaultTag + " : " + tags)
+      if (defaultTag) {
+        tags.push(defaultTag);
+        this.item.update({ "system.tags": tags });
+        this.render();
+      }
     });
+
 
     //Gear Classes, similar as tags
     if(this.item.type=="gear"){
