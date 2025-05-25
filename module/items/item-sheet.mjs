@@ -315,17 +315,33 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
   }
 
   _deleteItem(event) {
-    Dialog.confirm({
-      title: game.i18n.format("FFXIV.Dialogs.DialogTitleConfirmation"),
-      content: game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}),
-      yes: () => {
-        ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
-        this.item.delete();
-        this.render(false)
+    new foundry.applications.api.DialogV2({
+      id: "ffxiv-confirm-item-deletion",
+      window: { title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation") },
+      form: {
+        submitOnChange: false,
+        closeOnSubmit: true
       },
-      no: () => {},
-      defaultYes: false
-    });
+      content: game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}),
+      buttons: [
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.No"),
+          action: "keep",
+          type: "submit",
+          callback: (event, button) => {}
+        },
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.Yes"),
+          action: "delete",
+          type: "submit",
+          callback: (event, button) => {
+            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
+            this.item.delete();
+            this.render(false)
+          }
+        }
+      ]
+    }).render({force:true})
   }
 
   _toggleEquip(event) {

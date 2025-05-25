@@ -617,28 +617,30 @@ Hooks.on("ready", function(){
 
           if (!actors || !effect) return;
 
-          new Dialog({
-            title: game.i18n.localize("FFXIV.Notifications.StatusChangeRequest"),
+          new foundry.applications.api.DialogV2({
+            id: "gamemaster-socket-apply-effect",
+            window: {title: game.i18n.localize("FFXIV.Notifications.StatusChangeRequest")},
             content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest",{playerName:userName, effect: game.i18n.localize(effect.label)})}</p>
                 <ul>${actors.map(a => `<li>${a.name}</li>`).join("")}</ul>`,
-            buttons: {
-              yes: {
+            buttons: [
+              {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
-                callback: async () => {
-
+                action: "accept",
+                type: "submit",
+                callback: (event, button) => {
                   for (const actor of actors) {
                     actor.toggleStatusEffect(effect.id, {active: data.active});
                     ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(effect.label), actor: actor.name }));
                   }
-
-
                 }
               },
-              no: {
+              {
                 label: game.i18n.localize("FFXIV.Sockets.Decline"),
-                callback: () => {}
+                action: "decline",
+                type: "submit",
               }
-            }
+            ]
+
           }).render(true);
 
           break;

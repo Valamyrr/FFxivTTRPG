@@ -309,7 +309,9 @@
       "DialogTitleConfirmation": "Cette action n'est pas réversible",
       "Confirm": "Êtes-vous sûr de vouloir effectuer cette action ?",
       "Cancel": "Annuler",
-      "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?"
+      "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?",
+      "Yes":"Oui",
+      "No":"Non"
     },
     "Controls": {
       "FFXIVTools": "Outils FF XIV",
