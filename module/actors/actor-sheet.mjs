@@ -751,7 +751,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
           label:game.i18n.localize("FFXIV.Dialogs.Yes"),
           action:"delete",
           type: "submit",
-          callback: (event, button) => {
+          callback: (event, buttonDelete) => {
             const button = event.currentTarget
             const itemId = button.dataset.itemId
             const item = this.actor.items.get(itemId)
