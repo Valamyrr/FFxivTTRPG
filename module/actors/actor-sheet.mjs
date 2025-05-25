@@ -88,7 +88,10 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
       "showGear": game.settings.get('ffxiv','toggleGear'),
       "attributesImg": game.settings.get('ffxiv','attributesImg'),
       "tabHue": game.settings.get('ffxiv','hueTabsIcons'),
-      "attributesImgSpeed": game.settings.get("ffxiv", "attributesImgSpeed")
+      "attributesImgSpeed": game.settings.get("ffxiv", "attributesImgSpeed"),
+      "attributesImgDefense": game.settings.get("ffxiv","attributesImgDefense"),
+      "attributesImgMagicDefense": game.settings.get("ffxiv","attributesImgMagicDefense"),
+      "attributesImgVigilance": game.settings.get("ffxiv","attributesImgVigilance")
     }
 
     // Prepare character data and items.
@@ -345,7 +348,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
         }
       });
     }
-    
+
     if (this.actor.type=="npc") {
       // Scale NPC tokens based on size category.
       html.find('select[name="system.size.text"]').on("change", async (event) => {
@@ -366,7 +369,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
         });
       });
     }
-		
+
     // Add linebreaks to rich text ability descriptions.
     // Since for whatever reason, it seems to hate including those when saving the descriptions.
     // Inserts a <br> tag after every <p> except the last.
