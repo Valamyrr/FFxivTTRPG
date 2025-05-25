@@ -28,14 +28,18 @@
   width: fit-content !important;
 }
 
-.statblock-header{
+.statblock-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
   background: linear-gradient(0deg, var(--gradient-color-3) 20%, var(--gradient-color-2) 50%, var(--gradient-color-3) 80%);
   border-radius: 20px;
-  padding: 3px 20px 3px 20px;
+  padding: 3px 20px;
   position: relative;
   z-index: 2;
-  display: flex;
 }
+
 .statblock-content{
   padding: 30px 10px 1px 10px;
   margin: -30px 3px 0 3px;
@@ -46,7 +50,11 @@
 }
 
 .statblock-header-left {
-  display: inline;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  flex: 1 1 auto;
 }
 
 .statblock-header-right {
@@ -68,9 +76,21 @@
   width: 30px;
   text-align: center;
 }
+.npc input.npc-specie {
+  display: inline-block;
+  width: auto;
+  min-width: 2ch;
+  max-width: 16ch;
+  padding: 0;
+  background: transparent;
+  border: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
 
 .statblock-header input::placeholder{
-  color: lightgrey
+  color: #777777 !important
 }
 
 /*Nav*/

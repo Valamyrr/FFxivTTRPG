@@ -36,6 +36,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     const actorType = this.actor?.type || "simple";
     return `systems/ffxiv/templates/actor/actor-${this.actor.type}-sheet.hbs`;
   }
+
   /** @override */
   render(force, options) {
     super.render(force, options);
@@ -51,10 +52,10 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     }
     this.characterSheet = characterSheet
 
-
     this._applySidebarPreference();
-    if(this.actor.type == "character"){
 
+    // Set up UI elements for characters only
+    if(this.actor.type == "character"){
       Hooks.once('renderActorSheet', () => {
         this._updateManaBar();
         this._updateHealthBar();
@@ -63,8 +64,6 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
       });
     };
   }
-
-  /* -------------------------------------------- */
 
   /** @override */
   async getData() {
@@ -88,78 +87,87 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
       "useRarity": game.settings.get('ffxiv','useRarity'),
       "showGear": game.settings.get('ffxiv','toggleGear'),
       "attributesImg": game.settings.get('ffxiv','attributesImg'),
-      "tabHue": game.settings.get('ffxiv','hueTabsIcons')
+      "tabHue": game.settings.get('ffxiv','hueTabsIcons'),
+      "attributesImgSpeed": game.settings.get("ffxiv", "attributesImgSpeed")
     }
 
     // Prepare character data and items.
-    if (actorData.type == 'character') {
+    if (actorData.type === 'character') {
       this._prepareItems(context);
       this._prepareSharedData(context);
       this._prepareCharacterData(context);
+
+      // Enrich and inject pet data
+      const petIds = actorData.system.pets || [];
+      context.pets = [];
+
+      for (const id of petIds) {
+        const pet = game.actors.get(id);
+        if (!pet) continue;
+
+        const petData = pet.toObject();
+        petData.enriched = await this.constructor.enrichAllStrings(petData.system, this.actor.getRollData(), pet);
+        //console.log(petData.system)
+
+        for (const item of petData.items || []) {
+          item.enriched = await this.constructor.enrichAllStrings(item.system, this.actor.getRollData(), item);
+        }
+
+        context.pets.push(petData);
+      }
     }
 
     // Prepare NPC data and items.
-    if (actorData.type == 'npc') {
+    if (actorData.type === 'npc' || actorData.type === 'pet') {
       this._prepareItems(context);
       this._prepareSharedData(context);
-    }
-
-    if (actorData.type == 'pet') {
-      this._prepareItems(context);
-      this._prepareSharedData(context);
-      const traits = this.actor.system.traits || "";
-      context.enrichedTraits = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
-        traits,
-        {
-          secrets: this.document.isOwner,
-          async: true,
-          rollData: this.actor.getRollData(),
-          relativeTo: this.actor,
-        }
-      );
-
     }
 
     // Enrich biography info for display
     // Enrichment turns text like `[[/r 1d20]]` into buttons
-    const biography = this.actor.system.biography || "";
-    context.enrichedBiography = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
-      biography,
-      {
-        // Whether to show secret blocks in the finished html
-        secrets: this.document.isOwner,
-        // Necessary in v11, can be removed in v12
-        async: true,
-        // Data to fill in for inline rolls
-        rollData: this.actor.getRollData(),
-        // Relative UUID resolution
-        relativeTo: this.actor,
+    context.enriched = await this.constructor.enrichAllStrings(this.actor.system, this.actor.getRollData(), this.actor);
+
+    if (["character", "npc", "pet"].includes(actorData.type)) {
+      for (const item of context.items) {
+        item.enriched = await this.constructor.enrichAllStrings(item.system, this.actor.getRollData(), item);
       }
-    );
-    if (this.actor.system.profile_trait){
-      const effect = this.actor.system.profile_trait.effect || "";
-      context.enrichedProfileTrait = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
-        effect,
-        {
-          secrets: this.document.isOwner,
-          async: true,
-          rollData: this.actor.getRollData(),
-          relativeTo: this.actor,
-        }
-      );
     }
 
-
     // Prepare active effects
-    context.effects = prepareActiveEffectCategories(
-      // A generator that returns all effects stored on the actor
-      // as well as any items
-      this.actor.allApplicableEffects()
-    );
-
+    context.effects = prepareActiveEffectCategories(this.actor.allApplicableEffects());
     context.hidingSidebar = this.hidingSidebar;
-
     return context;
+  }
+
+  /**
+   * Recursively enrich all string fields in an object.
+   * @param {object} target The object to enrich
+   * @param {object} rollData The roll data for inline rolls
+   * @param {ClientDocument} relativeTo The document context
+   * @returns {Promise<object>} A new object with enriched HTML strings
+   */
+  static async enrichAllStrings(target, rollData, relativeTo) {
+    const enriched = {};
+
+    for (const [key, value] of Object.entries(target)) {
+      if (typeof value === "string") {
+        const html = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
+          value,
+          {
+            secrets: true,
+            async: true,
+            rollData,
+            relativeTo,
+          }
+        );
+
+        // Use enriched if it's different and not blank, else fallback to original
+        enriched[key] = html?.trim() ? html : value;
+      } else if (typeof value === "object" && value !== null) {
+        enriched[key] = await this.enrichAllStrings(value, rollData, relativeTo);
+      }
+    }
+    return enriched;
   }
 
   /**
@@ -187,9 +195,6 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     }
   }
 
-
-
-
   /**
    * Organize and classify Items for Actor sheets.
    *
@@ -206,13 +211,6 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     const traits = [];
 
     for (let i of context.items) {
-      /*
-      if (['instant_ability','secondary_ability','primary_ability'].indexOf(i.type)){
-        if (!Array.isArray(i.system.limitation_status) || i.limitation_status.length !== data.limitation_max) {
-          i.limitation_status = Array(i.limitation_max).fill(false);
-        }
-      }*/
-
       i.img = i.img || Item.DEFAULT_ICON;
 
       if (i.type === 'consumables') {
@@ -326,16 +324,56 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
         this.render();
       });
       html.on('click', '.add-tag', () => {
-        const tags = this.actor.system.tags || [];
-        if(this.actor.type == "trait"){
-          tags.push("FFXIV.Tags.Default")
-        }else{
-          tags.push("FFXIV.Tags.Default")
+        const tags = this.item.system.tags || [];
+
+        const configMap = {
+          primary_ability: "tags_abilities",
+          secondary_ability: "tags_abilities",
+          instant_ability: "tags_abilities",
+          trait: "tags_traits",
+          consumable: "tags_consumables"
         };
-        this.actor.update({ "system.tags": tags });
-        this.render();
+
+        const configKey = configMap[this.item.type];
+        const tagPool = CONFIG.FF_XIV[configKey] || {};
+        const defaultTag = Object.values(tagPool)[0]?.label || "";
+
+        if (defaultTag) {
+          tags.push(defaultTag);
+          this.item.update({ "system.tags": tags });
+          this.render();
+        }
       });
     }
+    
+    if (this.actor.type=="npc") {
+      // Scale NPC tokens based on size category.
+      html.find('select[name="system.size.text"]').on("change", async (event) => {
+        const SIZE_DIMENSIONS = {
+          "Small": [1, 1],
+          "Medium": [1, 1],
+          "Large": [2, 2],
+          "Huge": [3, 3],
+          "Colossal": [4, 4]
+        };
+
+        const newSize = event.currentTarget.value;
+        const [width, height] = SIZE_DIMENSIONS[newSize] || [1, 1];
+
+        await this.actor.update({
+          "prototypeToken.width": width,
+          "prototypeToken.height": height
+        });
+      });
+    }
+		
+    // Add linebreaks to rich text ability descriptions.
+    // Since for whatever reason, it seems to hate including those when saving the descriptions.
+    // Inserts a <br> tag after every <p> except the last.
+    html.find(".ability-description p:not(:last-of-type)").each(function () {
+      $(this).after("<br>");
+    });
+
 
     html.on('click', '.inventory-item', this._renderItem.bind(this));
 
@@ -485,7 +523,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
   };
 
   async _refreshDialogContent(dialog, item) {
-    const newHtml = await renderTemplate("systems/ffxiv/templates/item/item-sheet-dialog.hbs", item);
+    const newHtml = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/item/item-sheet-dialog.hbs", item);
     dialog.data.content = newHtml;
     dialog.render(true);
   };
@@ -789,9 +827,9 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
   async _removePet(event){
     const petId = event.currentTarget.dataset.itemId;
     let pets = foundry.utils.duplicate(this.actor.system.pets || []);
-    console.log(pets)
+    //console.log(pets)
     const index = pets.indexOf(petId)
-    console.log(index)
+    //console.log(index)
     if(index==-1){
       console.error(`No pet "${petId}" in pets array from:`,this.actor.system.pets)
       return;

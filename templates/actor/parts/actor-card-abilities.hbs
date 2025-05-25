@@ -1,4 +1,5 @@
 <div class="ability-card" data-item-id="{{_id}}">
+  
   <div class="ability-card-info">
     <img src="{{img}}" alt="{{name}}" class="ability-icon" data-item-id="{{_id}}">
     <div class="ability-header">
@@ -16,7 +17,7 @@
             <div class="limitation-wrapper">
               <input type="checkbox" class="limitation"
                 data-index={{index}} data-item-id={{../_id}}
-                {{#if (lookup ../system.limitations_status index)}}checked {{/if}}>
+                {{#if (lookup ../system.limitations_status index)}}checked{{/if}}>
               <span class="checkmark"></span>
             </div>
           {{/repeat}}
@@ -25,41 +26,36 @@
     </div>
 
     <div class="ability-details">
-      {{#if system.cost}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Cost" }}:</strong> {{system.cost}}</div>{{/if}}
-      {{#if system.target}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{system.target}}</div>{{/if}}
-      {{#if system.range}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{system.range}}</div>{{/if}}
+      {{#if system.cost}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Cost"}}:</strong> {{system.cost}}</div>{{/if}}
+      {{#if system.target}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Target"}}:</strong> {{system.target}}</div>{{/if}}
+      {{#if system.range}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Range"}}:</strong> {{system.range}}</div>{{/if}}
       {{#if system.check}}
         {{#if (not (eq system.check (localize "FFXIV.None")))}}
-        <div class="detail"><strong>{{ localize "FFXIV.Abilities.Check"}}:</strong>
-            {{localize system.check}}
-        </div>
+          <div class="detail"><strong>{{localize "FFXIV.Abilities.Check"}}:</strong> {{localize system.check}}</div>
         {{/if}}
       {{/if}}
-      {{#if system.challenge}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{system.challenge}}</div>{{/if}}
-      {{#if system.combo}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Combo" }}:</strong> {{system.combo}}</div>{{/if}}
-      {{#if system.trigger}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{system.trigger}}</div>{{/if}}
-      {{#if system.condition}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{system.condition}}</div>{{/if}}
+      {{#if system.challenge}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Challenge"}}:</strong> {{system.challenge}}</div>{{/if}}
+      {{#if system.combo}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Combo"}}:</strong> {{system.combo}}</div>{{/if}}
+      {{#if system.trigger}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Trigger"}}:</strong> {{system.trigger}}</div>{{/if}}
+      {{#if system.condition}}<div class="detail"><strong>{{localize "FFXIV.Abilities.Condition"}}:</strong> {{system.condition}}</div>{{/if}}
     </div>
-
   </div>
 
-
   <div class="ability-effects">
-    {{#if system.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{system.base_effect}}</div>{{/if}}
-    {{#if system.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{system.direct_hit}}</div>{{/if}}
-    {{#if system.limitations}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Limitations" }}:</strong> {{system.limitations}}</div>{{/if}}
-    {{#if system.marker_area}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{system.marker_area}}</div>{{/if}}
-    {{#if system.origin}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Origin" }}:</strong> {{system.origin}}</div>{{/if}}
-    {{#if system.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{system.marker_trigger}}</div>{{/if}}
-    {{#if system.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{system.marker_effect}}</div>{{/if}}
+    {{#if system.base_effect}}<div class="effect"><strong>{{localize "FFXIV.Abilities.BaseEffect"}}:</strong> {{{enriched.base_effect}}}</div>{{/if}}
+    {{#if system.direct_hit}}<div class="effect"><strong>{{localize "FFXIV.Abilities.DirectHit"}}:</strong> {{{enriched.direct_hit}}}</div>{{/if}}
+    {{#if system.limitations}}<div class="effect"><strong>{{localize "FFXIV.Abilities.Limitations"}}:</strong> {{{enriched.limitations}}}</div>{{/if}}
+    {{#if system.marker_area}}<div class="effect"><strong>{{localize "FFXIV.Abilities.MarkerArea"}}:</strong> {{{enriched.marker_area}}}</div>{{/if}}
+    {{#if system.origin}}<div class="effect"><strong>{{localize "FFXIV.Abilities.Origin"}}:</strong> {{{enriched.origin}}}</div>{{/if}}
+    {{#if system.marker_trigger}}<div class="effect"><strong>{{localize "FFXIV.Abilities.MarkerTrigger"}}:</strong> {{{enriched.marker_trigger}}}</div>{{/if}}
+    {{#if system.marker_effect}}<div class="effect"><strong>{{localize "FFXIV.Abilities.MarkerEffect"}}:</strong> {{{enriched.marker_effect}}}</div>{{/if}}
   </div>
 
   {{#if system.description}}
     <div class="ability-description">
-      <p>{{system.description}}</p>
+      {{{enriched.description}}}
     </div>
   {{/if}}
 
-  <button class="ability-roll-button" data-item-id={{_id}}>{{ localize "FFXIV.CharacterSheet.Roll" }}</button>
-
+  <button class="ability-roll-button" data-item-id={{_id}}>{{localize "FFXIV.CharacterSheet.Roll"}}</button>
 </div>

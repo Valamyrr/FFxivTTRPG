@@ -18,22 +18,22 @@
   <div class="pet-traits">
     <div class="effect">
       <strong>{{ localize "FFXIV.Abilities.TraitsShort" }}:</strong>
-      {{{system.traits}}}
+      {{{enriched.traits}}}
     </div>
   </div>
 
-  {{#each system.abilities as |item|}}
+  {{#each items as |item|}}
     {{#if (eq item.type "primary_ability")}}
-      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" this}}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" item}}
     {{/if}}
     {{#if (eq item.type "secondary_ability")}}
-      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" this}}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" item}}
     {{/if}}
     {{#if (eq item.type "instant_ability")}}
-      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" this}}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" item}}
     {{/if}}
     {{#if (eq item.type "trait")}}
-      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" this}}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" item}}
     {{/if}}
   {{/each}}
 
