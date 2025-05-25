@@ -591,24 +591,34 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
 
     if (item) {
       if (newQuantity < 0){
-        Dialog.confirm({
-          title: game.i18n.format("FFXIV.Dialogs.DialogTitleConfirmation"),
-          content: game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: item.name}),
-          yes: () => {
-            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
-            item.delete();
-            if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem')){
-              foundry.audio.AudioHelper.play({
-                src: game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem'),
-                volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-                autoplay: true,
-                loop: false
-              });
+        new foundry.applications.api.DialogV2({
+          id: "update-currency",
+          window: {title: game.i18n.format("FFXIV.Dialogs.DialogTitleConfirmation")},
+          buttons:[
+            {
+              label: game.i18n.localize("FFXIV.Dialogs.Yes"),
+              action: "delete",
+              type: "submit",
+              callback: (event, button) => {
+                ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
+                item.delete();
+                if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem')){
+                  foundry.audio.AudioHelper.play({
+                    src: game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem'),
+                    volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+                    autoplay: true,
+                    loop: false
+                  });
+                }
+              }
+            },
+            {
+              label: game.i18n.localiz("FFXIV.Dialogs.No"),
+              action: "keep",
+              type: "submit"
             }
-          },
-          no: () => {},
-          defaultYes: false
-        });
+          ]
+        }).render({force:true});
       } else {
           item.update({ 'system.quantity': newQuantity });
       }
@@ -733,19 +743,30 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
   }
 
   _onDeleteTitle(event){
-    Dialog.confirm({
-      title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation"),
-      content: game.i18n.localize("FFXIV.Confirm"),
-      yes: () => {
-        const button = event.currentTarget
-        const itemId = button.dataset.itemId
-        const item = this.actor.items.get(itemId)
-        item.delete();
-        ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
-      },
-      no: () => {},
-      defaultYes: false
-    });
+    new foundry.applications.api.DialogV2({
+      id:"delete-title",
+      window: {title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation")},
+      buttons:[
+        {
+          label:game.i18n.localize("FFXIV.Dialogs.Yes"),
+          action:"delete",
+          type: "submit",
+          callback: (event, button) => {
+            const button = event.currentTarget
+            const itemId = button.dataset.itemId
+            const item = this.actor.items.get(itemId)
+            item.delete();
+            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
+          }
+        },
+        {
+          label:game.i18n.localize("FFXIV.Dialogs.No"),
+          action:"keep",
+          type: "submit"
+        }
+      ]
+
+    }).render({force:true})
   }
 
   async _moveAbility(direction, event){

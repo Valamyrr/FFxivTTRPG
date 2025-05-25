@@ -325,12 +325,6 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       content: game.i18n.format("FFXIV.Dialogs.ItemDelete", {itemName: this.item.name}),
       buttons: [
         {
-          label: game.i18n.localize("FFXIV.Dialogs.No"),
-          action: "keep",
-          type: "submit",
-          callback: (event, button) => {}
-        },
-        {
           label: game.i18n.localize("FFXIV.Dialogs.Yes"),
           action: "delete",
           type: "submit",
@@ -339,6 +333,12 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
             this.item.delete();
             this.render(false)
           }
+        },
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.No"),
+          action: "keep",
+          type: "submit",
+          callback: (event, button) => {}
         }
       ]
     }).render({force:true})
