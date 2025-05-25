@@ -6,7 +6,7 @@
     "minimum": "13.342",
     "verified": "13.342"
   },
-  "version": "2.3",
+  "version": "2.4",
   "esmodules": ["module/ffxiv.mjs"],
   "styles": ["css/ffxiv.css"],
   "languages": [
