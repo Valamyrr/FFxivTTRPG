@@ -2,17 +2,10 @@
   "id": "ffxiv",
   "title": "Final Fantasy XIV TTRPG",
   "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
-  "background": "systems/ffxiv/assets/banner.jpg",
   "compatibility": {
     "minimum": "13.342",
     "verified": "13.342"
   },
-  "media": [
-    {
-      "type": "setup",
-      "thumbnail": "systems/ffxiv/assets/meteor.png"
-    }
-  ],
   "version": "2.3",
   "esmodules": ["module/ffxiv.mjs"],
   "styles": ["css/ffxiv.css"],
