@@ -1,18 +1,14 @@
 export class SettingsHelpers {
 
   static initSettings(){
-    game.settings.register("ffxiv", "colorScheme", {
-      name: game.i18n.localize("FFXIV.Settings.ColorScheme"),
-      hint: game.i18n.localize("FFXIV.Settings.ColorSchemeHint"),
+
+    game.settings.register("ffxiv", "overrideColorScheme", {
+      name: game.i18n.localize("FFXIV.Settings.OverrideColorScheme"),
+      hint: game.i18n.localize("FFXIV.Settings.OverrideColorSchemeHint"),
       scope: "client",
       config: true,
-      default: "dark",
-      type: String,
-      choices: {
-        dark: game.i18n.localize("FFXIV.Settings.Dark"),
-        light: game.i18n.localize("FFXIV.Settings.Light"),
-        blue: game.i18n.localize("FFXIV.Settings.Blue")
-      },
+      default: false,
+      type: Boolean,
       requiresReload: true
     });
 
@@ -85,7 +81,7 @@ export class SettingsHelpers {
       default: "Physical,Ranged,Magic,Unique,Primary,Secondary,Instant,Invoked,Gem,Wind-Aspected,Fire-Aspected,Earth-Aspected,Water-Aspected,Lightning-Aspected,Ice-Aspected,Thunder Spell,Flurry,Poison,Song,Ninjutsu,Technique,Pet,Limit Break,Stationary Marker,Mobile Marker",
       requiresReload: true
     });
-    
+
     game.settings.register("ffxiv", "customTraitTags", {
       name: game.i18n.localize("FFXIV.Settings.CustomTraitTags"),
       hint: game.i18n.localize("FFXIV.Settings.CustomTagsHint"),

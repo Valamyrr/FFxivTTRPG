@@ -301,7 +301,9 @@
       "soundNotificationFFxiv_critical": "Son lors d'un score critique",
       "Dark": "Sombre",
       "Light": "Clair",
-      "Blue": "Bleu"
+      "Blue": "Bleu",
+      "OverrideColorScheme": "Palette de couleur bleue",
+      "OverrideColorSchemeHint": "Remplacer le paramètre de thème de couleur par un bleu inspiré de celui du jeu vidéo."
     },
     "Dialogs": {
       "DialogTitleConfirmation": "Cette action n'est pas réversible",

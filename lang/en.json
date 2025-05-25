@@ -301,7 +301,9 @@
       "soundNotificationFFxiv_critical": "Sound when rolling a critical hit",
       "Dark": "Dark",
       "Light": "Light",
-      "Blue": "Blue"
+      "Blue": "Blue",
+      "OverrideColorScheme": "Blue color theme",
+      "OverrideColorSchemeHint": "Override core setting light/dark color scheme with a blue color scheme inspired from FFXIV in-game blue color scheme."
     },
     "Dialogs": {
       "DialogTitleConfirmation": "Action is irreversible",
