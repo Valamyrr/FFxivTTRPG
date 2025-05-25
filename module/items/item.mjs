@@ -59,7 +59,7 @@ export class FfxivItem extends Item {
       flavor: game.i18n.format("FFXIV.ItemType."+this.type)
     });
   }
-  
+
   async _rollHit() {
     // Identify the actor and user performing the roll
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
@@ -213,7 +213,7 @@ export class FfxivItem extends Item {
     }
 
     // Prepare additional roll buttons for follow-up actions
-    let extraButtons = "<div style='display:flex'>";
+    let extraButtons = "<div style='display:flex;flex-wrap: wrap;'>";
     if (this.system.base_formula) extraButtons += `<button class="ffxiv-roll-base" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollBaseEffectFormula")}</button>`;
     extraButtons += `<button class="ffxiv-roll-direct" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`;
     extraButtons += `<button class="ffxiv-roll-critical" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollCriticalHitFormula")}</button>`;
@@ -234,7 +234,7 @@ export class FfxivItem extends Item {
     });
   }
 
-  
+
   async _rollDirect(){
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
@@ -308,7 +308,7 @@ export class FfxivItem extends Item {
   }
 
   _getRollButtons(){
-    let buttons = "<div style='display:flex'>"
+    let buttons = "<div style='display:flex;flex-wrap: wrap;'>"
     if(this.system.base_formula) buttons += `<button class="ffxiv-roll-base" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollBaseEffectFormula")}</button>`
     if(this.system.alternate_formula) buttons += `<button class="ffxiv-roll-alternate" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollAlternateFormula")}</button>`
     if(this.system.status_effect) buttons += `<button class="ffxiv-apply-status" data-item-id="${this._id}" data-actor-id="${this.parent._id}" data-effect-id="${this.system.status_effect}" data-action="${this.system.status_action}">${game.i18n.localize("FFXIV.Abilities.StatusEffect")}</button>`

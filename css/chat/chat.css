@@ -18,7 +18,7 @@
   width:100%
 }
 .chat-ffxiv .message-content button{
-  flex:1;
+  flex:50%;
   color: var(--text-color);
   background: var(--primary-color);
 }
