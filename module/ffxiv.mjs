@@ -416,6 +416,18 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
     const defaultImg = defaultImages[itemData.type] || "icons/svg/item-bag.svg";
     itemData.updateSource({ img: defaultImg });
   }
+  //Currencies should be added, not split in several piles
+  if (itemData.type !== "currency") return;
+  const actor = itemData.parent;
+  if (!actor) return;
+  const existingCurrency = actor.items.find(i => i.type === "currency" && i.name === itemData.name);
+  if (existingCurrency){
+    const addedQty = parseInt(itemData.system?.quantity) ?? 0;
+    const oldQty = parseInt(existingCurrency.system?.quantity) ?? 0;
+    existingCurrency.update({ "system.quantity": oldQty + addedQty });
+    return false
+  };
+
 });
 
 Hooks.on("userConnected", (player, login, data) => {
