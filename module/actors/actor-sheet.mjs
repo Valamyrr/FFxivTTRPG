@@ -613,7 +613,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
               }
             },
             {
-              label: game.i18n.localiz("FFXIV.Dialogs.No"),
+              label: game.i18n.localize("FFXIV.Dialogs.No"),
               action: "keep",
               type: "submit"
             }
