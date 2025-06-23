@@ -354,20 +354,24 @@ Hooks.on('renderActorSheet', (app, html, data) => {
       document.body.removeChild(dragGhost);
     }, 0);
 
-    event.originalEvent.dataTransfer.setData('text/plain', draggedItem.id);
+    const item = actor.items.get(event.currentTarget.dataset.itemId);
+    event.originalEvent.dataTransfer.setData("text/plain", JSON.stringify({
+      type: "Item",
+      uuid: item.uuid
+    }));
   });
 
 
 
   // Handle drag over (for both items and empty slots)
   html.find('.inventory-item').on('dragover', event => {
-    event.preventDefault(); // Allow the drop by preventing default
     console.log('Drag over:', event.currentTarget.dataset.itemId || 'empty slot');
   });
 
   // Handle drop event (for both items and empty slots)
   html.find('.inventory-item').on('drop', async event => {
     event.preventDefault();
+    console.log(event)
 
     const targetPosition = event.currentTarget.dataset.itemPosition;
 
