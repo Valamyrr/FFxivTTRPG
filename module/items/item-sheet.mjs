@@ -38,7 +38,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
     // Alternatively, you could use the following return statement to do a
     // unique item sheet by type, like `weapon-sheet.hbs`.
     if (this.item.type == "consumable"){
-      if (game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null){
+      if (game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && (this.item.parent != null || this.item.flags["item-piles"])){
         return `${path}/item-sheet-dialog.hbs`;
       }else{
         return `${path}/item-consumable-sheet.hbs`;
