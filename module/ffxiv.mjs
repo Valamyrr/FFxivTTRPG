@@ -424,7 +424,7 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
   if (existingCurrency){
     const addedQty = parseInt(itemData.system?.quantity) ?? 0;
     const oldQty = parseInt(existingCurrency.system?.quantity) ?? 0;
-    existingCurrency.update({ "system.quantity": oldQty + addedQty });
+    existingCurrency.update({ "system.quantity": parseInt(oldQty + addedQty) });
     return false
   };
 

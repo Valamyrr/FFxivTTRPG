@@ -307,11 +307,11 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
           });
         }
       } else {
-          this.item.update({ 'system.quantity': newQuantity });
+          this.item.update({ 'system.quantity': parseInt(newQuantity) });
       }
   }
   _increaseQuantity(event){
-    this.item.update({ 'system.quantity': this.item.system.quantity + 1 });
+    this.item.update({ 'system.quantity': parseInt(this.item.system.quantity + 1) });
   }
 
   _deleteItem(event) {

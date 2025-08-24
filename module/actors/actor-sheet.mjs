@@ -620,7 +620,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
           ]
         }).render({force:true});
       } else {
-          item.update({ 'system.quantity': newQuantity });
+          item.update({ 'system.quantity': parseInt(newQuantity) });
       }
     }
   }
