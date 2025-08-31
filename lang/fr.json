@@ -14,6 +14,8 @@
       "barrier": "Barrière"
     },
     "Damages": "Dégâts",
+    "CriticalDamage": "Dégâts Critiques",
+    "BonusToHit": "Bonus au Toucher",
     "Custom": "Personnalisé",
     "Mana": {
       "long": "Mana",

@@ -125,6 +125,12 @@ export class FfxivActor extends Actor {
          data.dmg = data.dmg || "";
          if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += "+"+modValue;
 
+         data.cdmg = data.cdmg || "";
+         if (modName == CONFIG.FF_XIV.characteristics.CriticalDamage.label) data.cdmg += "+"+modValue;
+
+         data.hit = data.hit || "";
+         if (modName == CONFIG.FF_XIV.characteristics.BonusToHit.label) data.hit += "+"+modValue;
+
        }
      }
     //Add adventuring ranks

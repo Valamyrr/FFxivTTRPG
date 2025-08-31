@@ -18,6 +18,8 @@
       "abbrv": "MP"
     },
     "Damages": "Damages",
+    "CriticalDamage": "CriticalDamage",
+    "BonusToHit": "Bonus to Hit",
     "Custom": "Custom",
     "Attributes": {
       "Attributes": "Attributes",

@@ -45,6 +45,12 @@ FF_XIV.characteristics = {
   },
   "Damages":{
     "label": "FFXIV.Damages"
+  },
+  "CriticalDamage":{
+    "label": "FFXIV.CriticalDamage"
+  },
+  "BonusToHit": {
+    "label": "FFXIV.BonusToHit"
   }
 }
 

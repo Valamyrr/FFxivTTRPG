@@ -189,7 +189,7 @@ export class FfxivItem extends Item {
     }
 
     // Roll the formula
-    const roll = new Roll(formula, rollData);
+    const roll = new Roll(formula + " "+ rollData.hit, rollData);
     await roll.evaluate();
 
     // Ensure actor has critical range set
@@ -254,7 +254,7 @@ export class FfxivItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
-    let roll = new Roll(rollData.direct_formula, rollData);
+    let roll = new Roll(rollData.direct_formula + " + @cdmg", rollData);
     roll = new Roll(this._doubleDiceCounts(roll._formula), rollData);
     await roll.evaluate();
     ChatMessage.create({
