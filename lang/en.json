@@ -323,12 +323,16 @@
       "NoTarget": "No target selected.",
       "EffectApplied": "Effect \"{effect}\" applied to {actor}.",
       "EffectRequest": "{playerName} asks to apply effect \"{effect}\" to the following targets:",
+      "HealRequest": "{playerName} asks to heal \"{heal}\" HP to the following targets:",
+      "DamageRequest": "{playerName} asks to deal \"{damage}\" HP to the following targets:",
       "SendSocket": "Request sent to Gamemaster.",
       "ItemDelete": "{itemName} has been removed.",
       "NewPlayer": "{playerName} has joined the party.",
       "NoSoundAvailable": "No sound files found in the system soundboard directory.",
       "ReplaceGear": "{oldGear} has been replaced with {newGear}.",
       "StatusChangeRequest": "Request to change status effect",
+      "HealChangeRequest": "Request to heal a target",
+      "DamageChangeRequest": "Request to damage a target",
       "NotEnoughHP": "Not Enough HP to cast this ability (HP Cost)"
     },
     "Sockets": {
@@ -343,7 +347,9 @@
       "RollCriticalHitFormula": "Critical",
       "RollAlternateCriticalHitFormula": "Alternate Critical",
       "ShowModifiers": "Show Modifiers",
-      "NoModifiers": "No modifiers to show."
+      "NoModifiers": "No modifiers to show.",
+      "Damage": "Damage Target(s)",
+      "Heal": "Heal Target(s)"
     },
     "RollDialog": {
       "AdvantageDice": "Advantage Dice",

@@ -625,14 +625,12 @@ Hooks.on("ready", function(){
     game.socket.on("system.ffxiv", async (params) => {
       console.log("get socket")
       const {type, data, userName } = params;
+      const actors = data.actorIds.map(id => game.actors.get(id)).filter(Boolean);
       switch (type) {
         case "applyEffect":
-
-          const actors = data.actorIds.map(id => game.actors.get(id)).filter(Boolean);
+          console.log("status socket")
           const effect = data.effect
-
           if (!actors || !effect) return;
-
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-apply-effect",
             window: {title: game.i18n.localize("FFXIV.Notifications.StatusChangeRequest")},
@@ -656,11 +654,72 @@ Hooks.on("ready", function(){
                 type: "submit",
               }
             ]
-
           }).render(true);
+          break;
 
+        case "applyHeal":
+          console.log("heal socket")
+          const heal = data.heal
+          console.log(actors,!actors)
+          console.log(heal,!heal)
+          if (!actors || !heal) return;
+          new foundry.applications.api.DialogV2({
+            id: "gamemaster-socket-heal",
+            window: {title: game.i18n.localize("FFXIV.Notifications.HealChangeRequest")},
+            content: `<p>${game.i18n.format("FFXIV.Notifications.HealRequest",{playerName:userName, heal: heal})}</p>
+                <ul>${actors.map(a => `<li>${a.name}</li>`).join("")}</ul>`,
+            buttons: [
+              {
+                label: game.i18n.localize("FFXIV.Sockets.Accept"),
+                action: "accept",
+                type: "submit",
+                callback: (event, button) => {
+                  for (const actor of actors) {
+                    const health = Math.min( actor.system.health.value + parseInt(heal), actor.system.health.max )
+                    actor.update({"system.health.value":health})
+                  }
+                }
+              },
+              {
+                label: game.i18n.localize("FFXIV.Sockets.Decline"),
+                action: "decline",
+                type: "submit",
+              }
+            ]
+          }).render(true);
+          break;
+
+        case "applyDamage":
+          console.log("damage socket")
+          const damage = data.damage
+          if (!actors || !damage) return;
+          new foundry.applications.api.DialogV2({
+            id: "gamemaster-socket-damage",
+            window: {title: game.i18n.localize("FFXIV.Notifications.DamageChangeRequest")},
+            content: `<p>${game.i18n.format("FFXIV.Notifications.DamageRequest",{playerName:userName, damage: damage})}</p>
+                <ul>${actors.map(a => `<li>${a.name}</li>`).join("")}</ul>`,
+            buttons: [
+              {
+                label: game.i18n.localize("FFXIV.Sockets.Accept"),
+                action: "accept",
+                type: "submit",
+                callback: (event, button) => {
+                  for (const actor of actors) {
+                    const health = Math.max(actor.system.health.value - parseInt(damage), 0)
+                    actor.update({"system.health.value":health})
+                  }
+                }
+              },
+              {
+                label: game.i18n.localize("FFXIV.Sockets.Decline"),
+                action: "decline",
+                type: "submit",
+              }
+            ]
+          }).render(true);
           break;
         default:
+          console.log("socket error : type of request not found", type)
 
       }
     });
@@ -721,6 +780,75 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     if (actor) actor._showModifiers(ev);
   });
 
+  jqueryhtml.find(".ffxiv-apply-heal").on("click", async ev => {
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const targets = Array.from(game.user.targets);
+    const heal = parseInt(ev.currentTarget.dataset.heal);
+    console.log(ev.currentTarget.dataset)
+    const ownActors = [];
+    const actorsNeedingGM = [];
+    for (const token of targets) {
+      const actor = token.actor;
+      if (actor.testUserPermission(game.user, "OWNER")) {
+        ownActors.push(actor);
+      } else {
+        actorsNeedingGM.push(actor);
+      }
+    }
+    for (const actor of ownActors) {
+      const health = Math.min( actor.system.health.value + parseInt(heal), actor.system.health.max)
+      actor.update({"system.health.value": health})
+    }
+    if (actorsNeedingGM.length > 0) {
+      console.log("Send socket to GM, heal",heal)
+      game.socket.emit("system.ffxiv", {
+        type: "applyHeal",
+        data: {
+          actorIds: actorsNeedingGM.map(a => a.id),
+          heal: heal,
+          active: ev.currentTarget.dataset.action === 'true'
+        },
+        userName: game.user.name
+      });
+      ui.notifications.info(game.i18n.localize("FFXIV.Notifications.SendSocket"))
+    }
+
+  });
+  jqueryhtml.find(".ffxiv-apply-dmg").on("click", async ev => {
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const targets = Array.from(game.user.targets);
+    const damage = ev.currentTarget.dataset.damage;
+    const ownActors = [];
+    const actorsNeedingGM = [];
+    for (const token of targets) {
+      const actor = token.actor;
+      if (actor.testUserPermission(game.user, "OWNER")) {
+        ownActors.push(actor);
+      } else {
+        actorsNeedingGM.push(actor);
+      }
+    }
+    for (const actor of ownActors) {
+      const health = Math.max(actor.system.health.value - parseInt(damage), 0)
+      actor.update({"system.health.value":health})
+    }
+    if (actorsNeedingGM.length > 0) {
+      console.log("Send socket to GM, damage",damage)
+      game.socket.emit("system.ffxiv", {
+        type: "applyDamage",
+        data: {
+          actorIds: actorsNeedingGM.map(a => a.id),
+          damage: damage,
+          active: ev.currentTarget.dataset.action === 'true'
+        },
+        userName: game.user.name
+      });
+      ui.notifications.info(game.i18n.localize("FFXIV.Notifications.SendSocket"))
+    }
+  });
+
   jqueryhtml.find(".ffxiv-apply-status").on("click", async ev => {
     const status_effect = CONFIG.statusEffects.find(e => e.id === ev.currentTarget.dataset.effectId);
     const targets = Array.from(game.user.targets);
@@ -748,7 +876,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     }
 
     if (actorsNeedingGM.length > 0) {
-      console.log("Send socket to GM","applyEffect",status_effect)
+      console.log("Send socket to GM, statusEffect",status_effect)
       game.socket.emit("system.ffxiv", {
         type: "applyEffect",
         data: {

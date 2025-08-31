@@ -285,11 +285,15 @@ export class FfxivItem extends Item {
     const rollData = this.getRollData()
     const roll = new Roll(rollData.base_formula, rollData);
     await roll.evaluate();
+
+    const rollHTML = $("<div>" + await roll.render() + "</div>");
+
     ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
-      flavor: game.i18n.format("FFXIV.Abilities.BaseEffectRoll")
+      flavor: game.i18n.format("FFXIV.Abilities.BaseEffectRoll"),
+      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`
     });
   }
 
@@ -315,6 +319,16 @@ export class FfxivItem extends Item {
     if(this.system.hit_formula) buttons += `<button class="ffxiv-roll-hit" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollHitFormula")}</button>`
     if(this.type !="trait" && this.parent.system.showModifiers=="true") buttons += `<button class="ffxiv-show-modifiers" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.ShowModifiers")}</button>`
     return buttons+"</div>"
+  }
+  _getApplyButton(result){
+    if (game.user.targets.first()){
+      let buttons = "<div style='display:flex;flex-wrap: wrap;'>"
+      buttons += `<button class="ffxiv-apply-heal" data-item-id="${this._id}" data-actor-id="${this.parent._id}" data-heal="${result}">${game.i18n.localize("FFXIV.Chat.Heal")}</button>`
+      buttons += `<button class="ffxiv-apply-dmg" data-item-id="${this._id}" data-actor-id="${this.parent._id}" data-damage="${result}">${game.i18n.localize("FFXIV.Chat.Damage")}</button>`
+      return buttons+"</div>"
+    }else{
+      return ""
+    }
   }
 
   _doubleDiceCounts(input) {

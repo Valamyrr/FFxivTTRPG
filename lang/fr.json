@@ -323,12 +323,16 @@
       "NoTarget": "Aucune cible sélectionée.",
       "EffectApplied": "Effet \"{effect}\" appliqué à {actor}.",
       "EffectRequest": "{playerName} demande d'appliquer l'effet \"{effect}\" aux cibles suivantes :",
+      "HealRequest": "{playerName} demande de soigner \"{heal}\" PV aux cibles suivantes :",
+      "DamageRequest": "{playerName} demande d'infliger \"{damage}\" PV aux cibles suivantes:",
       "SendSocket": "Demande envoyée au Maître du jeu.",
       "ItemDelete": "{itemName} a été supprimé/e.",
       "NewPlayer": "{playerName} a rejoint l'équipe.",
       "NoSoundAvailable": "Aucun fichier son ne se trouve dans le répertoire des bruitages.",
       "ReplaceGear": "{oldGear} a été remplacé par {newGear}.",
       "StatusChangeRequest": "Demande d'effet de statut",
+      "HealRequest": "Demande d'application de soins",
+      "DamageRequest": "Demande d'application de dégâts",
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)"
     },
     "Sockets": {
@@ -343,7 +347,9 @@
       "RollCriticalHitFormula": "Critique",
       "RollAlternateCriticalHitFormula": "Critique Alternatif",
       "ShowModifiers": "Modificateurs",
-      "NoModifiers": "Pas de modificateurs à montrer."
+      "NoModifiers": "Pas de modificateurs à montrer.",
+      "Damage": "Infliger",
+      "Heal": "Soigner"
     },
     "RollDialog": {
       "AdvantageDice": "Dés d’avantage",
