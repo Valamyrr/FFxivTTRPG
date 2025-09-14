@@ -185,11 +185,11 @@ export class FfxivItem extends Item {
     }
 
     if (flatModifier !== 0) {
-      formula += flatModifier > 0 ? ` + ${flatModifier}` : ` - ${Math.abs(flatModifier)}`;
+      formula += rollData.hit + (flatModifier > 0 ? ` + ${flatModifier}` : ` - ${Math.abs(flatModifier)}`);
     }
 
     // Roll the formula
-    const roll = new Roll(formula + " "+ rollData.hit, rollData);
+    const roll = new Roll(formula, rollData);
     await roll.evaluate();
 
     // Ensure actor has critical range set
