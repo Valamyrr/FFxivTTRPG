@@ -240,13 +240,14 @@ export class FfxivItem extends Item {
     const user = game.user.id
     const rollData = this.getRollData()
     const roll = new Roll(rollData.direct_formula, rollData);
-    console.log(roll)
     await roll.evaluate();
+    const rollHTML = $("<div>" + await roll.render() + "</div>");
     ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
-      flavor: game.i18n.format("FFXIV.Abilities.DirectHitRoll")
+      flavor: game.i18n.format("FFXIV.Abilities.DirectHitRoll"),
+      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`
     });
   }
 
@@ -264,11 +265,13 @@ export class FfxivItem extends Item {
 
     roll = new Roll(this._doubleDiceCounts(roll._formula), rollData);
     await roll.evaluate();
+    const rollHTML = $("<div>" + await roll.render() + "</div>");
     ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
-      flavor: game.i18n.format("FFXIV.Abilities.CriticalHitRoll")
+      flavor: game.i18n.format("FFXIV.Abilities.CriticalHitRoll"),
+      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`
     });
   }
 
@@ -278,11 +281,13 @@ export class FfxivItem extends Item {
     const rollData = this.getRollData()
     let roll = new Roll(rollData.alternate_formula_critical, rollData);
     await roll.evaluate();
+    const rollHTML = $("<div>" + await roll.render() + "</div>");
     ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
-      flavor: game.i18n.format("FFXIV.Abilities.CriticalHitRoll")
+      flavor: game.i18n.format("FFXIV.Abilities.CriticalHitRoll"),
+      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`
     });
   }
 
@@ -290,13 +295,10 @@ export class FfxivItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
-    console.log(rollData)
-    console.log(rollData.base_formula)
     const roll = new Roll(rollData.base_formula, rollData);
     await roll.evaluate();
 
     const rollHTML = $("<div>" + await roll.render() + "</div>");
-
     ChatMessage.create({
       user: user,
       speaker: speaker,
@@ -312,11 +314,13 @@ export class FfxivItem extends Item {
     const rollData = this.getRollData()
     const roll = new Roll(rollData.alternate_formula, rollData);
     await roll.evaluate();
+    const rollHTML = $("<div>" + await roll.render() + "</div>");
     ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
-      flavor: game.i18n.format("FFXIV.Abilities.BaseEffectRoll")
+      flavor: game.i18n.format("FFXIV.Abilities.BaseEffectRoll"),
+      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`
     });
   }
 
