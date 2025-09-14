@@ -218,17 +218,17 @@
       "DOT": "Dégâts sur la durée",
       "Drain": "Drainé",
       "Enmity": "Provoqué",
-      "Heavy": "Lourd",
-      "Invoking": "Conjurer",
+      "Heavy": "Pesanteur",
+      "Invoking": "Incanter",
       "KnockedOut": "Inconscient",
       "Paralysis": "Paralysie",
       "Petrified": "Pétrifié",
       "Prone": "À terre",
       "Ready": "Prêt",
-      "Revivify": "Revirogant",
+      "Revivify": "Revigoré",
       "Silence": "Silence",
       "Sleep": "Sommeil",
-      "Stun": "Étourdissement",
+      "Stun": "Étourdis",
       "Weakness": "Faiblesse"
     },
     "Tags": {
@@ -395,3 +395,4 @@
     "False": "Faux"
   }
 }
+
