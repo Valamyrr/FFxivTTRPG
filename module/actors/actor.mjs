@@ -133,6 +133,8 @@ export class FfxivActor extends Actor {
 
        }
      }
+     if (data.dmg=="") data.dmg="0"
+     if (data.cdmg=="") data.cdmg="0"
     //Add adventuring ranks
     if (data.adventuring_rank) {
       data.arank_min = data.adventuring_rank.miner
