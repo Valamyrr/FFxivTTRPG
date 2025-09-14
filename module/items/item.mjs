@@ -230,6 +230,7 @@ export class FfxivItem extends Item {
       user,
       speaker,
       flavor: game.i18n.format("FFXIV.Abilities.HitRoll"),
+      rolls: [roll],
       content: `${rollHTML.html()} ${extraButtons}`
     });
   }
