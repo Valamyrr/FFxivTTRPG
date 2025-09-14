@@ -30,7 +30,6 @@ export class FfxivItem extends Item {
     if (this.parent){ //If an actor is present
       Object.assign(rollData,this.parent.getRollData())
     }
-
     return rollData;
   }
 
@@ -255,7 +254,14 @@ export class FfxivItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
-    let roll = new Roll(rollData.direct_formula + " + @cdmg", rollData);
+
+    let roll;
+    if((await (new Roll("@cdmg")).evaluate()).result > 0){
+      roll = new Roll(rollData.direct_formula + " + @cdmg", rollData);
+    }else{
+      roll = new Roll(rollData.direct_formula, rollData);
+    }
+
     roll = new Roll(this._doubleDiceCounts(roll._formula), rollData);
     await roll.evaluate();
     ChatMessage.create({
@@ -284,6 +290,8 @@ export class FfxivItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
+    console.log(rollData)
+    console.log(rollData.base_formula)
     const roll = new Roll(rollData.base_formula, rollData);
     await roll.evaluate();
 
