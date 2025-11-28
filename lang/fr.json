@@ -216,7 +216,7 @@
       "CriticalUp": "Critique Augmenté",
       "Death": "Mort",
       "DOT": "Dégâts sur la durée",
-      "Drain": "Drainé",
+      "Drain": "Drainage",
       "Enmity": "Provoqué",
       "Heavy": "Pesanteur",
       "Invoking": "Incanter",
@@ -395,4 +395,5 @@
     "False": "Faux"
   }
 }
+
 
