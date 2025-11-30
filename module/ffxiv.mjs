@@ -784,7 +784,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const targets = Array.from(game.user.targets);
-    const heal = parseInt(ev.currentTarget.dataset.heal);
+    const heal = parseInt(eval(ev.currentTarget.dataset.heal));
     console.log(ev.currentTarget.dataset)
     const ownActors = [];
     const actorsNeedingGM = [];
@@ -819,7 +819,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const targets = Array.from(game.user.targets);
-    const damage = ev.currentTarget.dataset.damage;
+    const damage = parseInt(eval(ev.currentTarget.dataset.damage));
     const ownActors = [];
     const actorsNeedingGM = [];
     for (const token of targets) {
