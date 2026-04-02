@@ -2,6 +2,7 @@ import {
   onManageActiveEffect,
   prepareActiveEffectCategories,
 } from '../helpers/effects.mjs';
+import { debugError, debugLog } from "../helpers/debug.mjs";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -255,7 +256,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-    console.log("Listeners activated for:", this.actor.name);
+    debugLog("Listeners activated for:", this.actor.name);
 
     if(this.actor.type=="pet") this.setPosition({ width: 500, height:735 });
 
@@ -351,7 +352,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
 
     if (this.actor.type=="npc") {
       // Scale NPC tokens based on size category.
-      html.find('select[name="system.size.text"]').on("change", async (event) => {
+      html.find('select[name="system.size"]').on("change", async (event) => {
         const SIZE_DIMENSIONS = {
           "Small": [1, 1],
           "Medium": [1, 1],
@@ -486,8 +487,8 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
       }
       item.roll(event);
     }else{
-      console.error("Roll Error : No item found.")
-      console.error(event.currentTarget)
+      debugError("Roll Error : No item found.");
+      debugError(event.currentTarget);
     }
 
   }
@@ -500,8 +501,8 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     if(pet && item){
       item.roll(event);
     }else{
-      console.error("Roll Error : No pet found.")
-      console.error(event.currentTarget)
+      debugError("Roll Error : No pet found.");
+      debugError(event.currentTarget);
     }
   }
 
@@ -521,7 +522,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     if (item) {
       item.sheet.render(true);
     } else {
-      console.error(`Item with ID ${itemId} not found. Cannot open empty inventory cells.`);
+      debugError(`Item with ID ${itemId} not found. Cannot open empty inventory cells.`);
     }
   };
 
@@ -855,7 +856,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     const index = pets.indexOf(petId)
     //console.log(index)
     if(index==-1){
-      console.error(`No pet "${petId}" in pets array from:`,this.actor.system.pets)
+      debugError(`No pet "${petId}" in pets array from:`,this.actor.system.pets);
       return;
     }
     pets.splice(index, 1);
@@ -870,7 +871,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
     if(pet){
       pet.sheet.render(true);
     }else{
-      console.error(`No pet found for ${petId}`);
+      debugError(`No pet found for ${petId}`);
     }
   }
 

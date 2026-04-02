@@ -1,12 +1,14 @@
 // Import document classes.
 import { FfxivActor } from './actors/actor.mjs';
 import { FfxivItem } from './items/item.mjs';
+import { registerDataModels } from './data-models.mjs';
 // Import sheet classes.
 import { FfxivActorSheet } from './actors/actor-sheet.mjs';
 import { FfxivItemSheet } from './items/item-sheet.mjs';
 // Import helper/utility classes and constants.
 import { preloadHandlebarsTemplates } from './helpers/templates.mjs';
 import { FF_XIV } from './helpers/config.mjs';
+import { debugError, debugLog } from "./helpers/debug.mjs";
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
 import { updateStatusEffects } from "./helpers/status_effects.mjs";
@@ -17,7 +19,9 @@ import { updateStatusEffects } from "./helpers/status_effects.mjs";
 
 
 Hooks.once('init', function () {
-  console.log("FFXIV | Initilisation du Système")
+  registerDataModels();
+  SettingsHelpers.initSettings();
+  debugLog("FFXIV | Init");
   // Add utility classes to the global game object so that they're more easily
   // accessible in global contexts.
   game.ffxivttrpg = {
@@ -38,20 +42,20 @@ Hooks.once('init', function () {
   CONFIG.ActiveEffect.legacyTransferral = false;
 
   // Register sheet application classes
-  console.log("FFXIV | Enregistrement des feuilles")
+  debugLog("FFXIV | Registering sheets");
   foundry.documents.collections.Actors.unregisterSheet('core', foundry.appv1.sheets.ActorSheet);
+  
   foundry.documents.collections.Actors.registerSheet('ffxiv', FfxivActorSheet, {
+    types: ['character', 'pet', 'npc'],
     makeDefault: true,
     label: 'FFXIV.SheetLabels.Actor',
   });
+
   foundry.documents.collections.Items.unregisterSheet('core', foundry.appv1.sheets.ItemSheet);
   foundry.documents.collections.Items.registerSheet('ffxiv', FfxivItemSheet, {
     makeDefault: true,
     label: 'FFXIV.SheetLabels.Item',
   });
-
-  SettingsHelpers.initSettings()
-
 
   CONFIG.Item.typeLabels = {
     consumable: game.i18n.localize("FFXIV.ItemType.consumable"),
@@ -172,7 +176,7 @@ Handlebars.registerHelper("delabelize", function ( category, label ) {
           return configCategory[key].value;
       }
     }
-    console.error("FFXIV | cannot find label for "+label+" in "+category)
+    debugError("FFXIV | cannot find label for "+label+" in "+category);
     return "label error"
   }else{
     return ""
@@ -334,7 +338,7 @@ Hooks.on('renderActorSheet', (app, html, data) => {
 
   // Handle drag start
   html.find('.inventory-item').on('dragstart', event => {
-    console.log('Drag started:', event.currentTarget.dataset.itemId);
+    debugLog('Drag started:', event.currentTarget.dataset.itemId);
     draggedItem = {
       id: event.currentTarget.dataset.itemId,
       position: event.currentTarget.dataset.itemPosition
@@ -365,17 +369,17 @@ Hooks.on('renderActorSheet', (app, html, data) => {
 
   // Handle drag over (for both items and empty slots)
   html.find('.inventory-item').on('dragover', event => {
-    console.log('Drag over:', event.currentTarget.dataset.itemId || 'empty slot');
+    debugLog('Drag over:', event.currentTarget.dataset.itemId || 'empty slot');
   });
 
   // Handle drop event (for both items and empty slots)
   html.find('.inventory-item').on('drop', async event => {
     event.preventDefault();
-    console.log(event)
+    debugLog(event);
 
     const targetPosition = event.currentTarget.dataset.itemPosition;
 
-    console.log('Dropped on:', targetPosition || 'empty slot');
+    debugLog('Dropped on:', targetPosition || 'empty slot');
 
     // If dropped on an empty slot, there's no item ID
     const targetItemId = event.currentTarget.dataset.itemId;
@@ -583,7 +587,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
             }).render(true);
 
           } catch (err) {
-            console.error("Tile creation failed:", err);
+            debugError("Tile creation failed:", err);
             ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.TileFailed"));
           }
         }
@@ -623,12 +627,12 @@ Hooks.on("ready", function(){
   // Seulement si MJ
   if (game.user.isGM) {
     game.socket.on("system.ffxiv", async (params) => {
-      console.log("get socket")
+      debugLog("get socket");
       const {type, data, userName } = params;
       const actors = data.actorIds.map(id => game.actors.get(id)).filter(Boolean);
       switch (type) {
         case "applyEffect":
-          console.log("status socket")
+          debugLog("status socket");
           const effect = data.effect
           if (!actors || !effect) return;
           new foundry.applications.api.DialogV2({
@@ -658,10 +662,10 @@ Hooks.on("ready", function(){
           break;
 
         case "applyHeal":
-          console.log("heal socket")
+          debugLog("heal socket");
           const heal = data.heal
-          console.log(actors,!actors)
-          console.log(heal,!heal)
+          debugLog(actors,!actors);
+          debugLog(heal,!heal);
           if (!actors || !heal) return;
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-heal",
@@ -690,7 +694,7 @@ Hooks.on("ready", function(){
           break;
 
         case "applyDamage":
-          console.log("damage socket")
+          debugLog("damage socket");
           const damage = data.damage
           if (!actors || !damage) return;
           new foundry.applications.api.DialogV2({
@@ -719,7 +723,7 @@ Hooks.on("ready", function(){
           }).render(true);
           break;
         default:
-          console.log("socket error : type of request not found", type)
+          debugError("socket error : type of request not found", type);
 
       }
     });
@@ -772,11 +776,11 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
   });
 
   jqueryhtml.find(".ffxiv-show-modifiers").on("click", async ev => {
-    console.log("call show modifiers")
+    debugLog("call show modifiers");
     const itemId = ev.currentTarget.dataset.itemId;
-    console.log(itemId)
+    debugLog(itemId);
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
-    console.log(actor)
+    debugLog(actor);
     if (actor) actor._showModifiers(ev);
   });
 
@@ -785,7 +789,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const targets = Array.from(game.user.targets);
     const heal = parseInt(eval(ev.currentTarget.dataset.heal));
-    console.log(ev.currentTarget.dataset)
+    debugLog(ev.currentTarget.dataset);
     const ownActors = [];
     const actorsNeedingGM = [];
     for (const token of targets) {
@@ -801,7 +805,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
       actor.update({"system.health.value": health})
     }
     if (actorsNeedingGM.length > 0) {
-      console.log("Send socket to GM, heal",heal)
+      debugLog("Send socket to GM, heal",heal);
       game.socket.emit("system.ffxiv", {
         type: "applyHeal",
         data: {
@@ -835,7 +839,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
       actor.update({"system.health.value":health})
     }
     if (actorsNeedingGM.length > 0) {
-      console.log("Send socket to GM, damage",damage)
+      debugLog("Send socket to GM, damage",damage);
       game.socket.emit("system.ffxiv", {
         type: "applyDamage",
         data: {
@@ -876,7 +880,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     }
 
     if (actorsNeedingGM.length > 0) {
-      console.log("Send socket to GM, statusEffect",status_effect)
+      debugLog("Send socket to GM, statusEffect",status_effect);
       game.socket.emit("system.ffxiv", {
         type: "applyEffect",
         data: {

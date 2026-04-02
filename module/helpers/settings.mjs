@@ -2,6 +2,16 @@ export class SettingsHelpers {
 
   static initSettings(){
 
+    game.settings.register("ffxiv", "debugLogging", {
+      name: game.i18n.localize("FFXIV.Settings.DebugLogging"),
+      hint: game.i18n.localize("FFXIV.Settings.DebugLoggingHint"),
+      scope: "client",
+      config: true,
+      default: false,
+      type: Boolean,
+      requiresReload: false
+    });
+
     game.settings.register("ffxiv", "overrideColorScheme", {
       name: game.i18n.localize("FFXIV.Settings.OverrideColorScheme"),
       hint: game.i18n.localize("FFXIV.Settings.OverrideColorSchemeHint"),

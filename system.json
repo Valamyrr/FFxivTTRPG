@@ -3,11 +3,77 @@
   "title": "Final Fantasy XIV TTRPG",
   "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
   "compatibility": {
-    "minimum": "13.342",
-    "verified": "13.342"
+    "minimum": "14",
+    "verified": "14.359"
   },
-  "version": "2.5.2",
+  "version": "3.0.0",
+  "authors": [
+    {
+      "name": "Valamyrr",
+      "url": "https://github.com/Valamyrr/",
+      "discord": "valamyrr"
+    },
+    {
+      "name": "AxeBane",
+      "url": "https://github.com/AxeBane/",
+      "discord": "axebane"
+    }
+  ],
+  "media": [
+    {
+      "type": "setup",
+      "url": "systems/ffxiv/assets/header_logo.png",
+      "thumbnail": "systems/ffxiv/assets/header_logo.png"
+    }
+  ],
   "esmodules": ["module/ffxiv.mjs"],
+  "documentTypes": {
+    "Actor": {
+      "character": {
+        "htmlFields": ["biography", "profile_trait.effect"]
+      },
+      "npc": {
+        "htmlFields": ["biography"]
+      },
+      "pet": {}
+    },
+    "Item": {
+      "consumable": {
+        "htmlFields": ["description"]
+      },
+      "limit_break": {
+        "htmlFields": ["description"]
+      },
+      "primary_ability": {
+        "htmlFields": ["description"]
+      },
+      "secondary_ability": {
+        "htmlFields": ["description"]
+      },
+      "instant_ability": {
+        "htmlFields": ["description"]
+      },
+      "trait": {
+        "htmlFields": ["description"]
+      },
+      "currency": {
+        "htmlFields": ["description"]
+      },
+      "title": {
+        "htmlFields": ["description"]
+      },
+      "gear": {
+        "htmlFields": ["description"]
+      },
+      "minion": {
+        "htmlFields": ["description", "traits"]
+      },
+      "augment": {
+        "htmlFields": ["description"]
+      }
+    }
+  },
+  "primaryTokenAttribute": "resources.health",
   "styles": ["css/ffxiv.css"],
   "languages": [
     {
