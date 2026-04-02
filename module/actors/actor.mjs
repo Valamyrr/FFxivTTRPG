@@ -1,22 +1,55 @@
+import { debugError, debugLog } from "../helpers/debug.mjs";
+
 /**
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
  * @extends {Actor}
  */
 export class FfxivActor extends Actor {
+
+  //The ensure and reset methods exist to fix issues spawned in V14 with active effects.
+  _ensureActiveEffectState() {
+    this.overrides ??= {};
+    this.statuses ??= new Set();
+    this._completedActiveEffectPhases ??= new Set();
+    this.tokenActiveEffectChanges ??= {};
+  }
+
+  _resetActiveEffectState() {
+    this._ensureActiveEffectState();
+    this.overrides = {};
+    this.tokenActiveEffectChanges = {};
+    this.statuses.clear();
+    this._completedActiveEffectPhases.clear();
+  }
+
+  // Reset effect bookkeeping before each prep pass; otherwise token actors can
+  // think "initial" / "final" already ran and throw on subsequent updates.
   /** @override */
   prepareData() {
-    // Prepare data for the actor. Calling the super version of this executes
-    // the following, in order: data reset (to clear active effects),
-    // prepareBaseData(), prepareEmbeddedDocuments() (including active effects),
-    // prepareDerivedData().
-    console.log("FFXIV | Actor ",this)
-    super.prepareData();
+    this._resetActiveEffectState();
+    return super.prepareData();
   }
 
   /** @override */
   prepareBaseData() {
     // Data modifications in this step occur before processing embedded
     // documents or derived data.
+    if (!Array.isArray(this.system.tags)) {
+      this.system.tags = [];
+    }
+
+    if (this.type === "npc") {
+      const currentSize = this.system.size;
+      if (currentSize && typeof currentSize === "object" && !Array.isArray(currentSize)) {
+        this.system.size = typeof currentSize.text === "string" ? currentSize.text : "";
+      } else if (typeof currentSize !== "string") {
+        this.system.size = "";
+      }
+    }
+
+    if (this.type === "pet" && typeof this.system.description !== "string") {
+      this.system.description = "";
+    }
   }
 
   /**
@@ -65,7 +98,6 @@ export class FfxivActor extends Actor {
 
   _preparePetData(actorData) {
     if (actorData.type !== 'pet') return;
-    actorData.system.abilities = Array.from(this.items) //to duplicate complete items data
   }
 
 
@@ -153,7 +185,7 @@ export class FfxivActor extends Actor {
   }
 
   async _showModifiers(){
-    console.log("showModifiers")
+    debugLog("showModifiers");
     if (this.items.some(item => item.system.active == true)){
       ChatMessage.create({
         content: await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/modifiers-chat-card.hbs", { items: this.items }),
@@ -161,7 +193,7 @@ export class FfxivActor extends Actor {
         flavor: game.i18n.localize("FFXIV.Traits.Modifiers") + " | " + game.i18n.localize("FFXIV.Traits.TraitsOnly")
       });
     }else{
-      console.error("No modifier to display",this.items)
+      debugError("No modifier to display",this.items);
       ui.notifications.warn(game.i18n.localize("FFXIV.Chat.NoModifiers"));
     }
   }

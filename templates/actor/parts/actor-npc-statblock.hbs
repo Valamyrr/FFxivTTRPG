@@ -2,11 +2,11 @@
   <div class="statblock-header">
     <div class="statblock-header-left">
       {{ localize "FFXIV.CharacterSheet.Size" }}:
-      <select name="system.size.text" class="input-transparent" style="width: auto;">
+      <select name="system.size" class="input-transparent" style="width: auto;">
         {{#each (array "Small" "Medium" "Large" "Huge" "Colossal") as |label|}}
           <option value="{{label}}"
-            {{#if (eq ../system.size.text label)}}selected
-            {{else if (and (not ../system.size.text) (eq label "Medium"))}}selected
+            {{#if (eq ../system.size label)}}selected
+            {{else if (and (not ../system.size) (eq label "Medium"))}}selected
             {{/if}}>
             {{localize (concat "FFXIV.SizeCategories." label)}}
           </option>

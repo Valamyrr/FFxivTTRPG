@@ -1,3 +1,5 @@
+import { debugError, debugLog } from "../helpers/debug.mjs";
+
 /**
  * Extend the basic Item with some very simple modifications.
  * @extends {Item}
@@ -9,7 +11,7 @@ export class FfxivItem extends Item {
   prepareData() {
     // As with the actor class, items are documents that can have their data
     // preparation methods overridden (such as prepareBaseData()).
-    console.log("FFXIV | Item ", this)
+    debugLog("FFXIV | Item ", this);
     super.prepareData();
 
   }
@@ -46,7 +48,7 @@ export class FfxivItem extends Item {
       if (game.items.get(this.system.granted_ability)){
         content = content + await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: game.items.get(this.system.granted_ability) });
       }else{
-        console.error("Granted ability must be a valid ID. Use `game.items.get(INSERT_ID)` to check your item's data.")
+        debugError("Granted ability must be a valid ID. Use `game.items.get(INSERT_ID)` to check your item's data.");
       }
     }
     content = content + this._getRollButtons()

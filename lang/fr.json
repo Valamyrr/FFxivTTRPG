@@ -3,10 +3,6 @@
     "Name": "Nom",
     "Level": "Niveau",
     "Class": "Job",
-    "Experience": {
-      "Exp": "Experience",
-      "Total": "Experience Totale"
-    },
     "Health": {
       "long": "Points de vie",
       "abbrv": "PV",
@@ -258,6 +254,8 @@
       "JobsAbbrvHint": "Only used for Gear select input of jobs requirements",
       "Theme": "Thème",
       "ThemeHint": "La palette de couleur avec laquelle vous voulez rerésenter vos fiches.",
+      "DebugLogging": "Journalisation de debug",
+      "DebugLoggingHint": "Active les messages supplémentaires du système FFXIV dans la console du navigateur pour le dépannage.",
       "UseRarity": "Utilisez-vous la propriété Rareté sur les Items ?",
       "UseRarityHint": "La propriété Rareté remplace le Niveau de Vente dans les tags quand cette configuration est activée",
       "CustomAbilityTags": "Tags personnalisés pour les compétences",
@@ -331,8 +329,6 @@
       "NoSoundAvailable": "Aucun fichier son ne se trouve dans le répertoire des bruitages.",
       "ReplaceGear": "{oldGear} a été remplacé par {newGear}.",
       "StatusChangeRequest": "Demande d'effet de statut",
-      "HealRequest": "Demande d'application de soins",
-      "DamageRequest": "Demande d'application de dégâts",
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)"
     },
     "Sockets": {

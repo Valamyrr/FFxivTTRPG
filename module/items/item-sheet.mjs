@@ -2,6 +2,7 @@ import {
   onManageActiveEffect,
   prepareActiveEffectCategories,
 } from '../helpers/effects.mjs';
+import { debugError, debugLog } from "../helpers/debug.mjs";
 
 import PopoutEditor from "../popout-editor.js";
 
@@ -191,7 +192,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       const configKey = configMap[this.item.type];
       const tagPool = CONFIG.FF_XIV[configKey] || {};
       const defaultTag = Object.values(tagPool)[0]?.label || "";
-      console.log(defaultTag + " : " + tags)
+      debugLog(defaultTag + " : " + tags);
       if (defaultTag) {
         tags.push(defaultTag);
         this.item.update({ "system.tags": tags });
@@ -352,7 +353,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       Object.keys(CONFIG.FF_XIV.gear_subcategories).map(k => [k, ""])
     );
 
-    console.log("Before:", equippedGear);
+    debugLog("Before:", equippedGear);
 
     // Find the category key corresponding to this item's category (localized label)
     let categoryKey = Object.keys(CONFIG.FF_XIV.gear_subcategories).find(
@@ -360,7 +361,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
     );
 
     if (!categoryKey) {
-      console.error(`Category not found for ${this.item.system.category}`);
+      debugError(`Category not found for ${this.item.system.category}`);
       return;
     }
 
@@ -382,7 +383,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       this.item.update({ "system.equipped": true });
     }
 
-    console.log("After:", equippedGear);
+    debugLog("After:", equippedGear);
     actor.update({ "system.equippedGear": equippedGear });
   }
 
