@@ -15,10 +15,10 @@
           <h1>{{actor.name}}</h1>
         </div>
         <div class="header-info">
-          {{#if (eq "custom" system.class.name)}}
+          {{#if (and (eq "custom" system.class.name) system.class.customIcon)}}
             <img class="class-icon" src="{{system.class.customIcon}}" alt="class icon">
           {{else}}
-            <img class="class-icon" src="systems/ffxiv/assets/classes/{{system.class.name}}.png" alt="class icon">
+            <img class="class-icon" src="{{actor.img}}" alt="class icon">
           {{/if}}
           <div class="class-info">
             <div class="level">{{system.experience.level.value}}</div>

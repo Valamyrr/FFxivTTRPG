@@ -6,6 +6,36 @@ import { debugError, debugLog } from "../helpers/debug.mjs";
  */
 export class FfxivActor extends Actor {
 
+  _ensureResource(resource, { max = null } = {}) {
+    const normalized = resource && typeof resource === "object" ? resource : {};
+    return {
+      value: Number.isFinite(normalized.value) ? normalized.value : 0,
+      max: Number.isFinite(normalized.max) ? normalized.max : max
+    };
+  }
+
+  _ensureCharacterSystemDefaults() {
+    if (this.type !== "character") return;
+
+    this.system.health = this._ensureResource(this.system.health);
+    this.system.barrier = this._ensureResource(this.system.barrier);
+    this.system.mana = this._ensureResource(this.system.mana, { max: 5 });
+
+    const currentClass = this.system.class && typeof this.system.class === "object" ? this.system.class : {};
+    this.system.class = {
+      name: typeof currentClass.name === "string" && currentClass.name.trim() ? currentClass.name : "custom",
+      role: typeof currentClass.role === "string" ? currentClass.role : "",
+      customIcon: typeof currentClass.customIcon === "string" ? currentClass.customIcon : "",
+      name_custom: typeof currentClass.name_custom === "string" ? currentClass.name_custom : ""
+    };
+
+    if (!Array.isArray(this.system.pets)) this.system.pets = [];
+    if (!Array.isArray(this.system.pet_order)) this.system.pet_order = [];
+    if (!this.system.ability_order || typeof this.system.ability_order !== "object" || Array.isArray(this.system.ability_order)) {
+      this.system.ability_order = {};
+    }
+  }
+
   //The ensure and reset methods exist to fix issues spawned in V14 with active effects.
   _ensureActiveEffectState() {
     this.overrides ??= {};
@@ -37,6 +67,8 @@ export class FfxivActor extends Actor {
     if (!Array.isArray(this.system.tags)) {
       this.system.tags = [];
     }
+
+    this._ensureCharacterSystemDefaults();
 
     if (this.type === "npc") {
       const currentSize = this.system.size;
@@ -86,8 +118,11 @@ export class FfxivActor extends Actor {
    */
   _prepareCharacterData(actorData) {
     if (actorData.type !== 'character') return;
-    if (actorData.system.class.name != "" && actorData.system.class.name != "custom"){
-      actorData.system.class.role = CONFIG.FF_XIV.classes[actorData.system.class.name].role
+    const className = actorData.system?.class?.name;
+    const classConfig = CONFIG.FF_XIV?.classes?.[className];
+
+    if (className && className !== "custom" && classConfig?.role) {
+      actorData.system.class.role = classConfig.role;
     }
 
   }

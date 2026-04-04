@@ -250,6 +250,8 @@
     "Settings": {
       "ToggleGear": "Display gear tab on character sheet",
       "ToggleGearHint": "Do you use homebrew rules for gear?",
+      "LegacyManaClickBehavior": "Invert left/right mana clicks",
+      "LegacyManaClickBehaviorHint": "Invert left-click and right-click behavior for mana. When enabled, left-click removes mana and right-click adds mana.",
       "JobsAbbrv": "List of abbreviations for jobs",
       "JobsAbbrvHint": "Only used for Gear select input of jobs requirements",
       "Theme": "Theme",

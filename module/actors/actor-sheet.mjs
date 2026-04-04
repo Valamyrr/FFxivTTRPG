@@ -534,7 +534,7 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
 
 
   _updateManaBar() {
-      const currentMana = this.actor.system.mana.value;
+      const currentMana = Number(this.actor.system?.mana?.value ?? 0);
       let cs = document.getElementById(this.characterSheet)
       if (cs) {
           const manaBarSlots = cs.querySelectorAll('.mana-slot');
@@ -549,13 +549,18 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
       }
   }
   _onClickManaBar(event) {
-    let currentMana = this.actor.system.mana.value;
+    let currentMana = Number(this.actor.system?.mana?.value ?? 0);
+    const useLegacyBehavior = game.settings.get("ffxiv", "legacyManaClickBehavior");
 
     if (event.which === 1) {
-        currentMana = Math.max(0, currentMana - 1);
+        currentMana = useLegacyBehavior
+          ? Math.max(0, currentMana - 1)
+          : Math.min(5, currentMana + 1);
     } else if (event.which === 3) {
       event.preventDefault()
-      currentMana = Math.min(5, currentMana + 1);
+      currentMana = useLegacyBehavior
+        ? Math.min(5, currentMana + 1)
+        : Math.max(0, currentMana - 1);
     }
 
     this.actor.update({ "system.mana.value": currentMana });
@@ -564,16 +569,16 @@ export class FfxivActorSheet extends foundry.appv1.sheets.ActorSheet {
   }
 
   _updateHealthBar() {
-    const currentHealth = this.actor.system.health.value;
-    const maxHealth = this.actor.system.health.max;
-
-    const healthPercentage = Math.min(100,Math.max(0,(currentHealth / maxHealth) * 100));
+    const currentHealth = Number(this.actor.system?.health?.value ?? 0);
+    const maxHealth = Number(this.actor.system?.health?.max ?? 0);
+    const healthPercentage = maxHealth > 0 ? Math.min(100, Math.max(0, (currentHealth / maxHealth) * 100)) : 0;
     let cs = document.getElementById(this.characterSheet);
     if (cs) {
 
       const healthBar = cs.querySelectorAll('.health-bar');
       if(healthBar.length > 0){
         healthBar[0].style.width = `${healthPercentage}%`
+        healthBar[0].classList.remove('health-good', 'health-bad', 'health-danger')
         if (healthPercentage >= 70) {
           healthBar[0].classList.add('health-good')
         } else if (healthPercentage >= 30) {

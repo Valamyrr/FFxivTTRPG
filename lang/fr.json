@@ -249,7 +249,9 @@
     },
     "Settings": {
       "ToggleGear": "Afficher l'onglet d'équipements",
-      "ToggleGearHint": "Utilisez-vous des règles faites maison pour l'équipement ?",
+      "ToggleGearHint": "Utilisez-vous des règles faites maison pour l'équipement?",
+      "LegacyManaClickBehavior": "Inverser les clics gauche/droite pour le mana",
+      "LegacyManaClickBehaviorHint": "Inverse le comportement des clics gauche et droit pour le mana. Quand activé, le clic gauche retire du mana et le clic droit en ajoute.",
       "JobsAbbrv": "List of abbreviations for jobs",
       "JobsAbbrvHint": "Only used for Gear select input of jobs requirements",
       "Theme": "Thème",

@@ -167,7 +167,7 @@ class CharacterActorData extends foundry.abstract.TypeDataModel {
         })
       }),
       class: new fields.SchemaField({
-        name: new fields.StringField({ required: false, blank: true, initial: "Custom" }),
+        name: new fields.StringField({ required: false, blank: true, initial: "custom" }),
         role: new fields.StringField({ required: false, blank: true, initial: "" }),
         customIcon: new fields.StringField({ required: false, blank: true, initial: "" }),
         name_custom: new fields.StringField({ required: false, blank: true, initial: "" })

@@ -72,6 +72,16 @@ export class SettingsHelpers {
       requiresReload: false
     });
 
+    game.settings.register("ffxiv", "legacyManaClickBehavior", {
+      name: game.i18n.localize("FFXIV.Settings.LegacyManaClickBehavior"),
+      hint: game.i18n.localize("FFXIV.Settings.LegacyManaClickBehaviorHint"),
+      scope: "client",
+      config: true,
+      default: false,
+      type: Boolean,
+      requiresReload: true
+    });
+
     game.settings.register("ffxiv", "useRarity", {
       name: game.i18n.localize("FFXIV.Settings.UseRarity"),
       hint: game.i18n.localize("FFXIV.Settings.UseRarityHint"),

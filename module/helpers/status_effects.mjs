@@ -1,114 +1,34 @@
 export const updateStatusEffects = () => {
+  const createStatusEffect = (id, labelKey, icon) => ({
+    id,
+    name: game.i18n.localize(labelKey),
+    label: labelKey,
+    img: icon,
+    icon
+  });
+
   CONFIG.statusEffects = [
-    {
-      id: "ascendent",
-      label: game.i18n.localize("FFXIV.Effects.Ascendent"),
-      icon: "systems/ffxiv/assets/effects/Ascendent.png"
-    },
-    {
-      id: "bind",
-      label: game.i18n.localize("FFXIV.Effects.Bind"),
-      icon: "systems/ffxiv/assets/effects/Bind.png"
-    },
-    {
-      id: "blind",
-      label: game.i18n.localize("FFXIV.Effects.Blind"),
-      icon: "systems/ffxiv/assets/effects/Blind.png"
-    },
-    {
-      id: "brink_death",
-      label: game.i18n.localize("FFXIV.Effects.BrinkDeath"),
-      icon: "systems/ffxiv/assets/effects/Brink of Death.png"
-    },
-    {
-      id: "comatose",
-      label: game.i18n.localize("FFXIV.Effects.Comatose"),
-      icon: "systems/ffxiv/assets/effects/Comatose.png"
-    },
-    {
-      id: "critical_up",
-      label: game.i18n.localize("FFXIV.Effects.CriticalUp"),
-      icon: "systems/ffxiv/assets/effects/Critical Up.png"
-    },
-    {
-      id: "death",
-      label: game.i18n.localize("FFXIV.Effects.Death"),
-      icon: "systems/ffxiv/assets/effects/Death.png"
-    },
-    {
-      id: "dot",
-      label: game.i18n.localize("FFXIV.Effects.DOT"),
-      icon: "systems/ffxiv/assets/effects/DOT.png"
-    },
-    {
-      id: "drain",
-      label: game.i18n.localize("FFXIV.Effects.Drain"),
-      icon: "systems/ffxiv/assets/effects/Drain.png"
-    },
-    {
-      id: "enmity",
-      label: game.i18n.localize("FFXIV.Effects.Enmity"),
-      icon: "systems/ffxiv/assets/effects/Enmity.png"
-    },
-    {
-      id: "heavy",
-      label: game.i18n.localize("FFXIV.Effects.Heavy"),
-      icon: "systems/ffxiv/assets/effects/Heavy.png"
-    },
-    {
-      id: "invoking",
-      label: game.i18n.localize("FFXIV.Effects.Invoking"),
-      icon: "systems/ffxiv/assets/effects/Invoking.png"
-    },
-    {
-      id: "knocked_out",
-      label: game.i18n.localize("FFXIV.Effects.KnockedOut"),
-      icon: "systems/ffxiv/assets/effects/Knocked Out.png"
-    },
-    {
-      id: "paralysis",
-      label: game.i18n.localize("FFXIV.Effects.Paralysis"),
-      icon: "systems/ffxiv/assets/effects/Paralysis.png"
-    },
-    {
-      id: "petrified",
-      label: game.i18n.localize("FFXIV.Effects.Petrified"),
-      icon: "systems/ffxiv/assets/effects/Petrified.png"
-    },
-    {
-      id: "prone",
-      label: game.i18n.localize("FFXIV.Effects.Prone"),
-      icon: "systems/ffxiv/assets/effects/Prone.png"
-    },
-    {
-      id: "ready",
-      label: game.i18n.localize("FFXIV.Effects.Ready"),
-      icon: "systems/ffxiv/assets/effects/Ready.png"
-    },
-    {
-      id: "revivify",
-      label: game.i18n.localize("FFXIV.Effects.Revivify"),
-      icon: "systems/ffxiv/assets/effects/Revivify.png"
-    },
-    {
-      id: "silence",
-      label: game.i18n.localize("FFXIV.Effects.Silence"),
-      icon: "systems/ffxiv/assets/effects/Silence.png"
-    },
-    {
-      id: "sleep",
-      label: game.i18n.localize("FFXIV.Effects.Sleep"),
-      icon: "systems/ffxiv/assets/effects/Sleep.png"
-    },
-    {
-      id: "stun",
-      label: game.i18n.localize("FFXIV.Effects.Stun"),
-      icon: "systems/ffxiv/assets/effects/Stun.png"
-    },
-    {
-      id: "weakness",
-      label: game.i18n.localize("FFXIV.Effects.Weakness"),
-      icon: "systems/ffxiv/assets/effects/Weakness.png"
-    }
+    createStatusEffect("ascendent", "FFXIV.Effects.Ascendent", "systems/ffxiv/assets/effects/Ascendent.png"),
+    createStatusEffect("bind", "FFXIV.Effects.Bind", "systems/ffxiv/assets/effects/Bind.png"),
+    createStatusEffect("blind", "FFXIV.Effects.Blind", "systems/ffxiv/assets/effects/Blind.png"),
+    createStatusEffect("brink_death", "FFXIV.Effects.BrinkDeath", "systems/ffxiv/assets/effects/Brink of Death.png"),
+    createStatusEffect("comatose", "FFXIV.Effects.Comatose", "systems/ffxiv/assets/effects/Comatose.png"),
+    createStatusEffect("critical_up", "FFXIV.Effects.CriticalUp", "systems/ffxiv/assets/effects/Critical Up.png"),
+    createStatusEffect("death", "FFXIV.Effects.Death", "systems/ffxiv/assets/effects/Death.png"),
+    createStatusEffect("dot", "FFXIV.Effects.DOT", "systems/ffxiv/assets/effects/DOT.png"),
+    createStatusEffect("drain", "FFXIV.Effects.Drain", "systems/ffxiv/assets/effects/Drain.png"),
+    createStatusEffect("enmity", "FFXIV.Effects.Enmity", "systems/ffxiv/assets/effects/Enmity.png"),
+    createStatusEffect("heavy", "FFXIV.Effects.Heavy", "systems/ffxiv/assets/effects/Heavy.png"),
+    createStatusEffect("invoking", "FFXIV.Effects.Invoking", "systems/ffxiv/assets/effects/Invoking.png"),
+    createStatusEffect("knocked_out", "FFXIV.Effects.KnockedOut", "systems/ffxiv/assets/effects/Knocked Out.png"),
+    createStatusEffect("paralysis", "FFXIV.Effects.Paralysis", "systems/ffxiv/assets/effects/Paralysis.png"),
+    createStatusEffect("petrified", "FFXIV.Effects.Petrified", "systems/ffxiv/assets/effects/Petrified.png"),
+    createStatusEffect("prone", "FFXIV.Effects.Prone", "systems/ffxiv/assets/effects/Prone.png"),
+    createStatusEffect("ready", "FFXIV.Effects.Ready", "systems/ffxiv/assets/effects/Ready.png"),
+    createStatusEffect("revivify", "FFXIV.Effects.Revivify", "systems/ffxiv/assets/effects/Revivify.png"),
+    createStatusEffect("silence", "FFXIV.Effects.Silence", "systems/ffxiv/assets/effects/Silence.png"),
+    createStatusEffect("sleep", "FFXIV.Effects.Sleep", "systems/ffxiv/assets/effects/Sleep.png"),
+    createStatusEffect("stun", "FFXIV.Effects.Stun", "systems/ffxiv/assets/effects/Stun.png"),
+    createStatusEffect("weakness", "FFXIV.Effects.Weakness", "systems/ffxiv/assets/effects/Weakness.png")
   ];
 }
