@@ -1,19 +1,39 @@
 MIT License
 
-Copyright (c) 2025-2026 Valamyrr / Foundry Mods
+Copyright (c) 2025-2026 Valamyrr / AxeBane / Foundry Mods
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
+of this software and associated documentation files, excluding third-party
+assets and Final Fantasy XIV materials as described below (the "Software"), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-This license does not apply to the assets content listed in this software's
-"assets" directory. See the README for licensing information for the assets.
+This license applies only to the original software code and documentation
+created by the copyright holders listed above.
+
+This license does not apply to any third-party assets, including but not
+limited to assets contained in this software's "assets" directory. See the
+README for licensing information for those assets.
+
+This software may reference, include, or be designed for use with resources
+derived from or inspired by FINAL FANTASY XIV. FINAL FANTASY XIV and related
+names, logos, artwork, icons, text, terminology, and other materials are
+copyrighted and/or trademarked by Square Enix. All such materials remain the
+property of Square Enix and are not licensed under the MIT License.
+
+FINAL FANTASY XIV © SQUARE ENIX. FINAL FANTASY is a registered trademark of
+Square Enix Holdings Co., Ltd. All FINAL FANTASY XIV-related assets and
+materials are used only to identify, support, or develop community content for
+FINAL FANTASY XIV and are subject to Square Enix's applicable materials usage
+terms.
+
+This project is not affiliated with, endorsed by, sponsored by, or approved by
+Square Enix.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
