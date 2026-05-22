@@ -1,0 +1,62 @@
+# Normalize text files to LF in the repository.
+* text=auto eol=lf
+
+# Explicit text formats
+*.js      text eol=lf
+*.mjs     text eol=lf
+*.cjs     text eol=lf
+*.ts      text eol=lf
+*.tsx     text eol=lf
+*.jsx     text eol=lf
+*.json    text eol=lf
+*.css     text eol=lf
+*.scss    text eol=lf
+*.html    text eol=lf
+*.xml     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.toml    text eol=lf
+*.ini     text eol=lf
+*.cfg     text eol=lf
+*.conf    text eol=lf
+*.md      text eol=lf
+*.txt     text eol=lf
+
+# Shell scripts should use LF
+*.sh      text eol=lf
+*.bash    text eol=lf
+*.zsh     text eol=lf
+
+# PowerShell and Windows batch files can safely stay CRLF if needed on Windows
+*.ps1     text eol=crlf
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# Game/project text files
+*.gd      text eol=lf
+*.tscn    text eol=lf
+*.tres    text eol=lf
+*.godot   text eol=lf
+*.yy      text eol=lf
+*.yyp     text eol=lf
+
+# Binary files
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.ico     binary
+*.pdf     binary
+*.zip     binary
+*.7z      binary
+*.rar     binary
+*.mp3     binary
+*.wav     binary
+*.ogg     binary
+*.mp4     binary
+*.mov     binary
+*.ttf     binary
+*.otf     binary
+*.woff    binary
+*.woff2   binary
