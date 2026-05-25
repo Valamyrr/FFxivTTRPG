@@ -1,5 +1,5 @@
 <div class="fixed-part">
-  <img class="profile-img character-img" src="{{ actor.img }}" data-edit="img" title="{{ actor.name }}" alt="avatar"/>
+  <img class="profile-img character-img actor-avatar" src="{{ actor.img }}" {{#if actorEditMode}}data-edit="img"{{/if}} title="{{ actor.name }}" alt="avatar"/>
   <div class="stat-bars">
 
     <div class="resource flex-group-center">
@@ -8,7 +8,7 @@
         <div class="stat-bar">
           <div class="health-border">
             <div class="health-bar"></div>
-            <input type="number" class="health-input" min="0" value="{{ system.health.value }}" name="system.health.value" />
+            <input type="text" inputmode="numeric" class="health-input" value="{{ system.health.value }}" name="system.health.value" />
             <span>/</span>
             <input type="number" class="health-input" min="0" value="{{ system.health.max }}" name="system.health.max" />
           </div>
@@ -22,7 +22,7 @@
         <div class="stat-bar">
           <div class="health-border">
             <div class="barrier-bar"></div>
-            <input type="number" class="barrier-input" min="0" value="{{ system.barrier.value }}" name="system.barrier.value" />
+            <input type="text" inputmode="numeric" class="barrier-input" value="{{ system.barrier.value }}" name="system.barrier.value" />
           </div>
         </div>
       </div>

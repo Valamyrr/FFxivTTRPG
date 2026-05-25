@@ -29,9 +29,20 @@
 .actor-titles .title-delete{
   height: 22px;
   width: 22px;
-  background: red;
+  background: #b00000;
   border: solid 1px white;
+  color: white;
   float: right;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 18px;
+  padding: 0;
+}
+
+.actor-titles .title-delete:hover{
+  background: red;
+  box-shadow: 0 0 5px red;
 }
 
 .sheet-body .actor-profiletrait .editor{
@@ -44,4 +55,63 @@
 
 .actor-biography .editor-content{
   margin: 10px;
+}
+
+.actor-profile .profile-field-value {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  box-sizing: border-box;
+  margin: 0;
+  min-height: 28px;
+  overflow-wrap: anywhere;
+  padding: 5px 7px;
+  text-align: center;
+  white-space: normal;
+  width: 100%;
+}
+
+.actor-profile .profile-short-text {
+  min-height: 78px;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
+.actor-profile .profile-paragraph-block {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  margin: 10px;
+  min-height: 80px;
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  white-space: normal;
+}
+
+.actor-profile .profile-paragraph-block p:first-child {
+  margin-top: 0;
+}
+
+.actor-profile .profile-paragraph-block p:last-child {
+  margin-bottom: 0;
+}
+
+.ffxiv.actor.character.actor-locked .actor-profile .profile-field-value,
+.ffxiv.actor.character.actor-locked .actor-profile .profile-short-text,
+.ffxiv.actor.character.actor-locked .actor-profile .profile-paragraph-block,
+.ffxiv.actor.character.actor-locked .actor-profile .profile-paragraph-block p {
+  font-family: inherit !important;
+  color: var(--text-color) !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+}
+
+.actor-profile .profile-field-value,
+.actor-profile .profile-short-text,
+.actor-profile .profile-paragraph-block,
+.actor-profile .profile-paragraph-block p {
+  font-family: inherit;
+  color: var(--text-color);
+  font-size: inherit;
+  font-weight: inherit;
 }

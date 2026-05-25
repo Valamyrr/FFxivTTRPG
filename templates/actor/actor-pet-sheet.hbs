@@ -1,25 +1,48 @@
-<form class='{{cssClass}} pet' autocomplete='off'>
+<div class='{{cssClass}} pet'>
   <header class='sheet-header'>
     <img
-      class='profile-img'
+      class='profile-img actor-avatar'
       src='{{actor.img}}'
-      data-edit='img'
+      {{#if actorEditMode}}data-edit='img'{{/if}}
       title='{{actor.name}}'
+      alt='avatar'
     />
     <div class='header-fields'>
-      <h1 class='charname'><input
-          name='name'
-          type='text'
-          value='{{actor.name}}'
-          placeholder='Name'
-        /></h1>
+      <h1 class='charname'>
+        {{#if actorEditMode}}
+          <input name='name' type='text' value='{{actor.name}}' placeholder='Name' />
+        {{else}}
+          {{actor.name}}
+        {{/if}}
+      </h1>
+      <div class="pet-header-fields">
+        <div class="pet-header-speed">
+          <img src="{{settings.attributesImgSpeed}}" alt="{{ localize "FFXIV.Attributes.Speed" }}">
+          <p class="s-attribute-value attribute-display-text">{{ localize "FFXIV.Attributes.Speed" }}:</p>
+          {{#if actorEditMode}}
+            <input type="number" class="s-attribute-value pet-speed-number" name="system.speed.value" value="{{ system.speed.value }}">
+          {{else}}
+            <span class="s-attribute-value pet-speed-number actor-locked">{{system.speed.value}}</span>
+          {{/if}}
+        </div>
+      </div>
     </div>
+    {{#if editable}}
+      <button type="button" class="actor-edit-toggle {{#if actorEditMode}}active{{/if}}" aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet'}}" aria-pressed="{{#if actorEditMode}}true{{else}}false{{/if}}" title="{{#if actorEditMode}}{{localize 'FFXIV.CharacterSheet.LockSheet'}}{{else}}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+        <i class="fa-solid {{#if actorEditMode}}fa-lock-open{{else}}fa-lock{{/if}}"></i>
+      </button>
+    {{/if}}
   </header>
 
   {{!-- Sheet Tab Navigation --}}
   <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
+    {{#if editable}}
+      <button type="button" class="npc-add-ability" title="Add Ability">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    {{/if}}
     <a class="sub-tab" data-tab="fight">{{ localize "FFXIV.Abilities.Abilities" }}<div class="chip"></div></a>
-    <a class="sub-tab" data-tab="info">{{ localize "FFXIV.CharacterSheet.Info" }}<div class="chip"></div></a>
+    <a class="sub-tab" data-tab="traits">{{ localize "FFXIV.Abilities.TraitsShort" }}<div class="chip"></div></a>
   </nav>
 
   {{! Sheet Body }}
@@ -30,8 +53,8 @@
         <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
           <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="primary_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="primary_ability">▼</button>{{/unless}}
+            {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="primary_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="primary_ability">▼</button>{{/unless}}
           </div>
         </div>
       {{/each}}
@@ -40,8 +63,8 @@
         <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
           <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="secondary_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="secondary_ability">▼</button>{{/unless}}
+            {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="secondary_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="secondary_ability">▼</button>{{/unless}}
           </div>
         </div>
       {{/each}}
@@ -50,45 +73,24 @@
         <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
           <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
+            {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
           </div>
         </div>
       {{/each}}
     </div>
 
-    <div class="tab info" data-group="primary" data-tab="info">
-      <div class='attributes'>
-        <div class="pet-attributes-container">
-
-          <div class="s-attribute-card">
-            <div class="s-attribute-header">
-              <img src="{{settings.attributesImgSpeed}}">
-              <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Speed" }}</div>
-            </div>
-            <div class="s-attribute-info">
-              <input type="number" class="s-attribute-value" name="system.speed.value" value="{{ system.speed.value }}">
-              <input type="text" class="s-attribute-value" name="system.speed.unit" value="{{ system.speed.unit }}">
-            </div>
+    <div class="tab traits actor-abilities" data-group="primary" data-tab="traits">
+      {{#each (sortAbilities items system.ability_order "trait")}}
+        <div class="ability-container">
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
+          <div class="move-buttons">
+            {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="trait">▲</button>{{/unless}}
+            {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="trait">▼</button>{{/unless}}
           </div>
-
-          <div class="resources grid grid-1col">
-            <div class="resource flex-group-center">
-              <label class="resource-label">{{ localize "FFXIV.Abilities.TraitsShort" }}</label>
-              <div class="resource-content flexrow flex-center flex-between">
-                {{editor
-                  enriched.traits
-                  target='system.traits'
-                  engine='prosemirror'
-                  button=true
-                  editable=editable
-                }}
-              </div>
-            </div>
-          </div>
-
         </div>
-      </div>
+      {{/each}}
     </div>
+
   </section>
-</form>
+</div>

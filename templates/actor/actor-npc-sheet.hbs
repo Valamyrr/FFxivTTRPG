@@ -1,10 +1,21 @@
-<form class="{{cssClass}} {{actor.type}} flexcol" autocomplete="off">
+<div class="{{cssClass}} {{actor.type}} flexcol">
 
   {{!-- Sheet Header --}}
   <header class="sheet-npc-header">
-    <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
+    <div class="charname">
+      {{#if actorEditMode}}
+        <h1><input name="name" type="text" value="{{actor.name}}" placeholder="{{localize 'FFXIV.Name'}}"/></h1>
+      {{else}}
+        <h1>{{actor.name}}</h1>
+      {{/if}}
+    </div>
+    {{#if editable}}
+      <button type="button" class="actor-edit-toggle {{#if actorEditMode}}active{{/if}}" aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet'}}" aria-pressed="{{#if actorEditMode}}true{{else}}false{{/if}}" title="{{#if actorEditMode}}{{localize 'FFXIV.CharacterSheet.LockSheet'}}{{else}}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+        <i class="fa-solid {{#if actorEditMode}}fa-lock-open{{else}}fa-lock{{/if}}"></i>
+      </button>
+    {{/if}}
     <div class="sheet-npc-header-left">
-      <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}"/>
+      <img class="profile-img actor-avatar" src="{{actor.img}}" {{#if actorEditMode}}data-edit="img"{{/if}} title="{{actor.name}}" alt="avatar"/>
     </div>
     <div class="sheet-npc-header-right">
       <div class="header-fields">
@@ -15,6 +26,11 @@
 
   {{!-- Sheet Tab Navigation --}}
   <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
+    {{#if editable}}
+      <button type="button" class="npc-add-ability" title="Add Ability">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    {{/if}}
     <a class="sub-tab" data-tab="fight">{{ localize "FFXIV.Abilities.Abilities" }}<div class="chip"></div></a>
     <a class="sub-tab" data-tab="traits">{{ localize "FFXIV.Abilities.TraitsShort" }}<div class="chip"></div></a>
   </nav>
@@ -26,8 +42,8 @@
         <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
           <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="primary_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="primary_ability">▼</button>{{/unless}}
+            {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="primary_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="primary_ability">▼</button>{{/unless}}
           </div>
         </div>
       {{/each}}
@@ -36,8 +52,8 @@
         <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
           <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="secondary_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="secondary_ability">▼</button>{{/unless}}
+            {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="secondary_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="secondary_ability">▼</button>{{/unless}}
           </div>
         </div>
       {{/each}}
@@ -46,8 +62,8 @@
         <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
           <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
+            {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
+            {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
           </div>
         </div>
       {{/each}}
@@ -64,11 +80,11 @@
         <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
           <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="trait">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="trait">▼</button>{{/unless}}
+            {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="trait">▲</button>{{/unless}}
+            {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="trait">▼</button>{{/unless}}
           </div>
         </div>
       {{/each}}
     </div>
   </section>
-</form>
+</div>

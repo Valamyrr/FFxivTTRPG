@@ -12,9 +12,10 @@ function buildAbilityFields() {
     combo: new fields.StringField({ required: false, blank: true, initial: "" }),
     condition: new fields.StringField({ required: false, blank: true, initial: "" }),
     direct_hit: new fields.StringField({ required: false, blank: true, initial: "" }),
-    status_effect: new fields.StringField({ required: false, blank: true, initial: "" }),
-    status_action: new fields.BooleanField({ required: false, initial: true }),
-    marker_area: new fields.StringField({ required: false, blank: true, initial: "" }),
+	    status_effect: new fields.StringField({ required: false, blank: true, initial: "" }),
+	    status_action: new fields.BooleanField({ required: false, initial: true }),
+	    status_effects: new fields.ArrayField(new fields.AnyField({ required: false })),
+	    marker_area: new fields.StringField({ required: false, blank: true, initial: "" }),
     marker_trigger: new fields.StringField({ required: false, blank: true, initial: "" }),
     marker_effect: new fields.StringField({ required: false, blank: true, initial: "" }),
     limitations: new fields.StringField({ required: false, blank: true, initial: "" }),
@@ -153,7 +154,10 @@ class CharacterActorData extends foundry.abstract.TypeDataModel {
       }),
       health: buildResourceField(),
       barrier: buildResourceField(),
-      mana: buildResourceField(5),
+      mana: new fields.SchemaField({
+        value: new fields.NumberField({ required: false, integer: true, min: 0, initial: 5 }),
+        max: new fields.NumberField({ required: false, nullable: true, integer: true, initial: 5 })
+      }),
       ability_order: new fields.ObjectField({ required: false, initial: {} }),
       pet_order: new fields.ArrayField(
         new fields.StringField({ required: false, blank: true, initial: "" })
@@ -191,7 +195,7 @@ class CharacterActorData extends foundry.abstract.TypeDataModel {
       pets: new fields.ArrayField(
         new fields.StringField({ required: false, blank: true, initial: "" })
       ),
-      showPets: new fields.StringField({ required: false, blank: true, initial: "true" }),
+      showPets: new fields.StringField({ required: false, blank: true, initial: "false" }),
       banner: new fields.StringField({ required: false, blank: true, initial: "" }),
       criticalRange: new fields.NumberField({ required: false, integer: true, min: 1, initial: 20 }),
       equippedGear: new fields.ObjectField({ required: false, initial: {} })
@@ -350,6 +354,27 @@ class AugmentItemData extends foundry.abstract.TypeDataModel {
   }
 }
 
+class JobItemData extends foundry.abstract.TypeDataModel {
+  static defineSchema() {
+    return {
+      ...buildItemFields(),
+      job_name: new fields.StringField({ required: false, blank: true, initial: "" }),
+      level: new fields.NumberField({ required: false, integer: true, min: 30, max: 110, initial: 30 }),
+      role: new fields.StringField({ required: false, blank: true, initial: "dps" }),
+      has_pets: new fields.BooleanField({ required: false, initial: false }),
+      health: buildResourceField(),
+      primary_attributes: buildPrimaryAttributesField(),
+      secondary_attributes: buildSecondaryAttributesField(),
+      ability_grants: new fields.ArrayField(new fields.SchemaField({
+        uuid: new fields.StringField({ required: false, blank: true, initial: "" }),
+        name: new fields.StringField({ required: false, blank: true, initial: "" }),
+        type: new fields.StringField({ required: false, blank: true, initial: "" }),
+        item: new fields.AnyField({ required: false })
+      }))
+    };
+  }
+}
+
 export function registerDataModels() {
   Object.assign(CONFIG.Actor.dataModels, {
     "ffxiv.character": CharacterActorData,
@@ -368,6 +393,7 @@ export function registerDataModels() {
     "ffxiv.title": TitleItemData,
     "ffxiv.gear": GearItemData,
     "ffxiv.minion": MinionItemData,
-    "ffxiv.augment": AugmentItemData
+    "ffxiv.augment": AugmentItemData,
+    "ffxiv.job": JobItemData
   });
 }

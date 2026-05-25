@@ -1,6 +1,6 @@
 {{! This template is a fallback for when items don't have more specific templates. }}
 {{! Generally, you'll want to make more specific templates when possible. }}
-<form class='{{cssClass}}' autocomplete='off'>
+<div class='{{cssClass}}'>
   <header class='sheet-header'>
     <img
       class='profile-img'
@@ -30,13 +30,7 @@
     {{! Description Tab }}
     <div class='tab' data-group='primary' data-tab='description'>
 
-      {{editor
-        enrichedDescription
-        target='system.description'
-        engine='prosemirror'
-        button=true
-        editable=editable
-      }}
+      <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
     </div>
     <div class='tab' data-group='primary' data-tab='attributes'>
 
@@ -86,4 +80,4 @@
     </div>
 
   </section>
-</form>
+</div>

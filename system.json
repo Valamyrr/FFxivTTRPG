@@ -4,9 +4,9 @@
   "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
   "compatibility": {
     "minimum": "14",
-    "verified": "14.359"
+    "verified": "14.363"
   },
-  "version": "3.0.1",
+  "version": "4.0.0-dev",
   "authors": [
     {
       "name": "Valamyrr",
@@ -70,6 +70,9 @@
       },
       "augment": {
         "htmlFields": ["description"]
+      },
+      "job": {
+        "htmlFields": ["description"]
       }
     }
   },
@@ -88,8 +91,8 @@
     }
   ],
   "url": "https://github.com/Valamyrr/FFxivTTRPG",
-  "manifest": "https://github.com/Valamyrr/FFxivTTRPG/releases/latest/download/system.json",
-  "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v3.0.1/system.zip",
+  "manifest": "https://github.com/Valamyrr/FFxivTTRPG/releases/latest/v4.0.0-dev/system.json,
+  "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v4.0.0-dev/system.zip",
   "license": "LICENSE.txt",
   "socket": true
 }

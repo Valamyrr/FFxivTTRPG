@@ -1,4 +1,4 @@
-<nav class="sheet-tabs tabs nav-{{system.class.role}} {{#unless settings.tabHue}}no-{{/unless}}hue" data-group="primary" style="{{#if (and (eq limited true) (eq displayLimited false)) }}display:none;{{/if}}">
+<nav class="sheet-tabs tabs nav-{{system.class.role}} {{#unless settings.tabHue}}no-{{/unless}}hue {{#if settings.showGear}}has-gear-tab{{/if}}" data-group="primary" style="{{#if (and (eq limited true) (eq displayLimited false)) }}display:none;{{/if}}">
   {{#each items}}
   <a class="item" data-tab="{{tab}}" title="{{label}}"><img src="{{icon}}"></img></a>
   {{/each}}

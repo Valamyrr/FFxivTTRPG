@@ -1,44 +1,115 @@
 <div class="npc-statblock">
   <div class="statblock-header">
-    <div class="statblock-header-left">
+    <div class="statblock-size-line">
       {{ localize "FFXIV.CharacterSheet.Size" }}:
-      <select name="system.size" class="input-transparent" style="width: auto;">
-        {{#each (array "Small" "Medium" "Large" "Huge" "Colossal") as |label|}}
-          <option value="{{label}}"
-            {{#if (eq ../system.size label)}}selected
-            {{else if (and (not ../system.size) (eq label "Medium"))}}selected
-            {{/if}}>
-            {{localize (concat "FFXIV.SizeCategories." label)}}
-          </option>
-        {{/each}}
-      </select>
-      (
-      <input type="number" class="input-transparent input-size-numbers" name="prototypeToken.width" value="{{ actor.prototypeToken.width }}" min="1" style="width: 1.5em; text-align: center;" />
-      x
-      <input type="number" class="input-transparent input-size-numbers" name="prototypeToken.height" value="{{ actor.prototypeToken.height }}" min="1" style="width: 1.5em; text-align: center;" />
-      )
-      <input class="input-transparent npc-specie" type="text" name="system.specie" value="{{ system.specie }}" placeholder="Hyur"/>
+      {{#if actorEditMode}}
+        <select name="system.size" class="input-transparent" style="width: auto;">
+          {{#each (array "Small" "Medium" "Large" "Huge" "Colossal") as |label|}}
+            <option value="{{label}}"
+              {{#if (eq ../system.size label)}}selected
+              {{else if (and (not ../system.size) (eq label "Medium"))}}selected
+              {{/if}}>
+              {{localize (concat "FFXIV.SizeCategories." label)}}
+            </option>
+          {{/each}}
+        </select>
+      {{else}}
+        <span class="npc-plain-value npc-size-value">{{#if system.size}}{{localize (concat "FFXIV.SizeCategories." system.size)}}{{else}}{{localize "FFXIV.SizeCategories.Medium"}}{{/if}}</span>
+      {{/if}}
+      <span class="npc-token-size">
+        (
+        {{#if actorEditMode}}
+          <input type="number" class="input-transparent input-size-numbers" name="prototypeToken.width" value="{{ actor.prototypeToken.width }}" min="1" style="width: 1.5em; text-align: center;" />
+        {{else}}
+          <span class="npc-plain-value npc-size-number">{{actor.prototypeToken.width}}</span>
+        {{/if}}
+        x
+        {{#if actorEditMode}}
+          <input type="number" class="input-transparent input-size-numbers" name="prototypeToken.height" value="{{ actor.prototypeToken.height }}" min="1" style="width: 1.5em; text-align: center;" />
+        {{else}}
+          <span class="npc-plain-value npc-size-number">{{actor.prototypeToken.height}}</span>
+        {{/if}}
+        )
+      </span>
     </div>
-    <div class="statblock-header-right">
-      {{ localize "FFXIV.Attributes.Vigilance" }}: <input class="input-window" type="text" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}"/>
+    <div class="statblock-meta-line">
+      {{#if actorEditMode}}
+        <input class="input-transparent npc-specie" type="text" name="system.specie" value="{{ system.specie }}" placeholder="Hyur"/>
+      {{else}}
+        <span class="npc-plain-value npc-specie">{{system.specie}}</span>
+      {{/if}}
     </div>
   </div>
   <div class="statblock-content">
-    <div class="resources grid grid-2col">
-      <div class="resource flex-group-left">
-          {{ localize "FFXIV.Attributes.Defense" }}: <input class="input-window" type="text" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}"/>
+    <div class="npc-combat-stats">
+      <div class="npc-main-stats">
+        <div class="resource flex-group-left">
+          <span class="npc-stat-label">{{ localize "FFXIV.Health.long" }}:</span>
+          <span class="npc-stat-control">
+            <input class="input-window" type="text" name="system.health.value" value="{{ system.health.value }}"/> /
+            {{#if actorEditMode}}
+              <input class="input-window" type="text" name="system.health.max" value="{{ system.health.max }}"/>
+            {{else}}
+              <span class="npc-plain-value npc-stat-number">{{system.health.max}}</span>
+            {{/if}}
+          </span>
+        </div>
+        <div class="resource flex-group-left">
+          <span class="npc-stat-label">{{ localize "FFXIV.Attributes.Vigilance" }}:</span>
+          <span class="npc-stat-control">
+            {{#if actorEditMode}}
+              <input class="input-window" type="number" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}" placeholder="0"/>
+            {{else}}
+              <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.vigilance.value}}</span>
+            {{/if}}
+          </span>
+        </div>
+        <div class="resource flex-group-left">
+          <span class="npc-stat-label">{{ localize "FFXIV.Attributes.Speed" }}:</span>
+          <span class="npc-stat-control">
+            {{#if actorEditMode}}
+              <input class="input-window" type="number" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}" placeholder="0"/>
+            {{else}}
+              <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.speed.value}}</span>
+            {{/if}}
+          </span>
+        </div>
+        <div class="resource flex-group-left">
+          <span class="npc-stat-label">{{ localize "FFXIV.Health.barrier" }}:</span>
+          <span class="npc-stat-control">
+            <input class="input-window" type="text" name="system.barrier.value" value="{{ system.barrier.value }}"/>
+          </span>
+        </div>
       </div>
-      <div class="resource flex-group-left">
-          {{ localize "FFXIV.Attributes.MagicDefense" }}: <input class="input-window" type="text" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}"/>
-      </div>
-      <div class="resource flex-group-left">
-          {{ localize "FFXIV.Health.long" }}: <input class="input-window" type="text" name="system.health.value" value="{{ system.health.value }}"/> / <input class="input-window" type="text" name="system.health.max" value="{{ system.health.max }}"/>
-      </div>
-      <div class="resource flex-group-left">
-          {{ localize "FFXIV.Attributes.Speed" }}: <input class="input-window" type="text" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}"/>
-      </div>
-      <div class="resource flex-group-left">
-          {{ localize "FFXIV.Health.barrier" }}: <input class="input-window" type="text" name="system.barrier.value" value="{{ system.barrier.value }}"/> / <input class="input-window" type="text" name="system.barrier.max" value="{{ system.barrier.max }}"/>
+      <div class="npc-defense-table">
+        <div class="npc-defense-heading">Defenses</div>
+        <div class="npc-defense-divider"></div>
+        <div class="npc-defense-values">
+          <div class="npc-defense-cell">
+            {{#if settings.attributesImgDefense }}
+              <img class="npc-defense-icon" src="{{ settings.attributesImgDefense }}" alt="{{ localize 'FFXIV.Attributes.Defense' }}" title="{{ localize 'FFXIV.Attributes.Defense' }}">
+            {{else}}
+              <span title="{{ localize 'FFXIV.Attributes.Defense' }}">{{ localize "FFXIV.Attributes.Defense" }}</span>
+            {{/if}}
+            {{#if actorEditMode}}
+              <input class="input-window" type="number" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}" placeholder="0"/>
+            {{else}}
+              <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.defense.value}}</span>
+            {{/if}}
+          </div>
+          <div class="npc-defense-cell">
+            {{#if settings.attributesImgMagicDefense }}
+              <img class="npc-defense-icon" src="{{ settings.attributesImgMagicDefense }}" alt="{{ localize 'FFXIV.Attributes.MagicDefense' }}" title="{{ localize 'FFXIV.Attributes.MagicDefense' }}">
+            {{else}}
+              <span title="{{ localize 'FFXIV.Attributes.MagicDefense' }}">{{ localize "FFXIV.Attributes.MagicDefense" }}</span>
+            {{/if}}
+            {{#if actorEditMode}}
+              <input class="input-window" type="number" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}" placeholder="0"/>
+            {{else}}
+              <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.magic_defense.value}}</span>
+            {{/if}}
+          </div>
+        </div>
       </div>
     </div>
     <hr>
@@ -47,31 +118,51 @@
       <div class="resource flex-group-center">
         <label for="system.primary_attributes.strength.value" class="resource-label roll-attribute" data-attribute="strength"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Strength.abbrv" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-        <input type="text" name="system.primary_attributes.strength.value" value="{{ system.primary_attributes.strength.value }}" placeholder="+0"/>
+          {{#if actorEditMode}}
+            <input type="text" name="system.primary_attributes.strength.value" value="{{ system.primary_attributes.strength.value }}" placeholder="+0"/>
+          {{else}}
+            <span class="npc-plain-value">{{system.primary_attributes.strength.value}}</span>
+          {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
         <label for="system.primary_attributes.dexterity.value" class="resource-label roll-attribute" data-attribute="dexterity"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Dexterity.abbrv" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-        <input type="text" name="system.primary_attributes.dexterity.value" value="{{ system.primary_attributes.dexterity.value }}" placeholder="+0"/>
+          {{#if actorEditMode}}
+            <input type="text" name="system.primary_attributes.dexterity.value" value="{{ system.primary_attributes.dexterity.value }}" placeholder="+0"/>
+          {{else}}
+            <span class="npc-plain-value">{{system.primary_attributes.dexterity.value}}</span>
+          {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
         <label for="system.primary_attributes.vitality.value" class="resource-label roll-attribute" data-attribute="vitality"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Vitality.abbrv" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-        <input type="text" name="system.primary_attributes.vitality.value" value="{{ system.primary_attributes.vitality.value }}" placeholder="+0"/>
+          {{#if actorEditMode}}
+            <input type="text" name="system.primary_attributes.vitality.value" value="{{ system.primary_attributes.vitality.value }}" placeholder="+0"/>
+          {{else}}
+            <span class="npc-plain-value">{{system.primary_attributes.vitality.value}}</span>
+          {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
         <label for="system.primary_attributes.intelligence.value" class="resource-label roll-attribute" data-attribute="intelligence"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Intelligence.abbrv" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-        <input type="text" name="system.primary_attributes.intelligence.value" value="{{ system.primary_attributes.intelligence.value }}" placeholder="+0"/>
+          {{#if actorEditMode}}
+            <input type="text" name="system.primary_attributes.intelligence.value" value="{{ system.primary_attributes.intelligence.value }}" placeholder="+0"/>
+          {{else}}
+            <span class="npc-plain-value">{{system.primary_attributes.intelligence.value}}</span>
+          {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
         <label for="system.primary_attributes.mind.value" class="resource-label roll-attribute" data-attribute="mind"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Mind.abbrv" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-        <input type="text" name="system.primary_attributes.mind.value" value="{{ system.primary_attributes.mind.value }}" placeholder="+0"/>
+          {{#if actorEditMode}}
+            <input type="text" name="system.primary_attributes.mind.value" value="{{ system.primary_attributes.mind.value }}" placeholder="+0"/>
+          {{else}}
+            <span class="npc-plain-value">{{system.primary_attributes.mind.value}}</span>
+          {{/if}}
         </div>
       </div>
 

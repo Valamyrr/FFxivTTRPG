@@ -14,7 +14,11 @@
   background-position: top 20% left 40%;
   padding: 5px;
   height: 150px;
+  min-height: 150px;
+  flex: 0 0 150px;
+  box-sizing: border-box;
   color: white;
+  position: relative;
 }
 
 /*Header's background depengind on characters' class*/
@@ -38,14 +42,31 @@
 }
 
 /*Character Name*/
-.charname{
+.charname {
   width: 100%;
-}
-.charname h1{
+  text-align: center;
   font-size: 3.5em;
   font-family: "Cinzel", serif;
   font-optical-sizing: auto;
   font-style: normal;
+  line-height: 1.12;
+  margin: 0;
+  max-width: calc(100% - 48px);
+}
+
+.ffxiv.actor h1.charname input,
+.ffxiv.actor .charname input,
+.ffxiv.actor .charname h1 {
+  font-family: "Cinzel", serif;
+  font-size: 1em;
+  border: none;
+  box-sizing: border-box;
+  color: inherit;
+  height: 1.2em;
+  line-height: 1.12;
+  min-height: 0;
+  padding: 0 6px;
+  width: 100%;
 }
 
 /*Class Icon + Class Name block*/
@@ -74,7 +95,7 @@
 
 .ffxiv.actor .class-info .class-name span{
   font-size: 2em;
-  font-family: "Cinzel Decorative", serif;
+  font-family: "Cinzel", serif;
   font-optical-sizing: auto;
   font-style: normal;
 }

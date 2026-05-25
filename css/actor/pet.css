@@ -1,7 +1,99 @@
-.pet .profile-img{
-  width: 100%;
+.ffxiv.actor.pet .profile-img{
+  width: 142.5px;
   height: auto;
   border: none;
+  flex: 0 0 142.5px;
+  object-fit: contain;
+}
+
+.ffxiv.actor.pet {
+  min-width: 650px;
+  max-width: 920px;
+}
+
+.ffxiv.actor.pet .sheet-header {
+  height: auto;
+  min-height: 150px;
+  position: relative;
+}
+
+.ffxiv.actor.pet .header-fields {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  box-sizing: border-box;
+  padding-right: 48px;
+}
+
+.ffxiv.actor.pet .charname {
+  max-width: 100%;
+}
+
+.ffxiv.actor.pet .pet-header-fields {
+  width: 100%;
+}
+
+.ffxiv.actor.pet .pet-header-speed {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.ffxiv.actor.pet .pet-header-speed img {
+  width: 32px;
+  height: 32px;
+}
+
+.ffxiv.actor.pet .pet-speed-number.actor-locked {
+  font-size: 1.5rem;
+  min-width: 2.2ch;
+  max-width: 3ch;
+  width: 2.2ch;
+  text-align: left;
+  background: transparent;
+  border: none;
+}
+
+.ffxiv.actor.pet .pet-speed-number {
+  font-size: 1.5rem;
+  min-width: 2.2ch;
+  max-width: 3ch;
+  width: 2.2ch;
+  border: none;
+  text-align: left;
+}
+
+.ffxiv.actor.pet .attribute-display-text {
+  font-size: 1.5rem;
+  max-width: 5ch;
+  border: none;
+  text-align: left;
+  background:transparent;
+  border: none;
+}
+
+.ffxiv.actor.pet .sheet-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ffxiv.actor.pet .pet-header-fields {
+  width: 100%;
+  margin-top: 0.4rem;
+}
+
+.ffxiv.actor.pet .pet-header-speed .s-attribute-name {
+  font-weight: 500;
+}
+
+.ffxiv.actor.pet .pet-header-speed .s-attribute-value {
+  font-weight: 400;
 }
 
 .ffxiv .pet .tags-container{
@@ -84,6 +176,10 @@
 
 /*Nav*/
 .pet nav.nav-sub-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
   padding-top: 10px;
   border:none;
   border-top: solid 1px var(--border-color-1);
@@ -91,4 +187,68 @@
   width: 100%;
   text-align: center;
   filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+}
+
+.pet nav.nav-sub-tabs .sub-tab {
+  width: 45%;
+}
+
+.pet nav.nav-sub-tabs .npc-add-ability {
+  width: 34px;
+  height: 25px;
+  min-height: 25px;
+  margin: 4px 6px 4px -2px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  clip-path: polygon(0 0, 85% 0, 100% 50%, 85% 100%, 0 100%);
+  background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+  color: var(--text-color-strong);
+  cursor: pointer;
+  line-height: 1;
+  filter: var(--subtabactive-filter);
+}
+
+.pet nav.nav-sub-tabs .npc-add-ability:hover,
+.pet nav.nav-sub-tabs .npc-add-ability:focus {
+  color: var(--invert-text-color);
+  box-shadow: none;
+  text-shadow: 0 0 4px var(--text-color-strong);
+}
+
+.ffxiv.actor.pet .sheet-body,
+.ffxiv.actor.pet .actor-abilities {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.ffxiv.actor.pet .actor-abilities {
+  padding: 0 12px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.ffxiv.actor.pet .ability-container {
+  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  max-width: 100%;
+}
+
+.ffxiv.actor.pet .ability-card {
+  min-width: 0;
+}
+
+.ffxiv.actor.pet .ability-header {
+  max-width: calc(100% - 60px);
+}
+
+.ffxiv.actor.pet .move-buttons button {
+  width: 28px;
+}
+
+.ffxiv.actor.pet .pet-traits-text {
+  min-height: 80px;
+  width: 100%;
 }

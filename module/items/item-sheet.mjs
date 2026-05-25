@@ -4,30 +4,58 @@ import {
 } from '../helpers/effects.mjs';
 import { debugError, debugLog } from "../helpers/debug.mjs";
 
+const DEFAULT_SOUNDS = {
+  soundNotificationFFXIV_deleteItem: "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
+  soundNotificationFFXIV_openSheet: "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
+  soundNotificationFFXIV_closeSheet: "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
+};
+
+const SOUND_ITEM_TYPES = new Set([
+  "primary_ability",
+  "secondary_ability",
+  "instant_ability",
+  "trait",
+  "limit_break",
+  "job",
+]);
+
 import PopoutEditor from "../popout-editor.js";
 
+const { HandlebarsApplicationMixin } = foundry.applications.api;
+const { ItemSheetV2 } = foundry.applications.sheets;
+
 /**
- * Extend the basic ItemSheet with some very simple modifications
- * @extends {ItemSheet}
+ * ApplicationV2 implementation of the FFXIV item sheet.
+ * @extends {ItemSheetV2}
  */
-export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
+export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
+  tabGroups = {
+    primary: "description",
+  };
+
   /** @override */
-  static get defaultOptions() {
-    let options = foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ['ffxiv', 'sheet', 'item',  CONFIG.theme+'_theme'],
+  static DEFAULT_OPTIONS = {
+    classes: ['ffxiv', 'sheet', 'item'],
+    position: {
       width: 520,
       height: 480,
-      tabs: [
-        {
-          navSelector: '.sheet-tabs',
-          contentSelector: '.sheet-body',
-          initial: 'description',
-        },
-      ]
-    });
+    },
+    form: {
+      submitOnChange: true,
+      closeOnSubmit: false,
+    },
+    window: {
+      resizable: true,
+    },
+  };
 
-    return options;
-  }
+  /** @override */
+  static PARTS = {
+    sheet: {
+      template: "systems/ffxiv/templates/item/item-sheet.hbs",
+      scrollable: [".sheet-body"],
+    },
+  };
 
   /** @override */
   get template() {
@@ -73,6 +101,9 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
     if (this.item.type == "augment"){
       return `${path}/item-augment-sheet.hbs`;
     }
+    if (this.item.type == "job"){
+      return `${path}/item-job-sheet.hbs`;
+    }
     if (this.item.type == "gear"){
       if (game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null){
         return `${path}/item-sheet-dialog-gear.hbs`;
@@ -92,12 +123,39 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  async getData() {
-    // Retrieve base data structure.
-    const context = super.getData();
+  _configureRenderParts(options) {
+    const parts = super._configureRenderParts(options);
+    parts.sheet.template = this.template;
+    return parts;
+  }
+
+  /** @override */
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
 
     // Use a safe clone of the item data for further operations.
     const itemData = this.document.toObject(false);
+    context.item = this.item;
+    context.system = itemData.system;
+    context.source = this.item._source.system;
+    context.flags = itemData.flags;
+    context.config = CONFIG.FF_XIV;
+    context.statusEffects = CONFIG.statusEffects;
+    context.itemStatusEffects = this._getStatusEffectEntries(itemData.system);
+    context.cssClass = this._getSheetClasses().join(" ");
+    context.editable = this.document.isOwner;
+    context.bakedActionTag = this._getBakedActionTag(this.item.type);
+    context.customTags = this._getCustomActionTags(itemData.system.tags);
+    context.hasMarkerTag = this._hasMarkerTag(itemData.system.tags);
+    context.hasCheck = this._hasCheck(itemData.system.check);
+    if (this.item.type === "job") {
+      context.system.job_name = this._getJobBaseName(context.system.job_name, this.item.name);
+      context.system.ability_grants = this._normalizeJobAbilityGrants(context.system.ability_grants)
+        .map(grant => ({
+          ...grant,
+          typeLabel: this._getJobGrantTypeLabel(grant.type)
+        }));
+    }
 
     const fieldsToEnrich = {
         description: this.item.system.description || "",
@@ -120,13 +178,6 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       "jobsAbbrv": game.settings.get('ffxiv','jobsAbbrv').split(",")
     }
 
-    // Add the item's data to context.data for easier access, as well as flags.
-    context.system = itemData.system;
-    context.flags = itemData.flags;
-
-    // Adding a pointer to CONFIG.FF_XIV
-    context.config = CONFIG.FF_XIV;
-    context.statusEffects = CONFIG.statusEffects
     // Prepare active effects for easier access
     context.effects = prepareActiveEffectCategories(this.item.effects);
     return context;
@@ -135,56 +186,246 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  render(force, options={}) {
-    super.render(force, options);
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+
+    this.element.classList.add(`${CONFIG.theme}_theme`);
+    this._activateProseMirrorEditors();
+    this._activatePrimaryTabs();
+
+    const limited = this.element.querySelector('.limited-display');
+    if (limited) {
+      this._fitLimitedDisplayToContent();
+      const limitedDisplay = game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null;
+      if(this.item.type=="gear" && limitedDisplay) this.setPosition({ width: 340 });
+    }
+
+    this.activateListeners($(this.element));
+    this._activateJobDropZone();
+  }
+
+  /** @override */
+  async _onFirstRender(context, options) {
+    if (typeof super._onFirstRender === "function") await super._onFirstRender(context, options);
+    if (SOUND_ITEM_TYPES.has(this.item.type)) this._playConfiguredSound("soundNotificationFFXIV_openSheet");
+  }
+
+  /** @override */
+  async _onClose(options) {
+    await super._onClose(options);
+    if (SOUND_ITEM_TYPES.has(this.item.type)) this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
+  }
+
+  _playConfiguredSound(setting) {
+    const src = game.settings.get('ffxiv', setting) || DEFAULT_SOUNDS[setting];
+    if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && src){
+      foundry.audio.AudioHelper.play({
+        src,
+        volume: 1,
+        autoplay: true,
+        loop: false
+      });
+    }
+  }
+
+  /** @override */
+  _onChangeForm(formConfig, event) {
+    if (!formConfig.submitOnChange) return super._onChangeForm(formConfig, event);
+    if (!this.isEditable) return;
+    if (!event.target?.name) return;
+
+    event.preventDefault();
+    const updateData = { [event.target.name]: this._getChangedFieldValue(event.target) };
+    const render = this.item.type === "job" && ["system.job_name", "system.level"].includes(event.target.name);
+    this.document.update(updateData, { render })
+      .then(async () => {
+        await this._syncJobPetVisibility(event.target.name, updateData[event.target.name]);
+        await this._syncJobItemName(event.target.name);
+        if (event.target.name === "system.check") this.render({ force: true });
+      })
+      .catch(err => ui.notifications.error(err, { console: true }));
+  }
+
+  async _syncJobItemName(fieldName) {
+    if (this.item.type !== "job") return;
+    if (!["system.job_name", "system.level"].includes(fieldName)) return;
+
+    const name = this._formatJobItemName(this.item.system.job_name, this.item.system.level);
+    if (this.item.name === name) return;
+    await this.item.update({ name });
+  }
+
+  _getJobBaseName(jobName, itemName=this.item.name) {
+    const name = String(jobName ?? "").trim();
+    if (name) return name;
+    return String(itemName ?? "").replace(/\s*\(LV\s*(?:\d+|\?\?)\)\s*$/i, "").trim();
+  }
+
+  _formatJobItemName(jobName, level) {
+    const name = this._getJobBaseName(jobName) || game.i18n.localize("FFXIV.ItemType.job");
+    const levelNumber = Number(level);
+    const levelText = Number.isFinite(levelNumber) && levelNumber > 0 ? String(levelNumber) : "??";
+    return `${name} (LV ${levelText})`;
+  }
+
+  async _syncJobPetVisibility(fieldName, value) {
+    if (fieldName !== "system.has_pets") return;
+    if (this.item.type !== "job") return;
+    if (this.item.parent?.documentName !== "Actor" || this.item.parent.type !== "character") return;
+    await this.item.parent.update({ "system.showPets": value ? "true" : "false" }, { render: false });
+  }
+
+  _getChangedFieldValue(target) {
+    if (target.type === "checkbox") return target.checked;
+    if (target.multiple) return Array.from(target.selectedOptions).map(option => option.value);
+
+    const dtype = target.dataset?.dtype;
+    if (target.type === "number" || dtype === "Number") {
+      return target.value === "" ? null : Number(target.value);
+    }
+    if (dtype === "Boolean") return target.value === "true";
+
+    return target.value;
+  }
+
+  _getBakedActionTag(type) {
+    const bakedTags = {
+      primary_ability: "FFXIV.Tags.Primary",
+      secondary_ability: "FFXIV.Tags.Secondary",
+      instant_ability: "FFXIV.Tags.Instant",
+      limit_break: "FFXIV.ItemType.limit_break",
+    };
+    return bakedTags[type] ?? "";
+  }
+
+  _getCustomActionTags(tags) {
+    const bakedTagNames = new Set(["primary", "secondary", "instant", "limit break", "limit-break"]);
+    return (Array.isArray(tags) ? tags : [])
+      .map((tag, index) => ({ tag, index }))
+      .filter(({ tag }) => !bakedTagNames.has(String(tag ?? "").trim().toLowerCase()));
+  }
+
+  _hasMarkerTag(tags) {
+    return (Array.isArray(tags) ? tags : [])
+      .some(tag => String(tag ?? "").toLowerCase().includes("marker"));
+  }
+
+  _hasCheck(check) {
+    const none = game.i18n.localize("FFXIV.None");
+    return Boolean(check) && check !== "FFXIV.None" && check !== none;
+  }
+
+  _getStatusEffectEntries(system) {
+    const entries = Array.isArray(system.status_effects) ? foundry.utils.deepClone(system.status_effects) : [];
+    if (!entries.length && system.status_effect) {
+      entries.push({
+        id: system.status_effect,
+        action: system.status_action !== false
+      });
+    }
+    return entries.map(entry => ({
+      id: entry?.id ?? "",
+      action: entry?.action !== false
+    }));
+  }
+
+  _getCurrentStatusEffectEntries() {
+    return this._getStatusEffectEntries(this.item.system);
+  }
+
+  _onChangeStatusEffect(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+
+    const entries = this._getCurrentStatusEffectEntries();
+    entries[index] ??= { id: "", action: true };
+    if (event.currentTarget.classList.contains("status-effect-id")) {
+      entries[index].id = event.currentTarget.value;
+    } else {
+      entries[index].action = event.currentTarget.value === "true";
+    }
+    this.item.update({
+      "system.status_effects": entries,
+      "system.status_effect": "",
+      "system.status_action": true
+    }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch(err => ui.notifications.error(err, { console: true }));
+  }
+
+  _onAddStatusEffect(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const entries = this._getCurrentStatusEffectEntries();
+    const defaultEffect = CONFIG.statusEffects?.[0]?.id ?? "";
+    entries.push({ id: defaultEffect, action: true });
+    this.item.update({
+      "system.status_effects": entries,
+      "system.status_effect": "",
+      "system.status_action": true
+    }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch(err => ui.notifications.error(err, { console: true }));
+  }
+
+  _onRemoveStatusEffect(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const entries = this._getCurrentStatusEffectEntries();
+    entries.splice(index, 1);
+    this.item.update({
+      "system.status_effects": entries,
+      "system.status_effect": "",
+      "system.status_action": true
+    }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch(err => ui.notifications.error(err, { console: true }));
   }
 
   /** @override */
   activateListeners(html) {
-    super.activateListeners(html);
-
-
-    Hooks.once("renderItemSheet", (app, html, data) => {
-      this.setPosition({ height: $(html).find('.limited-display').height() + 30 });
-      const limitedDisplay = game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null;
-      if(this.item.type=="gear" && limitedDisplay) this.setPosition({ width: 340 });
-    });
+    html.off(".ffxivItemSheet");
 
     // Everything below here is only needed if the sheet is editable
-    if (!this.isEditable) return;
+    if (!this.document.isOwner) return;
 
     // hidden here instead of css to prevent non-editable display of edit button
-    html.find(".popout-editor").on("mouseover", (event) => {
+    html.find(".popout-editor").off("mouseover.ffxivItemSheet").on("mouseover.ffxivItemSheet", (event) => {
       $(event.currentTarget).find(".popout-editor-button").show();
     });
-    html.find(".popout-editor").on("mouseout", (event) => {
+    html.find(".popout-editor").off("mouseout.ffxivItemSheet").on("mouseout.ffxivItemSheet", (event) => {
       $(event.currentTarget).find(".popout-editor-button").hide();
     });
-    html.find(".popout-editor .popout-editor-button").on("click", this._onPopoutEditor.bind(this));
+    html.find(".popout-editor .popout-editor-button").off("click.ffxivItemSheet").on("click.ffxivItemSheet", this._onPopoutEditor.bind(this));
+    html.on('click.ffxivItemSheet', '.profile-img[data-edit="img"]', this._onPickItemIcon.bind(this));
 
 
     //Tags
-    html.on('change', '.select-tags', (event) => {
-      const index = $(event.currentTarget).closest('li').index(); // Find the index of the current item
+    html.on('change.ffxivItemSheet', '.select-tags', (event) => {
+      const index = Number(event.currentTarget.dataset.index ?? $(event.currentTarget).closest('li').index());
       const value = $(event.currentTarget).val(); // Get the selected value
       const tags = this.item.system.tags || []; // Ensure tags is initialized
       tags[index] = value; // Update the correct index in the array
       this.item.update({ "system.tags": tags }); // Update the item with the new tags array
     });
-    html.on('click', '.remove-tag', (event) => {
+    html.on('click.ffxivItemSheet', '.remove-tag', (event) => {
       const index = event.currentTarget.dataset.index;
       const tags = this.item.system.tags || [];
       tags.splice(index, 1); // Remove the tag at the specified index
       this.item.update({ "system.tags": tags });
       this.render(); // Re-render to show the updated fields
     });
-    html.on('click', '.add-tag', () => {
+    html.on('click.ffxivItemSheet', '.add-tag', () => {
       const tags = this.item.system.tags || [];
 
       const configMap = {
         primary_ability: "tags_abilities",
         secondary_ability: "tags_abilities",
         instant_ability: "tags_abilities",
+        limit_break: "tags_abilities",
         trait: "tags_traits",
         consumable: "tags_consumables"
       };
@@ -200,24 +441,28 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       }
     });
 
+    html.on('change.ffxivItemSheet', '.status-effect-id, .status-effect-action', this._onChangeStatusEffect.bind(this));
+    html.on('click.ffxivItemSheet', '.add-status-effect', this._onAddStatusEffect.bind(this));
+    html.on('click.ffxivItemSheet', '.remove-status-effect', this._onRemoveStatusEffect.bind(this));
+
 
     //Gear Classes, similar as tags
     if(this.item.type=="gear"){
-      html.on('change', '.select-classes', (event) => {
+      html.on('change.ffxivItemSheet', '.select-classes', (event) => {
         const index = $(event.currentTarget).closest('li').index();
         const value = $(event.currentTarget).val();
         const classes = this.item.system.classes || [];
         classes[index] = value;
         this.item.update({ "system.classes": classes });
       });
-      html.on('click', '.remove-class', (event) => {
+      html.on('click.ffxivItemSheet', '.remove-class', (event) => {
         const index = event.currentTarget.dataset.index;
         const classes = this.item.system.classes || [];
         classes.splice(index, 1);
         this.item.update({ "system.classes": classes });
         this.render();
       });
-      html.on('click', '.add-class', () => {
+      html.on('click.ffxivItemSheet', '.add-class', () => {
         const classes = this.item.system.classes || [];
         classes.push("");
         this.item.update({ "system.classes": classes });
@@ -225,10 +470,23 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       });
     }
 
+    if(this.item.type=="job"){
+      html.on('click.ffxivItemSheet', '.job-ability-edit', this._onEditJobAbility.bind(this));
+      html.on('click.ffxivItemSheet', '.remove-job-ability', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = Number(event.currentTarget.dataset.index);
+        const grants = this._getJobAbilityGrants();
+        grants.splice(index, 1);
+        this.item.update({ "system.ability_grants": grants });
+        this.render();
+      });
+    }
+
 
 
     // Modifiers, similar as tags
-    html.on('change', '.modifier-name', (event) => {
+    html.on('change.ffxivItemSheet', '.modifier-name', (event) => {
       const index = event.currentTarget.dataset.index;
       const value = event.currentTarget.value;
       const modifiers = this.item.system.modifiers || [];
@@ -237,7 +495,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
         this.item.update({ "system.modifiers": modifiers });
       }
     });
-    html.on('change', '.modifier-value', (event) => {
+    html.on('change.ffxivItemSheet', '.modifier-value', (event) => {
       const index = event.currentTarget.dataset.index;
       let value = event.currentTarget.value || 0;
       const modifiers = this.item.system.modifiers || [];
@@ -249,12 +507,12 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
         this.item.update({ "system.modifiers": modifiers });
       }
     });
-    html.on('click', '.add-modifier', () => {
+    html.on('click.ffxivItemSheet', '.add-modifier', () => {
       const modifiers = this.item.system.modifiers || [];
       modifiers.push(["FFXIV.Attributes.Strength.long", 0]);
       this.item.update({ "system.modifiers": modifiers });
     });
-    html.on('click', '.remove-modifier', (event) => {
+    html.on('click.ffxivItemSheet', '.remove-modifier', (event) => {
       const index = event.currentTarget.dataset.index;
       const modifiers = this.item.system.modifiers || [];
       modifiers.splice(index, 1);
@@ -266,15 +524,15 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
 
 
 
-    html.on('click', '.item-delete', this._deleteItem.bind(this));
-    html.on('click', '.quantity-form .delete', this._deleteItem.bind(this));
-    html.on('click', '.quantity-form .item-qty-btn-rm', this._decreaseQuantity.bind(this));
-    html.on('click', '.quantity-form .item-qty-btn-add', this._increaseQuantity.bind(this));
-    html.on('click', '.item-qty-btn.gear-equip', this._toggleEquip.bind(this))
+    html.on('click.ffxivItemSheet', '.item-delete', this._deleteItem.bind(this));
+    html.on('click.ffxivItemSheet', '.quantity-form .delete', this._deleteItem.bind(this));
+    html.on('click.ffxivItemSheet', '.quantity-form .item-qty-btn-rm', this._decreaseQuantity.bind(this));
+    html.on('click.ffxivItemSheet', '.quantity-form .item-qty-btn-add', this._increaseQuantity.bind(this));
+    html.on('click.ffxivItemSheet', '.item-qty-btn.gear-equip', this._toggleEquip.bind(this))
 
-    html.on('click', '.item-roll-button', this._rollItem.bind(this));
+    html.on('click.ffxivItemSheet', '.item-roll-button', this._rollItem.bind(this));
 
-    html.on("keydown", (event) => {
+    html.on("keydown.ffxivItemSheet", (event) => {
       if (event.key === "Enter") {
           event.preventDefault(); // Prevent the Enter key from triggering the button
       }
@@ -282,7 +540,48 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
 
   }
 
+  _getSheetClasses() {
+    return ['ffxiv', 'sheet', 'item', `${CONFIG.theme}_theme`];
+  }
+
+  _activatePrimaryTabs() {
+    const nav = this.element.querySelector(".sheet-tabs");
+    if (!nav) return;
+
+    const tabs = Array.from(this.element.querySelectorAll(".sheet-body .tab[data-tab]"));
+    const links = Array.from(nav.querySelectorAll("[data-tab]"));
+    if (!tabs.length || !links.length) return;
+
+    let initial = this.tabGroups?.primary || links.find(link => link.classList.contains("active"))?.dataset.tab
+      || links[0]?.dataset.tab || tabs[0]?.dataset.tab;
+    if (!tabs.some(panel => panel.dataset.tab === initial)) initial = links[0]?.dataset.tab || tabs[0]?.dataset.tab;
+
+    const activate = (tab) => {
+      this.tabGroups.primary = tab;
+      links.forEach(link => link.classList.toggle("active", link.dataset.tab === tab));
+      tabs.forEach(panel => {
+        const active = panel.dataset.tab === tab;
+        panel.classList.toggle("active", active);
+        panel.style.display = active ? "" : "none";
+      });
+    };
+
+    this._tabController?.abort();
+    this._tabController = new AbortController();
+    links.forEach(link => {
+      link.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        activate(link.dataset.tab);
+      }, { capture: true, signal: this._tabController.signal });
+    });
+
+    activate(initial);
+  }
+
   async _rollItem(event){
+    event.preventDefault();
+    event.stopPropagation();
     if (this.item.type=="gear"){
       var templatePath = "systems/ffxiv/templates/chat/gear-chat-card.hbs"
     }else {
@@ -296,13 +595,16 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
   }
 
   _decreaseQuantity(event){
+    event.preventDefault();
+    event.stopPropagation();
     const newQuantity = this.item.system.quantity - 1;
       if (newQuantity < 1){
         this._deleteItem(event)
-        if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem')){
+        const deleteSound = game.settings.get('ffxiv', 'soundNotificationFFXIV_deleteItem') || DEFAULT_SOUNDS.soundNotificationFFXIV_deleteItem;
+        if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && deleteSound){
           foundry.audio.AudioHelper.play({
-            src: game.settings.get('ffxiv', 'soundNotificationFFxiv_deleteItem'),
-            volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
+            src: deleteSound,
+            volume: 1,
             autoplay: true,
             loop: false
           });
@@ -312,10 +614,14 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
       }
   }
   _increaseQuantity(event){
+    event.preventDefault();
+    event.stopPropagation();
     this.item.update({ 'system.quantity': parseInt(this.item.system.quantity + 1) });
   }
 
   _deleteItem(event) {
+    event.preventDefault();
+    event.stopPropagation();
     new foundry.applications.api.DialogV2({
       id: "ffxiv-confirm-item-deletion",
       window: { title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation") },
@@ -332,7 +638,7 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
           callback: (event, button) => {
             ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: this.item.name}));
             this.item.delete();
-            this.render(false)
+            this.render()
           }
         },
         {
@@ -346,6 +652,8 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
   }
 
   _toggleEquip(event) {
+    event.preventDefault();
+    event.stopPropagation();
     let actor = game.actors.get(this.item.parent._id);
 
     // Ensure equippedGear is initialized with category keys, not localized labels
@@ -402,15 +710,186 @@ export class FfxivItemSheet extends foundry.appv1.sheets.ItemSheet {
     const windowLeft = parseInt(parentPosition.left, 10);
     const windowTop = parseInt(parentPosition.top, 10);
 
-    const title = a.dataset.label ? `Editor for ${this.object.name}: ${label}` : `Editor for ${this.object.name}`;
+    const title = a.dataset.label ? `Editor for ${this.item.name}: ${label}` : `Editor for ${this.item.name}`;
 
-    new PopoutEditor(this.object, {
+    new PopoutEditor(this.item, {
       name: key,
-      title: title,
+      window: { title },
       height: windowHeight,
       width: windowWidth,
       left: windowLeft,
       top: windowTop,
+    }).render({ force: true });
+  }
+
+  _activateProseMirrorEditors() {
+    this.element.querySelectorAll(".editor-content[data-edit]").forEach(div => this._activateEditor?.(div));
+  }
+
+  _fitLimitedDisplayToContent() {
+    requestAnimationFrame(() => {
+      const limited = this.element.querySelector(".limited-display");
+      if (!limited) return;
+
+      const header = this.element.querySelector(".window-header");
+      const headerHeight = header?.offsetHeight || 0;
+      const contentHeight = Math.ceil(limited.scrollHeight);
+      this.setPosition({ height: contentHeight + headerHeight + 6 });
+    });
+  }
+
+  _activateJobDropZone() {
+    this._jobDropController?.abort();
+    if (this.item.type !== "job" || !this.document.isOwner) return;
+
+    const dropZone = this.element.querySelector(".job-progression-tab");
+    if (!dropZone) return;
+
+    this._jobDropController = new AbortController();
+    const { signal } = this._jobDropController;
+
+    const allowDrop = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+      dropZone.classList.add("drag-over");
+    };
+
+    dropZone.addEventListener("dragenter", allowDrop, { signal });
+    dropZone.addEventListener("dragover", allowDrop, { signal });
+    dropZone.addEventListener("dragleave", event => {
+      if (!dropZone.contains(event.relatedTarget)) dropZone.classList.remove("drag-over");
+    }, { signal });
+    dropZone.addEventListener("drop", event => {
+      dropZone.classList.remove("drag-over");
+      this._onDropJobAbility(event);
+    }, { signal });
+  }
+
+  _onPickItemIcon(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const FilePickerImpl = foundry.applications.apps.FilePicker.implementation;
+    new FilePickerImpl({
+      type: "imagevideo",
+      current: this.item.img,
+      callback: path => this.item.update({ img: path })
     }).render(true);
+  }
+
+  _getDropData(event) {
+    const dataTransfer = event.originalEvent?.dataTransfer || event.dataTransfer;
+    if (!dataTransfer) return {};
+
+    const formats = ["text/plain", "application/json", "text/json"];
+    for (const format of formats) {
+      const raw = dataTransfer.getData(format);
+      if (!raw) continue;
+      try {
+        return JSON.parse(raw);
+      } catch (_err) {
+        if (raw.includes(".") || raw.length > 12) return { uuid: raw };
+      }
+    }
+
+    return {};
+  }
+
+  _normalizeJobAbilityGrants(grants) {
+    if (Array.isArray(grants)) return foundry.utils.deepClone(grants);
+    if (grants && typeof grants === "object") return foundry.utils.deepClone(Object.values(grants));
+    return [];
+  }
+
+  _getJobAbilityGrants() {
+    return this._normalizeJobAbilityGrants(this.item.system.ability_grants);
+  }
+
+  _getJobGrantTypeLabel(type) {
+    const label = game.i18n.localize(`FFXIV.ItemType.${type}`);
+    return label.replace(/\s+Ability$/i, "");
+  }
+
+  async _getJobGrantItemData(grant) {
+    if (grant.item) return foundry.utils.deepClone(grant.item);
+
+    const sourceItem = grant.uuid ? await fromUuid(grant.uuid) : null;
+    if (!sourceItem) return null;
+
+    const itemData = sourceItem.toObject();
+    delete itemData._id;
+    return itemData;
+  }
+
+  async _onEditJobAbility(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const grants = this._getJobAbilityGrants();
+    const grant = grants[index];
+    if (!grant) return;
+
+    const itemData = await this._getJobGrantItemData(grant);
+    if (!itemData) {
+      ui.notifications.warn("Could not find the mapped item to edit.");
+      return;
+    }
+
+    const tempItem = new CONFIG.Item.documentClass(itemData, { temporary: true });
+    const persistGrant = async changes => {
+      const update = foundry.utils.expandObject(changes);
+      const nextData = foundry.utils.mergeObject(foundry.utils.deepClone(itemData), update, {
+        inplace: false,
+        overwrite: true
+      });
+      delete nextData._id;
+
+      grants[index] = {
+        ...grants[index],
+        name: nextData.name,
+        type: nextData.type,
+        item: nextData
+      };
+      await this.item.update({ "system.ability_grants": grants }, { render: false });
+
+      foundry.utils.mergeObject(itemData, nextData, { inplace: true, overwrite: true });
+      tempItem.updateSource(update);
+      this.render({ force: true });
+      return tempItem;
+    };
+
+    tempItem.update = persistGrant;
+    tempItem.sheet.render({ force: true });
+  }
+
+  async _onDropJobAbility(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const data = this._getDropData(event);
+    let item = data.uuid ? await fromUuid(data.uuid) : null;
+    if (!item && typeof Item.implementation.fromDropData === "function") {
+      item = await Item.implementation.fromDropData(data);
+    }
+    const validTypes = ["primary_ability", "secondary_ability", "instant_ability", "limit_break", "trait"];
+    if (!item || !validTypes.includes(item.type)) {
+      ui.notifications.warn("Drop an ability, limit break, or trait item onto the job ability list.");
+      return;
+    }
+
+    const grants = this._getJobAbilityGrants();
+    if (grants.some(grant => grant.uuid === item.uuid)) return;
+    const itemData = item.toObject();
+    delete itemData._id;
+    grants.push({
+      uuid: item.uuid,
+      name: item.name,
+      type: item.type,
+      item: itemData
+    });
+    await this.item.update({ "system.ability_grants": grants }, { render: false });
+    this.render({ force: true });
   }
 }

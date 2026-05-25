@@ -1,22 +1,49 @@
 import {migrateDataToSystem} from "./helpers/migration.js";
 
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
 /**
  * A specialized form used to pop out the editor.
- * @extends {FormApplication}
+ * @extends {ApplicationV2}
  */
-export default class PopoutEditor extends FormApplication {
+export default class PopoutEditor extends HandlebarsApplicationMixin(ApplicationV2) {
+  constructor(object, options={}) {
+    options.position ??= {};
+    for (const key of ["width", "height", "left", "top"]) {
+      if (key in options) {
+        options.position[key] = options[key];
+        delete options[key];
+      }
+    }
+    super(options);
+    this.object = object;
+  }
+
   /** @override */
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: "popout-editor",
-      classes: ["ffxiv", "sheet"],
+  static DEFAULT_OPTIONS = {
+    id: "popout-editor",
+    classes: ["ffxiv", "sheet"],
+    window: {
       title: "Pop-out Editor",
-      template: "systems/ffxiv/templates/popout-editor.html",
+      resizable: true,
+    },
+    form: {
+      handler: PopoutEditor._onSubmit,
+      closeOnSubmit: true,
+    },
+    position: {
       width: 320,
       height: 320,
-      resizable:true,
-    });
-  }
+    },
+  };
+
+  /** @override */
+  static PARTS = {
+    sheet: {
+      template: "systems/ffxiv/templates/popout-editor.html",
+      scrollable: [".sheet-body"],
+    },
+  };
 
   /**
    * Return a reference to the target attribute
@@ -27,30 +54,28 @@ export default class PopoutEditor extends FormApplication {
   }
 
   /** @override */
-  getData() {
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
     // Get current value
-    let attr = foundry.utils.getProperty(this.object.system, this.attribute.replace('data.', ''));
+    const systemPath = this.attribute.replace(/^(data|system)\./, "");
+    let attr = foundry.utils.getProperty(this.object.system, systemPath);
 
     // Return data
-    return {
-      value: attr,
-      cssClass: "editable popout-editor-window",
-    };
+    context.value = attr;
+    context.cssClass = "editable popout-editor-window";
+    return context;
   }
 
   /* -------------------------------------------- */
 
-  /** @override */
-  _updateObject(event, formData) {
+  static async _onSubmit(event, form, formData) {
     const updateData = {};
-    updateData[`${this.attribute}`] = formData.value;
+    updateData[`${this.attribute}`] = formData.object.value;
 
     // Update the object
-    this.object.update(
+    await this.object.update(
         migrateDataToSystem(updateData)
     );
-
-    this.close();
   }
 
 

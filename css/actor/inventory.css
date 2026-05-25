@@ -12,9 +12,10 @@
 /* Container for the inventory grid */
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 50px); /* 50px square cells */
-  gap: 10px; /* Spacing between items */
-  justify-content: start; /* Align items to the start */
+  grid-template-columns: repeat(9, 50px);
+  column-gap: max(10px, calc((100% - 450px) / 8));
+  row-gap: 10px;
+  justify-content: space-between;
 }
 
 /* Individual inventory items */

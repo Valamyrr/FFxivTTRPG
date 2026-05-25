@@ -1,6 +1,6 @@
-<form class="{{cssClass}} {{actor.type}} flexcol" autocomplete="off">
+<div class="{{cssClass}} {{actor.type}} flexcol">
   {{!-- Sheet Header --}}
-  <header class="sheet-header" style="background: linear-gradient(90deg, var(--{{system.class.role}}) 0%, rgba(255,255,255,0) 100%), url('{{system.banner}}');background-size: cover;background-position: top 20% left 40%;">
+  <header class="sheet-header" style="background: linear-gradient(90deg, var(--{{system.class.role}}) 0%, rgba(255,255,255,0) 100%){{#if system.banner}}, url('{{system.banner}}'){{/if}};background-size: cover;background-position: top 20% left 40%;">
 {{!--
 <img class="class-img" src="systems/ffxiv/assets/classes/{{system.class.name}}.png" alt="class icon">
 <div class="class-level">
@@ -12,13 +12,20 @@
 --}}
     <div class="header-fields">
         <div class="charname">
-          <h1>{{actor.name}}</h1>
-        </div>
-        <div class="header-info">
-          {{#if (and (eq "custom" system.class.name) system.class.customIcon)}}
-            <img class="class-icon" src="{{system.class.customIcon}}" alt="class icon">
+          {{#if actorEditMode}}
+            <h1><input name="name" type="text" value="{{actor.name}}" placeholder="{{localize 'FFXIV.Name'}}"/></h1>
           {{else}}
-            <img class="class-icon" src="{{actor.img}}" alt="class icon">
+            <h1>{{actor.name}}</h1>
+          {{/if}}
+        </div>
+        {{#if editable}}
+          <button type="button" class="actor-edit-toggle {{#if actorEditMode}}active{{/if}}" aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet'}}" aria-pressed="{{#if actorEditMode}}true{{else}}false{{/if}}" title="{{#if actorEditMode}}{{localize 'FFXIV.CharacterSheet.LockSheet'}}{{else}}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+            <i class="fa-solid {{#if actorEditMode}}fa-lock-open{{else}}fa-lock{{/if}}"></i>
+          </button>
+        {{/if}}
+        <div class="header-info">
+          {{#if system.class.customIcon}}
+            <img class="class-icon" src="{{system.class.customIcon}}" alt="class icon">
           {{/if}}
           <div class="class-info">
             <div class="level">{{system.experience.level.value}}</div>
@@ -91,4 +98,4 @@
 
     </section>
   </div>
-</form>
+</div>

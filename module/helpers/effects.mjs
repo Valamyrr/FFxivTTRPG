@@ -25,7 +25,7 @@ export function onManageActiveEffect(event, owner) {
         },
       ]);
     case 'edit':
-      return effect.sheet.render(true);
+      return effect.sheet.render({ force: true });
     case 'delete':
       return effect.delete();
     case 'toggle':

@@ -46,6 +46,15 @@
 .meteor-value input.value{
   width: 30px;
   border: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-color);
+  height: 30px;
+  line-height: 30px;
+  min-height: 0;
+  padding: 0;
+  text-align: center;
+  appearance: textfield;
 }
 .meteor-value input.value:focus{
   border-radius: 1000px;
@@ -104,5 +113,10 @@
   color: var(--text-color);
   border: 1px solid #a3a3a3;
   border-radius: 3px;
-  flex:1
+  flex:1;
+  height: 28px;
+  line-height: 28px;
+  min-height: 0;
+  padding: 0;
+  box-shadow: none;
 }

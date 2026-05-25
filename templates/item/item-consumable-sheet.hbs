@@ -1,4 +1,4 @@
-<form class='{{cssClass}} dialog' autocomplete='off'>
+<div class='{{cssClass}} dialog'>
   <header class='sheet-header'>
     <img
       class='profile-img'
@@ -14,7 +14,7 @@
           placeholder='Name'
         /></h1>
     </div>
-    <button class="item-delete fa fa-trash-can"></button>
+    <button type="button" class="item-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}"><i class="fa-solid fa-trash-can"></i></button>
   </header>
 
   <hr>
@@ -277,13 +277,7 @@
 
     </div>
 
-    {{editor
-      enrichedDescription
-      target='system.description'
-      engine='prosemirror'
-      button=true
-      editable=editable
-    }}
+    <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
 
   </section>
-</form>
+</div>

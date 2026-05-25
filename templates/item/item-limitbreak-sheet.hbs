@@ -1,4 +1,4 @@
-<form class='{{cssClass}}' autocomplete='off'>
+<div class='{{cssClass}}'>
   <header class='sheet-header'>
     <img
       class='profile-img'
@@ -14,7 +14,7 @@
           placeholder='Name'
         /></h1>
     </div>
-    <button class="item-delete fa fa-trash-can"></button>
+    <button type="button" class="item-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}"><i class="fa-solid fa-trash-can"></i></button>
   </header>
 
   <hr>
@@ -26,14 +26,19 @@
       <div class="tags-container">
         <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
         <ul class="tag-list">
-          {{#each system.tags as |tag index|}}
+          {{#if bakedActionTag}}
+            <li><span class="tag baked-action-tag">{{localize bakedActionTag}}</span></li>
+          {{/if}}
+          {{#each customTags as |entry|}}
             <li>
-              <select style="text-align: center;" class="select-tags">
+              <select style="text-align: center;" class="select-tags" data-index="{{entry.index}}">
                 {{#each ../config.tags_abilities as |t|}}
-                <option value="{{t.label}}" {{#if (eq t.label tag)}}selected {{/if}}>{{ localize t.label }}</option>
+                <option value="{{t.label}}" {{#if (eq t.label entry.tag)}}selected {{/if}}>{{ localize t.label }}</option>
                 {{/each}}
               </select>
-              <button type="button" class="remove-tag" data-index="{{index}}">x</button>
+              <button type="button" class="remove-tag" data-index="{{entry.index}}" aria-label="{{localize 'FFXIV.Item.Delete'}}">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
             </li>
           {{/each}}
         </ul>
@@ -70,12 +75,14 @@
           </div>
         </div>
 
-        <div class="resource flex-group-center">
-          <label for="system.challenge" class="resource-label">{{ localize "FFXIV.Abilities.Challenge" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.challenge" type="text" value="{{item.system.challenge}}"/>
+        {{#if hasCheck}}
+          <div class="resource flex-group-center">
+            <label for="system.challenge" class="resource-label">{{ localize "FFXIV.Abilities.Challenge" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="system.challenge" type="text" value="{{item.system.challenge}}"/>
+            </div>
           </div>
-        </div>
+        {{/if}}
 
         <div class="resource flex-group-center">
           <label for="system.trigger" class="resource-label">{{ localize "FFXIV.Abilities.Trigger" }}</label>
@@ -153,4 +160,4 @@
     </div>
 
   </section>
-</form>
+</div>

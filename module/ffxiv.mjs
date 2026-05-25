@@ -1,10 +1,11 @@
 // Import document classes.
-import { FfxivActor } from './actors/actor.mjs';
-import { FfxivItem } from './items/item.mjs';
+import { FFXIVActor } from './actors/actor.mjs';
+import { FFXIVCombat } from './combat.mjs';
+import { FFXIVItem } from './items/item.mjs';
 import { registerDataModels } from './data-models.mjs';
 // Import sheet classes.
-import { FfxivActorSheet } from './actors/actor-sheet.mjs';
-import { FfxivItemSheet } from './items/item-sheet.mjs';
+import { FFXIVActorSheet } from './actors/actor-sheet.mjs';
+import { FFXIVItemSheet } from './items/item-sheet.mjs';
 // Import helper/utility classes and constants.
 import { preloadHandlebarsTemplates } from './helpers/templates.mjs';
 import { FF_XIV } from './helpers/config.mjs';
@@ -12,6 +13,7 @@ import { debugError, debugLog } from "./helpers/debug.mjs";
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
 import { updateStatusEffects } from "./helpers/status_effects.mjs";
+import { registerEscapeHandler } from "./helpers/escape.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -25,16 +27,17 @@ Hooks.once('init', function () {
   // Add utility classes to the global game object so that they're more easily
   // accessible in global contexts.
   game.ffxivttrpg = {
-    FfxivActor,
-    FfxivItem
+    FFXIVActor,
+    FFXIVItem
   };
 
   // Add custom constants for configuration.
   CONFIG.FF_XIV = FF_XIV;
 
   // Define custom Document classes
-  CONFIG.Actor.documentClass = FfxivActor;
-  CONFIG.Item.documentClass = FfxivItem;
+  CONFIG.Actor.documentClass = FFXIVActor;
+  CONFIG.Combat.documentClass = FFXIVCombat;
+  CONFIG.Item.documentClass = FFXIVItem;
 
   // Active Effects are never copied to the Actor,
   // but will still apply to the Actor from within the Item
@@ -43,16 +46,17 @@ Hooks.once('init', function () {
 
   // Register sheet application classes
   debugLog("FFXIV | Registering sheets");
-  foundry.documents.collections.Actors.unregisterSheet('core', foundry.appv1.sheets.ActorSheet);
-  
-  foundry.documents.collections.Actors.registerSheet('ffxiv', FfxivActorSheet, {
+  const DocumentSheetConfig = foundry.applications.apps.DocumentSheetConfig;
+  DocumentSheetConfig.unregisterSheet(Actor, 'core', foundry.appv1.sheets.ActorSheet);
+
+  DocumentSheetConfig.registerSheet(Actor, 'ffxiv', FFXIVActorSheet, {
     types: ['character', 'pet', 'npc'],
     makeDefault: true,
     label: 'FFXIV.SheetLabels.Actor',
   });
 
-  foundry.documents.collections.Items.unregisterSheet('core', foundry.appv1.sheets.ItemSheet);
-  foundry.documents.collections.Items.registerSheet('ffxiv', FfxivItemSheet, {
+  DocumentSheetConfig.unregisterSheet(Item, 'core', foundry.appv1.sheets.ItemSheet);
+  DocumentSheetConfig.registerSheet(Item, 'ffxiv', FFXIVItemSheet, {
     makeDefault: true,
     label: 'FFXIV.SheetLabels.Item',
   });
@@ -68,7 +72,8 @@ Hooks.once('init', function () {
     title: game.i18n.localize("FFXIV.ItemType.title"),
     gear: game.i18n.localize("FFXIV.ItemType.gear"),
     minion: game.i18n.localize("FFXIV.ItemType.minion"),
-    augment: game.i18n.localize("FFXIV.ItemType.augment")
+    augment: game.i18n.localize("FFXIV.ItemType.augment"),
+    job: game.i18n.localize("FFXIV.ItemType.job")
   };
 
   CONFIG.Actor.typeLabels = {
@@ -78,6 +83,7 @@ Hooks.once('init', function () {
   };
 
   updateStatusEffects()
+  registerEscapeHandler();
 
   // Preload Handlebars templates.
   return preloadHandlebarsTemplates();
@@ -100,10 +106,14 @@ Handlebars.registerHelper('isOccupied', function(items, position) {
 });
 
 Handlebars.registerHelper('add', function(a, b) {
-  return a + b;
+  const left = Number(a);
+  const right = Number(b);
+  return (Number.isFinite(left) ? left : 0) + (Number.isFinite(right) ? right : 0);
 });
 Handlebars.registerHelper('sub', function(a, b) {
-  return a - b;
+  const left = Number(a);
+  const right = Number(b);
+  return (Number.isFinite(left) ? left : 0) - (Number.isFinite(right) ? right : 0);
 });
 Handlebars.registerHelper('eq', function(a, b) {
   return a === b;
@@ -116,6 +126,44 @@ Handlebars.registerHelper('or', function(a, b) {
 });
 Handlebars.registerHelper('and', function(a, b) {
   return a && b;
+});
+Handlebars.registerHelper("hasContent", function (value) {
+  if (value === null || value === undefined) return false;
+  const text = String(value)
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+  return text.length > 0;
+});
+
+const BAKED_ACTION_TAG_LABELS = {
+  primary_ability: "FFXIV.Tags.Primary",
+  secondary_ability: "FFXIV.Tags.Secondary",
+  instant_ability: "FFXIV.Tags.Instant",
+  limit_break: "FFXIV.ItemType.limit_break",
+};
+const BAKED_ACTION_TAGS = new Set(["primary", "secondary", "instant", "limit break", "limit-break"]);
+
+function isBakedActionTag(tag) {
+  return BAKED_ACTION_TAGS.has(String(tag ?? "").trim().toLowerCase());
+}
+
+Handlebars.registerHelper("actionTags", function (type, tags) {
+  const bakedTag = BAKED_ACTION_TAG_LABELS[type];
+  const customTags = Array.isArray(tags) ? tags.filter(tag => !isBakedActionTag(tag)) : [];
+  return bakedTag ? [bakedTag, ...customTags] : customTags;
+});
+
+Handlebars.registerHelper("customActionTags", function (tags) {
+  return Array.isArray(tags) ? tags.filter(tag => !isBakedActionTag(tag)) : [];
+});
+
+Handlebars.registerHelper("hasCustomActionTags", function (tags) {
+  return Array.isArray(tags) && tags.some(tag => !isBakedActionTag(tag));
+});
+
+Handlebars.registerHelper("bakedActionTag", function (type) {
+  return BAKED_ACTION_TAG_LABELS[type] ?? "";
 });
 Handlebars.registerHelper('superior', function(a, b) {
   return a > b;
@@ -133,16 +181,44 @@ Handlebars.registerHelper("mod", function (index, divisor, remainder) {
 Handlebars.registerHelper("array", function () {
   return Array.from(arguments).slice(0, arguments.length - 1);
 });
+
+const DEFAULT_TAB_ICONS = {
+  imgTabAbilities: "systems/ffxiv/assets/tab-icons/actions-and-traits.webp",
+  imgTabAttributes: "systems/ffxiv/assets/tab-icons/pvp-profile.webp",
+  imgTabGear: "systems/ffxiv/assets/tab-icons/armoury-chest.webp",
+  imgTabRoleplay: "systems/ffxiv/assets/tab-icons/character.webp",
+  imgTabItems: "systems/ffxiv/assets/tab-icons/inventory.webp",
+  imgTabCompanions: "systems/ffxiv/assets/tab-icons/companions.webp",
+  imgTabSettings: "systems/ffxiv/assets/tab-icons/system-configuration.webp",
+};
+
+function getCharacterTabIcon(settingKey) {
+  return game.settings.get("ffxiv", settingKey) || DEFAULT_TAB_ICONS[settingKey];
+}
+
+const DEFAULT_SOUNDS = {
+  soundNotificationFFXIV_moveItem: "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
+  soundNotificationFFXIV_enterChat: "systems/ffxiv/assets/sfx/ffxiv-full-party.mp3",
+  soundNotificationFFXIV_openSheet: "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
+  soundNotificationFFXIV_closeSheet: "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
+};
+
+function playConfiguredSound(setting) {
+  const src = game.settings.get("ffxiv", setting) || DEFAULT_SOUNDS[setting];
+  if (!game.settings.get("ffxiv", "soundNotificationFFXIV") || !src) return;
+  foundry.audio.AudioHelper.play({ src, volume: 1, autoplay: true, loop: false });
+}
+
 Handlebars.registerHelper("characterTabs", function(settings){
   let items = [
-    { tab: "abilities", label: game.i18n.localize("FFXIV.Abilities.Abilities"), icon: game.settings.get("ffxiv", "imgTabAbilities") },
-    { tab: "attributes", label: game.i18n.localize("FFXIV.Attributes.Attributes"), icon: game.settings.get("ffxiv", "imgTabAttributes") },
-    { tab: "roleplay", label: game.i18n.localize("FFXIV.CharacterSheet.Character"), icon: game.settings.get("ffxiv", "imgTabRoleplay") },
+    { tab: "abilities", label: game.i18n.localize("FFXIV.Abilities.Abilities"), icon: getCharacterTabIcon("imgTabAbilities") },
+    { tab: "attributes", label: game.i18n.localize("FFXIV.Attributes.Attributes"), icon: getCharacterTabIcon("imgTabAttributes") },
+    { tab: "roleplay", label: game.i18n.localize("FFXIV.CharacterSheet.Character"), icon: getCharacterTabIcon("imgTabRoleplay") },
   ];
-  if (settings.showGear) items.push({ tab: "gear", label: game.i18n.localize("FFXIV.CharacterSheet.Gear"), icon: game.settings.get("ffxiv", "imgTabGear") });
-  items.push({ tab: "items", label: game.i18n.localize("FFXIV.CharacterSheet.Inventory"), icon: game.settings.get("ffxiv", "imgTabItems") })
-  items.push({ tab: "companions", label: game.i18n.localize("FFXIV.CharacterSheet.Companions"), icon: game.settings.get("ffxiv", "imgTabCompanions") })
-  items.push({ tab: "settings", label: game.i18n.localize("FFXIV.CharacterSheet.Config"), icon: game.settings.get("ffxiv", "imgTabSettings") })
+  if (settings.showGear) items.push({ tab: "gear", label: game.i18n.localize("FFXIV.CharacterSheet.Gear"), icon: getCharacterTabIcon("imgTabGear") });
+  items.push({ tab: "items", label: game.i18n.localize("FFXIV.CharacterSheet.Inventory"), icon: getCharacterTabIcon("imgTabItems") })
+  items.push({ tab: "companions", label: game.i18n.localize("FFXIV.CharacterSheet.Companions"), icon: getCharacterTabIcon("imgTabCompanions") })
+  items.push({ tab: "settings", label: game.i18n.localize("FFXIV.CharacterSheet.Config"), icon: getCharacterTabIcon("imgTabSettings") })
   return items;
 })
 
@@ -262,7 +338,11 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 
 Hooks.once('ready', function () {
   // Wait to register hotbar drop hook on ready so that modules could register earlier if they want to
-  Hooks.on('hotbarDrop', (bar, data, slot) => createItemMacro(data, slot));
+  Hooks.on('hotbarDrop', (bar, data, slot) => {
+    if (!isFFXIVItemHotbarDrop(data)) return;
+    createItemMacro(data, slot);
+    return false;
+  });
 
   // Color Scheme to use with css variables
   if (game.settings.get("ffxiv","overrideColorScheme")){
@@ -275,7 +355,130 @@ Hooks.once('ready', function () {
     }
   }
 
+  if (game.user.isGM) {
+    migrateLegacyPetTraits();
+  }
+
 });
+
+function hasStringContent(value) {
+  if (value === null || value === undefined) return false;
+  if (typeof value !== "string") return false;
+  const text = value
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+  return text.length > 0;
+}
+
+async function migrateLegacyPetTraits() {
+  for (const pet of game.actors.filter(actor => actor.type === "pet")) {
+    const sourceTraits = pet._source?.system?.traits ?? pet.toObject(false).system?.traits ?? pet.system?.traits;
+    const traits = typeof sourceTraits === "string" ? sourceTraits : "";
+    if (!hasStringContent(traits)) continue;
+    const hasMigrated = pet.items.some(item => item.type === "trait" && item.flags?.ffxiv?.migratedTrait);
+    if (hasMigrated) continue;
+
+    const traitItemData = {
+      name: "Migrated Trait",
+      type: "trait",
+      img: "icons/svg/aura.svg",
+      system: {
+        description: traits,
+        tags: [],
+        activable: false,
+        modifiers: [],
+        source: "",
+        level: 0
+      },
+      flags: {
+        ffxiv: {
+          migratedTrait: true
+        }
+      }
+    };
+
+    try {
+      await pet.createEmbeddedDocuments("Item", [traitItemData]);
+      await pet.update({ "system.traits": "" });
+      debugLog(`FFXIV | Migrated traits for pet ${pet.name}`);
+    } catch (error) {
+      console.error("FFXIV | Pet trait migration failed for", pet.name, error);
+    }
+  }
+}
+
+function getFFXIVTheme() {
+  if (game.settings.get("ffxiv","overrideColorScheme")) return "blue";
+  return game.settings.get('core', 'uiConfig').colorScheme.applications
+    || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+}
+
+function applyFFXIVChatTheme(element) {
+  const chatElement = element instanceof HTMLElement ? element : element?.[0];
+  if (!chatElement) return;
+
+  const theme = getFFXIVTheme();
+  chatElement.classList.add("chat-ffxiv", `${theme}_theme`);
+}
+
+function isFFXIVItemHotbarDrop(data) {
+  if (data?.type !== "Item") return false;
+  return Boolean(data.uuid || (data.actorId && data.itemId));
+}
+
+async function createItemMacro(data, slot) {
+  if (data.type !== "Item") return;
+
+  const uuid = data.uuid || (data.actorId && data.itemId ? `Actor.${data.actorId}.Item.${data.itemId}` : null);
+  if (!uuid) return;
+
+  const item = await fromUuid(uuid);
+  if (!item) return ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.MacroItemMissing"));
+  const folder = await getPlayerMacroFolder(item);
+
+  const command = `const item = await fromUuid("${uuid}");
+if (!item) return ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.MacroItemMissing"));
+return item.roll?.();`;
+
+  let macro = game.macros.find(m => m.name === item.name && m.command === command && m.folder?.id === folder?.id);
+  if (!macro) {
+    macro = await Macro.create({
+      name: item.name,
+      type: "script",
+      img: item.img,
+      command,
+      folder: folder?.id,
+      flags: { ffxiv: { itemUuid: uuid } }
+    });
+  }
+
+  game.user.assignHotbarMacro(macro, slot);
+  return false;
+}
+
+async function getPlayerMacroFolder(item) {
+  const parentFolder = await getOrCreateMacroFolder("Player Macros");
+  const actorName = item.parent?.documentName === "Actor" ? item.parent.name : game.user.character?.name || game.user.name;
+  return getOrCreateMacroFolder(actorName, parentFolder);
+}
+
+async function getOrCreateMacroFolder(name, parent = null) {
+  const parentId = parent?.id ?? null;
+  const existing = game.folders.find(folder =>
+    folder.type === "Macro"
+    && folder.name === name
+    && (folder.folder?.id ?? folder.parent ?? null) === parentId
+  );
+  if (existing) return existing;
+
+  return Folder.create({
+    name,
+    type: "Macro",
+    folder: parentId
+  });
+}
 
 /* -------------------------------------------- */
 /*  Render Actor Sheet Hook                     */
@@ -283,6 +486,7 @@ Hooks.once('ready', function () {
 
 let isDraggingItem = false;
 Hooks.on('renderActorSheet', async (app, html, data) => {
+  if (app instanceof FFXIVActorSheet) return;
   const actor = app.actor;
   const isOwner = actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
   if (isDraggingItem && !isOwner) return;
@@ -330,6 +534,7 @@ Hooks.on('renderActorSheet', async (app, html, data) => {
 let draggedItem = null;
 
 Hooks.on('renderActorSheet', (app, html, data) => {
+  if (app instanceof FFXIVActorSheet) return;
   const actor = app.actor;
   const isOwner = actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
   if(!isOwner) return;
@@ -396,14 +601,7 @@ Hooks.on('renderActorSheet', (app, html, data) => {
       await draggedItemData.update({ 'system.position': targetPosition });
     }
 
-    if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_moveItem')){
-      foundry.audio.AudioHelper.play({
-        src: game.settings.get('ffxiv', 'soundNotificationFFxiv_moveItem'),
-        volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-        autoplay: true,
-        loop: false
-      });
-    }
+    playConfiguredSound("soundNotificationFFXIV_moveItem");
 
     // Re-render the inventory after dropping
     app.render();
@@ -437,165 +635,874 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
 Hooks.on("userConnected", (player, login, data) => {
   if(login && !game.paused){ //If the game is paused or the player logouts, do not play anything
     ui.notifications.info(game.i18n.format("FFXIV.Notifications.NewPlayer", {playerName: player.name}));
-    if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_enterChat')){
-      foundry.audio.AudioHelper.play({
-        src: game.settings.get('ffxiv', 'soundNotificationFFxiv_enterChat'),
-        volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-        autoplay: true,
-        loop: false
-      });
-    }
+    playConfiguredSound("soundNotificationFFXIV_enterChat");
   }
 });
 
 Hooks.on("renderActorSheet", (app, html, data) => {
-  if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_openSheet')){
-    foundry.audio.AudioHelper.play({
-      src: game.settings.get('ffxiv', 'soundNotificationFFxiv_openSheet'),
-      volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-      autoplay: true,
-      loop: false
-    });
-  }
+  if (app instanceof FFXIVActorSheet) return;
+  playConfiguredSound("soundNotificationFFXIV_openSheet");
   const actorSheet = app.actor.sheet;
   html.on('click', '.abilities-sub-tabs .sub-tab', actorSheet._displayAbilityTab.bind(actorSheet))
   html.on('click', '.companions-sub-tabs .companions-sub-tab', actorSheet._displayCompanionTab.bind(actorSheet))
 
 });
 
-Hooks.on("closeActorSheet", (hookEvent, html) => {
-  if(game.settings.get('ffxiv', 'soundNotificationFFxiv') && game.settings.get('ffxiv', 'soundNotificationFFxiv_closeSheet')){
-    foundry.audio.AudioHelper.play({
-      src: game.settings.get('ffxiv', 'soundNotificationFFxiv_closeSheet'),
-      volume: game.settings.get('ffxiv', 'soundNotificationFFxivVolume'),
-      autoplay: true,
-      loop: false
-    });
+Hooks.on("updateItem", (item, diff, options, userId) => {
+  refreshOwnedItemActorSheets(item, { preserveTopWindow: true })
+    .catch(err => debugError("FFXIV | Failed to refresh actor sheet after item update", err));
+});
+
+Hooks.on("closeItemSheet", (app) => {
+  refreshOwnedItemActorSheets(app?.item)
+    .catch(err => debugError("FFXIV | Failed to refresh actor sheet after item sheet close", err));
+});
+
+async function refreshOwnedItemActorSheets(item, { preserveTopWindow = false } = {}) {
+  if (!item?.parent || item.parent.documentName !== "Actor") return;
+
+  const sheets = new Set();
+  if (item.parent.sheet?.rendered) sheets.add(item.parent.sheet);
+  for (const sheet of Object.values(ui.windows)) {
+    if (sheet instanceof FFXIVActorSheet && sheet.actor?.id === item.parent.id && sheet.rendered) {
+      sheets.add(sheet);
+    }
   }
+  if (!sheets.size) return;
+
+  const restoreTopWindow = preserveTopWindow ? captureTopWindowRestore() : null;
+  for (const sheet of sheets) {
+    await sheet.render({ force: true, focus: false });
+  }
+  restoreTopWindow?.();
+}
+
+function captureTopWindowRestore() {
+  const topElement = getTopApplicationElement();
+  if (!topElement) return null;
+
+  return () => {
+    if (!document.body.contains(topElement)) return;
+    const highestZIndex = getApplicationElements()
+      .reduce((highest, element) => Math.max(highest, getZIndex(element)), 0);
+    topElement.style.zIndex = String(highestZIndex + 1);
+  };
+}
+
+function getTopApplicationElement() {
+  return getApplicationElements()
+    .sort((a, b) => getZIndex(b) - getZIndex(a))[0] ?? null;
+}
+
+function getApplicationElements() {
+  const apps = [
+    ...Object.values(ui.windows ?? {}),
+    ...Array.from(foundry.applications.instances?.values?.() ?? []),
+  ];
+
+  return [...new Set(apps)]
+    .map(getApplicationElement)
+    .filter(element => element && document.body.contains(element));
+}
+
+function getApplicationElement(app) {
+  if (app?.element instanceof HTMLElement) return app.element;
+  if (app?.element?.[0] instanceof HTMLElement) return app.element[0];
+  if (app?.id) return document.getElementById(app.id);
+  if (Number.isFinite(app?.appId)) return document.querySelector(`[data-appid="${app.appId}"]`);
+  return null;
+}
+
+function getZIndex(element) {
+  const zIndex = Number.parseInt(getComputedStyle(element).zIndex, 10);
+  return Number.isFinite(zIndex) ? zIndex : 0;
+}
+
+Hooks.on("closeActorSheet", (hookEvent, html) => {
+  if (hookEvent instanceof FFXIVActorSheet) return;
+  playConfiguredSound("soundNotificationFFXIV_closeSheet");
 })
 
 Hooks.on("renderChatLog", (app, html) => {
-  let theme;
-  if (game.settings.get("ffxiv","overrideColorScheme")){
-    theme = "blue"
-  }else{
-    if (game.settings.get('core', 'uiConfig').colorScheme.applications){
-      theme = game.settings.get('core', 'uiConfig').colorScheme.applications
-    }else{
-      theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }
-  }
-  $("section#chat.sidebar-tab").addClass("chat-ffxiv").addClass(theme+'_theme')
+  applyFFXIVChatTheme(html);
+  document.querySelector("section#chat.sidebar-tab")?.classList.add("chat-ffxiv", `${getFFXIVTheme()}_theme`);
 });
+
+Hooks.on("renderTokenHUD", (app, html) => {
+  const tokenDocument = app.document ?? app.object?.document;
+  if (!["character", "npc"].includes(tokenDocument?.actor?.type)) return;
+
+  const element = getHookHTMLElement(html, app);
+  if (!element) return;
+
+  for (const barName of ["bar1", "bar2"]) {
+    const attribute = tokenDocument[barName]?.attribute;
+    if (!["health", "barrier"].includes(attribute)) continue;
+    const input = element.querySelector(`input[name="${barName}"]`);
+    if (!input) continue;
+    input.disabled = false;
+    input.removeAttribute("disabled");
+  }
+});
+
+function getHookHTMLElement(html, app) {
+  return html instanceof HTMLElement ? html
+    : html?.[0] instanceof HTMLElement ? html[0]
+    : html?.element instanceof HTMLElement ? html.element
+    : html?.element?.[0] instanceof HTMLElement ? html.element[0]
+    : app?.element instanceof HTMLElement ? app.element
+    : app?.element?.[0] instanceof HTMLElement ? app.element[0]
+    : null;
+}
+
+const FFXIV_MARKER_SOCKET_TYPE = "placeMarkerTile";
+const markerDialogs = new WeakSet();
 
 Hooks.on("getSceneControlButtons", (controls) => {
   if (!controls.tiles?.tools) return;
+  controls.tiles.visible = true;
 
-  controls.tiles.tools.ffxivMarker = {
+  const markerTool = {
     name: "ffxivMarker",
     title: game.i18n.localize("FFXIV.MarkerPlacement.Title"),
     icon: "fas fa-map-marker-alt",
-    visible: game.user.isGM,
+    visible: true,
     button: true,
-    onChange: async (event, active) => {
+    onChange: async (_event, active) => {
       if (!active) return;
-
-      const ASSET_GRID_SIZE = 300;
-      const gridSize = canvas.grid.size;
-
-      if (!canvas.scene) {
-        ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"));
-        return;
-      }
-
-      ui.notifications.info(game.i18n.localize("FFXIV.MarkerPlacement.Instructions.ClickToPlace"));
-
-      const getClick = () =>
-        new Promise((resolve) => {
-          const handler = (event) => {
-            canvas.stage.off("mousedown", handler);
-            const pos = event.data.getLocalPosition(canvas.stage);
-            const snappedX = Math.floor(pos.x / gridSize) * gridSize;
-            const snappedY = Math.floor(pos.y / gridSize) * gridSize;
-            resolve({ x: snappedX, y: snappedY });
-          };
-          canvas.stage.once("mousedown", handler);
-        });
-
-      const { x, y } = await getClick();
-
-      const iconPackModule = game.modules.get("ffxiv-ttrpg-icons-pack");
-      const defaultDirectory = iconPackModule?.active
-        ? "modules/ffxiv-ttrpg-icons-pack/ffxiv/markers"
-        : "";
-
-      const FilePickerImpl = foundry.applications.apps.FilePicker.implementation;
-
-      new FilePickerImpl({
-        type: "image",
-        current: defaultDirectory,
-        callback: async (path) => {
-          try {
-            const tex = await foundry.canvas.loadTexture(path);
-            const nativeWidth = tex.width;
-            const nativeHeight = tex.height;
-
-            const widthGrids = Math.round(nativeWidth / ASSET_GRID_SIZE);
-            const heightGrids = Math.round(nativeHeight / ASSET_GRID_SIZE);
-            const tileWidth = widthGrids * gridSize;
-            const tileHeight = heightGrids * gridSize;
-
-            new foundry.applications.api.DialogV2({
-              window: { title: game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Title") },
-              content: `
-                <p>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Description")}</p>
-                <form>
-                  <label><input type="radio" name="marker" value="enemy" checked>
-                    ${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Enemy")}
-                  </label><br/>
-                  <label><input type="radio" name="marker" value="ally">
-                    ${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Ally")}
-                  </label><br/>
-                </form>
-              `,
-              buttons: [{
-                action: "place",
-                label: game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Button.Place"),
-                icon: "fas fa-check",
-                default: true,
-                callback: (event, button) => button.form.elements.marker.value
-              }],
-              submit: async (role) => {
-                const isAlly = role === "ally";
-                const tintColor = isAlly ? "#00ccff" : null;
-
-                const tileData = {
-                  texture: { src: path, tint: tintColor },
-                  x,
-                  y,
-                  width: tileWidth,
-                  height: tileHeight,
-                  z: 100,
-                  rotation: 0,
-                  hidden: false,
-                  locked: false
-                };
-
-                const result = await canvas.scene.createEmbeddedDocuments("Tile", [tileData]);
-                if (!result.length) throw new Error("No tile was created.");
-              }
-            }).render(true);
-
-          } catch (err) {
-            debugError("Tile creation failed:", err);
-            ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.TileFailed"));
-          }
-        }
-      }).render(true);
+      await openMarkerPlacementTool();
     }
   };
+  controls.tiles.tools = insertSceneToolAfterSelect(controls.tiles.tools, "ffxivMarker", markerTool);
 });
 
+function insertSceneToolAfterSelect(tools, toolKey, tool) {
+  const entries = Object.entries(tools).filter(([key]) => key !== toolKey);
+  const selectIndex = entries.findIndex(([key, value]) => {
+    const name = value?.name ?? key;
+    return name === "select" || name === "selectTile" || name === "tilesSelect";
+  });
+  const insertIndex = selectIndex >= 0 ? selectIndex + 1 : entries.length;
+  entries.splice(insertIndex, 0, [toolKey, tool]);
+  return Object.fromEntries(entries);
+}
+
+async function openMarkerPlacementTool() {
+  if (!canvas.scene) {
+    ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"));
+    return;
+  }
+
+  const marker = await configureMarkerShape();
+  if (!marker) return;
+
+  const gridSize = canvas.grid.size;
+  const rendered = renderMarkerDataUrl(marker, gridSize);
+  if (!rendered) {
+    ui.notifications.warn(game.i18n.localize("FFXIV.MarkerPlacement.Errors.EmptyShape"));
+    return;
+  }
+
+  try {
+    if (marker.targeted) {
+      ui.notifications.info(game.i18n.localize("FFXIV.MarkerPlacement.Instructions.ClickToken"));
+      const target = await previewTargetedMarkerPlacement(rendered);
+      if (!target) return;
+      await requestMarkerTileCreation({
+        texture: createMarkerTileTexture(rendered.src),
+        x: target.x,
+        y: target.y,
+        width: rendered.width,
+        height: rendered.height,
+        z: 100,
+        rotation: 0,
+        hidden: false,
+        locked: false,
+        flags: {
+          ffxiv: {
+            markerPlacement: {
+              mode: marker.mode,
+              targeted: true,
+              tokenId: target.token.document.id
+            }
+          }
+        }
+      });
+      return;
+    }
+
+    ui.notifications.info(game.i18n.localize("FFXIV.MarkerPlacement.Instructions.ClickToPlace"));
+    const position = await previewMarkerPlacement(rendered);
+    if (!position) return;
+    await requestMarkerTileCreation({
+      texture: createMarkerTileTexture(rendered.src),
+      x: position.x,
+      y: position.y,
+      width: rendered.width,
+      height: rendered.height,
+      z: 100,
+      rotation: 0,
+      hidden: false,
+      locked: false,
+      flags: {
+        ffxiv: {
+          markerPlacement: {
+            mode: marker.mode,
+            targeted: false
+          }
+        }
+      }
+    });
+  } catch (err) {
+    debugError("Marker placement failed:", err);
+    ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.TileFailed"));
+  }
+}
+
+async function requestMarkerTileCreation(tileData) {
+  if (game.user.isGM) return createMarkerTileFromRequest({
+    sceneId: canvas.scene.id,
+    tileData
+  });
+
+  const gm = game.users.find(user => user.active && user.isGM);
+  if (!gm) {
+    ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoGM"));
+    return null;
+  }
+
+  game.socket.emit("system.ffxiv", {
+    type: FFXIV_MARKER_SOCKET_TYPE,
+    userName: game.user.name,
+    gmUserId: gm.id,
+    data: {
+      sceneId: canvas.scene.id,
+      tileData
+    }
+  });
+  ui.notifications.info(game.i18n.localize("FFXIV.MarkerPlacement.Instructions.RequestSent"));
+  return null;
+}
+
+async function createMarkerTileFromRequest({ sceneId, tileData }) {
+  return createMarkerTile(sceneId, foundry.utils.deepClone(tileData));
+}
+
+function createMarkerTileTexture(src) {
+  return {
+    src,
+    anchorX: 0,
+    anchorY: 0,
+    scaleX: 1,
+    scaleY: 1
+  };
+}
+
+async function createMarkerTile(sceneId, tileData) {
+  const scene = game.scenes.get(sceneId);
+  if (!scene) throw new Error(`Scene ${sceneId} not found.`);
+  const result = await scene.createEmbeddedDocuments("Tile", [tileData]);
+  return result[0] ?? null;
+}
+
+async function configureMarkerShape() {
+  const size = 15;
+  const center = Math.floor(size / 2);
+  const state = Array.from({ length: size }, () => Array.from({ length: size }, () => false));
+  for (let y = center - 2; y <= center + 2; y++) {
+    for (let x = center - 2; x <= center + 2; x++) state[y][x] = true;
+  }
+  let selection = {
+    state,
+    opacity: 0.8,
+    type: "enemy",
+    mode: "standard",
+    targeted: false
+  };
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = `
+    <style>
+      .ffxiv-marker-config { display: flex; gap: 16px; overflow-x: auto; }
+      .ffxiv-marker-panel { display: flex; flex-direction: column; gap: 8px; }
+      .ffxiv-marker-row { display: flex; align-items: center; gap: 8px; }
+      .ffxiv-marker-grid { display: grid; grid-template-columns: repeat(${size}, 24px); }
+      .ffxiv-marker-cell { width: 24px; height: 24px; border: 1px solid #888; background: #222; cursor: pointer; }
+      .ffxiv-marker-cell.selected.enemy { background: orange; }
+      .ffxiv-marker-cell.selected.allied { background: #66ffff; }
+      .ffxiv-marker-presets { display: flex; flex-direction: column; gap: 8px; }
+      .ffxiv-marker-preset-row { display: flex; gap: 8px; }
+	      .ffxiv-marker-preview { overflow: hidden; max-width: 260px; max-height: 260px; border: 0; background: transparent; width: fit-content; height: fit-content; padding: 6px; }
+      .ffxiv-marker-preview canvas { display: block; }
+    </style>
+    <div class="ffxiv-marker-config" style="display: flex; gap: 16px; overflow-x: auto; align-items: flex-start;">
+      <div class="ffxiv-marker-panel" style="display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto;">
+        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
+          <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Source")}</label>
+          <select id="ffxiv-marker-type">
+            <option value="enemy" selected>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Enemy")}</option>
+            <option value="allied">${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Ally")}</option>
+          </select>
+        </div>
+        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
+          <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Opacity")}</label>
+          <input type="range" id="ffxiv-marker-opacity" min="0" max="100" value="80">
+          <span id="ffxiv-marker-opacity-value">80%</span>
+        </div>
+        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
+          <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Mode")}</label>
+          <select id="ffxiv-marker-mode">
+            <option value="standard" selected>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Standard")}</option>
+            <option value="stack">${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Stack")}</option>
+            <option value="knockback">${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Knockback")}</option>
+            <option value="tankbuster">${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Tankbuster")}</option>
+          </select>
+        </div>
+        <label class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="ffxiv-marker-targeted">
+          ${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Targeted")}
+        </label>
+        <div class="ffxiv-marker-grid" style="display: grid; grid-template-columns: repeat(${size}, 24px); flex: 0 0 auto;">
+          ${state.flatMap((row, y) => row.map((_on, x) =>
+            `<div class="ffxiv-marker-cell" data-x="${x}" data-y="${y}" style="width: 24px; height: 24px; box-sizing: border-box; border: 1px solid #888; background: ${state[y][x] ? "orange" : "#222"}; cursor: pointer;"></div>`
+          )).join("")}
+        </div>
+      </div>
+      <div class="ffxiv-marker-panel" style="display: flex; flex-direction: column; gap: 8px; flex: 0 0 260px;">
+        <strong>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Presets")}</strong>
+	        <div class="ffxiv-marker-presets" style="display: flex; flex-direction: column; gap: 8px;">
+	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
+	            <button type="button" data-span="1" data-mode="standard">Standard 3x3</button>
+	            <button type="button" data-span="2" data-mode="standard">Standard 5x5</button>
+	          </div>
+	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
+	            <button type="button" data-circle-span="2" data-mode="standard">Circle 5x5</button>
+	            <button type="button" data-circle-span="3" data-mode="standard">Circle 7x7</button>
+	          </div>
+	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
+	            <button type="button" data-span="1" data-mode="stack">Stack 3x3</button>
+	            <button type="button" data-span="2" data-mode="stack">Stack 5x5</button>
+	          </div>
+	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
+	            <button type="button" data-span="1" data-mode="knockback">Knockback 3x3</button>
+	            <button type="button" data-span="2" data-mode="knockback">Knockback 5x5</button>
+	          </div>
+	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
+	            <button type="button" data-span="1" data-mode="tankbuster">Tank Buster 3x3</button>
+	            <button type="button" data-span="2" data-mode="tankbuster">Tank Buster 5x5</button>
+	          </div>
+        </div>
+        <strong>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Preview")}</strong>
+	        <div class="ffxiv-marker-preview" style="overflow: hidden; max-width: 260px; max-height: 260px; border: 0; background: transparent; width: fit-content; height: fit-content; padding: 6px;"><canvas id="ffxiv-marker-preview" style="display: block;"></canvas></div>
+      </div>
+    </div>`;
+
+  initializeMarkerShapeDialog(wrapper, null, state, center, selectionValue => {
+    selection = selectionValue;
+  });
+  const confirmed = await foundry.applications.api.DialogV2.wait({
+    window: { title: game.i18n.localize("FFXIV.MarkerPlacement.Title"), resizable: true },
+    position: { width: 760 },
+    content: wrapper,
+    buttons: [
+      { action: "create", label: game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Button.Place"), icon: "fas fa-check", default: true, callback: () => true },
+      { action: "cancel", label: "Cancel", icon: "fas fa-times", callback: () => false }
+    ],
+    render: (app, html) => {
+      initializeMarkerShapeDialog(app, html, state, center, selectionValue => {
+        selection = selectionValue;
+      });
+    }
+  });
+
+  if (!confirmed) return null;
+  return selection;
+}
+
+function initializeMarkerShapeDialog(app, html, state, center, setSelection, dialogKey) {
+  const element = getDialogElement(app, html, dialogKey);
+  if (!element) return false;
+  if (markerDialogs.has(element)) return true;
+  markerDialogs.add(element);
+  const cells = Array.from(element.querySelectorAll(".ffxiv-marker-cell"));
+  const type = element.querySelector("#ffxiv-marker-type");
+  const opacity = element.querySelector("#ffxiv-marker-opacity");
+  const opacityValue = element.querySelector("#ffxiv-marker-opacity-value");
+  const mode = element.querySelector("#ffxiv-marker-mode");
+	  const targeted = element.querySelector("#ffxiv-marker-targeted");
+	  const preview = element.querySelector("#ffxiv-marker-preview");
+	  const previewContainer = preview.closest(".ffxiv-marker-preview");
+  if (!cells.length || !type || !opacity || !opacityValue || !mode || !targeted || !preview) {
+    markerDialogs.delete(element);
+    return false;
+  }
+  const updateSelection = () => {
+    setSelection({
+      state,
+      opacity: Number(opacity.value) / 100,
+      type: type.value,
+      mode: mode.value,
+      targeted: targeted.checked
+    });
+  };
+
+  const updateCells = () => {
+    for (const cell of cells) {
+      const on = state[Number(cell.dataset.y)][Number(cell.dataset.x)];
+      cell.classList.toggle("selected", on);
+      cell.classList.toggle("enemy", on && type.value === "enemy");
+      cell.classList.toggle("allied", on && type.value === "allied");
+      cell.style.background = !on ? "#222" : type.value === "enemy" ? "orange" : "#66ffff";
+    }
+  };
+  const updatePreview = () => {
+    updateSelection();
+    const rendered = renderMarkerDataUrl({
+      state,
+      opacity: Number(opacity.value) / 100,
+      type: type.value,
+      mode: mode.value,
+      targeted: targeted.checked
+    }, Math.max(24, Math.round(canvas.grid.size / 3)));
+	    if (!rendered) {
+	      preview.width = 1;
+	      preview.height = 1;
+	    if (previewContainer) {
+	      previewContainer.style.width = "fit-content";
+	      previewContainer.style.height = "fit-content";
+	    }
+	      return;
+	    }
+	    preview.width = rendered.width;
+	    preview.height = rendered.height;
+	    const displayWidth = Math.min(220, rendered.width);
+	    const displayHeight = rendered.height * (displayWidth / rendered.width);
+	    preview.style.width = `${displayWidth}px`;
+	    preview.style.height = `${displayHeight}px`;
+	    if (previewContainer) {
+	      previewContainer.style.width = `${displayWidth + 12}px`;
+	      previewContainer.style.height = `${Math.min(260, displayHeight + 12)}px`;
+	      previewContainer.style.background = "transparent";
+	      previewContainer.style.border = "0";
+	      previewContainer.style.overflow = "hidden";
+	      previewContainer.style.padding = "6px";
+	    }
+	    const ctx = preview.getContext("2d");
+	    ctx.clearRect(0, 0, preview.width, preview.height);
+	    const image = new Image();
+	    image.onload = () => {
+	      ctx.clearRect(0, 0, preview.width, preview.height);
+	      ctx.drawImage(image, 0, 0);
+	    };
+	    image.src = rendered.src;
+	  };
+	  const configurePreset = (span, presetMode) => {
+	    for (const row of state) row.fill(false);
+	    for (let y = center - span; y <= center + span; y++) {
+	      for (let x = center - span; x <= center + span; x++) state[y][x] = true;
+	    }
+	    mode.value = presetMode;
+	    type.disabled = presetMode === "tankbuster";
+	    updateCells();
+	    updatePreview();
+	  };
+	  const configureCirclePreset = (span, presetMode) => {
+	    for (const row of state) row.fill(false);
+	    if (span === 1) {
+	      state[center][center] = true;
+	      state[center - 1][center] = true;
+	      state[center + 1][center] = true;
+	      state[center][center - 1] = true;
+	      state[center][center + 1] = true;
+	      mode.value = presetMode;
+	      type.disabled = presetMode === "tankbuster";
+	      updateCells();
+	      updatePreview();
+	      return;
+	    }
+	    const radius = span + 0.5;
+	    for (let y = center - span; y <= center + span; y++) {
+	      for (let x = center - span; x <= center + span; x++) {
+	        state[y][x] = Math.hypot(x - center, y - center) < radius;
+	      }
+	    }
+	    mode.value = presetMode;
+	    type.disabled = presetMode === "tankbuster";
+	    updateCells();
+	    updatePreview();
+	  };
+
+  let dragging = false;
+  let initial = false;
+  const toggleCell = cell => {
+    const x = Number(cell.dataset.x);
+    const y = Number(cell.dataset.y);
+    state[y][x] = !state[y][x];
+    updateCells();
+    updatePreview();
+  };
+
+  for (const cell of cells) {
+    cell.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragging = true;
+      initial = state[Number(cell.dataset.y)][Number(cell.dataset.x)];
+      toggleCell(cell);
+    });
+    cell.addEventListener("pointerenter", () => {
+      if (!dragging) return;
+      if (state[Number(cell.dataset.y)][Number(cell.dataset.x)] === initial) toggleCell(cell);
+    });
+  }
+  window.addEventListener("pointerup", () => dragging = false, { signal: html?.options?.signal });
+	  element.querySelectorAll("[data-span][data-mode]").forEach(button => {
+	    button.addEventListener("click", event => {
+	      event.preventDefault();
+	      configurePreset(Number(button.dataset.span), button.dataset.mode);
+	    });
+	  });
+	  element.querySelectorAll("[data-circle-span][data-mode]").forEach(button => {
+	    button.addEventListener("click", event => {
+	      event.preventDefault();
+	      configureCirclePreset(Number(button.dataset.circleSpan), button.dataset.mode);
+	    });
+	  });
+  opacity.addEventListener("input", () => {
+    opacityValue.textContent = `${opacity.value}%`;
+    updatePreview();
+  });
+  type.addEventListener("change", () => {
+    updateCells();
+    updatePreview();
+  });
+  mode.addEventListener("change", () => {
+    type.disabled = mode.value === "tankbuster";
+    updatePreview();
+  });
+  targeted.addEventListener("change", updatePreview);
+  updateCells();
+  updatePreview();
+  return true;
+}
+
+function getDialogElement(app, html, dialogKey) {
+  const keyedElement = dialogKey ? document.querySelector(`[data-ffxiv-marker-dialog="${dialogKey}"]`) : null;
+  const visibleMarkerElements = Array.from(document.querySelectorAll(".ffxiv-marker-config"))
+    .filter(element => element.offsetParent !== null);
+  const candidates = [
+    keyedElement,
+    html,
+    html?.element,
+    html?.element?.[0],
+    html?.target,
+    html?.currentTarget,
+    html?.[0],
+    app,
+    app?.element,
+    app?.element?.[0],
+    app?.target,
+    app?.currentTarget,
+    app?.[0],
+    visibleMarkerElements.at(-1),
+    visibleMarkerElements.at(-1)?.closest(".app, .application, .window-app, .dialog")
+  ];
+
+  return candidates.find(element =>
+    element instanceof HTMLElement && element.querySelector?.("#ffxiv-marker-preview")
+  ) ?? null;
+}
+
+function renderMarkerDataUrl(marker, gridSize) {
+  const bounds = getMarkerBounds(marker.state);
+  if (!bounds) return null;
+  const cropped = marker.state.slice(bounds.minY, bounds.maxY + 1)
+    .map(row => row.slice(bounds.minX, bounds.maxX + 1));
+  const widthCells = cropped[0].length;
+  const heightCells = cropped.length;
+  const width = widthCells * gridSize;
+  const height = heightCells * gridSize;
+  const canvasElement = document.createElement("canvas");
+  canvasElement.width = width;
+  canvasElement.height = height;
+  const ctx = canvasElement.getContext("2d");
+  ctx.clearRect(0, 0, width, height);
+  const isOn = (x, y) => y >= 0 && y < heightCells && x >= 0 && x < widthCells && cropped[y][x];
+  const baseColor = marker.mode === "tankbuster" ? "firebrick" : marker.type === "enemy" ? "orange" : "#66ffff";
+
+  ctx.globalAlpha = marker.opacity;
+  ctx.fillStyle = baseColor;
+  for (let y = 0; y < heightCells; y++) {
+    for (let x = 0; x < widthCells; x++) {
+      if (!cropped[y][x]) continue;
+      drawMarkerCell(ctx, x * gridSize, y * gridSize, gridSize, [
+        isOn(x, y - 1),
+        isOn(x - 1, y),
+        isOn(x + 1, y),
+        isOn(x, y + 1)
+      ]);
+      ctx.fill();
+    }
+  }
+
+  drawMarkerOverlays(ctx, cropped, width, height, gridSize, marker);
+  return { src: canvasElement.toDataURL("image/webp"), width, height, widthCells, heightCells };
+}
+
+function getMarkerBounds(state) {
+  let minX = state[0].length;
+  let minY = state.length;
+  let maxX = -1;
+  let maxY = -1;
+  state.forEach((row, y) => row.forEach((value, x) => {
+    if (!value) return;
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }));
+  return maxX < 0 ? null : { minX, minY, maxX, maxY };
+}
+
+function drawMarkerCell(ctx, x, y, size, [top, left, right, bottom]) {
+  const radius = size / 4;
+  ctx.beginPath();
+  ctx.moveTo(x + (top || left ? 0 : radius), y);
+  if (!top && !left) ctx.arcTo(x, y, x, y + radius, radius);
+  ctx.lineTo(x, y + (bottom || left ? size : size - radius));
+  if (!bottom && !left) ctx.arcTo(x, y + size, x + radius, y + size, radius);
+  ctx.lineTo(x + (bottom || right ? size : size - radius), y + size);
+  if (!bottom && !right) ctx.arcTo(x + size, y + size, x + size, y + size - radius, radius);
+  ctx.lineTo(x + size, y + (top || right ? 0 : radius));
+  if (!top && !right) ctx.arcTo(x + size, y, x + size - radius, y, radius);
+  ctx.closePath();
+}
+
+function drawMarkerOverlays(ctx, cropped, width, height, gridSize, marker) {
+  const widthCells = cropped[0].length;
+  const heightCells = cropped.length;
+  const centerX = Math.floor(widthCells / 2);
+  const centerY = Math.floor(heightCells / 2);
+
+  if (marker.mode === "stack") {
+    for (const { dx, dy } of [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 }]) {
+      for (let step = 1; step <= 2; step++) {
+        const x = centerX + dx * step;
+        const y = centerY + dy * step;
+        if (!cropped[y]?.[x]) break;
+        drawMarkerArrow(ctx, x * gridSize + gridSize / 2, y * gridSize + gridSize / 2, width / 2, height / 2, gridSize * 0.4, "yellow", step === 1 ? marker.opacity : marker.opacity * 0.5, true);
+      }
+    }
+  }
+
+  if (marker.mode === "knockback") {
+    for (let y = 0; y < heightCells; y++) {
+      for (let x = 0; x < widthCells; x++) {
+        if (!cropped[y][x] || (x === centerX && y === centerY)) continue;
+        drawMarkerArrow(ctx, x * gridSize + gridSize / 2, y * gridSize + gridSize / 2, width / 2, height / 2, gridSize * 0.6, "#8b4513", marker.opacity * 0.5, false);
+      }
+    }
+  }
+
+  if (marker.targeted && cropped[centerY - 1]?.[centerX]) {
+    const cx = centerX * gridSize + gridSize / 2;
+    const cy = (centerY - 1) * gridSize + gridSize / 2;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - gridSize * 0.4);
+    ctx.lineTo(cx + gridSize * 0.2, cy);
+    ctx.lineTo(cx, cy + gridSize * 0.4);
+    ctx.lineTo(cx - gridSize * 0.2, cy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth = Math.max(2, gridSize * 0.03);
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawMarkerArrow(ctx, tileX, tileY, originX, originY, length, color, alpha, inward) {
+  const dx = inward ? originX - tileX : tileX - originX;
+  const dy = inward ? originY - tileY : tileY - originY;
+  const distance = Math.hypot(dx, dy);
+  if (!distance) return;
+  const ux = dx / distance;
+  const uy = dy / distance;
+  const px = -uy;
+  const py = ux;
+  const halfLength = length / 2;
+  const tipX = tileX + ux * halfLength;
+  const tipY = tileY + uy * halfLength;
+  const baseX = tileX - ux * halfLength;
+  const baseY = tileY - uy * halfLength;
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(baseX + px * length * 0.5, baseY + py * length * 0.5);
+  ctx.lineTo(baseX - px * length * 0.5, baseY - py * length * 0.5);
+  ctx.lineTo(tipX, tipY);
+  ctx.closePath();
+  ctx.fill();
+}
+
+async function previewMarkerPlacement(rendered) {
+  const sprite = await createMarkerPreviewSprite(rendered);
+  sprite.width = rendered.width;
+  sprite.height = rendered.height;
+  sprite.alpha = 0.65;
+  sprite.eventMode = "none";
+  canvas.stage.addChild(sprite);
+
+  const snap = event => {
+    const gridSize = canvas.grid.size;
+    const pos = getCanvasEventPosition(event);
+    const cellX = Math.floor(pos.x / gridSize);
+    const cellY = Math.floor(pos.y / gridSize);
+    sprite.x = (cellX - Math.floor(rendered.widthCells / 2)) * gridSize;
+    sprite.y = (cellY - Math.floor(rendered.heightCells / 2)) * gridSize;
+    return { x: sprite.x, y: sprite.y };
+  };
+
+  return new Promise(resolve => {
+    const cleanup = () => {
+      canvas.stage.off("pointermove", onMove);
+      canvas.stage.off("pointerdown", onClick);
+      canvas.stage.off("rightdown", onCancel);
+      canvas.stage.removeChild(sprite);
+      sprite.destroy({ children: true });
+    };
+    const onMove = event => snap(event);
+    const onClick = event => {
+      const position = snap(event);
+      cleanup();
+      resolve(position);
+    };
+    const onCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+    canvas.stage.on("pointermove", onMove);
+    canvas.stage.once("pointerdown", onClick);
+    canvas.stage.once("rightdown", onCancel);
+  });
+}
+
+async function previewTargetedMarkerPlacement(rendered) {
+  const sprite = await createMarkerPreviewSprite(rendered);
+  sprite.width = rendered.width;
+  sprite.height = rendered.height;
+  sprite.alpha = 0.65;
+  sprite.eventMode = "none";
+  sprite.visible = false;
+  canvas.stage.addChild(sprite);
+
+  const positionForEvent = event => {
+    const pos = getCanvasEventPosition(event);
+    const token = canvas.tokens.placeables.find(placeable =>
+      pos.x >= placeable.x && pos.x <= placeable.x + placeable.w
+      && pos.y >= placeable.y && pos.y <= placeable.y + placeable.h
+    );
+    if (token) {
+      sprite.visible = true;
+      sprite.x = token.x + token.w / 2 - rendered.width / 2;
+      sprite.y = token.y + token.h / 2 - rendered.height / 2;
+      return { token, x: sprite.x, y: sprite.y };
+    }
+    sprite.visible = false;
+    return null;
+  };
+
+  return new Promise(resolve => {
+    const cleanup = () => {
+      canvas.stage.off("pointermove", onMove);
+      canvas.stage.off("pointerdown", onClick);
+      canvas.stage.off("rightdown", onCancel);
+      canvas.stage.removeChild(sprite);
+      sprite.destroy({ children: true });
+    };
+    const onMove = event => positionForEvent(event);
+    const onClick = event => {
+      const target = positionForEvent(event);
+      if (!target) return;
+      cleanup();
+      resolve(target);
+    };
+    const onCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+    canvas.stage.on("pointermove", onMove);
+    canvas.stage.once("pointerdown", onClick);
+    canvas.stage.once("rightdown", onCancel);
+  });
+}
+
+async function createMarkerPreviewSprite(rendered) {
+  const texture = PIXI.Texture.fromURL
+    ? await PIXI.Texture.fromURL(rendered.src)
+    : PIXI.Texture.from(rendered.src);
+  return new PIXI.Sprite(texture);
+}
+
+function getCanvasEventPosition(event) {
+  if (event.data?.getLocalPosition) return event.data.getLocalPosition(canvas.stage);
+  if (event.getLocalPosition) return event.getLocalPosition(canvas.stage);
+  if (event.global) return canvas.stage.worldTransform.applyInverse(event.global);
+  return canvas.mousePosition;
+}
+
+Hooks.on("moveToken", (tokenDocument, movement) => {
+  if (!game.user.isGM) return;
+  const destination = movement?.destination;
+  if (!destination) return;
+  updateTargetedMarkersForToken(tokenDocument, destination);
+});
+
+Hooks.on("updateToken", (tokenDocument, changes) => {
+  if (!game.user.isGM) return;
+  if (!("width" in changes || "height" in changes) || "x" in changes || "y" in changes) return;
+  updateTargetedMarkersForToken(tokenDocument, tokenDocument);
+});
+
+function updateTargetedMarkersForToken(tokenDocument, tokenPosition) {
+  const scene = tokenDocument.parent;
+  if (!scene || canvas.scene?.id !== scene.id) return;
+  for (const tile of scene.tiles) {
+    const marker = tile.getFlag("ffxiv", "markerPlacement");
+    if (!marker?.targeted || marker.tokenId !== tokenDocument.id) continue;
+    const position = getCenteredMarkerPosition(tile, tokenPosition);
+    tile.update({
+      x: position.x,
+      y: position.y
+    }).catch(err => debugError("Failed to move targeted marker:", err));
+  }
+}
+
+function getCenteredMarkerPosition(tile, tokenPosition) {
+  const gridSize = canvas.grid.size;
+  const tokenWidth = (tokenPosition.width ?? 1) * gridSize;
+  const tokenHeight = (tokenPosition.height ?? 1) * gridSize;
+  return {
+    x: Math.round(tokenPosition.x + tokenWidth / 2 - tile.width / 2),
+    y: Math.round(tokenPosition.y + tokenHeight / 2 - tile.height / 2)
+  };
+}
+
+function applyDamageToActor(actor, damage) {
+  const incomingDamage = Math.max(Number.parseInt(damage, 10) || 0, 0);
+  const barrier = Math.max(Number(actor.system.barrier?.value) || 0, 0);
+  const healthDamage = Math.max(incomingDamage - barrier, 0);
+  const updates = {
+    "system.health.value": Math.max((Number(actor.system.health?.value) || 0) - healthDamage, 0)
+  };
+
+  if (barrier > 0) {
+    updates["system.barrier.value"] = Math.max(barrier - incomingDamage, 0);
+  }
+
+  return actor.update(updates);
+}
 
 Hooks.on("ready", function(){
   const categories = [
@@ -610,7 +1517,9 @@ Hooks.on("ready", function(){
     CONFIG.FF_XIV[configTarget] = CONFIG.FF_XIV[configTarget] || {};
 
     const raw = game.settings.get("ffxiv", configKey);
-    const tags = raw.split(",").map(t => t.trim()).filter(Boolean);
+    const tags = raw.split(",")
+      .map(t => t.trim())
+      .filter(tag => tag && (configTarget === "tags_consumables" || !isBakedActionTag(tag)));
 
     for (let tag of tags) {
       const key = tag.replace(/\s+/g, "-");
@@ -624,33 +1533,44 @@ Hooks.on("ready", function(){
   }
 
 
-  // Seulement si MJ
   if (game.user.isGM) {
     game.socket.on("system.ffxiv", async (params) => {
       debugLog("get socket");
-      const {type, data, userName } = params;
-      const actors = data.actorIds.map(id => game.actors.get(id)).filter(Boolean);
+      const {type, data, userName, gmUserId } = params;
+      if (gmUserId && gmUserId !== game.user.id) return;
+      const actors = data.actorIds?.map(id => game.actors.get(id)).filter(Boolean) ?? [];
       switch (type) {
+        case FFXIV_MARKER_SOCKET_TYPE:
+          try {
+            await createMarkerTileFromRequest(data);
+          } catch (err) {
+            debugError("socket marker placement failed:", err);
+          }
+          break;
         case "applyEffect":
           debugLog("status socket");
-          const effect = data.effect
-          if (!actors || !effect) return;
+          const effects = (Array.isArray(data.effects) ? data.effects : [{ effect: data.effect, active: data.active }])
+            .filter(entry => entry.effect);
+          if (!actors || !effects.length) return;
+          const effectList = effects.map(entry => game.i18n.localize(entry.effect.label)).join(", ");
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-apply-effect",
             window: {title: game.i18n.localize("FFXIV.Notifications.StatusChangeRequest")},
-            content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest",{playerName:userName, effect: game.i18n.localize(effect.label)})}</p>
+            content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest",{playerName:userName, effect: effectList})}</p>
                 <ul>${actors.map(a => `<li>${a.name}</li>`).join("")}</ul>`,
             buttons: [
               {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
-                callback: (event, button) => {
-                  for (const actor of actors) {
-                    actor.toggleStatusEffect(effect.id, {active: data.active});
-                    ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(effect.label), actor: actor.name }));
-                  }
-                }
+	                callback: (event, button) => {
+	                  for (const actor of actors) {
+	                    for (const { effect, active } of effects) {
+	                      actor.toggleStatusEffect(effect.id, {active});
+	                      ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(effect.label), actor: actor.name }));
+	                    }
+	                  }
+	                }
               },
               {
                 label: game.i18n.localize("FFXIV.Sockets.Decline"),
@@ -709,8 +1629,7 @@ Hooks.on("ready", function(){
                 type: "submit",
                 callback: (event, button) => {
                   for (const actor of actors) {
-                    const health = Math.max(actor.system.health.value - parseInt(damage), 0)
-                    actor.update({"system.health.value":health})
+                    applyDamageToActor(actor, damage);
                   }
                 }
               },
@@ -732,6 +1651,8 @@ Hooks.on("ready", function(){
 })
 
 Hooks.on("renderChatMessageHTML", (message, html, data) => {
+  applyFFXIVChatTheme(html);
+
   const jqueryhtml = $(html)
   jqueryhtml.find(".ffxiv-roll-base").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
@@ -835,8 +1756,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
       }
     }
     for (const actor of ownActors) {
-      const health = Math.max(actor.system.health.value - parseInt(damage), 0)
-      actor.update({"system.health.value":health})
+      applyDamageToActor(actor, damage);
     }
     if (actorsNeedingGM.length > 0) {
       debugLog("Send socket to GM, damage",damage);
@@ -854,13 +1774,17 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
   });
 
   jqueryhtml.find(".ffxiv-apply-status").on("click", async ev => {
-    const status_effect = CONFIG.statusEffects.find(e => e.id === ev.currentTarget.dataset.effectId);
+    const itemId = ev.currentTarget.dataset.itemId;
+    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const item = actor?.items?.get(itemId);
+    const statusEntries = getStatusEffectEntriesForItem(item, ev.currentTarget);
     const targets = Array.from(game.user.targets);
 
     if (targets.length === 0) {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
       return;
     }
+    if (!statusEntries.length) return;
 
     const ownActors = [];
     const actorsNeedingGM = [];
@@ -875,18 +1799,19 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     }
 
     for (const actor of ownActors) {
-      await actor.toggleStatusEffect(status_effect.id, { active: true });
-      ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(status_effect.label), actor: actor.name }));
+      for (const { effect, active } of statusEntries) {
+        await actor.toggleStatusEffect(effect.id, { active });
+        ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(effect.label), actor: actor.name }));
+      }
     }
 
     if (actorsNeedingGM.length > 0) {
-      debugLog("Send socket to GM, statusEffect",status_effect);
+      debugLog("Send socket to GM, statusEffects", statusEntries);
       game.socket.emit("system.ffxiv", {
         type: "applyEffect",
         data: {
           actorIds: actorsNeedingGM.map(a => a.id),
-          effect: status_effect,
-          active: ev.currentTarget.dataset.action === 'true'
+          effects: statusEntries
         },
         userName: game.user.name
       });
@@ -896,3 +1821,20 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
   });
 
 });
+
+function getStatusEffectEntriesForItem(item, element) {
+  const sourceEntries = Array.isArray(item?.system?.status_effects) && item.system.status_effects.length
+    ? item.system.status_effects
+    : item?.system?.status_effect
+      ? [{ id: item.system.status_effect, action: item.system.status_action !== false }]
+      : element?.dataset?.effectId
+        ? [{ id: element.dataset.effectId, action: element.dataset.action === "true" }]
+        : [];
+
+  return sourceEntries
+    .map(entry => ({
+      effect: CONFIG.statusEffects.find(effect => effect.id === entry?.id),
+      active: entry?.action !== false
+    }))
+    .filter(entry => entry.effect);
+}

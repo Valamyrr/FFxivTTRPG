@@ -1,7 +1,8 @@
 .npc .profile-img{
   width: 100%;
-  height: auto;
-  border-color: var(--border-color-1)
+  height: 100%;
+  border-color: var(--border-color-1);
+  object-fit: cover;
 }
 .npc h1{
   border: none;
@@ -9,13 +10,27 @@
 .npc h1 input{
   padding: 20px;
 }
+.sheet-npc-header {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  position: relative;
+}
+.sheet-npc-header .charname {
+  grid-column: 1 / -1;
+}
 .sheet-npc-header-left{
-  float: left;
-  width: 30%;
+  align-self: stretch;
+  min-height: 100%;
+  width: 190px;
 }
 .sheet-npc-header-right{
-  float: right;
-  width: 70%
+  min-width: 0;
+  width: 100%
+}
+.sheet-npc-header-right .header-fields,
+.sheet-npc-header-right .npc-statblock {
+  height: 100%;
 }
 
 /*statblock*/
@@ -24,15 +39,178 @@
   font-weight: bold;
 }
 
-.npc input.npc-specie{
-  width: fit-content !important;
+.npc-statblock .npc-plain-value {
+  color: var(--text-color);
+  display: inline-block;
+  line-height: 28px;
+  min-height: 28px;
+  padding: 0 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.npc-statblock .npc-size-value {
+  min-width: 90px;
+  width: 90px;
+}
+
+.npc-statblock .npc-size-number {
+  min-width: 2.25em;
+  padding: 0;
+  width: 2.25em;
+}
+
+.npc-statblock .npc-stat-number {
+  min-width: 3em;
+  width: 3em;
+}
+
+.npc-statblock .npc-health-value {
+  min-width: calc(6em + 1ch);
+}
+
+.npc-statblock .resource-content .npc-plain-value {
+  margin: auto;
+  text-align: center;
+  width: 100%;
+}
+
+.npc-statblock .resource {
+  min-height: 1.9em;
+}
+
+.npc-statblock .npc-token-size {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.15em;
+  white-space: nowrap;
+}
+
+.npc-statblock .npc-plain-value.npc-specie {
+  flex: 1 1 22ch;
+  max-width: 32ch;
+  min-width: 12ch;
+  text-align: right;
+  width: clamp(14ch, 24vw, 32ch);
+}
+
+.npc-combat-stats {
+  align-items: start;
+  display: grid;
+  gap: 0.6em 1.25em;
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.npc-main-stats {
+  display: grid;
+  gap: 0.35em 1em;
+  grid-template-columns: minmax(13em, 1fr) minmax(10em, 0.75fr);
+  grid-template-rows: 28px 28px;
+}
+
+.npc-main-stats .resource {
+  align-items: center;
+  display: grid;
+  gap: 0.35em;
+  grid-template-columns: var(--npc-stat-label-width, 4.65em) max-content;
+  justify-content: start;
+  white-space: nowrap;
+}
+
+.npc-main-stats .resource:nth-child(2),
+.npc-main-stats .resource:nth-child(3) {
+  --npc-stat-label-width: 5.55em;
+}
+
+.npc-stat-label {
+  text-align: right;
+}
+
+.npc-stat-control {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35em;
+}
+
+.npc-main-stats .resource:first-child {
+  grid-row: 1;
+}
+
+.npc-main-stats .resource:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.npc-main-stats .resource:nth-child(3) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.npc-main-stats .resource:nth-child(4) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.npc-defense-table {
+  display: grid;
+  grid-template-rows: 28px auto 28px;
+  justify-self: end;
+  min-width: min(100%, 16em);
+}
+
+.npc-defense-heading {
+  align-self: center;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.npc-defense-divider {
+  align-self: center;
+  border-top: 1px solid var(--border-color-1);
+  opacity: 0.9;
+}
+
+.npc-defense-values {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 28px;
+}
+
+.npc-defense-cell {
+  align-items: center;
+  display: grid;
+  gap: 0.3em;
+  grid-template-columns: auto auto;
+  min-height: 28px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.npc-defense-cell + .npc-defense-cell {
+  border-left: 2px solid var(--border-color-1);
+  padding-left: 0.65em;
+}
+
+.npc-defense-icon {
+  border: none;
+  height: 26px;
+  object-fit: contain;
+  width: 26px;
+}
+
+.npc-defense-cell > span:first-child {
+  font-size: 0.85em;
+  opacity: 0.85;
 }
 
 .statblock-header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  column-gap: 1.5em;
+  row-gap: 0.35em;
   background: linear-gradient(0deg, var(--gradient-color-3) 20%, var(--gradient-color-2) 50%, var(--gradient-color-3) 80%);
   border-radius: 20px;
   padding: 3px 20px;
@@ -41,7 +219,7 @@
 }
 
 .statblock-content{
-  padding: 30px 10px 1px 10px;
+  padding: 42px 10px 1px 10px;
   margin: -30px 3px 0 3px;
   background: linear-gradient(90deg, var(--primary-color) 90%, var(--gradient-color-2) 100%);
   border-radius: 5px;
@@ -49,12 +227,33 @@
   z-index: 1
 }
 
+.statblock-size-line,
+.statblock-meta-line,
 .statblock-header-left {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 0.5em;
+}
+
+.statblock-size-line,
+.statblock-header-left {
+  flex-wrap: nowrap;
   flex: 1 1 auto;
+}
+
+.statblock-meta-line {
+  flex: 1 1 24ch;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  margin-left: auto;
+  min-width: min(100%, 24ch);
+  white-space: nowrap;
+}
+
+.statblock-vigilance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
 }
 
 .statblock-header-right {
@@ -66,27 +265,72 @@
   border: none;
   position: relative;
   width: 90px;
+  height: 28px;
+  line-height: 28px;
+  min-height: 28px;
   background: transparent;
+  color: var(--text-color-input);
+  box-shadow: none;
+}
+.npc-statblock input.input-transparent {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
 }
 .npc-statblock .input-window{
   width: 3em;
+  height: 28px;
+  line-height: 28px;
+  min-height: 28px;
   text-align: center;
+  color: var(--text-color-input);
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  box-shadow: none;
 }
 .npc .input-size-numbers{
-  width: 30px;
-  text-align: center;
+  width: 2.25em !important;
+  height: 1.6em;
+  line-height: 1.6em;
+  padding: 0;
+  text-align: center !important;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.npc .input-size-numbers::-webkit-inner-spin-button,
+.npc .input-size-numbers::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
 }
 .npc input.npc-specie {
   display: inline-block;
-  width: auto;
-  min-width: 2ch;
-  max-width: 16ch;
-  padding: 0;
-  background: transparent;
-  border: none;
+  flex: 1 1 22ch;
+  width: clamp(14ch, 24vw, 32ch) !important;
+  min-width: 12ch;
+  max-width: 32ch;
+  padding: 0 6px;
+  color: var(--text-color-input);
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.npc-statblock .npc-plain-value.npc-specie,
+.npc input.npc-specie {
+  height: 28px;
+  line-height: 28px;
+}
+
+.npc-statblock select.input-transparent {
+  color: var(--text-color-input);
+}
+
+.npc-statblock select.input-transparent option {
+  background: var(--option-background-color);
+  color: var(--text-color-input);
 }
 
 .statblock-header input::placeholder{
@@ -95,6 +339,10 @@
 
 /*Nav*/
 .npc nav.nav-sub-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
   padding-top: 10px;
   border:none;
   border-top: solid 1px var(--border-color-1);
@@ -102,4 +350,31 @@
   width: 100%;
   text-align: center;
   filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+}
+
+.npc nav.nav-sub-tabs .sub-tab {
+  width: 38%;
+}
+
+.npc nav.nav-sub-tabs .npc-add-ability {
+  width: 34px;
+  height: 25px;
+  min-height: 25px;
+  margin: 4px 6px 4px -2px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  clip-path: polygon(0 0, 85% 0, 100% 50%, 85% 100%, 0 100%);
+  background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+  color: var(--text-color-strong);
+  cursor: pointer;
+  line-height: 1;
+  filter: var(--subtabactive-filter);
+}
+
+.npc nav.nav-sub-tabs .npc-add-ability:hover,
+.npc nav.nav-sub-tabs .npc-add-ability:focus {
+  color: var(--invert-text-color);
+  box-shadow: none;
+  text-shadow: 0 0 4px var(--text-color-strong);
 }

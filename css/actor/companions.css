@@ -49,7 +49,7 @@
 }
 
 .pet-card {
-  padding: 10px 10px 0 10px;
+  padding: 10px;
   box-shadow: 0px 0px 5px 0px #111;
   border-radius: 7px;
   background: var(--pet-color);
@@ -60,20 +60,26 @@
 }
 
 .pet-header{
-  margin-left: 3px;
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 6px 3px;
+  gap: 12px;
+}
+.pet-heading{
+  min-width: 0;
 }
 .pet-name{
   font-size: 1.6em;
-  display: inline;
-}
-.pet-header-right{
-  float: right;
+  line-height: 1.05;
 }
 .pet-tag{
-  display: inline-block;
+  flex: 0 0 auto;
+  line-height: 1.2;
 }
 .pet-speed{
-  margin: 2px 0 5px 3px;
+  font-weight: bold;
+  margin-top: 2px;
 }
 .pet-traits{
   padding: 8px;
@@ -86,6 +92,17 @@
   padding: 5px;
 }
 
-.ffxiv .pet-remove.fa.fa-trash-can{
+.ffxiv .pet-remove{
+  background: #b00000;
+  border: 1px solid white;
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
   line-height: 28px;
+  font-family: Arial, sans-serif;
+}
+
+.ffxiv .pet-remove:hover{
+  background: red;
+  box-shadow: 0 0 5px red;
 }

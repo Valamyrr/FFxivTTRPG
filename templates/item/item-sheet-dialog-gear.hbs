@@ -1,4 +1,4 @@
-<form class='{{cssClass}} limited-display' autocomplete='off'>
+<div class='{{cssClass}} limited-display'>
   <div class="item-card">
     <div class="item-card-info">
       <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon">
@@ -65,17 +65,17 @@
 
       <div class="quantity-form">
         {{#if (not system.equipped)}}
-          <div class="detail"><strong>{{ localize "FFXIV.CharacterSheet.Equip" }} :</strong></div> <button class="item-qty-btn gear-equip fa fa-user"></button>
+          <div class="detail"><strong>{{ localize "FFXIV.CharacterSheet.Equip" }} :</strong></div> <button type="button" class="item-qty-btn gear-equip fa fa-user"></button>
         {{else}}
-          <div class="detail"><strong>{{ localize "FFXIV.CharacterSheet.Unequip" }} :</strong></div> <button class="item-qty-btn gear-equip fa fa-user"></button>
+          <div class="detail"><strong>{{ localize "FFXIV.CharacterSheet.Unequip" }} :</strong></div> <button type="button" class="item-qty-btn gear-equip fa fa-user"></button>
         {{/if}}
         <br>
-        <div class="detail"><strong>{{ localize "FFXIV.Item.Delete" }} :</strong></div> <button class="item-qty-btn fa fa-xmark delete"></button>
+        <div class="detail"><strong>{{ localize "FFXIV.Item.Delete" }} :</strong></div> <button type="button" class="item-qty-btn delete" aria-label="{{localize 'FFXIV.Item.Delete'}}"><i class="fa-solid fa-trash-can"></i></button>
       </div>
 
 
 
-      <button class="item-roll-button">{{ localize "FFXIV.CharacterSheet.Show" }}</button>
+      <button type="button" class="item-roll-button">{{ localize "FFXIV.CharacterSheet.Show" }}</button>
     </div>
   </div>
-</form>
+</div>

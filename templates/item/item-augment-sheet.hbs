@@ -1,4 +1,4 @@
-<form class='{{cssClass}}' autocomplete='off'>
+<div class='{{cssClass}}'>
   <header class='sheet-header'>
     <img
       class='profile-img'
@@ -14,7 +14,7 @@
           placeholder='Name'
         /></h1>
     </div>
-    <button class="item-delete fa fa-trash-can"></button>
+    <button type="button" class="item-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}"><i class="fa-solid fa-trash-can"></i></button>
   </header>
 
   <hr>
@@ -60,9 +60,9 @@
         </div>
         {{/if}}
         <div class="resource flex-group-center">
-          <label for="item.system.shop_tier" class="resource-label">{{ localize "FFXIV.Item.ShopTier" }}</label>
+          <label for="system.shop_tier" class="resource-label">{{ localize "FFXIV.Item.ShopTier" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="item.system.shop_tier" type="number" value="{{item.system.shop_tier}}"/>
+            <input name="system.shop_tier" type="number" value="{{item.system.shop_tier}}"/>
           </div>
         </div>
 
@@ -90,4 +90,4 @@
     </div>
 
   </section>
-</form>
+</div>

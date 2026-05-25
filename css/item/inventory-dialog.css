@@ -1,4 +1,5 @@
 .ffxiv.item .window-content:has(.limited-display){
+  overflow: visible;
   padding: 0
 }
 .ffxiv.item:has(.limited-display) .window-resizable-handle{
@@ -156,17 +157,31 @@
 /* Quantity buttons */
 
 .quantity-form{
-  margin: auto;
-  width: fit-content;
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+  margin: 4px 0 0 auto;
+  white-space: nowrap;
+  width: 100%;
+}
+.quantity-form .detail{
+  display: inline-flex;
+  margin-right: 0;
 }
 .item-qty-btn{
   width: 1.5em;
   line-height: 1em;
 }
 .ffxiv.item .item-card .quantity-form .delete{
+  align-items: center;
   color: red;
   border-color: red;
-  width: fit-content;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 6px;
+  width: auto;
 }
 .gear-equip{
   padding: 1px;

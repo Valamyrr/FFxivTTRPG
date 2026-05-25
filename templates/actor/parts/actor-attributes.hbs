@@ -59,8 +59,8 @@
             <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Defense" }}</div>
           </div>
           <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}">
-            <input type="text" class="s-attribute-value" disabled value="+{{ sub rollData.def system.secondary_attributes.defense.value }}">
+            <input type="number" class="s-attribute-value" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}" placeholder="0">
+            <input type="text" class="s-attribute-value secondary-attribute-modifier" data-modifier-for="defense" disabled value="+{{ sub rollData.def system.secondary_attributes.defense.value }}">
           </div>
         </div>
 
@@ -70,8 +70,8 @@
             <div class="s-attribute-name">{{ localize "FFXIV.Attributes.MagicDefense" }}</div>
           </div>
           <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}">
-            <input type="text" class="s-attribute-value" disabled value="+{{ sub rollData.mdef system.secondary_attributes.magic_defense.value }}">
+            <input type="number" class="s-attribute-value" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}" placeholder="0">
+            <input type="text" class="s-attribute-value secondary-attribute-modifier" data-modifier-for="magic_defense" disabled value="+{{ sub rollData.mdef system.secondary_attributes.magic_defense.value }}">
           </div>
         </div>
 
@@ -81,8 +81,8 @@
             <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Vigilance" }}</div>
           </div>
           <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}">
-            <input type="text" class="s-attribute-value" disabled value="+{{ sub rollData.vigilance system.secondary_attributes.vigilance.value }}">
+            <input type="number" class="s-attribute-value" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}" placeholder="0">
+            <input type="text" class="s-attribute-value secondary-attribute-modifier" data-modifier-for="vigilance" disabled value="+{{ sub rollData.vigilance system.secondary_attributes.vigilance.value }}">
           </div>
         </div>
 
@@ -92,7 +92,7 @@
             <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Speed" }}</div>
           </div>
           <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}">
+            <input type="number" class="s-attribute-value" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}" placeholder="0">
             <input type="text" class="s-attribute-value" name="system.secondary_attributes.speed.unit" value="{{ system.secondary_attributes.speed.unit }}">
           </div>
         </div>

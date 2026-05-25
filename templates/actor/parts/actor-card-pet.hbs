@@ -1,26 +1,27 @@
 <div class="pet-card">
 
   <div class="pet-header">
-    <div class="pet-name" data-pet-id="{{_id}}">
-      {{name}}
-    </div>
-    <div class="pet-header-right">
-      <div class="pet-tag">
-        {{ localize "FFXIV.Tags.Pet" }}
+    <div class="pet-heading">
+      <div class="pet-name" data-pet-id="{{_id}}">
+        {{name}}
+      </div>
+      <div class="pet-speed">
+        {{ localize "FFXIV.Attributes.Speed" }}: {{system.speed.value}} {{system.speed.unit}}
       </div>
     </div>
-  </div>
-
-  <div class="pet-speed">
-    {{ localize "FFXIV.Attributes.Speed" }}: {{system.speed.value}} {{system.speed.unit}}
-  </div>
-
-  <div class="pet-traits">
-    <div class="effect">
-      <strong>{{ localize "FFXIV.Abilities.TraitsShort" }}:</strong>
-      {{{enriched.traits}}}
+    <div class="pet-tag">
+      {{ localize "FFXIV.Tags.Pet" }}
     </div>
   </div>
+
+  {{#if (hasContent enriched.traits)}}
+    <div class="pet-traits">
+      <div class="effect">
+        <strong>{{ localize "FFXIV.Abilities.TraitsShort" }}:</strong>
+        {{{enriched.traits}}}
+      </div>
+    </div>
+  {{/if}}
 
   {{#each items as |item|}}
     {{#if (eq item.type "primary_ability")}}
