@@ -179,3 +179,38 @@
 .ffxiv.actor td:not(:first-child) {
   text-align: center;
 }
+
+.ffxiv-inventory-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 170px;
+  background: rgba(20, 20, 24, 0.98);
+  border: 1px solid #9f9f9f;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  opacity: 1;
+  backdrop-filter: none;
+}
+
+.ffxiv-inventory-context-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #f0e1c4;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  box-shadow: none;
+}
+
+.ffxiv-inventory-context-option:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ffxiv-inventory-context-option.discard {
+  color: #f5b4b4;
+}

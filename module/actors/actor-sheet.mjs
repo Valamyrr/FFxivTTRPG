@@ -345,6 +345,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @override */
   async _onClose(options) {
     this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
+    this._closeInventoryContextMenu();
 
     await super._onClose(options);
   }
@@ -1025,6 +1026,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
 
     html.on('click.ffxivActorSheet', '.inventory-item', this._renderItem.bind(this));
+    html.on('contextmenu.ffxivActorSheet', '.inventory-item[data-item-id]', this._onInventoryItemContextMenu.bind(this));
 
 
     html.on('mousedown.ffxivActorSheet', '.mana-bar', this._onClickManaBar.bind(this));
@@ -1237,6 +1239,125 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       debugError(`Item with ID ${itemId} not found. Cannot open empty inventory cells.`);
     }
   };
+
+  _onInventoryItemContextMenu(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const itemId = event.currentTarget?.dataset?.itemId;
+    if (!itemId) return;
+    const item = this.actor.items.get(itemId);
+    if (!item) return;
+
+    this._closeInventoryContextMenu();
+
+    const menu = document.createElement("div");
+    menu.className = "ffxiv-inventory-context-menu";
+
+    const openFull = document.createElement("button");
+    openFull.type = "button";
+    openFull.className = "ffxiv-inventory-context-option";
+    openFull.textContent = game.i18n.localize("FFXIV.Item.EditItem");
+    openFull.addEventListener("click", (clickEvent) => {
+      clickEvent.preventDefault();
+      clickEvent.stopPropagation();
+      this._closeInventoryContextMenu();
+      new item.sheet.constructor({
+        document: item,
+        ffxivForceFullSheet: true
+      }).render({ force: true });
+    });
+
+    const useItem = document.createElement("button");
+    useItem.type = "button";
+    useItem.className = "ffxiv-inventory-context-option";
+    useItem.textContent = game.i18n.localize("FFXIV.Item.UseItem");
+    useItem.addEventListener("click", async (clickEvent) => {
+      clickEvent.preventDefault();
+      clickEvent.stopPropagation();
+      this._closeInventoryContextMenu();
+      await item.roll();
+    });
+
+    const discard = document.createElement("button");
+    discard.type = "button";
+    discard.className = "ffxiv-inventory-context-option discard";
+    discard.textContent = game.i18n.localize("FFXIV.Item.DiscardItem");
+    discard.addEventListener("click", (clickEvent) => {
+      clickEvent.preventDefault();
+      clickEvent.stopPropagation();
+      this._closeInventoryContextMenu();
+      this._confirmDiscardInventoryItem(item);
+    });
+
+    menu.appendChild(useItem);
+    menu.appendChild(openFull);
+    menu.appendChild(discard);
+    document.body.appendChild(menu);
+
+    const margin = 8;
+    const { clientX, clientY } = event;
+    const width = menu.offsetWidth || 160;
+    const height = menu.offsetHeight || 40;
+    const left = Math.min(clientX, window.innerWidth - width - margin);
+    const top = Math.min(clientY, window.innerHeight - height - margin);
+    menu.style.left = `${Math.max(margin, left)}px`;
+    menu.style.top = `${Math.max(margin, top)}px`;
+
+    const closeMenu = () => this._closeInventoryContextMenu();
+    const onKeyDown = (keyEvent) => {
+      if (keyEvent.key === "Escape") closeMenu();
+    };
+
+    this._inventoryContextMenu = {
+      element: menu,
+      closeMenu,
+      onKeyDown
+    };
+
+    setTimeout(() => {
+      document.addEventListener("click", closeMenu, { once: true });
+      document.addEventListener("contextmenu", closeMenu, { once: true });
+      document.addEventListener("keydown", onKeyDown, { once: true });
+    }, 0);
+  }
+
+  _closeInventoryContextMenu() {
+    const menu = this._inventoryContextMenu;
+    if (!menu) return;
+    menu.element?.remove();
+    this._inventoryContextMenu = null;
+  }
+
+  _confirmDiscardInventoryItem(item) {
+    new foundry.applications.api.DialogV2({
+      id: "ffxiv-discard-inventory-item",
+      window: { title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation") },
+      form: {
+        submitOnChange: false,
+        closeOnSubmit: true
+      },
+      content: game.i18n.format("FFXIV.Dialogs.ItemDelete", { itemName: item.name }),
+      buttons: [
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.Yes"),
+          action: "discard",
+          type: "submit",
+          callback: async () => {
+            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", { itemName: item.name }));
+            await item.delete();
+            this.render();
+          }
+        },
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.No"),
+          action: "cancel",
+          type: "submit",
+          callback: () => {}
+        }
+      ]
+    }).render({ force: true });
+  }
 
   _onDeleteAbility(event) {
     event.preventDefault();

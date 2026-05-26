@@ -38,8 +38,8 @@
           {{#if system.price.sell}}
             <span class="minion-meta-pill">{{ localize "FFXIV.Item.Sell" }}: {{system.price.sell}}{{#if system.price.denomination}} {{ localize system.price.denomination}}{{/if}}</span>
           {{/if}}
-          {{#if (hasShopTier system)}}
-            <span class="minion-meta-pill">{{ localize "FFXIV.Item.ShopTier" }}: {{shopTierDisplay system}}</span>
+          {{#if (hasItemQuality system)}}
+            <span class="minion-meta-pill">{{ localize (itemQualityLabelKey system) }}: {{itemQualityDisplay system}}</span>
           {{/if}}
         </div>
 
@@ -97,6 +97,17 @@
               <option value="">{{ localize "FFXIV.None" }}</option>
               {{#each this.config.shop_tiers as |tier|}}
               <option value="{{tier.value}}" {{#if (eq tier.value ../system.shop_tier)}}selected {{/if}}>{{ localize tier.label }}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select style="text-align: center;" name="system.rarity">
+              <option value="">{{ localize "FFXIV.None" }}</option>
+              {{#each this.config.rarities as |rarity|}}
+              <option value="{{rarity.value}}" {{#if (eq rarity.value ../system.rarity)}}selected {{/if}}>{{ localize rarity.label }}</option>
               {{/each}}
             </select>
           </div>

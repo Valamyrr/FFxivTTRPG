@@ -67,6 +67,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @override */
   get template() {
     const path = 'systems/ffxiv/templates/item';
+    const forceFullSheet = this.options?.ffxivForceFullSheet === true;
 
     // Return a single sheet for all item types.
     // return `${path}/item-sheet.hbs`;
@@ -74,7 +75,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     // Alternatively, you could use the following return statement to do a
     // unique item sheet by type, like `weapon-sheet.hbs`.
     if (this.item.type == "consumable"){
-      if (game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && (this.item.parent != null || this.item.flags["item-piles"])){
+      if (!forceFullSheet && game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && (this.item.parent != null || this.item.flags["item-piles"])){
         return `${path}/item-sheet-dialog.hbs`;
       }else{
         return `${path}/item-consumable-sheet.hbs`;
@@ -112,7 +113,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return `${path}/item-job-sheet.hbs`;
     }
     if (this.item.type == "gear"){
-      if (game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null){
+      if (!forceFullSheet && game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null){
         return `${path}/item-sheet-dialog-gear.hbs`;
       }else{
         return `${path}/item-gear-sheet.hbs`;
@@ -787,6 +788,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _isLimitedDisplayMode() {
+    if (this.options?.ffxivForceFullSheet) return false;
     if (!game.settings.get('ffxiv', 'limitedPhysicalItemsDialog')) return false;
     if (this.item.type === "consumable") {
       return this.item.parent != null || Boolean(this.item.flags?.["item-piles"]);

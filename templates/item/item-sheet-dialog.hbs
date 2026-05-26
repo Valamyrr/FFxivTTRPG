@@ -16,7 +16,7 @@
       </div>
 
       <div class="item-dialog-details item-dialog-summary">
-        {{#if (hasShopTier item.system)}}<div class="detail"><strong>{{localize "FFXIV.Item.ShopTier"}}:</strong> {{shopTierDisplay item.system}}</div>{{/if}}
+        {{#if (hasItemQuality item.system)}}<div class="detail"><strong>{{localize (itemQualityLabelKey item.system)}}:</strong> {{itemQualityDisplay item.system}}</div>{{/if}}
         {{#if (not (eq item.system.price.buy 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{item.system.price.buy}}{{#if item.system.price.denomination}} {{localize item.system.price.denomination}}{{/if}}</div>{{/if}}
         {{#if item.system.target}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{{enriched.target}}}</div>{{/if}}
         {{#if item.system.range}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{{enriched.range}}}</div>{{/if}}

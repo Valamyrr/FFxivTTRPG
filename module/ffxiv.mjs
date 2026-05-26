@@ -188,6 +188,20 @@ Handlebars.registerHelper("rarityTooltipClass", function (rarity) {
   return key ? `rarity-${key}` : "";
 });
 
+Handlebars.registerHelper("itemQualityLabelKey", function (system) {
+  return normalizeRarityValue(system?.rarity ?? "") ? "FFXIV.Item.Rarity" : "FFXIV.Item.ShopTier";
+});
+
+Handlebars.registerHelper("itemQualityDisplay", function (system) {
+  const rarity = normalizeRarityValue(system?.rarity);
+  if (rarity) return game.i18n.localize(`FFXIV.Rarities.${rarity.charAt(0).toUpperCase()}${rarity.slice(1)}`);
+  return formatShopTierDisplay(system?.shop_tier, system?.shop_tier_custom, game.i18n);
+});
+
+Handlebars.registerHelper("hasItemQuality", function (system) {
+  return Boolean(Handlebars.helpers.itemQualityDisplay(system));
+});
+
 const BAKED_ACTION_TAG_LABELS = {
   primary_ability: "FFXIV.Tags.Primary",
   secondary_ability: "FFXIV.Tags.Secondary",

@@ -138,6 +138,15 @@ FF_XIV.minion_types = [
   "FFXIV.Tags.Mount"
 ]
 
+FF_XIV.rarities = {
+  basic: { value: "basic", label: "FFXIV.Rarities.Basic" },
+  green: { value: "green", label: "FFXIV.Rarities.Green" },
+  aetherial: { value: "aetherial", label: "FFXIV.Rarities.Aetherial" },
+  blue: { value: "blue", label: "FFXIV.Rarities.Blue" },
+  relic: { value: "relic", label: "FFXIV.Rarities.Relic" },
+  unique: { value: "unique", label: "FFXIV.Rarities.Unique" }
+};
+
 FF_XIV.base_tags_abilities = [
   "Physical",
   "Ranged",
