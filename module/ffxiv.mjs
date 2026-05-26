@@ -12,9 +12,10 @@ import { FF_XIV } from './helpers/config.mjs';
 import { debugError, debugLog } from "./helpers/debug.mjs";
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
-import { updateStatusEffects } from "./helpers/status_effects.mjs";
+import { updateStatusEffects } from "./helpers/status-effects.mjs";
 import { registerEscapeHandler } from "./helpers/escape.mjs";
 import { formatShopTierDisplay, normalizeShopTier } from "./helpers/shop-tier.mjs";
+import { ABILITY_SUBTYPE_TYPES, getAbilitySubtype, ensureAbilitySubtypeTags } from "./helpers/ability-subtype.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -24,12 +25,12 @@ import { formatShopTierDisplay, normalizeShopTier } from "./helpers/shop-tier.mj
 Hooks.once('init', function () {
   registerDataModels();
   SettingsHelpers.initSettings();
-  debugLog("FFXIV | Init");
   // Add utility classes to the global game object so that they're more easily
   // accessible in global contexts.
   game.ffxivttrpg = {
     FFXIVActor,
-    FFXIVItem
+    FFXIVItem,
+    runItemMigration: async (force = false) => migrateItemDataStructure({ force })
   };
 
   // Add custom constants for configuration.
@@ -63,13 +64,9 @@ Hooks.once('init', function () {
   });
 
   CONFIG.Item.typeLabels = {
+    ability: game.i18n.localize("FFXIV.ItemType.ability"),
     consumable: game.i18n.localize("FFXIV.ItemType.consumable"),
-    limit_break: game.i18n.localize("FFXIV.ItemType.limit_break"),
-    primary_ability: game.i18n.localize("FFXIV.ItemType.primary_ability"),
-    secondary_ability: game.i18n.localize("FFXIV.ItemType.secondary_ability"),
-    instant_ability: game.i18n.localize("FFXIV.ItemType.instant_ability"),
     trait: game.i18n.localize("FFXIV.ItemType.trait"),
-    currency: game.i18n.localize("FFXIV.ItemType.currency"),
     title: game.i18n.localize("FFXIV.ItemType.title"),
     gear: game.i18n.localize("FFXIV.ItemType.gear"),
     minion: game.i18n.localize("FFXIV.ItemType.minion"),
@@ -215,7 +212,8 @@ function isBakedActionTag(tag) {
 }
 
 Handlebars.registerHelper("actionTags", function (type, tags) {
-  const bakedTag = BAKED_ACTION_TAG_LABELS[type];
+  const effectiveType = type === "ability" ? getAbilitySubtype({ type, system: { tags } }) : type;
+  const bakedTag = BAKED_ACTION_TAG_LABELS[effectiveType];
   const customTags = Array.isArray(tags) ? tags.filter(tag => !isBakedActionTag(tag)) : [];
   return bakedTag ? [bakedTag, ...customTags] : customTags;
 });
@@ -230,6 +228,9 @@ Handlebars.registerHelper("hasCustomActionTags", function (tags) {
 
 Handlebars.registerHelper("bakedActionTag", function (type) {
   return BAKED_ACTION_TAG_LABELS[type] ?? "";
+});
+Handlebars.registerHelper("isAbilitySubtype", function (item, subtype) {
+  return getAbilitySubtype(item) === subtype;
 });
 Handlebars.registerHelper('superior', function(a, b) {
   return a > b;
@@ -257,6 +258,7 @@ const DEFAULT_TAB_ICONS = {
   imgTabCompanions: "systems/ffxiv/assets/tab-icons/companions.webp",
   imgTabSettings: "systems/ffxiv/assets/tab-icons/system-configuration.webp",
 };
+const LEGACY_ABILITY_TYPES = new Set(["primary_ability", "secondary_ability", "instant_ability", "limit_break"]);
 
 function getCharacterTabIcon(settingKey) {
   const configured = game.settings.get("ffxiv", settingKey);
@@ -342,12 +344,17 @@ Handlebars.registerHelper('buildInventoryGrid', function(items, gridSize) {
   return grid; // Return the filled grid array
 });
 Handlebars.registerHelper("sortAbilities", function (items, order, type) {
+  const byType = (item) => {
+    if (type === "trait") return item.type === "trait";
+    if (type === "ability") return item.type === "ability";
+    return getAbilitySubtype(item) === type;
+  };
   if (!order || !order[type] || !Array.isArray(order[type])) {
-    return items.filter((i) => i.type === type); // no saved order, return as is
+    return items.filter(byType); // no saved order, return as is
   }
 
   return items
-  .filter((i) => i.type === type)
+  .filter(byType)
   .sort((a, b) => {
     const indexA = order[type].indexOf(a._id);
     const indexB = order[type].indexOf(b._id);
@@ -406,6 +413,8 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 
 Hooks.once('ready', function () {
   installTokenBarrierOverlay();
+  installItemDirectoryCompatibilityPatch();
+  installItemCreateTypeFilter();
 
   // Wait to register hotbar drop hook on ready so that modules could register earlier if they want to
   Hooks.on('hotbarDrop', (bar, data, slot) => {
@@ -427,10 +436,107 @@ Hooks.once('ready', function () {
 
   if (game.user.isGM) {
     migrateLegacyPetTraits();
-    migrateLegacyShopTiers();
+    migrateItemDataStructure();
+    migrateActorCurrencyToFortune();
   }
 
 });
+
+function installItemCreateTypeFilter() {
+  if (globalThis.__ffxivItemCreateTypeFilterInstalled) return;
+  globalThis.__ffxivItemCreateTypeFilterInstalled = true;
+
+  const stripLegacyTypeOptions = root => {
+    if (!root) return;
+    const typeSelect = root.querySelector?.("select[name='type']");
+    if (!typeSelect) return;
+
+    // Only touch selects that clearly look like Item type selectors.
+    const values = new Set(Array.from(typeSelect.options).map(option => String(option.value)));
+    if (!values.has("ability")) return;
+    if (![...LEGACY_ABILITY_TYPES].some(type => values.has(type))) return;
+
+    for (const option of Array.from(typeSelect.options)) {
+      if (LEGACY_ABILITY_TYPES.has(option.value)) option.remove();
+    }
+
+    if (LEGACY_ABILITY_TYPES.has(typeSelect.value)) {
+      typeSelect.value = "ability";
+      typeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
+
+  const filterLegacyTypes = (app, element) => {
+    const root = element instanceof HTMLElement ? element : element?.[0];
+    if (!root) return;
+    stripLegacyTypeOptions(root);
+
+    // Some dialogs repopulate form fields post-render; keep it clean.
+    if (!root._ffxivTypeFilterObserver) {
+      const observer = new MutationObserver(() => stripLegacyTypeOptions(root));
+      observer.observe(root, { childList: true, subtree: true });
+      root._ffxivTypeFilterObserver = observer;
+    }
+  };
+
+  Hooks.on("renderApplicationV2", filterLegacyTypes);
+  Hooks.on("renderDialogV2", filterLegacyTypes);
+  Hooks.on("renderDialog", filterLegacyTypes);
+}
+
+function installItemDirectoryCompatibilityPatch() {
+  const DirectoryClass = globalThis.ItemDirectory;
+  if (!DirectoryClass?.prototype?._onClickEntry) return;
+  if (DirectoryClass.prototype._ffxivCollectionCompatPatched) return;
+
+  const originalOnClickEntry = DirectoryClass.prototype._onClickEntry;
+  const originalGetEntryContextOptions = DirectoryClass.prototype._getEntryContextOptions;
+  DirectoryClass.prototype._onClickEntry = async function patchedItemDirectoryOnClickEntry(event, ...args) {
+    const collection = this.collection;
+    const entryElement = event?.currentTarget?.closest?.("[data-entry-id]")
+      ?? event?.target?.closest?.("[data-entry-id]");
+    const entryId = entryElement?.dataset?.entryId;
+    const hasGetDocument = typeof collection?.getDocument === "function";
+    const hasGet = typeof collection?.get === "function";
+
+    // Safety guard: if core cannot resolve this entry to a document, skip hard-crash and warn.
+    if (entryId && !hasGetDocument && hasGet) {
+      const doc = collection.get(entryId);
+      if (!doc?.sheet) {
+        ui.notifications?.warn("This item entry could not be opened because its document is unavailable.");
+        return;
+      }
+    } else if (entryId && hasGetDocument) {
+      const resolved = await collection.getDocument(entryId);
+      if (!resolved?.sheet) {
+        ui.notifications?.warn("This item entry could not be opened because its document is unavailable.");
+        return;
+      }
+    }
+    return originalOnClickEntry.call(this, event, ...args);
+  };
+  if (typeof originalGetEntryContextOptions === "function") {
+    DirectoryClass.prototype._getEntryContextOptions = function patchedItemDirectoryContextOptions(...args) {
+      const options = originalGetEntryContextOptions.call(this, ...args) || [];
+      return options.map(option => {
+        if (typeof option?.visible !== "function") return option;
+        const originalVisible = option.visible;
+        return {
+          ...option,
+          visible: (...visibleArgs) => {
+            try {
+              return originalVisible(...visibleArgs);
+            } catch (error) {
+              debugError("FFXIV | Item directory context visibility guard:", error);
+              return false;
+            }
+          }
+        };
+      });
+    };
+  }
+  DirectoryClass.prototype._ffxivCollectionCompatPatched = true;
+}
 
 function hasStringContent(value) {
   if (value === null || value === undefined) return false;
@@ -480,81 +586,719 @@ async function migrateLegacyPetTraits() {
   }
 }
 
-const SHOP_TIER_MIGRATION_VERSION = "2026-05-shop-tier-v1";
+async function migrateActorCurrencyToFortune() {
+  for (const actor of game.actors.filter(entry => entry.type === "character")) {
+    const currencyItems = actor.items.filter(item => item.type === "currency");
+    if (!currencyItems.length) continue;
+
+    const migratedFortune = currencyItems.reduce((total, item) => {
+      const quantity = Number.parseInt(item.system?.quantity, 10);
+      return total + (Number.isFinite(quantity) ? quantity : 0);
+    }, 0);
+
+    const currentFortune = Number.parseInt(actor.system?.fortune, 10);
+    const nextFortune = Math.max((Number.isFinite(currentFortune) ? currentFortune : 0) + migratedFortune, 0);
+
+    try {
+      await actor.update({ "system.fortune": nextFortune });
+      await actor.deleteEmbeddedDocuments("Item", currencyItems.map(item => item.id));
+      debugLog(`FFXIV | Migrated ${currencyItems.length} currency item(s) to Fortune for ${actor.name}`);
+    } catch (error) {
+      console.error("FFXIV | Currency migration failed for", actor.name, error);
+    }
+  }
+}
+
 const SHOP_TIER_TYPES = new Set(["consumable", "gear", "augment", "minion"]);
+const ACTION_FORMULA_TYPES = new Set(["ability", "primary_ability", "secondary_ability", "instant_ability", "limit_break", "augment", "minion"]);
+const HP_COST_MIGRATION_TYPES = new Set(["ability", "primary_ability", "secondary_ability", "instant_ability", "limit_break", "consumable", "augment", "minion"]);
+const ITEM_DATA_MIGRATION_VERSION = "9";
+function getMigratableItemCompendiumPacks() {
+  return game.packs.filter(pack => pack.documentName === "Item" && !pack.locked);
+}
 
-async function migrateLegacyShopTiers() {
-  const currentVersion = game.settings.get("ffxiv", "shopTierMigrationVersion");
-  if (currentVersion === SHOP_TIER_MIGRATION_VERSION) return;
+let _itemMigrationPromise = null;
 
-  const worldItemUpdates = [];
-  const actorItemUpdates = [];
-  let pendingCount = 0;
-  let inProgressNotification = null;
-
+async function migrateItemDataStructure({ force = false } = {}) {
+  if (_itemMigrationPromise) return _itemMigrationPromise;
+  _itemMigrationPromise = _migrateItemDataStructureInternal({ force });
   try {
-    for (const item of game.items) {
-      if (!SHOP_TIER_TYPES.has(item.type)) continue;
-      const nextTier = normalizeShopTier(item.system.shop_tier, item.system.shop_tier_custom);
-      if (item.system.shop_tier === nextTier.shop_tier && (item.system.shop_tier_custom ?? "") === nextTier.shop_tier_custom) continue;
-      worldItemUpdates.push({ item, nextTier });
-      pendingCount++;
-    }
+    return await _itemMigrationPromise;
+  } finally {
+    _itemMigrationPromise = null;
+  }
+}
 
-    for (const actor of game.actors) {
-      const updates = [];
-      for (const item of actor.items) {
-        if (!SHOP_TIER_TYPES.has(item.type)) continue;
-        const nextTier = normalizeShopTier(item.system.shop_tier, item.system.shop_tier_custom);
-        if (item.system.shop_tier === nextTier.shop_tier && (item.system.shop_tier_custom ?? "") === nextTier.shop_tier_custom) continue;
+async function _migrateItemDataStructureInternal({ force = false } = {}) {
+  const currentVersion = game.settings.get("ffxiv", "itemMigrationVersion");
+  if (!force && currentVersion === ITEM_DATA_MIGRATION_VERSION) return;
 
-        updates.push({
-          _id: item.id,
-          "system.shop_tier": nextTier.shop_tier,
-          "system.shop_tier_custom": nextTier.shop_tier_custom
-        });
-      }
+  let inProgressNotification = null;
+  let progressActive = false;
+  let progressContainer = null;
+  let progressBarFill = null;
+  let progressLabel = null;
+  const applyStyles = (el, styles) => Object.assign(el.style, styles);
+  const ensureMigrationProgressUI = () => {
+    if (progressContainer?.isConnected) return;
+    progressContainer = document.createElement("div");
+    progressContainer.id = "ffxiv-item-migration-progress";
+    applyStyles(progressContainer, {
+      position: "fixed",
+      left: "16px",
+      right: "16px",
+      bottom: "16px",
+      zIndex: "9999",
+      background: "rgba(20, 20, 20, 0.92)",
+      border: "1px solid #4da3ff",
+      borderRadius: "8px",
+      padding: "10px 12px",
+      color: "#f3f3f3",
+      boxShadow: "0 6px 24px rgba(0,0,0,0.45)"
+    });
 
-      if (!updates.length) continue;
-      actorItemUpdates.push({ actor, updates });
-      pendingCount += updates.length;
-    }
+    progressLabel = document.createElement("div");
+    applyStyles(progressLabel, {
+      fontSize: "13px",
+      marginBottom: "8px",
+      fontWeight: "600"
+    });
 
-    if (pendingCount === 0) {
-      await game.settings.set("ffxiv", "shopTierMigrationVersion", SHOP_TIER_MIGRATION_VERSION);
-      return;
-    }
+    const progressTrack = document.createElement("div");
+    applyStyles(progressTrack, {
+      height: "10px",
+      borderRadius: "999px",
+      background: "rgba(255,255,255,0.2)",
+      overflow: "hidden"
+    });
 
+    progressBarFill = document.createElement("div");
+    applyStyles(progressBarFill, {
+      height: "100%",
+      width: "0%",
+      background: "linear-gradient(90deg, #4da3ff, #87c3ff)",
+      transition: "width 120ms ease-out"
+    });
+
+    progressTrack.appendChild(progressBarFill);
+    progressContainer.append(progressLabel, progressTrack);
+    document.body.appendChild(progressContainer);
+  };
+  const clearMigrationProgressUI = () => {
+    progressContainer?.remove();
+    progressContainer = null;
+    progressBarFill = null;
+    progressLabel = null;
+  };
+  const showMigrationProgress = (pct, labelKey, data = {}) => {
+    const label = game.i18n.has(labelKey)
+      ? game.i18n.format(labelKey, data)
+      : game.i18n.localize(labelKey);
+    const clamped = Math.max(0, Math.min(100, Number(pct) || 0));
+    ensureMigrationProgressUI();
+    if (progressLabel) progressLabel.textContent = `${label} (${clamped}%)`;
+    if (progressBarFill) progressBarFill.style.width = `${clamped}%`;
+    progressActive = true;
+    debugLog(`FFXIV | [${clamped}%] ${label}`);
+  };
+  const clearMigrationProgress = () => {
+    if (!progressActive) return;
+    showMigrationProgress(100, "FFXIV.Notifications.ItemMigrationProgressComplete");
+    setTimeout(() => {
+      clearMigrationProgressUI();
+    }, 500);
+    progressActive = false;
+  };
+  const reportPhase = (messageKey, data = {}) => {
+    const message = game.i18n.has(messageKey)
+      ? game.i18n.format(messageKey, data)
+      : game.i18n.localize(messageKey);
+    debugLog(`FFXIV | ${message}`);
+  };
+  try {
     inProgressNotification = ui.notifications?.warn(
-      game.i18n.localize("FFXIV.Notifications.ShopTierMigrationInProgress"),
+      game.i18n.localize("FFXIV.Notifications.ItemMigrationInProgress"),
       { permanent: true }
     );
 
-    for (const { item, nextTier } of worldItemUpdates) {
-      await item.update({
-        "system.shop_tier": nextTier.shop_tier,
-        "system.shop_tier_custom": nextTier.shop_tier_custom
-      }, { render: false });
-    }
+    showMigrationProgress(2, "FFXIV.Notifications.ItemMigrationProgressStarting");
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseShopTierStart");
+    showMigrationProgress(10, "FFXIV.Notifications.ItemMigrationPhaseShopTierStart");
+    const shopTierStats = await migrateLegacyShopTiers();
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseShopTierDone", shopTierStats);
+    showMigrationProgress(30, "FFXIV.Notifications.ItemMigrationPhaseShopTierDone", shopTierStats);
 
-    for (const { actor, updates } of actorItemUpdates) {
-      await actor.updateEmbeddedDocuments("Item", updates, { render: false });
-    }
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseFormulaStart");
+    showMigrationProgress(35, "FFXIV.Notifications.ItemMigrationPhaseFormulaStart");
+    const formulaStats = await migrateActionFormulaStructure();
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseFormulaDone", formulaStats);
+    showMigrationProgress(55, "FFXIV.Notifications.ItemMigrationPhaseFormulaDone", formulaStats);
 
-    await game.settings.set("ffxiv", "shopTierMigrationVersion", SHOP_TIER_MIGRATION_VERSION);
-    ui.notifications.info(game.i18n.localize("FFXIV.Notifications.ShopTierMigrationComplete"));
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseHpCostStart");
+    showMigrationProgress(60, "FFXIV.Notifications.ItemMigrationPhaseHpCostStart");
+    const hpCostStats = await migrateAbilityHpCosts();
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseHpCostDone", hpCostStats);
+    showMigrationProgress(75, "FFXIV.Notifications.ItemMigrationPhaseHpCostDone", hpCostStats);
 
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseAbilityTypeStart");
+    showMigrationProgress(80, "FFXIV.Notifications.ItemMigrationPhaseAbilityTypeStart");
+    const abilityTypeStats = await migrateAbilityItemTypes();
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseAbilityTypeDone", abilityTypeStats);
+    showMigrationProgress(98, "FFXIV.Notifications.ItemMigrationPhaseAbilityTypeDone", abilityTypeStats);
+
+    await game.settings.set("ffxiv", "itemMigrationVersion", ITEM_DATA_MIGRATION_VERSION);
+    showMigrationProgress(100, "FFXIV.Notifications.ItemMigrationProgressComplete");
+    ui.notifications.info(game.i18n.localize("FFXIV.Notifications.ItemMigrationComplete"));
   } catch (error) {
-    console.error("FFXIV | Shop tier migration failed", error);
-    ui.notifications.error(game.i18n.localize("FFXIV.Notifications.ShopTierMigrationFailed"));
+    console.error("FFXIV | Item migration failed", error);
+    ui.notifications.error(game.i18n.localize("FFXIV.Notifications.ItemMigrationFailed"));
   } finally {
+    clearMigrationProgress();
     if (inProgressNotification) {
       if (typeof ui.notifications?.remove === "function") {
         ui.notifications.remove(inProgressNotification.id ?? inProgressNotification);
-      }
-      else if (typeof inProgressNotification.remove === "function") inProgressNotification.remove();
+      } else if (typeof inProgressNotification.remove === "function") inProgressNotification.remove();
     }
   }
+}
+
+function normalizeHpCostValue(raw) {
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+async function migrateAbilityHpCosts() {
+  let updatedWorldItems = 0;
+  let updatedActorItems = 0;
+  let updatedCompendiumItems = 0;
+  const worldUpdates = [];
+  for (const item of game.items) {
+    if (!HP_COST_MIGRATION_TYPES.has(item.type)) continue;
+    const nextValue = normalizeHpCostValue(item.system?.hpcost);
+    if (nextValue === (Number.isFinite(item.system?.hpcost) ? item.system.hpcost : Number.parseInt(item.system?.hpcost, 10) || 0)) continue;
+    worldUpdates.push({ _id: item.id, "system.hpcost": nextValue });
+    updatedWorldItems += 1;
+  }
+  if (worldUpdates.length) {
+    await Item.updateDocuments(worldUpdates, { render: false });
+  }
+
+  for (const pack of getMigratableItemCompendiumPacks()) {
+    const docs = await pack.getDocuments();
+    const updates = [];
+    for (const item of docs) {
+      if (!HP_COST_MIGRATION_TYPES.has(item.type)) continue;
+      const nextValue = normalizeHpCostValue(item.system?.hpcost);
+      const currentValue = Number.isFinite(item.system?.hpcost) ? item.system.hpcost : Number.parseInt(item.system?.hpcost, 10) || 0;
+      if (nextValue === currentValue) continue;
+      updates.push({ _id: item.id, "system.hpcost": nextValue });
+    }
+    if (!updates.length) continue;
+    await pack.documentClass.updateDocuments(updates, { pack: pack.collection, render: false });
+    updatedCompendiumItems += updates.length;
+  }
+
+  for (const actor of game.actors) {
+    const updates = [];
+    for (const item of actor.items) {
+      if (!HP_COST_MIGRATION_TYPES.has(item.type)) continue;
+      const nextValue = normalizeHpCostValue(item.system?.hpcost);
+      const currentValue = Number.isFinite(item.system?.hpcost) ? item.system.hpcost : Number.parseInt(item.system?.hpcost, 10) || 0;
+      if (nextValue === currentValue) continue;
+      updates.push({ _id: item.id, "system.hpcost": nextValue });
+    }
+    if (!updates.length) continue;
+    await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+    updatedActorItems += updates.length;
+  }
+  return { updatedWorldItems, updatedActorItems, updatedCompendiumItems };
+}
+
+async function migrateAbilityItemTypes() {
+  const legacyAbilityTypes = new Set(ABILITY_SUBTYPE_TYPES);
+  let createdWorldItems = 0;
+  let deletedWorldItems = 0;
+  let updatedWorldTags = 0;
+  let createdActorItems = 0;
+  let deletedActorItems = 0;
+  let updatedActorTags = 0;
+  let updatedAbilityOrders = 0;
+  let updatedJobGrantUUIDs = 0;
+  let createdCompendiumItems = 0;
+  let deletedCompendiumItems = 0;
+  let updatedCompendiumTags = 0;
+  const worldUUIDMap = new Map();
+  const remapAndNormalizeGrantEntries = (rawGrants, UUIDMap) => {
+    const entries = Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {});
+    let changed = false;
+    const nextEntries = entries.map(grant => {
+      if (!grant || typeof grant !== "object") return grant;
+      let nextGrant = grant;
+
+      const currentUUID = String(grant.uuid ?? "");
+      const nextUUID = UUIDMap.get(currentUUID);
+      if (nextUUID && nextUUID !== currentUUID) {
+        nextGrant = { ...nextGrant, uuid: nextUUID };
+        changed = true;
+      }
+
+      const grantType = String(nextGrant.type ?? "");
+      const normalizedSubtype = legacyAbilityTypes.has(grantType)
+        ? grantType
+        : (nextGrant.item ? getAbilitySubtype(nextGrant.item) : "");
+      if (legacyAbilityTypes.has(grantType)) {
+        nextGrant = { ...nextGrant, type: "ability" };
+        changed = true;
+      }
+
+      if (nextGrant.item && typeof nextGrant.item === "object") {
+        const itemType = String(nextGrant.item.type ?? "");
+        if (itemType === "ability" || legacyAbilityTypes.has(itemType)) {
+          const fallbackSubtype = legacyAbilityTypes.has(itemType)
+            ? itemType
+            : (normalizedSubtype || "primary_ability");
+          const nextItem = foundry.utils.deepClone(nextGrant.item);
+          nextItem.type = "ability";
+          nextItem.system = nextItem.system || {};
+          nextItem.system.tags = ensureAbilitySubtypeTags(nextItem.system.tags, fallbackSubtype);
+          nextGrant = { ...nextGrant, item: nextItem };
+          changed = true;
+        }
+
+        const grantItemType = String(nextGrant.item.type ?? "");
+        const nextItemSystem = foundry.utils.deepClone(nextGrant.item.system || {});
+        let itemChanged = false;
+
+        if (ACTION_FORMULA_TYPES.has(grantItemType)) {
+          const formulaPatch = _migrateActionFormulaFields(nextItemSystem);
+          if (formulaPatch) {
+            for (const [path, value] of Object.entries(formulaPatch)) {
+              const localPath = path.startsWith("system.") ? path.slice(7) : path;
+              foundry.utils.setProperty(nextItemSystem, localPath, value);
+            }
+            itemChanged = true;
+          }
+        }
+
+        if (HP_COST_MIGRATION_TYPES.has(grantItemType)) {
+          const nextHpCost = normalizeHpCostValue(nextItemSystem.hpcost);
+          const currentHpCost = Number.isFinite(nextItemSystem.hpcost) ? nextItemSystem.hpcost : Number.parseInt(nextItemSystem.hpcost, 10) || 0;
+          if (nextHpCost !== currentHpCost) {
+            nextItemSystem.hpcost = nextHpCost;
+            itemChanged = true;
+          }
+        }
+
+        if (SHOP_TIER_TYPES.has(grantItemType)) {
+          const normalizedTier = normalizeShopTier(nextItemSystem.shop_tier, nextItemSystem.shop_tier_custom);
+          if (nextItemSystem.shop_tier !== normalizedTier.shop_tier || (nextItemSystem.shop_tier_custom ?? "") !== normalizedTier.shop_tier_custom) {
+            nextItemSystem.shop_tier = normalizedTier.shop_tier;
+            nextItemSystem.shop_tier_custom = normalizedTier.shop_tier_custom;
+            itemChanged = true;
+          }
+        }
+
+        if (itemChanged) {
+          nextGrant = {
+            ...nextGrant,
+            item: {
+              ...nextGrant.item,
+              system: nextItemSystem
+            }
+          };
+          changed = true;
+        }
+      }
+
+      return nextGrant;
+    });
+    return changed ? nextEntries : null;
+  };
+  const buildAbilityData = (item) => {
+    const source = item.toObject();
+    const fallbackSubtype = legacyAbilityTypes.has(item.type) ? item.type : "primary_ability";
+    source.type = "ability";
+    source.system = source.system || {};
+    source.system.tags = ensureAbilitySubtypeTags(source.system.tags, fallbackSubtype);
+    delete source._id;
+    return source;
+  };
+
+  const worldLegacyItems = [];
+  for (const item of game.items) {
+    if (item.type === "ability") {
+      const normalizedTags = ensureAbilitySubtypeTags(item.system?.tags, "primary_ability");
+      const currentTags = Array.isArray(item.system?.tags) ? item.system.tags : [];
+      if (JSON.stringify(normalizedTags) !== JSON.stringify(currentTags)) {
+        await item.update({ "system.tags": normalizedTags }, { render: false });
+        updatedWorldTags += 1;
+      }
+      continue;
+    }
+    if (!legacyAbilityTypes.has(item.type)) continue;
+    worldLegacyItems.push(item);
+  }
+
+  if (worldLegacyItems.length) {
+    const createData = worldLegacyItems.map(item => buildAbilityData(item));
+    const created = await Item.createDocuments(createData, { render: false });
+    createdWorldItems += created.length;
+    for (let i = 0; i < worldLegacyItems.length; i++) {
+      worldUUIDMap.set(worldLegacyItems[i].uuid, created[i]?.uuid);
+    }
+    const deleteIds = worldLegacyItems.map(item => item.id);
+    await Item.deleteDocuments(deleteIds, { render: false });
+    deletedWorldItems += deleteIds.length;
+  }
+
+  for (const pack of getMigratableItemCompendiumPacks()) {
+    const docs = await pack.getDocuments();
+    const packUUIDMap = new Map();
+    const packLegacyItems = [];
+    const tagUpdates = [];
+    for (const item of docs) {
+      if (item.type === "ability") {
+        const normalizedTags = ensureAbilitySubtypeTags(item.system?.tags, "primary_ability");
+        const currentTags = Array.isArray(item.system?.tags) ? item.system.tags : [];
+        if (JSON.stringify(normalizedTags) !== JSON.stringify(currentTags)) {
+          tagUpdates.push({ _id: item.id, "system.tags": normalizedTags });
+        }
+        continue;
+      }
+      if (!legacyAbilityTypes.has(item.type)) continue;
+      packLegacyItems.push(item);
+    }
+
+    if (tagUpdates.length) {
+      await pack.documentClass.updateDocuments(tagUpdates, { pack: pack.collection, render: false });
+      updatedCompendiumTags += tagUpdates.length;
+    }
+
+    if (packLegacyItems.length) {
+      const createData = packLegacyItems.map(item => buildAbilityData(item));
+      const created = await pack.documentClass.createDocuments(createData, { pack: pack.collection, render: false });
+      createdCompendiumItems += created.length;
+      for (let i = 0; i < packLegacyItems.length; i++) {
+        packUUIDMap.set(packLegacyItems[i].uuid, created[i]?.uuid);
+      }
+      const deleteIds = packLegacyItems.map(item => item.id);
+      await pack.documentClass.deleteDocuments(deleteIds, { pack: pack.collection, render: false });
+      deletedCompendiumItems += deleteIds.length;
+    }
+
+    const refreshedDocs = await pack.getDocuments();
+    const jobUpdates = [];
+    for (const item of refreshedDocs) {
+      if (item.type !== "job") continue;
+      const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, packUUIDMap);
+      if (!nextGrants) continue;
+      jobUpdates.push({ _id: item.id, "system.ability_grants": nextGrants });
+    }
+    if (jobUpdates.length) {
+      await pack.documentClass.updateDocuments(jobUpdates, { pack: pack.collection, render: false });
+      updatedJobGrantUUIDs += jobUpdates.length;
+    }
+  }
+
+  for (const item of game.items) {
+    if (item.type !== "job") continue;
+    const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, worldUUIDMap);
+    if (!nextGrants) continue;
+    await item.update({ "system.ability_grants": nextGrants }, { render: false });
+    updatedJobGrantUUIDs += 1;
+  }
+
+  for (const actor of game.actors) {
+    const toMigrate = [];
+    const idMap = new Map();
+    const actorUUIDMap = new Map();
+
+    for (const item of actor.items) {
+      if (!legacyAbilityTypes.has(item.type)) continue;
+      toMigrate.push(item);
+    }
+
+    if (toMigrate.length) {
+      const createData = toMigrate.map(item => buildAbilityData(item));
+      const created = await actor.createEmbeddedDocuments("Item", createData, { render: false });
+      createdActorItems += created.length;
+      for (let i = 0; i < toMigrate.length; i++) {
+        idMap.set(toMigrate[i].id, created[i].id);
+        actorUUIDMap.set(toMigrate[i].uuid, created[i]?.uuid);
+      }
+      await actor.deleteEmbeddedDocuments("Item", toMigrate.map(item => item.id), { render: false });
+      deletedActorItems += toMigrate.length;
+    }
+
+    const abilityOrder = foundry.utils.deepClone(actor.system?.ability_order || {});
+    let orderChanged = false;
+    for (const key of Object.keys(abilityOrder)) {
+      if (!Array.isArray(abilityOrder[key])) continue;
+      const next = abilityOrder[key].map(id => idMap.get(id) ?? id);
+      if (JSON.stringify(next) !== JSON.stringify(abilityOrder[key])) {
+        abilityOrder[key] = next;
+        orderChanged = true;
+      }
+    }
+    if (orderChanged) {
+      await actor.update({ "system.ability_order": abilityOrder }, { render: false });
+      updatedAbilityOrders += 1;
+    }
+
+    const abilityItems = actor.items.filter(item => item.type === "ability");
+    const tagUpdates = [];
+    for (const item of abilityItems) {
+      const normalizedTags = ensureAbilitySubtypeTags(item.system?.tags, "primary_ability");
+      const currentTags = Array.isArray(item.system?.tags) ? item.system.tags : [];
+      if (JSON.stringify(normalizedTags) === JSON.stringify(currentTags)) continue;
+      tagUpdates.push({ _id: item.id, "system.tags": normalizedTags });
+    }
+    if (tagUpdates.length) {
+      await actor.updateEmbeddedDocuments("Item", tagUpdates, { render: false });
+      updatedActorTags += tagUpdates.length;
+    }
+
+    const UUIDMap = new Map([...worldUUIDMap, ...actorUUIDMap]);
+    const jobUpdates = [];
+    for (const item of actor.items) {
+      if (item.type !== "job") continue;
+      const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, UUIDMap);
+      if (!nextGrants) continue;
+      jobUpdates.push({ _id: item.id, "system.ability_grants": nextGrants });
+    }
+    if (jobUpdates.length) {
+      await actor.updateEmbeddedDocuments("Item", jobUpdates, { render: false });
+      updatedJobGrantUUIDs += jobUpdates.length;
+    }
+  }
+  return {
+    createdWorldItems,
+    deletedWorldItems,
+    updatedWorldTags,
+    createdCompendiumItems,
+    deletedCompendiumItems,
+    updatedCompendiumTags,
+    createdActorItems,
+    deletedActorItems,
+    updatedActorTags,
+    updatedAbilityOrders,
+    updatedJobGrantUUIDs
+  };
+}
+
+async function migrateLegacyShopTiers() {
+  const worldItemUpdates = [];
+  const actorItemUpdates = [];
+  let updatedCompendiumItems = 0;
+  for (const item of game.items) {
+    if (!SHOP_TIER_TYPES.has(item.type)) continue;
+    const nextTier = normalizeShopTier(item.system.shop_tier, item.system.shop_tier_custom);
+    if (item.system.shop_tier === nextTier.shop_tier && (item.system.shop_tier_custom ?? "") === nextTier.shop_tier_custom) continue;
+    worldItemUpdates.push({ item, nextTier });
+  }
+
+  for (const actor of game.actors) {
+    const updates = [];
+    for (const item of actor.items) {
+      if (!SHOP_TIER_TYPES.has(item.type)) continue;
+      const nextTier = normalizeShopTier(item.system.shop_tier, item.system.shop_tier_custom);
+      if (item.system.shop_tier === nextTier.shop_tier && (item.system.shop_tier_custom ?? "") === nextTier.shop_tier_custom) continue;
+
+      updates.push({
+        _id: item.id,
+        "system.shop_tier": nextTier.shop_tier,
+        "system.shop_tier_custom": nextTier.shop_tier_custom
+      });
+    }
+
+    if (!updates.length) continue;
+    actorItemUpdates.push({ actor, updates });
+  }
+
+  if (worldItemUpdates.length) {
+    const worldUpdates = worldItemUpdates.map(({ item, nextTier }) => ({
+      _id: item.id,
+      "system.shop_tier": nextTier.shop_tier,
+      "system.shop_tier_custom": nextTier.shop_tier_custom
+    }));
+    await Item.updateDocuments(worldUpdates, { render: false });
+  }
+
+  for (const { actor, updates } of actorItemUpdates) {
+    await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+  }
+
+  for (const pack of getMigratableItemCompendiumPacks()) {
+    const docs = await pack.getDocuments();
+    const updates = [];
+    for (const item of docs) {
+      if (!SHOP_TIER_TYPES.has(item.type)) continue;
+      const nextTier = normalizeShopTier(item.system.shop_tier, item.system.shop_tier_custom);
+      if (item.system.shop_tier === nextTier.shop_tier && (item.system.shop_tier_custom ?? "") === nextTier.shop_tier_custom) continue;
+      updates.push({
+        _id: item.id,
+        "system.shop_tier": nextTier.shop_tier,
+        "system.shop_tier_custom": nextTier.shop_tier_custom
+      });
+    }
+    if (!updates.length) continue;
+    await pack.documentClass.updateDocuments(updates, { pack: pack.collection, render: false });
+    updatedCompendiumItems += updates.length;
+  }
+  return {
+    updatedWorldItems: worldItemUpdates.length,
+    updatedActorItems: actorItemUpdates.reduce((sum, entry) => sum + entry.updates.length, 0),
+    updatedCompendiumItems
+  };
+}
+
+function _normalizeActionFormulaAttribute(rawAttribute) {
+  const normalized = String(rawAttribute ?? "").trim().toLowerCase();
+  const aliases = {
+    str: "str",
+    strength: "str",
+    dex: "dex",
+    dexterity: "dex",
+    vit: "vit",
+    vitality: "vit",
+    int: "int",
+    intelligence: "int",
+    mnd: "mnd",
+    mind: "mnd"
+  };
+  return aliases[normalized] ?? "";
+}
+
+function _extractActionFormulaAttribute(formula) {
+  const source = String(formula ?? "");
+  if (!source.trim()) return { formula: "", attribute: "" };
+
+  const plusPattern = /(\s*\+\s*)@([a-z_]+)/i;
+  let next = source;
+  let matchedAttribute = "";
+
+  const plusMatch = plusPattern.exec(source);
+  if (plusMatch) {
+    matchedAttribute = _normalizeActionFormulaAttribute(plusMatch[2]);
+    if (matchedAttribute) {
+      next = `${source.slice(0, plusMatch.index)}${source.slice(plusMatch.index + plusMatch[0].length)}`;
+    }
+  }
+
+  if (!matchedAttribute) {
+    const startPattern = /^\s*@([a-z_]+)\s*/i;
+    const startMatch = startPattern.exec(source);
+    if (startMatch) {
+      matchedAttribute = _normalizeActionFormulaAttribute(startMatch[1]);
+      if (matchedAttribute) next = source.slice(startMatch[0].length);
+    }
+  }
+
+  const cleaned = String(next)
+    .replace(/\s+/g, " ")
+    .replace(/^\s*\+\s*/g, "")
+    .replace(/\+\s*\+/g, "+")
+    .trim();
+
+  return {
+    formula: cleaned,
+    attribute: matchedAttribute
+  };
+}
+
+function _migrateActionFormulaFields(itemSystem) {
+  const pairs = [
+    { formulaKey: "hit_formula", attrKey: "hit_formula_attribute" },
+    { formulaKey: "direct_formula", attrKey: "direct_formula_attribute" },
+    { formulaKey: "alternate_formula", attrKey: "alternate_formula_attribute" },
+    { formulaKey: "alternate_formula_critical", attrKey: "alternate_formula_critical_attribute" }
+  ];
+
+  const updates = {};
+  let changed = false;
+
+  for (const { formulaKey, attrKey } of pairs) {
+    const formulaValue = String(itemSystem?.[formulaKey] ?? "");
+    const currentAttribute = _normalizeActionFormulaAttribute(itemSystem?.[attrKey] ?? "");
+
+    if (currentAttribute) {
+      if (itemSystem?.[attrKey] !== currentAttribute) {
+        updates[`system.${attrKey}`] = currentAttribute;
+        changed = true;
+      }
+      continue;
+    }
+
+    if (!formulaValue.trim()) continue;
+    const extracted = _extractActionFormulaAttribute(formulaValue);
+    if (!extracted.attribute) continue;
+
+    if (extracted.formula !== formulaValue) {
+      updates[`system.${formulaKey}`] = extracted.formula;
+      changed = true;
+    }
+    updates[`system.${attrKey}`] = extracted.attribute;
+    changed = true;
+  }
+
+  return changed ? updates : null;
+}
+
+async function migrateActionFormulaStructure() {
+  const worldItemUpdates = [];
+  const actorItemUpdates = [];
+  let updatedCompendiumItems = 0;
+  for (const item of game.items) {
+    if (!ACTION_FORMULA_TYPES.has(item.type)) continue;
+    const updates = _migrateActionFormulaFields(item.system);
+    if (!updates) continue;
+    worldItemUpdates.push({ item, updates });
+  }
+
+  for (const actor of game.actors) {
+    const updates = [];
+    for (const item of actor.items) {
+      if (!ACTION_FORMULA_TYPES.has(item.type)) continue;
+      const patch = _migrateActionFormulaFields(item.system);
+      if (!patch) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+
+    if (!updates.length) continue;
+    actorItemUpdates.push({ actor, updates });
+  }
+
+  if (worldItemUpdates.length) {
+    const worldUpdates = worldItemUpdates.map(({ item, updates }) => ({
+      _id: item.id,
+      ...updates
+    }));
+    await Item.updateDocuments(worldUpdates, { render: false });
+  }
+
+  for (const { actor, updates } of actorItemUpdates) {
+    await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+  }
+
+  for (const pack of getMigratableItemCompendiumPacks()) {
+    const docs = await pack.getDocuments();
+    const updates = [];
+    for (const item of docs) {
+      if (!ACTION_FORMULA_TYPES.has(item.type)) continue;
+      const patch = _migrateActionFormulaFields(item.system);
+      if (!patch) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+    if (!updates.length) continue;
+    await pack.documentClass.updateDocuments(updates, { pack: pack.collection, render: false });
+    updatedCompendiumItems += updates.length;
+  }
+  return {
+    updatedWorldItems: worldItemUpdates.length,
+    updatedActorItems: actorItemUpdates.reduce((sum, entry) => sum + entry.updates.length, 0),
+    updatedCompendiumItems
+  };
 }
 
 function getFFXIVTheme() {
@@ -766,18 +1510,6 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
     const defaultImg = defaultImages[itemData.type] || "icons/svg/item-bag.svg";
     itemData.updateSource({ img: defaultImg });
   }
-  //Currencies should be added, not split in several piles
-  if (itemData.type !== "currency") return;
-  const actor = itemData.parent;
-  if (!actor) return;
-  const existingCurrency = actor.items.find(i => i.type === "currency" && i.name === itemData.name);
-  if (existingCurrency){
-    const addedQty = parseInt(itemData.system?.quantity) ?? 0;
-    const oldQty = parseInt(existingCurrency.system?.quantity) ?? 0;
-    existingCurrency.update({ "system.quantity": parseInt(oldQty + addedQty) });
-    return false
-  };
-
 });
 
 Hooks.on("userConnected", (player, login, data) => {

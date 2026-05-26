@@ -71,7 +71,7 @@
 
     <div class="tab traits actor-abilities" data-group="primary" data-tab="traits">
       {{#each (reverse items)}}
-        {{#if (eq type "limit_break")}}
+        {{#if (isAbilitySubtype this "limit_break")}}
           {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
         {{/if}}
       {{/each}}

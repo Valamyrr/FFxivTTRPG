@@ -67,7 +67,7 @@
     <section class="sub-tab-content" data-tab="traits" style="display:none;">
 
       {{#each (reverse items)}}
-        {{#if (eq type "limit_break")}}
+        {{#if (isAbilitySubtype this "limit_break")}}
           {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
         {{/if}}
       {{/each}}

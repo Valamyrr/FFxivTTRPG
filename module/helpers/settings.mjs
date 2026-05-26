@@ -183,6 +183,65 @@ class FFXIVCustomTagsSettingsMenu extends FFXIVSettingsSubmenu {
   };
 }
 
+class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(ApplicationV2) {
+  static menuId = "migration-tools";
+  static DEFAULT_OPTIONS = {
+    id: "ffxiv-migration-tools",
+    classes: ["ffxiv", "settings-submenu"],
+    position: {
+      width: 520,
+      height: "auto",
+    },
+    window: {
+      title: "FFXIV Migration Tools",
+      resizable: false,
+    },
+  };
+
+  static PARTS = {
+    sheet: {
+      template: "systems/ffxiv/templates/migration-tools.hbs",
+    },
+  };
+
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    context.currentVersion = game.settings.get("ffxiv", "itemMigrationVersion") || "(none)";
+    return context;
+  }
+
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+    this._controller?.abort();
+    this._controller = new AbortController();
+    const { signal } = this._controller;
+
+    this.element.querySelector("[data-action='run-item-migration']")?.addEventListener("click", async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!game.user.isGM) {
+        ui.notifications.warn("Only a GM can run item migration.");
+        return;
+      }
+
+      const runButton = event.currentTarget;
+      runButton.disabled = true;
+      try {
+        await game.ffxivttrpg?.runItemMigration?.(true);
+      } finally {
+        runButton.disabled = false;
+        this.render({ force: true });
+      }
+    }, { signal });
+  }
+
+  async _onClose(options) {
+    this._controller?.abort();
+    this._controller = null;
+    await super._onClose(options);
+  }
+}
+
 export class SettingsHelpers {
 
   static initSettings(){
@@ -229,6 +288,15 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.CustomTagsSettingsMenuHint"),
       icon: "fas fa-tags",
       type: FFXIVCustomTagsSettingsMenu,
+      restricted: true
+    });
+
+    game.settings.registerMenu("ffxiv", "migrationToolsMenu", {
+      name: "Migration Tools",
+      label: "Open Tools",
+      hint: "Run system item-data migration on demand.",
+      icon: "fas fa-arrows-rotate",
+      type: FFXIVMigrationToolsMenu,
       restricted: true
     });
 
@@ -331,9 +399,9 @@ export class SettingsHelpers {
       requiresReload: true
     });
 
-    game.settings.register("ffxiv", "shopTierMigrationVersion", {
-      name: "FFXIV.Settings.ShopTierMigrationVersion",
-      hint: "FFXIV.Settings.ShopTierMigrationVersionHint",
+    game.settings.register("ffxiv", "itemMigrationVersion", {
+      name: "Item migration version",
+      hint: "Internal setting used to track one-time item data migration progress.",
       scope: "world",
       config: false,
       default: "",

@@ -147,6 +147,14 @@ FF_XIV.rarities = {
   unique: { value: "unique", label: "FFXIV.Rarities.Unique" }
 };
 
+FF_XIV.formula_attributes = {
+  str: { value: "str", label: "FFXIV.Attributes.Strength.long" },
+  dex: { value: "dex", label: "FFXIV.Attributes.Dexterity.long" },
+  vit: { value: "vit", label: "FFXIV.Attributes.Vitality.long" },
+  int: { value: "int", label: "FFXIV.Attributes.Intelligence.long" },
+  mnd: { value: "mnd", label: "FFXIV.Attributes.Mind.long" }
+};
+
 FF_XIV.base_tags_abilities = [
   "Physical",
   "Ranged",

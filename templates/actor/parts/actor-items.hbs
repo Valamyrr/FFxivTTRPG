@@ -25,28 +25,22 @@
       {{/if}}
     {{/each}}
   </div>
-
-  {{#if (hasItemType items "currency")}}<h2>{{ localize "FFXIV.CharacterSheet.Currencies"}}</h2>{{/if}}
-
-  <div class="currencies">
-
-    <div class="currencies-grid">
-    {{#each items as |item|}}
-      {{#if (eq item.type "currency")}}
-      <div class="currency-card">
-        <div class="currency-image">
-          <img src="{{item.img}}" alt="{{item.name}}">
-        </div>
-        <hr/>
-        <div class="currency-info">
-          <div class="currency-name {{rarityTextClass item.system.rarity}}">{{item.name}}</div>
-          <input type="number" class="currency-quantity" data-item-id="{{item._id}}" value="{{item.system.quantity}}">
-        </div>
-      </div>
-      {{/if}}
-    {{/each}}
-    </div>
-
+  <div class="ffxiv-fortune-row">
+    <img
+      class="ffxiv-fortune-icon"
+      src="systems/ffxiv/assets/currency/fortune.webp"
+      alt="{{localize 'FFXIV.Item.Fortune'}}"
+      title="{{localize 'FFXIV.Item.Fortune'}}"
+    >
+    <input
+      id="ffxiv-fortune"
+      type="number"
+      name="system.fortune"
+      value="{{system.fortune}}"
+      min="0"
+      data-dtype="Number"
+      {{#unless editable}}disabled{{/unless}}
+    >
   </div>
 
   {{#if (hasItemType items "augment")}}<h2>{{ localize "FFXIV.CharacterSheet.Augments"}}</h2>{{/if}}

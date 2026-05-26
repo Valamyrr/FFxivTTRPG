@@ -1,4 +1,4 @@
-<div class='{{cssClass}}'>
+<div class='{{cssClass}} item-modern-sheet'>
   <header class='sheet-header'>
     <img
       class='profile-img'
@@ -22,7 +22,7 @@
   {{! Sheet Body }}
   <section class='sheet-body'>
 
-    <div class='attributes'>
+    <div class='attributes item-details-card'>
       <div class="tags-container">
         <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
         <ul class="tag-list">
@@ -100,6 +100,14 @@
           <label for="system.hit_formula" class="resource-label">{{ localize "FFXIV.Abilities.HitFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <input name="system.hit_formula" type="text" value="{{item.system.hit_formula}}"/>
+            {{#if (hasContent item.system.hit_formula)}}
+            <select style="text-align: center;" name="system.hit_formula_attribute">
+              <option value="">{{ localize "FFXIV.None" }}</option>
+              {{#each this.config.formula_attributes as |attr|}}
+              <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.hit_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+              {{/each}}
+            </select>
+            {{/if}}
           </div>
         </div>
       </div>
@@ -131,8 +139,48 @@
           <label for="system.direct_formula" class="resource-label">{{ localize "FFXIV.Abilities.DirectFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <input name="system.direct_formula" type="text" value="{{item.system.direct_formula}}"/>
+            {{#if (hasContent item.system.direct_formula)}}
+            <select style="text-align: center;" name="system.direct_formula_attribute">
+              <option value="">{{ localize "FFXIV.None" }}</option>
+              {{#each this.config.formula_attributes as |attr|}}
+                <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.direct_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+              {{/each}}
+            </select>
+            {{/if}}
           </div>
         </div>
+
+        {{#if (hasContent item.system.direct_hit)}}
+        <div class="resource flex-group-center">
+          <label for="system.alternate_formula" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormula" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.alternate_formula" type="text" value="{{item.system.alternate_formula}}"/>
+            {{#if (hasContent item.system.alternate_formula)}}
+            <select style="text-align: center;" name="system.alternate_formula_attribute">
+              <option value="">{{ localize "FFXIV.None" }}</option>
+              {{#each this.config.formula_attributes as |attr|}}
+                <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.alternate_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+              {{/each}}
+            </select>
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.alternate_formula_critical" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormulaCritical" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.alternate_formula_critical" type="text" value="{{item.system.alternate_formula_critical}}"/>
+            {{#if (hasContent item.system.alternate_formula_critical)}}
+            <select style="text-align: center;" name="system.alternate_formula_critical_attribute">
+              <option value="">{{ localize "FFXIV.None" }}</option>
+              {{#each this.config.formula_attributes as |attr|}}
+                <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.alternate_formula_critical_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+              {{/each}}
+            </select>
+            {{/if}}
+          </div>
+        </div>
+        {{/if}}
 
         <div class="resource flex-group-center">
           <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>

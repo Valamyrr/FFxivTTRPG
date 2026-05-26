@@ -486,3 +486,30 @@
   opacity: 0.75;
   text-align: center;
 }
+
+.ffxiv.item.item-modern-sheet .sheet-body {
+  padding: 0 10px 12px;
+}
+
+.ffxiv.item.item-modern-sheet .sheet-body > .attributes,
+.ffxiv.item.item-modern-sheet .sheet-body > .resources,
+.ffxiv.item.item-modern-sheet .sheet-body > .tags-container,
+.ffxiv.item.item-modern-sheet .sheet-body > prose-mirror {
+  background: rgba(10, 12, 20, 0.35);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 10px;
+  margin: 10px 0;
+  padding: 12px;
+}
+
+.ffxiv.item.item-modern-sheet .item-details-card > hr,
+.ffxiv.item.item-modern-sheet .sheet-body > hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 12px 0;
+}
+
+.ffxiv.item.item-modern-sheet .tags-container .resource-label,
+.ffxiv.item.item-modern-sheet .resource-label {
+  letter-spacing: 0.02em;
+}

@@ -3,6 +3,7 @@ import {
   prepareActiveEffectCategories,
 } from '../helpers/effects.mjs';
 import { debugError, debugLog } from "../helpers/debug.mjs";
+import { getAbilitySubtype, getSubtypeTagLabel, ensureAbilitySubtypeTags } from "../helpers/ability-subtype.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -15,6 +16,7 @@ const CHARACTER_LOCK_ALLOWED_FIELDS = new Set([
   "system.health.value",
   "system.barrier.value",
   "system.barrier.max",
+  "system.fortune",
 ]);
 const NPC_LOCK_ALLOWED_FIELDS = new Set([
   "system.health.value",
@@ -57,6 +59,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.hidingSidebar = false;
     this.currentAbilityTab = "primary";
     this.actorEditMode = false;
+    this._enrichedCache = null;
   }
 
   /** @override */
@@ -122,6 +125,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
+    const skipEnrichment = options?.ffxivSkipEnrichment === true;
 
     const actorData = this.document.toObject(false);
     context.actor = this.actor;
@@ -158,10 +162,11 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         if (!pet) continue;
 
         const petData = pet.toObject();
-        petData.enriched = await this.constructor.enrichAllStrings(petData.system, this.actor.getRollData(), pet);
-
-        for (const item of petData.items || []) {
-          item.enriched = await this.constructor.enrichAllStrings(item.system, this.actor.getRollData(), item);
+        if (!skipEnrichment) {
+          petData.enriched = await this.constructor.enrichAllStrings(petData.system, this.actor.getRollData(), pet);
+          for (const item of petData.items || []) {
+            item.enriched = await this.constructor.enrichAllStrings(item.system, this.actor.getRollData(), item);
+          }
         }
 
         context.pets.push(petData);
@@ -173,17 +178,65 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this._prepareSharedData(context);
     }
 
-    context.enriched = await this.constructor.enrichAllStrings(this.actor.system, this.actor.getRollData(), this.actor);
-
-    if (["character", "npc", "pet"].includes(actorData.type)) {
-      for (const item of context.items) {
-        item.enriched = await this.constructor.enrichAllStrings(item.system, this.actor.getRollData(), item);
+    if (!skipEnrichment) {
+      context.enriched = await this.constructor.enrichAllStrings(this.actor.system, this.actor.getRollData(), this.actor);
+      if (["character", "npc", "pet"].includes(actorData.type)) {
+        for (const item of context.items) {
+          item.enriched = await this.constructor.enrichAllStrings(item.system, this.actor.getRollData(), item);
+        }
       }
+      this._cacheEnrichedContext(context);
+    } else {
+      this._applyCachedEnrichment(context);
     }
 
     context.effects = prepareActiveEffectCategories(this.actor.allApplicableEffects());
     context.hidingSidebar = this.hidingSidebar;
     return context;
+  }
+
+  _cacheEnrichedContext(context) {
+    const itemMap = new Map();
+    for (const item of context.items || []) {
+      itemMap.set(item._id, foundry.utils.deepClone(item.enriched || {}));
+    }
+
+    const petMap = new Map();
+    for (const pet of context.pets || []) {
+      const petItems = new Map();
+      for (const item of pet.items || []) {
+        petItems.set(item._id, foundry.utils.deepClone(item.enriched || {}));
+      }
+      petMap.set(pet._id, {
+        enriched: foundry.utils.deepClone(pet.enriched || {}),
+        items: petItems
+      });
+    }
+
+    this._enrichedCache = {
+      actor: foundry.utils.deepClone(context.enriched || {}),
+      items: itemMap,
+      pets: petMap
+    };
+  }
+
+  _applyCachedEnrichment(context) {
+    const cache = this._enrichedCache;
+    if (!cache) {
+      context.enriched = {};
+      return;
+    }
+    context.enriched = foundry.utils.deepClone(cache.actor || {});
+    for (const item of context.items || []) {
+      item.enriched = foundry.utils.deepClone(cache.items?.get(item._id) || {});
+    }
+    for (const pet of context.pets || []) {
+      const petCache = cache.pets?.get(pet._id);
+      pet.enriched = foundry.utils.deepClone(petCache?.enriched || {});
+      for (const item of pet.items || []) {
+        item.enriched = foundry.utils.deepClone(petCache?.items?.get(item._id) || {});
+      }
+    }
   }
 
   /** @override */
@@ -383,8 +436,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!EDIT_MODE_ACTOR_TYPES.has(this.actor.type) || !this.document.isOwner) return;
     if (!this._pendingSheetScrollPositions?.length) this._captureSheetScroll();
     this.actorEditMode = !this.actorEditMode;
-    this.render({ force: true });
+    this.render({ force: true, ffxivSkipEnrichment: true });
     this._restoreSheetScroll();
+  }
+
+  _renderWithoutEnrichment(options = {}) {
+    return this.render({ force: true, ffxivSkipEnrichment: true, ...options });
   }
 
   _warnActorSheetLocked(event) {
@@ -443,38 +500,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       icon?.classList.toggle("fa-lock", !editing);
       icon?.classList.toggle("fa-lock-open", editing);
     }
-
-    const controls = root.querySelectorAll("input, select, textarea, prose-mirror");
-    controls.forEach(control => {
-      if (control.closest(".actor-edit-toggle")) return;
-      if (this._isActorLockAllowedControl(control)) {
-        control.disabled = false;
-        control.toggleAttribute("readonly", false);
-        control.setAttribute("aria-disabled", "false");
-        return;
-      }
-
-      if (!control.dataset.actorEditOriginalDisabled) {
-        control.dataset.actorEditOriginalDisabled = control.disabled ? "true" : "false";
-      }
-
-      const wasDisabled = control.dataset.actorEditOriginalDisabled === "true";
-      const canUseReadonly = control.matches("textarea")
-        || (control.matches("input") && !["button", "checkbox", "color", "file", "radio", "range", "reset", "submit"].includes(control.type));
-
-      control.disabled = wasDisabled || (!editing && !canUseReadonly);
-      control.toggleAttribute("readonly", !editing && canUseReadonly && !wasDisabled);
-      control.setAttribute("aria-disabled", String(!editing || wasDisabled));
-
-      control.querySelectorAll?.("[contenteditable]").forEach(editor => {
-        editor.setAttribute("contenteditable", editing && !wasDisabled ? "true" : "false");
-      });
-    });
-
-    root.querySelectorAll("[data-edit]").forEach(element => {
-      element.classList.toggle("actor-edit-locked", !editing);
-      element.setAttribute("aria-disabled", String(!editing));
-    });
   }
 
   _setCharacterSheetId() {
@@ -619,7 +644,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
         if (!sourceItem || sourceItem.documentName !== "Item") {
           isDraggingItem = false;
-          return this.render();
+          return this._renderWithoutEnrichment();
         }
 
         const sourceActor = sourceItem.parent;
@@ -631,7 +656,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           const draggedItemData = targetActor.items.get(sourceItem.id) || targetActor.items.get(draggedItem?.id);
           if (!draggedItemData) {
             isDraggingItem = false;
-            return this.render();
+            return this._renderWithoutEnrichment();
           }
 
           if (targetItemId) {
@@ -652,7 +677,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           }
 
           isDraggingItem = false;
-          return this.render();
+          return this._renderWithoutEnrichment();
         }
 
         const sourceData = sourceItem.toObject();
@@ -669,7 +694,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
                 if (!fallbackPosition) {
                   ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.InventoryFull"));
                   isDraggingItem = false;
-                  return this.render();
+                  return this._renderWithoutEnrichment();
                 }
                 await occupied.update({ "system.position": fallbackPosition }, { render: false });
               }
@@ -688,7 +713,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             }
 
             isDraggingItem = false;
-            targetActor?.sheet?.render?.({ force: true }).catch(() => {});
+            targetActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => {});
             return;
           }
 
@@ -728,13 +753,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           }
 
           isDraggingItem = false;
-          targetActor?.sheet?.render?.({ force: true }).catch(() => {});
-          sourceActor?.sheet?.render?.({ force: true }).catch(() => {});
+          targetActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => {});
+          sourceActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => {});
         } catch (err) {
           console.error(err);
           ui.notifications.error(err.message || "Item move failed");
           isDraggingItem = false;
-          this.render();
+          this._renderWithoutEnrichment();
         }
       }, { signal });
     });
@@ -825,7 +850,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const secondary_abilities = [];
     const instant_abilities = [];
     const limit_break = [];
-    const currency = [];
     const traits = [];
 
     for (let i of context.items) {
@@ -846,9 +870,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       if (i.type === 'limit_break') {
         limit_break.push(i);
       }
-      if (i.type === 'currency') {
-        currency.push(i);
-      }
       if (i.type === 'traits') {
         traits.push(i);
       }
@@ -861,7 +882,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.secondary_abilities = secondary_abilities;
     context.instant_abilities = instant_abilities;
     context.limit_break = limit_break;
-    context.currency = currency;
     context.traits = traits;
   }
 
@@ -1031,8 +1051,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     html.on('mousedown.ffxivActorSheet', '.mana-bar', this._onClickManaBar.bind(this));
 
-    html.on('change.ffxivActorSheet', '.currency-quantity', this._updateCurrency.bind(this));
-
     html.on('click.ffxivActorSheet', '.ability-icon', this._renderItem.bind(this));
     html.on('click.ffxivActorSheet', '.augment-icon', this._renderItem.bind(this));
     html.on('click.ffxivActorSheet', '.ability-roll-button', this._rollItem.bind(this));
@@ -1120,12 +1138,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }
 
-    const abilityTypes = ["primary_ability", "secondary_ability", "instant_ability"];
+    const abilityTypes = ["primary_ability", "secondary_ability", "instant_ability", "limit_break"];
     const createAbility = async (type) => {
       const label = game.i18n.localize(`FFXIV.ItemType.${type}`);
       await this._createEmbeddedItem({
-        type,
+        type: "ability",
         name: `New ${label}`,
+        tags: [getSubtypeTagLabel(type)],
         openSheet: true,
         preserveScroll: true
       });
@@ -1189,15 +1208,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const itemId = event.currentTarget.dataset.itemId
     const item = this.actor.items.get(itemId);
     if(item){
-      if(item.system.hpcost){
-        const currentHP = this.actor.system.health.value
-        if(currentHP - item.system.hpcost < 1){
-          ui.notifications.warning(game.i18n.localize("FFXIV.Notifications.NotEnoughHP"))
-          return;
-        }
-        this.actor.update({"system.health.value": currentHP - item.system.hpcost})
-      }
-      item.roll(event);
+      await item.roll(event);
     }else{
       debugError("Roll Error : No item found.");
       debugError(event.currentTarget);
@@ -1725,47 +1736,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
-  _updateCurrency(event){
-    const itemId = event.currentTarget.dataset.itemId;
-    const newQuantity = event.currentTarget.value;
-    const item = this.actor.items.get(itemId);
-
-    if (item) {
-      if (newQuantity < 0){
-        new foundry.applications.api.DialogV2({
-          id: "update-currency",
-          window: {title: game.i18n.format("FFXIV.Dialogs.DialogTitleConfirmation")},
-          buttons:[
-            {
-              label: game.i18n.localize("FFXIV.Dialogs.Yes"),
-              action: "delete",
-              type: "submit",
-              callback: (event, button) => {
-                ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
-                item.delete();
-                if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_deleteItem')){
-                  foundry.audio.AudioHelper.play({
-                    src: game.settings.get('ffxiv', 'soundNotificationFFXIV_deleteItem'),
-                    volume: 1,
-                    autoplay: true,
-                    loop: false
-                  });
-                }
-              }
-            },
-            {
-              label: game.i18n.localize("FFXIV.Dialogs.No"),
-              action: "keep",
-              type: "submit"
-            }
-          ]
-        }).render({force:true});
-      } else {
-          item.update({ 'system.quantity': parseInt(newQuantity) });
-      }
-    }
-  }
-
   _displayAbilityTab(event){
     event.preventDefault();
     event.stopPropagation();
@@ -1954,7 +1924,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (abilityOrder.constructor.name=="Array") abilityOrder = {} //Before 1.4, there was an issue with template.json creating arrays instead of objects
     if (!abilityOrder[abilityType]) abilityOrder[abilityType] = [];
 
-    const allAbilities = actor.items.filter(i => i.type === abilityType).map(i => i.id);
+    const allAbilities = actor.items
+      .filter(i => {
+        if (abilityType === "trait") return i.type === "trait";
+        return getAbilitySubtype(i) === abilityType;
+      })
+      .map(i => i.id);
 
     abilityOrder[abilityType] = abilityOrder[abilityType].filter(id => allAbilities.includes(id)); //redefinition to avoid issues with deleted abilities
 
@@ -1972,7 +1947,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     [abilityOrder[abilityType][index], abilityOrder[abilityType][newIndex]] =
     [abilityOrder[abilityType][newIndex], abilityOrder[abilityType][index]];
-    await actor.update({ "system.ability_order": abilityOrder });
+    await actor.update({ "system.ability_order": abilityOrder }, { render: false });
+    await this._renderWithoutEnrichment();
   }
 
 
@@ -2068,14 +2044,24 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   _isManualAbilityDrop(item) {
-    const abilityTypes = ["primary_ability", "secondary_ability", "instant_ability", "limit_break", "trait"];
-    return item?.documentName === "Item" && abilityTypes.includes(item.type);
+    const isAbility = item?.type === "ability"
+      || ["primary_ability", "secondary_ability", "instant_ability", "limit_break"].includes(item?.type);
+    return item?.documentName === "Item" && (isAbility || item.type === "trait");
   }
 
   async _equipDroppedAbility(sourceItem) {
     this._captureSheetScroll();
     const itemData = sourceItem.toObject();
     delete itemData._id;
+    if (["primary_ability", "secondary_ability", "instant_ability", "limit_break"].includes(itemData.type)) {
+      itemData.type = "ability";
+      const existingTags = Array.isArray(itemData.system?.tags) ? itemData.system.tags : [];
+      itemData.system = itemData.system || {};
+      itemData.system.tags = ensureAbilitySubtypeTags(
+        [getSubtypeTagLabel(getAbilitySubtype(sourceItem)), ...existingTags],
+        "primary_ability"
+      );
+    }
 
     await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
     await this.render({ force: true });

@@ -24,13 +24,13 @@
   {{/if}}
 
   {{#each items as |item|}}
-    {{#if (eq item.type "primary_ability")}}
+    {{#if (isAbilitySubtype item "primary_ability")}}
       {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" item}}
     {{/if}}
-    {{#if (eq item.type "secondary_ability")}}
+    {{#if (isAbilitySubtype item "secondary_ability")}}
       {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" item}}
     {{/if}}
-    {{#if (eq item.type "instant_ability")}}
+    {{#if (isAbilitySubtype item "instant_ability")}}
       {{> "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs" item}}
     {{/if}}
     {{#if (eq item.type "trait")}}

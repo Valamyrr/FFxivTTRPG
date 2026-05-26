@@ -24,11 +24,15 @@ function buildAbilityFields() {
     ),
     limitations_max: new fields.NumberField({ required: false, integer: true, min: 0, initial: 0 }),
     hit_formula: new fields.StringField({ required: false, blank: true, initial: "" }),
+    hit_formula_attribute: new fields.StringField({ required: false, blank: true, initial: "" }),
     direct_formula: new fields.StringField({ required: false, blank: true, initial: "" }),
+    direct_formula_attribute: new fields.StringField({ required: false, blank: true, initial: "" }),
     base_formula: new fields.StringField({ required: false, blank: true, initial: "" }),
     alternate_formula: new fields.StringField({ required: false, blank: true, initial: "" }),
+    alternate_formula_attribute: new fields.StringField({ required: false, blank: true, initial: "" }),
     alternate_formula_critical: new fields.StringField({ required: false, blank: true, initial: "" }),
-    hpcost: new fields.StringField({ required: false, blank: true, initial: "" }),
+    alternate_formula_critical_attribute: new fields.StringField({ required: false, blank: true, initial: "" }),
+    hpcost: new fields.NumberField({ required: false, integer: true, min: 0, initial: 0 }),
     origin: new fields.StringField({ required: false, blank: true, initial: "" })
   };
 }
@@ -200,6 +204,7 @@ class CharacterActorData extends foundry.abstract.TypeDataModel {
       showPets: new fields.StringField({ required: false, blank: true, initial: "false" }),
       banner: new fields.StringField({ required: false, blank: true, initial: "" }),
       criticalRange: new fields.NumberField({ required: false, integer: true, min: 1, initial: 20 }),
+      fortune: new fields.NumberField({ required: false, integer: true, min: 0, initial: 0 }),
       equippedGear: new fields.ObjectField({ required: false, initial: {} })
     };
   }
@@ -299,15 +304,6 @@ class TraitItemData extends foundry.abstract.TypeDataModel {
   }
 }
 
-class CurrencyItemData extends foundry.abstract.TypeDataModel {
-  static defineSchema() {
-    return {
-      ...buildItemFields(),
-      quantity: new fields.NumberField({ required: false, integer: true, min: 0, initial: 1 })
-    };
-  }
-}
-
 class TitleItemData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
@@ -386,13 +382,13 @@ export function registerDataModels() {
   });
 
   Object.assign(CONFIG.Item.dataModels, {
+    "ffxiv.ability": AbilityItemData,
     "ffxiv.consumable": ConsumableItemData,
     "ffxiv.limit_break": LimitBreakItemData,
     "ffxiv.primary_ability": AbilityItemData,
     "ffxiv.secondary_ability": AbilityItemData,
     "ffxiv.instant_ability": AbilityItemData,
     "ffxiv.trait": TraitItemData,
-    "ffxiv.currency": CurrencyItemData,
     "ffxiv.title": TitleItemData,
     "ffxiv.gear": GearItemData,
     "ffxiv.minion": MinionItemData,

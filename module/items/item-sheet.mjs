@@ -4,6 +4,7 @@ import {
 } from '../helpers/effects.mjs';
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import { normalizeShopTier } from "../helpers/shop-tier.mjs";
+import { getAbilitySubtype, ensureAbilitySubtypeTags, getSubtypeTagLabel } from "../helpers/ability-subtype.mjs";
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem: "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
@@ -12,11 +13,8 @@ const DEFAULT_SOUNDS = {
 };
 
 const SOUND_ITEM_TYPES = new Set([
-  "primary_ability",
-  "secondary_ability",
-  "instant_ability",
+  "ability",
   "trait",
-  "limit_break",
   "job",
 ]);
 
@@ -82,13 +80,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
     }
 
-    if (this.item.type == "primary_ability"){
+    if (this.item.type == "ability"){
+      const subtype = getAbilitySubtype(this.item);
+      if (subtype === "limit_break") return `${path}/item-limitbreak-sheet.hbs`;
       return `${path}/item-ability-sheet.hbs`;
     }
-    if (this.item.type == "secondary_ability"){
-      return `${path}/item-ability-sheet.hbs`;
-    }
-    if (this.item.type == "instant_ability"){
+    if (this.item.type == "primary_ability" || this.item.type == "secondary_ability" || this.item.type == "instant_ability"){
       return `${path}/item-ability-sheet.hbs`;
     }
     if (this.item.type == "trait"){
@@ -118,10 +115,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }else{
         return `${path}/item-gear-sheet.hbs`;
       }
-    }
-
-    if (this.item.type == "currency"){
-      return `${path}/item-currency-sheet.hbs`;
     }
 
     return `${path}/item-sheet.hbs`;
@@ -156,7 +149,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.itemStatusEffects = this._getStatusEffectEntries(itemData.system);
     context.cssClass = this._getSheetClasses().join(" ");
     context.editable = this.document.isOwner;
-    context.bakedActionTag = this._getBakedActionTag(this.item.type);
+    const actionType = this.item.type === "ability" ? getAbilitySubtype(this.item) : this.item.type;
+    context.bakedActionTag = this._getBakedActionTag(actionType);
     context.customTags = this._getCustomActionTags(itemData.system.tags);
     context.hasMarkerTag = this._hasMarkerTag(itemData.system.tags);
     context.hasCheck = this._hasCheck(itemData.system.check);
@@ -249,11 +243,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     this.activateListeners($(this.element));
     this._activateJobDropZone();
+    this._activateFormulaFieldVisibility();
   }
 
   /** @override */
   async _onFirstRender(context, options) {
     if (typeof super._onFirstRender === "function") await super._onFirstRender(context, options);
+    await this._enforceAbilitySubtypeTag();
     if (SOUND_ITEM_TYPES.has(this.item.type)) this._playConfiguredSound("soundNotificationFFXIV_openSheet");
   }
 
@@ -284,7 +280,21 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     event.preventDefault();
     const updateData = { [event.target.name]: this._getChangedFieldValue(event.target) };
     const render = (this.item.type === "job" && ["system.job_name", "system.level"].includes(event.target.name))
-      || ["system.shop_tier", "system.max_stack", "system.direct_formula", "system.check", "system.origin"].includes(event.target.name);
+      || [
+        "system.shop_tier",
+        "system.max_stack",
+        "system.hit_formula",
+        "system.hit_formula_attribute",
+        "system.direct_formula",
+        "system.direct_formula_attribute",
+        "system.direct_hit",
+        "system.alternate_formula",
+        "system.alternate_formula_attribute",
+        "system.alternate_formula_critical",
+        "system.alternate_formula_critical_attribute",
+        "system.check",
+        "system.origin"
+      ].includes(event.target.name);
     this.document.update(updateData, { render })
       .then(async () => {
         await this._syncJobPetVisibility(event.target.name, updateData[event.target.name]);
@@ -350,6 +360,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return (Array.isArray(tags) ? tags : [])
       .map((tag, index) => ({ tag, index }))
       .filter(({ tag }) => !bakedTagNames.has(String(tag ?? "").trim().toLowerCase()));
+  }
+
+  async _enforceAbilitySubtypeTag() {
+    if (this.item.type !== "ability") return;
+    const normalizedTags = ensureAbilitySubtypeTags(this.item.system?.tags, "primary_ability");
+    const currentTags = Array.isArray(this.item.system?.tags) ? this.item.system.tags : [];
+    if (JSON.stringify(normalizedTags) === JSON.stringify(currentTags)) return;
+    await this.item.update({ "system.tags": normalizedTags }, { render: false });
   }
 
   _hasMarkerTag(tags) {
@@ -458,6 +476,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       tags[index] = value; // Update the correct index in the array
       this.item.update({ "system.tags": tags }); // Update the item with the new tags array
     });
+    html.on('change.ffxivItemSheet', '.select-subtype-tag', (event) => {
+      const value = $(event.currentTarget).val();
+      const tags = Array.isArray(this.item.system.tags) ? [...this.item.system.tags] : [];
+      tags[0] = value;
+      const fallbackSubtype = getAbilitySubtype({ type: "ability", system: { tags } }) || "primary_ability";
+      const normalized = ensureAbilitySubtypeTags(tags, fallbackSubtype);
+      this.item.update({ "system.tags": normalized }, { render: false }).then(() => this.render({ force: true }));
+    });
     html.on('click.ffxivItemSheet', '.remove-tag', (event) => {
       const index = event.currentTarget.dataset.index;
       const tags = this.item.system.tags || [];
@@ -469,6 +495,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const tags = this.item.system.tags || [];
 
       const configMap = {
+        ability: "tags_abilities",
         primary_ability: "tags_abilities",
         secondary_ability: "tags_abilities",
         instant_ability: "tags_abilities",
@@ -787,6 +814,33 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.element.querySelectorAll(".editor-content[data-edit]").forEach(div => this._activateEditor?.(div));
   }
 
+  _activateFormulaFieldVisibility() {
+    const updateVisibility = () => {
+      const hasText = value => String(value ?? "").trim().length > 0;
+      this.element.querySelectorAll("[data-formula-source]").forEach(input => {
+        const key = input.dataset.formulaSource;
+        const target = this.element.querySelector(`[data-formula-target="${key}"]`);
+        if (!target) return;
+        target.style.display = hasText(input.value) ? "" : "none";
+      });
+
+      const directHitInput = this.element.querySelector('input[name="system.direct_hit"]');
+      const gate = this.element.querySelector("[data-direct-hit-gate]");
+      if (gate && directHitInput) {
+        gate.style.display = hasText(directHitInput.value) ? "" : "none";
+      }
+    };
+
+    this._formulaVisibilityController?.abort();
+    this._formulaVisibilityController = new AbortController();
+    const { signal } = this._formulaVisibilityController;
+    const formulaInputs = this.element.querySelectorAll(
+      '[data-formula-source], input[name="system.direct_hit"]'
+    );
+    formulaInputs.forEach(input => input.addEventListener("input", updateVisibility, { signal }));
+    updateVisibility();
+  }
+
   _isLimitedDisplayMode() {
     if (this.options?.ffxivForceFullSheet) return false;
     if (!game.settings.get('ffxiv', 'limitedPhysicalItemsDialog')) return false;
@@ -924,9 +978,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _normalizeJobAbilityGrants(grants) {
-    if (Array.isArray(grants)) return foundry.utils.deepClone(grants);
-    if (grants && typeof grants === "object") return foundry.utils.deepClone(Object.values(grants));
-    return [];
+    const entries = Array.isArray(grants)
+      ? foundry.utils.deepClone(grants)
+      : (grants && typeof grants === "object" ? foundry.utils.deepClone(Object.values(grants)) : []);
+    return entries.map(entry => this._normalizeJobGrantEntry(entry));
   }
 
   _getJobAbilityGrants() {
@@ -934,12 +989,37 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _getJobGrantTypeLabel(type) {
+    if (["ability", "primary_ability", "secondary_ability", "instant_ability", "limit_break"].includes(type)) {
+      return game.i18n.localize("FFXIV.ItemType.ability");
+    }
     const label = game.i18n.localize(`FFXIV.ItemType.${type}`);
     return label.replace(/\s+Ability$/i, "");
   }
 
+  _normalizeJobGrantEntry(grant) {
+    if (!grant || typeof grant !== "object") return grant;
+    const nextGrant = foundry.utils.deepClone(grant);
+    const legacyTypes = new Set(["primary_ability", "secondary_ability", "instant_ability", "limit_break"]);
+    const grantType = String(nextGrant.type ?? "");
+    const itemType = String(nextGrant.item?.type ?? "");
+    const fallbackSubtype = legacyTypes.has(grantType)
+      ? grantType
+      : (legacyTypes.has(itemType) ? itemType : getAbilitySubtype(nextGrant.item));
+
+    if (grantType === "ability" || legacyTypes.has(grantType)) {
+      nextGrant.type = "ability";
+    }
+
+    if (nextGrant.item && typeof nextGrant.item === "object" && (itemType === "ability" || legacyTypes.has(itemType))) {
+      nextGrant.item.type = "ability";
+      nextGrant.item.system = nextGrant.item.system || {};
+      nextGrant.item.system.tags = ensureAbilitySubtypeTags(nextGrant.item.system.tags, fallbackSubtype || "primary_ability");
+    }
+    return nextGrant;
+  }
+
   async _getJobGrantItemData(grant) {
-    if (grant.item) return foundry.utils.deepClone(grant.item);
+    if (grant.item) return foundry.utils.deepClone(this._normalizeJobGrantEntry(grant).item);
 
     const sourceItem = grant.uuid ? await fromUuid(grant.uuid) : null;
     if (!sourceItem) return null;
@@ -1000,7 +1080,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!item && typeof Item.implementation.fromDropData === "function") {
       item = await Item.implementation.fromDropData(data);
     }
-    const validTypes = ["primary_ability", "secondary_ability", "instant_ability", "limit_break", "trait"];
+    const validTypes = ["ability", "primary_ability", "secondary_ability", "instant_ability", "limit_break", "trait"];
     if (!item || !validTypes.includes(item.type)) {
       ui.notifications.warn("Drop an ability, limit break, or trait item onto the job ability list.");
       return;
@@ -1010,10 +1090,20 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (grants.some(grant => grant.uuid === item.uuid)) return;
     const itemData = item.toObject();
     delete itemData._id;
+    let itemType = item.type;
+    if (["primary_ability", "secondary_ability", "instant_ability", "limit_break"].includes(itemType)) {
+      itemType = "ability";
+      itemData.type = "ability";
+      itemData.system = itemData.system || {};
+      itemData.system.tags = ensureAbilitySubtypeTags(
+        [getSubtypeTagLabel(getAbilitySubtype(item)), ...(Array.isArray(itemData.system.tags) ? itemData.system.tags : [])],
+        "primary_ability"
+      );
+    }
     grants.push({
       uuid: item.uuid,
       name: item.name,
-      type: item.type,
+      type: itemType,
       item: itemData
     });
     await this.item.update({ "system.ability_grants": grants }, { render: false });

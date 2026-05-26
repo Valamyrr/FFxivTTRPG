@@ -6,7 +6,7 @@
     "minimum": "14",
     "verified": "14.363"
   },
-  "version": "4.0.0-dev",
+  "version": "4.0.1-dev",
   "authors": [
     {
       "name": "Valamyrr",
@@ -38,6 +38,9 @@
       "pet": {}
     },
     "Item": {
+      "ability": {
+        "htmlFields": ["description"]
+      },
       "consumable": {
         "htmlFields": ["description"]
       },
@@ -54,9 +57,6 @@
         "htmlFields": ["description"]
       },
       "trait": {
-        "htmlFields": ["description"]
-      },
-      "currency": {
         "htmlFields": ["description"]
       },
       "title": {

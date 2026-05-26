@@ -132,7 +132,6 @@
 
 .health-bar{
   background: linear-gradient(180deg, #91de49 0%, #4c9f1f 55%, #315f17 100%);
-  transition: width 0.3s ease;
 }
 
 .health-bar.health-good{
@@ -153,7 +152,6 @@
 
 .mana-fill{
   background: linear-gradient(180deg, #f2cce8 0%, #b25aa4 50%, #6e1f66 100%);
-  transition: width 0.3s ease;
 }
 
 .health-border{

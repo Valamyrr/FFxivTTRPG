@@ -1,5 +1,6 @@
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import { normalizeShopTier } from "../helpers/shop-tier.mjs";
+import { ABILITY_SUBTYPE_TYPES, ensureAbilitySubtypeTags, getAbilitySubtype, getSubtypeTagLabel } from "../helpers/ability-subtype.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set(["consumable", "gear", "augment", "minion"]);
 const INVENTORY_ITEM_TYPES = new Set(["consumable", "gear", "augment"]);
@@ -58,6 +59,7 @@ export class FFXIVItem extends Item {
     if (result === false) return false;
     this._normalizeShopTierOnCreate(data);
     this._normalizeStackConfigOnCreate(data);
+    this._normalizeAbilitySubtypeOnCreate(data);
     if (this.type === "job") this.updateSource({
       name: this._formatJobName(data.system?.job_name, data.system?.level, data.name)
     });
@@ -70,6 +72,7 @@ export class FFXIVItem extends Item {
     if (result === false) return false;
     this._normalizeShopTierOnUpdate(changed);
     this._normalizeStackConfigOnUpdate(changed);
+    this._normalizeAbilitySubtypeOnUpdate(changed);
     if (this.type !== "job") return result;
 
     const jobName = foundry.utils.getProperty(changed, "system.job_name") ?? this.system.job_name;
@@ -113,6 +116,19 @@ export class FFXIVItem extends Item {
 
   _hasInventoryData() {
     return INVENTORY_ITEM_TYPES.has(this.type);
+  }
+
+  _normalizeAbilitySubtypeOnCreate(data) {
+    if (this.type !== "ability") return;
+    const normalizedTags = ensureAbilitySubtypeTags(data?.system?.tags, "primary_ability");
+    this.updateSource({ "system.tags": normalizedTags });
+  }
+
+  _normalizeAbilitySubtypeOnUpdate(changed) {
+    if (this.type !== "ability") return;
+    if (!foundry.utils.hasProperty(changed, "system.tags")) return;
+    const incomingTags = foundry.utils.getProperty(changed, "system.tags");
+    foundry.utils.setProperty(changed, "system.tags", ensureAbilitySubtypeTags(incomingTags, "primary_ability"));
   }
 
   _normalizeStackConfigOnCreate(data) {
@@ -229,6 +245,16 @@ export class FFXIVItem extends Item {
         if (!sourceItem) continue;
         itemData = sourceItem.toObject();
       }
+      if (ABILITY_SUBTYPE_TYPES.includes(itemData.type)) {
+        const legacySubtype = getAbilitySubtype(itemData) || itemData.type || "primary_ability";
+        const existingTags = Array.isArray(itemData?.system?.tags) ? itemData.system.tags : [];
+        itemData.type = "ability";
+        itemData.system = itemData.system || {};
+        itemData.system.tags = ensureAbilitySubtypeTags(
+          [getSubtypeTagLabel(legacySubtype), ...existingTags],
+          legacySubtype
+        );
+      }
       delete itemData._id;
       itemData.flags = foundry.utils.mergeObject(itemData.flags || {}, {
         ffxiv: {
@@ -293,6 +319,8 @@ export class FFXIVItem extends Item {
    * @private
    */
   async roll(event) {
+    if (!(await this._spendHPCostIfNeeded())) return;
+
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     let content = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", {
@@ -340,6 +368,23 @@ export class FFXIVItem extends Item {
     }
 
     await this._consumeFromInventoryIfNeeded();
+  }
+
+  async _spendHPCostIfNeeded() {
+    if (this.parent?.documentName !== "Actor") return true;
+    const hpCost = Number.parseInt(this.system?.hpcost, 10);
+    if (!Number.isFinite(hpCost) || hpCost <= 0) return true;
+
+    const currentHP = Number.parseInt(this.parent.system?.health?.value, 10) || 0;
+    const nextHP = currentHP - hpCost;
+    if (nextHP < 1) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NotEnoughHP"));
+      return false;
+    }
+
+    // HP cost always drains HP directly and never consumes Barrier.
+    await this.parent.update({ "system.health.value": nextHP }, { render: false });
+    return true;
   }
 
   async _rollHit(options = {}) {
@@ -536,11 +581,13 @@ export class FFXIVItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
-    const formula = options.critical ? await this._getCriticalDirectFormula(rollData) : rollData.direct_formula;
+    const formula = options.critical
+      ? await this._getCriticalDirectFormula(rollData)
+      : this._composeFormulaWithAttribute(rollData.direct_formula, rollData.direct_formula_attribute);
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
     const rollHTML = $("<div>" + await roll.render() + "</div>");
-    ChatMessage.create({
+    await ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
@@ -558,7 +605,7 @@ export class FFXIVItem extends Item {
     let roll = new Roll(await this._getCriticalDirectFormula(rollData), rollData);
     await roll.evaluate();
     const rollHTML = $("<div>" + await roll.render() + "</div>");
-    ChatMessage.create({
+    await ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
@@ -572,10 +619,13 @@ export class FFXIVItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
-    let roll = new Roll(rollData.alternate_formula_critical, rollData);
+    let roll = new Roll(
+      this._composeFormulaWithAttribute(rollData.alternate_formula_critical, rollData.alternate_formula_critical_attribute),
+      rollData
+    );
     await roll.evaluate();
     const rollHTML = $("<div>" + await roll.render() + "</div>");
-    ChatMessage.create({
+    await ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
@@ -594,7 +644,7 @@ export class FFXIVItem extends Item {
     await roll.evaluate();
 
     const rollHTML = $("<div>" + await roll.render() + "</div>");
-    ChatMessage.create({
+    await ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
@@ -608,10 +658,13 @@ export class FFXIVItem extends Item {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
     const rollData = this.getRollData()
-    const roll = new Roll(rollData.alternate_formula, rollData);
+    const roll = new Roll(
+      this._composeFormulaWithAttribute(rollData.alternate_formula, rollData.alternate_formula_attribute),
+      rollData
+    );
     await roll.evaluate();
     const rollHTML = $("<div>" + await roll.render() + "</div>");
-    ChatMessage.create({
+    await ChatMessage.create({
       user: user,
       speaker: speaker,
       rolls: [roll],
@@ -658,11 +711,11 @@ export class FFXIVItem extends Item {
   }
 
   _hasDirectRoll() {
-    return this._hasFormula(this.system.direct_formula);
+    return this._hasFormula(this._composeFormulaWithAttribute(this.system.direct_formula, this.system.direct_formula_attribute));
   }
 
   _hasHitRoll() {
-    return this._hasFormula(this.system.hit_formula) || this._hasCheck();
+    return this._hasFormula(this._composeFormulaWithAttribute(this.system.hit_formula, this.system.hit_formula_attribute)) || this._hasCheck();
   }
 
   _hasCheck() {
@@ -674,7 +727,9 @@ export class FFXIVItem extends Item {
   }
 
   _getHitBaseFormula(rollData = this.getRollData()) {
-    if (this._hasFormula(this.system.hit_formula)) return rollData.hit_formula;
+    if (this._hasFormula(this.system.hit_formula)) {
+      return this._composeFormulaWithAttribute(rollData.hit_formula, rollData.hit_formula_attribute);
+    }
     return this._getCheckFormula() || "1d20";
   }
 
@@ -720,7 +775,7 @@ export class FFXIVItem extends Item {
   }
 
   async _getCriticalDirectFormula(rollData = this.getRollData()) {
-    let formula = rollData.direct_formula;
+    let formula = this._composeFormulaWithAttribute(rollData.direct_formula, rollData.direct_formula_attribute);
     const criticalDamage = Number((await (new Roll("@cdmg", rollData)).evaluate()).result);
     if (criticalDamage > 0) formula += " + @cdmg";
     return this._doubleDiceCounts(formula);
@@ -758,6 +813,22 @@ export class FFXIVItem extends Item {
     return /\d*d\d+/i.test(String(formula || ""));
   }
 
+  _composeFormulaWithAttribute(formula, attributeKey) {
+    const base = String(formula ?? "").trim();
+    if (!base) return "";
+    const token = this._formulaAttributeToken(attributeKey);
+    if (!token) return base;
+    return `${base} + ${token}`;
+  }
+
+  _formulaAttributeToken(attributeKey) {
+    const normalized = String(attributeKey ?? "").trim().toLowerCase();
+    if (!normalized) return "";
+    const supported = new Set(["str", "dex", "vit", "int", "mnd"]);
+    if (!supported.has(normalized)) return "";
+    return `@${normalized}`;
+  }
+
   _getApplyButton(result){
     let buttons = "<div style='display:flex;flex-wrap: wrap;'>"
     buttons += `<button class="ffxiv-apply-dmg" data-item-id="${this._id}" data-actor-id="${this.parent._id}" data-damage="${result}">${game.i18n.localize("FFXIV.Chat.Damage")}</button>`
@@ -770,4 +841,5 @@ export class FFXIVItem extends Item {
       return `${(Number(count) || 1) * 2}d${faces}`;
     });
   }
+
 }

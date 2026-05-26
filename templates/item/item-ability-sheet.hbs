@@ -1,4 +1,4 @@
-<div class='{{cssClass}}'>
+<div class='{{cssClass}} item-modern-sheet'>
   <header class='sheet-header'>
     <img
       class='profile-img'
@@ -22,13 +22,18 @@
   {{! Sheet Body }}
   <section class='sheet-body'>
 
-    <div class='attributes'>
+    <div class='attributes item-details-card'>
       <div class="tags-container">
         <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
         <ul class="tag-list">
-          {{#if bakedActionTag}}
-            <li><span class="tag baked-action-tag">{{localize bakedActionTag}}</span></li>
-          {{/if}}
+          <li>
+            <select style="text-align: center;" class="select-subtype-tag" data-index="0">
+              <option value="Primary" {{#if (isAbilitySubtype item "primary_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Primary"}}</option>
+              <option value="Secondary" {{#if (isAbilitySubtype item "secondary_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Secondary"}}</option>
+              <option value="Instant" {{#if (isAbilitySubtype item "instant_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Instant"}}</option>
+              <option value="Limit Break" {{#if (isAbilitySubtype item "limit_break")}}selected{{/if}}>{{localize "FFXIV.ItemType.limit_break"}}</option>
+            </select>
+          </li>
           {{#each customTags as |entry|}}
             <li>
               <select style="text-align: center;" class="select-tags" data-index="{{entry.index}}">
@@ -112,7 +117,13 @@
         <div class="resource flex-group-center">
           <label for="system.hit_formula" class="resource-label">{{ localize "FFXIV.Abilities.HitFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.hit_formula" type="text" value="{{item.system.hit_formula}}" placeholder="1d20 + @str"/>
+            <input name="system.hit_formula" type="text" value="{{item.system.hit_formula}}" placeholder="1d20 + @str" data-formula-source="hit"/>
+            <select style="text-align: center; {{#unless (hasContent item.system.hit_formula)}}display:none;{{/unless}}" name="system.hit_formula_attribute" data-formula-target="hit">
+              <option value="">{{ localize "FFXIV.None" }}</option>
+              {{#each this.config.formula_attributes as |attr|}}
+              <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.hit_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+              {{/each}}
+            </select>
           </div>
         </div>
       </div>
@@ -143,7 +154,13 @@
         <div class="resource flex-group-center">
           <label for="system.direct_formula" class="resource-label">{{ localize "FFXIV.Abilities.DirectFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.direct_formula" type="text" value="{{item.system.direct_formula}}" placeholder="3 + 1d6 + @dmg"/>
+            <input name="system.direct_formula" type="text" value="{{item.system.direct_formula}}" placeholder="3 + 1d6 + @dmg" data-formula-source="direct"/>
+            <select style="text-align: center; {{#unless (hasContent item.system.direct_formula)}}display:none;{{/unless}}" name="system.direct_formula_attribute" data-formula-target="direct">
+              <option value="">{{ localize "FFXIV.None" }}</option>
+              {{#each this.config.formula_attributes as |attr|}}
+              <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.direct_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+              {{/each}}
+            </select>
           </div>
         </div>
 
@@ -157,21 +174,35 @@
         <div class="resource flex-group-center">
           <label for="system.hpcost" class="resource-label">{{ localize "FFXIV.Abilities.HPCost" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.hpcost" type="text" value="{{item.system.hpcost}}"/>
+            <input name="system.hpcost" type="number" min="0" data-dtype="Number" value="{{item.system.hpcost}}"/>
           </div>
         </div>
 
-        <div class="resource flex-group-center">
-          <label for="system.alternate_formula" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormula" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.alternate_formula" type="text" value="{{item.system.alternate_formula}}"/>
+        <div data-direct-hit-gate>
+          <div class="resource flex-group-center">
+            <label for="system.alternate_formula" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormula" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="system.alternate_formula" type="text" value="{{item.system.alternate_formula}}" data-formula-source="alternate"/>
+              <select style="text-align: center; {{#unless (hasContent item.system.alternate_formula)}}display:none;{{/unless}}" name="system.alternate_formula_attribute" data-formula-target="alternate">
+                <option value="">{{ localize "FFXIV.None" }}</option>
+                {{#each this.config.formula_attributes as |attr|}}
+                <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.alternate_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+                {{/each}}
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div class="resource flex-group-center">
-          <label for="system.alternate_formula_critical" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormulaCritical" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.alternate_formula_critical" type="text" value="{{item.system.alternate_formula_critical}}"/>
+          <div class="resource flex-group-center">
+            <label for="system.alternate_formula_critical" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormulaCritical" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="system.alternate_formula_critical" type="text" value="{{item.system.alternate_formula_critical}}" data-formula-source="alternate-critical"/>
+              <select style="text-align: center; {{#unless (hasContent item.system.alternate_formula_critical)}}display:none;{{/unless}}" name="system.alternate_formula_critical_attribute" data-formula-target="alternate-critical">
+                <option value="">{{ localize "FFXIV.None" }}</option>
+                {{#each this.config.formula_attributes as |attr|}}
+                <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.alternate_formula_critical_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+                {{/each}}
+              </select>
+            </div>
           </div>
         </div>
 
