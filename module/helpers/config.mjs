@@ -138,4 +138,52 @@ FF_XIV.minion_types = [
   "FFXIV.Tags.Mount"
 ]
 
+FF_XIV.base_tags_abilities = [
+  "Physical",
+  "Ranged",
+  "Magic",
+  "Unique",
+  "Invoked",
+  "Gem",
+  "Wind-Aspected",
+  "Fire-Aspected",
+  "Earth-Aspected",
+  "Water-Aspected",
+  "Lightning-Aspected",
+  "Ice-Aspected",
+  "Thunder Spell",
+  "Flurry",
+  "Poison",
+  "Song",
+  "Ninjutsu",
+  "Technique",
+  "Pet",
+  "Stationary Marker",
+  "Mobile Marker"
+];
+
+FF_XIV.base_tags_traits = [
+  "Trait",
+  "Enhancement",
+  "Job Resource",
+  "Machine"
+];
+
+FF_XIV.base_tags_consumables = [
+  "Primary",
+  "Secondary",
+  "Instant",
+  "Physical",
+  "Consumable",
+  "Meal",
+  "Rest",
+  "Utility",
+  "Wind-Aspected",
+  "Fire-Aspected",
+  "Earth-Aspected",
+  "Water-Aspected",
+  "Lightning-Aspected",
+  "Ice-Aspected"
+];
+
 FF_XIV.shop_tiers = getShopTierChoices();

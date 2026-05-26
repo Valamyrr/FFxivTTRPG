@@ -245,7 +245,12 @@ const DEFAULT_TAB_ICONS = {
 };
 
 function getCharacterTabIcon(settingKey) {
-  return game.settings.get("ffxiv", settingKey) || DEFAULT_TAB_ICONS[settingKey];
+  const configured = game.settings.get("ffxiv", settingKey);
+  if (typeof configured === "string") {
+    const normalized = configured.trim();
+    if (normalized && normalized !== "null" && normalized !== "undefined") return normalized;
+  }
+  return DEFAULT_TAB_ICONS[settingKey];
 }
 
 const DEFAULT_SOUNDS = {
@@ -1872,32 +1877,78 @@ function applyDamageToActor(actor, damage) {
   return actor.update(updates);
 }
 
-Hooks.on("ready", function(){
+function normalizeTagValue(tag) {
+  return String(tag ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function parseTagSetting(raw) {
+  return String(raw ?? "")
+    .split(",")
+    .map(tag => tag.trim())
+    .filter(Boolean);
+}
+
+function buildTagPool(tags) {
+  const pool = {};
+  for (const tag of tags) {
+    const key = tag.replace(/\s+/g, "-");
+    if (!pool[key]) {
+      pool[key] = {
+        value: key,
+        label: tag
+      };
+    }
+  }
+  return pool;
+}
+
+async function migrateCustomTagSettings() {
   const categories = [
-    { configKey: "customAbilityTags", configTarget: "tags_abilities"},
-    { configKey: "customTraitTags", configTarget: "tags_traits"},
-    { configKey: "customConsumableTags", configTarget: "tags_consumables"}
+    { configKey: "customAbilityTags", baseKey: "base_tags_abilities" },
+    { configKey: "customTraitTags", baseKey: "base_tags_traits" },
+    { configKey: "customConsumableTags", baseKey: "base_tags_consumables" }
+  ];
+
+  for (const { configKey, baseKey } of categories) {
+    const baseTags = Array.isArray(FF_XIV[baseKey]) ? FF_XIV[baseKey] : [];
+    const normalizedBase = new Set(baseTags.map(normalizeTagValue));
+    const raw = game.settings.get("ffxiv", configKey);
+    const customTags = parseTagSetting(raw);
+    const filtered = customTags.filter(tag => !normalizedBase.has(normalizeTagValue(tag)));
+    const hasChanged = filtered.length !== customTags.length || filtered.some((tag, idx) => tag !== customTags[idx]);
+    if (!hasChanged) continue;
+    await game.settings.set("ffxiv", configKey, filtered.join(","));
+  }
+}
+
+Hooks.on("ready", function(){
+  migrateCustomTagSettings().catch(err => debugError("FFXIV | Custom tag migration failed:", err));
+
+  const categories = [
+    { configKey: "customAbilityTags", configTarget: "tags_abilities", baseKey: "base_tags_abilities" },
+    { configKey: "customTraitTags", configTarget: "tags_traits", baseKey: "base_tags_traits" },
+    { configKey: "customConsumableTags", configTarget: "tags_consumables", baseKey: "base_tags_consumables" }
   ];
 
   CONFIG.FF_XIV = CONFIG.FF_XIV || {};
 
-  for (let { configKey, configTarget, labelPrefix } of categories) {
-    CONFIG.FF_XIV[configTarget] = CONFIG.FF_XIV[configTarget] || {};
-
+  for (let { configKey, configTarget, baseKey } of categories) {
+    const baseTags = Array.isArray(FF_XIV[baseKey]) ? FF_XIV[baseKey] : [];
     const raw = game.settings.get("ffxiv", configKey);
-    const tags = raw.split(",")
-      .map(t => t.trim())
-      .filter(tag => tag && (configTarget === "tags_consumables" || !isBakedActionTag(tag)));
-
-    for (let tag of tags) {
-      const key = tag.replace(/\s+/g, "-");
-      if (!CONFIG.FF_XIV[configTarget][key]) {
-        CONFIG.FF_XIV[configTarget][key] = {
-          value: key,
-          label: key
-        };
-      }
+    const customTags = parseTagSetting(raw);
+    const combinedTags = [...baseTags, ...customTags];
+    const deduped = [];
+    const seen = new Set();
+    for (const tag of combinedTags) {
+      const normalized = normalizeTagValue(tag);
+      if (!normalized || seen.has(normalized)) continue;
+      seen.add(normalized);
+      deduped.push(tag.trim());
     }
+    CONFIG.FF_XIV[configTarget] = buildTagPool(deduped);
   }
 
 

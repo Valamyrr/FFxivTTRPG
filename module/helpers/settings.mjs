@@ -28,6 +28,7 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
+    const placeholders = this.constructor.placeholders ?? {};
     context.settings = this.constructor.settingKeys.map(key => {
       const config = game.settings.settings.get(`ffxiv.${key}`);
       const value = game.settings.get("ffxiv", key);
@@ -48,6 +49,7 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
         hasMin: config?.range?.min !== undefined,
         hasMax: config?.range?.max !== undefined,
         hasStep: config?.range?.step !== undefined,
+        placeholder: placeholders[key] ?? "",
       };
     });
     return context;
@@ -174,6 +176,11 @@ class FFXIVCustomTagsSettingsMenu extends FFXIVSettingsSubmenu {
     "customTraitTags",
     "customConsumableTags",
   ];
+  static placeholders = {
+    customAbilityTags: "Arcane, Bleed, Teleport",
+    customTraitTags: "Passive, Stance, Combo",
+    customConsumableTags: "Elixir, Tonic, Field Kit",
+  };
 }
 
 export class SettingsHelpers {
@@ -261,7 +268,7 @@ export class SettingsHelpers {
       config: false,
       default: false,
       type: Boolean,
-      requiresReload: false
+      requiresReload: true
     });
 
     game.settings.register("ffxiv", "toggleGear", {
@@ -271,7 +278,7 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: false
+      requiresReload: true
     });
 
     game.settings.register("ffxiv", "legacyManaClickBehavior", {
@@ -300,7 +307,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "Physical,Ranged,Magic,Unique,Invoked,Gem,Wind-Aspected,Fire-Aspected,Earth-Aspected,Water-Aspected,Lightning-Aspected,Ice-Aspected,Thunder Spell,Flurry,Poison,Song,Ninjutsu,Technique,Pet,Stationary Marker,Mobile Marker",
+      default: "",
       requiresReload: true
     });
 
@@ -310,7 +317,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "Trait,Enhancement,Job Resource,Machine",
+      default: "",
       requiresReload: true
     });
 
@@ -320,7 +327,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "Primary,Secondary,Instant,Physical,Consumable,Meal,Rest,Utility,Wind-Aspected,Fire-Aspected,Earth-Aspected,Water-Aspected,Lightning-Aspected,Ice-Aspected",
+      default: "",
       requiresReload: true
     });
 
@@ -412,7 +419,7 @@ export class SettingsHelpers {
       config: false,
       default: "systems/ffxiv/assets/circle.png",
       type: String,
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
 
@@ -423,7 +430,7 @@ export class SettingsHelpers {
       config: false,
       default: "systems/ffxiv/assets/attribute-icons/rampart.webp",
       type: String,
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "attributesImgMagicDefense", {
@@ -433,7 +440,7 @@ export class SettingsHelpers {
       config: false,
       default: "systems/ffxiv/assets/attribute-icons/dark_mind.webp",
       type: String,
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "attributesImgVigilance", {
@@ -443,7 +450,7 @@ export class SettingsHelpers {
       config: false,
       default: "systems/ffxiv/assets/attribute-icons/duty-finder.webp",
       type: String,
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "attributesImgSpeed", {
@@ -453,7 +460,7 @@ export class SettingsHelpers {
       config: false,
       default: "systems/ffxiv/assets/attribute-icons/sightseeing-log.webp",
       type: String,
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
 
@@ -464,7 +471,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "systems/ffxiv/assets/tab-icons/actions-and-traits.webp",
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabAttributes", {
@@ -474,7 +481,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "systems/ffxiv/assets/tab-icons/pvp-profile.webp",
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabGear", {
@@ -484,7 +491,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "systems/ffxiv/assets/tab-icons/armoury-chest.webp",
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabRoleplay", {
@@ -494,7 +501,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "systems/ffxiv/assets/tab-icons/character.webp",
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabItems", {
@@ -504,7 +511,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "systems/ffxiv/assets/tab-icons/inventory.webp",
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabCompanions", {
@@ -514,7 +521,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "systems/ffxiv/assets/tab-icons/companions.webp",
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
     game.settings.register("ffxiv", "imgTabSettings", {
@@ -524,7 +531,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "systems/ffxiv/assets/tab-icons/system-configuration.webp",
-      requiresReload: false,
+      requiresReload: true,
       filePicker: "image"
     });
 
