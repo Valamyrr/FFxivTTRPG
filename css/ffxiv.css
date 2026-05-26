@@ -36,6 +36,20 @@ input:disabled{
   cursor: pointer;
 }
 
+#token-hud .attribute input.ffxiv-barrier-input {
+  border-color: #f2cd47;
+  box-shadow: 0 0 8px rgba(242, 205, 71, 0.45);
+}
+
+#token-hud .attribute.ffxiv-mana-hud input.ffxiv-mana-input {
+  border-color: #cc7ac3;
+  box-shadow: 0 0 8px rgba(204, 122, 195, 0.45);
+}
+
+#token-hud .attribute.ffxiv-hud-health {
+  transform: translateY(-34px);
+}
+
 .ffxiv-settings-submenu {
   display: flex;
   flex-direction: column;

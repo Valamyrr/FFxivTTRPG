@@ -1,5 +1,5 @@
 .ffxiv.item .window-content:has(.limited-display){
-  overflow: visible;
+  overflow: hidden;
   padding: 0
 }
 .ffxiv.item:has(.limited-display) .window-resizable-handle{
@@ -8,26 +8,32 @@
 
 
 /* Rarity Title*/
+.text-rarity-basic,
 .limited-display .text-rarity-basic {
   color: var(--rarity-basic);
   text-shadow: var(--shadow-improve-readability-white);
 }
+.text-rarity-green,
 .limited-display .text-rarity-green {
   color: var(--rarity-green);
   text-shadow: var(--shadow-improve-readability-light);
 }
+.text-rarity-aetherial,
 .limited-display .text-rarity-aetherial {
   color: var(--rarity-aetherial);
   text-shadow: var(--shadow-improve-readability-light);
 }
+.text-rarity-blue,
 .limited-display .text-rarity-blue {
   color: var(--rarity-blue);
   text-shadow: var(--shadow-improve-readability-light);
 }
+.text-rarity-relic,
 .limited-display .text-rarity-relic {
   color: var(--rarity-relic);
   text-shadow: var(--shadow-improve-readability-dark);
 }
+.text-rarity-unique,
 .limited-display .text-rarity-unique {
   color: var(--rarity-unique);
   text-shadow: var(--shadow-improve-readability-dark);
@@ -98,6 +104,12 @@
   padding-top: 5px;
 }
 
+.item-card .item-dialog-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+
 .item-card .detail {
   display: inline-block;
   margin-right: 3px;
@@ -120,6 +132,21 @@
 }
 .item-card .effect {
   display: inline-block;
+}
+
+.item-card .item-dialog-effects-stacked .effect {
+  display: block;
+}
+
+.item-card .item-dialog-flavor {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.item-card .item-dialog-flavor *,
+.item-card .item-dialog-flavor strong {
+  font-style: italic;
+  font-weight: 400 !important;
 }
 
 .item-card .item-dialog-roll-button {

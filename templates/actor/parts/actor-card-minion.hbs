@@ -1,4 +1,4 @@
-<div class="ability-card" data-item-id="{{_id}}">
+<div class="ability-card minion-card" data-item-id="{{_id}}">
   <div class="ability-card-info">
     <img src="{{img}}" alt="{{name}}" class="ability-icon"  data-item-id="{{_id}}">
     <div class="ability-header">
@@ -7,7 +7,6 @@
       </div>
       <div class="ability-right">
         <div class="ability-tags">
-          {{#if settings.useRarity}}<span class="tag">{{ localize system.rarity }}</span>{{#if system.minion_type}}, {{/if}}{{/if}}
           {{#if system.minion_type}}<span class="tag">{{localize system.minion_type }}</span>{{#if system.tags }}, {{/if}}{{/if}}
           {{#each system.tags as |tag|}}
             <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
@@ -19,7 +18,7 @@
 
       {{#if system.price.buy}}<div class="detail"><strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{system.price.buy}}{{#if system.price.denomination}} {{ localize system.price.denomination}}{{/if}}</div>{{/if}}
       {{#if system.price.sell}}<div class="detail"><strong>{{ localize "FFXIV.Item.Sell" }}:</strong> {{system.price.sell}}{{#if system.price.denomination}} {{ localize system.price.denomination}}{{/if}}</div>{{/if}}
-      {{#if system.shop_tier}}<div class="detail"><strong>{{ localize "FFXIV.Item.ShopTier" }}:</strong> {{system.shop_tier}}</div>{{/if}}
+      {{#if (hasShopTier system)}}<div class="detail"><strong>{{ localize "FFXIV.Item.ShopTier" }}:</strong> {{shopTierDisplay system}}</div>{{/if}}
 
     </div>
   </div>

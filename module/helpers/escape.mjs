@@ -41,8 +41,15 @@ function getActiveApp(event) {
   const targeted = getEventApp(event, apps);
   if (targeted) return targeted;
 
+  const topmost = getTopmostApp(apps);
+  if (topmost) return topmost;
+
   if (activeApp && apps.includes(activeApp)) return activeApp;
 
+  return null;
+}
+
+function getTopmostApp(apps) {
   return apps
     .map(app => ({ app, element: getAppElement(app) }))
     .filter(({ element }) => element)
@@ -69,8 +76,16 @@ function getOpenApps() {
     if (typeof app?.close !== "function") return false;
     const element = getAppElement(app);
     if (!element || !document.body.contains(element)) return false;
+    if (!isFFXIVApp(app, element)) return false;
     return app.rendered ?? true;
   });
+}
+
+function isFFXIVApp(app, element) {
+  if (element?.classList?.contains("ffxiv")) return true;
+  if (typeof app?.id === "string" && app.id.startsWith("FFXIV")) return true;
+  if (typeof app?.constructor?.name === "string" && app.constructor.name.startsWith("FFXIV")) return true;
+  return false;
 }
 
 function getAppElement(app) {

@@ -2,12 +2,11 @@
   <div class="item-card-info">
     <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon">
     <div class="item-dialog-header">
-      <div class="item-dialog-name text-rarity-{{ delabelize 'rarities' item.system.rarity }}">
+      <div class="item-dialog-name {{rarityTextClass item.system.rarity}}">
         {{item.name}}
       </div>
       <div class="item-dialog-right">
         <div class="item-dialog-tags">
-            {{#if useRarity}}<span class="tag">{{ localize item.system.rarity }}</span>,{{/if}}
             <span class="tag">{{ localize item.system.category }}</span>
         </div>
       </div>

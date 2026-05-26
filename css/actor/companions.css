@@ -48,6 +48,52 @@
   display: block;
 }
 
+.companions-sub-tab-content .ability-card.minion-card .ability-header {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 5px 0;
+  padding: 5px 0;
+  width: 100%;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-name {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-right {
+  display: inline-flex;
+  float: none;
+  flex: 0 0 auto;
+  margin-left: 10px;
+  margin-right: 4px;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-tags {
+  display: inline-flex;
+  text-align: right;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-card-info {
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-icon {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-header,
+.companions-sub-tab-content .ability-card.minion-card .ability-details {
+  grid-column: 2;
+}
+
 .pet-card {
   padding: 10px;
   box-shadow: 0px 0px 5px 0px #111;

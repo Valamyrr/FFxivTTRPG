@@ -42,19 +42,6 @@
           </div>
         </div>
 
-        {{#if settings.useRarity}}
-        <div class="resource flex-group-center">
-          <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <select style="text-align: center;" name="system.rarity">
-              {{#each this.config.rarities as |a|}}
-              <option value="{{a.label}}" {{#if (eq a.label ../item.system.rarity)}}selected {{/if}}>{{ localize a.label }}</option>
-              {{/each}}
-            </select>
-          </div>
-        </div>
-        {{/if}}
-
       </div>
 
       <div class="tags-container">

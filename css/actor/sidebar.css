@@ -58,115 +58,210 @@
 
 .stat-bars{
   margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.stat-bar {
-  height: 30px;
+.compact-health-resource .health-resource-label {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 10px 0;
-  background: var(--gradient-stats-sidebar);
-  border-radius: 10px;
-  padding: 5px
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 5px;
 }
 
-.mana-slot {
-  height: 16px;
-  width: 36px;
-  background-color: var(--primary-color); /* Default color for empty slots */
-  clip-path: polygon(20% 0, 100% 0, 80% 100%, 0% 100%);
-  transition: all 0.6s ease;
-  position: absolute;
-  top: 2px;
-  left: 2px;
+.ffxiv-gauge{
+  width: 100%;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 6px;
 }
 
-.mana-border {
-  box-sizing: border-box;
-  display: inline-block;
+.ffxiv-gauge .gauge-label{
+  color: #e9cb73;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+}
+
+.ffxiv-gauge .gauge-track{
   position: relative;
-  background: white;
-  height:20px;
-  width: 40px;
-  clip-path: polygon(20% 0, 100% 0, 80% 100%, 0% 100%);
+  width: 100%;
+  height: 20px;
+  border: 1px solid #d8bc70;
+  border-radius: 5px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(31, 31, 31, 0.96) 0%, rgba(11, 11, 11, 0.98) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 222, 147, 0.12), 0 0 4px rgba(0, 0, 0, 0.45);
 }
 
-.mana-slot.slot-1, .mana-border:first-child {
-  border-radius: 5px 0 0 5px;
-  clip-path: polygon(0 0, 100% 0, 80% 100%, 0% 100%);
-}
-.mana-slot.slot-5, .mana-border:last-child {
-  border-radius: 0 5px 5px 0;
-  clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
+.barrier-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
+  border: 1px solid rgba(225, 190, 95, 0.9);
+  border-radius: 999px;
+  color: #f4d77e;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 2px 6px;
+  box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.15), 0 0 3px rgba(0, 0, 0, 0.55);
 }
 
-.mana-filled {
-  background: linear-gradient(180deg, rgba(242,198,232,1) 0%, rgba(108,0,76,1) 100%);
-  transition: all 0.6s ease;
+.barrier-chip-label {
+  opacity: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
+  text-transform: uppercase;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.06em;
+}
+
+.gauge-fill{
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  bottom: 1px;
+  width: 0%;
+  border-radius: 3px;
+}
+
+.health-bar{
+  background: linear-gradient(180deg, #91de49 0%, #4c9f1f 55%, #315f17 100%);
+  transition: width 0.3s ease;
+}
+
+.health-bar.health-good{
+  background: linear-gradient(180deg, #97e94d 0%, #54ad24 55%, #315f17 100%);
+}
+
+.health-bar.health-bad{
+  background: linear-gradient(180deg, #f3b745 0%, #d57d15 55%, #8f4e00 100%);
+}
+
+.health-bar.health-danger{
+  background: linear-gradient(180deg, #eb6b63 0%, #c12c2c 55%, #780f16 100%);
+}
+
+.mana-bar{
+  cursor: pointer;
+}
+
+.mana-fill{
+  background: linear-gradient(180deg, #f2cce8 0%, #b25aa4 50%, #6e1f66 100%);
+  transition: width 0.3s ease;
 }
 
 .health-border{
   position: relative;
-  height: 20px;
-  width: 100%;
-  box-sizing: border-box;
-  border: solid 2px white;
-  border-radius: 5px;
-  text-align: center;
+  cursor: text;
+}
+
+.barrier-overlay{
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0%;
+  width: 0%;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #fff4b8 0%, #ffd84d 45%, #c98d13 100%);
+  box-shadow: inset 0 0 0 1px rgba(98, 67, 0, 0.5), inset 0 -1px 0 rgba(86, 56, 0, 0.45);
+  z-index: 0;
+}
+
+.barrier-overflow{
+  position: absolute;
+  top: 0px;
+  left: 0%;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(180deg, #fff4b8 0%, #ffd84d 45%, #c98d13 100%);
+  box-shadow: inset 0 0 0 1px rgba(98, 67, 0, 0.45);
+  border-radius: 2px;
+  opacity: 0.98;
+  z-index: 0;
+}
+
+.gauge-values{
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding-right: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f4f4f4;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.95), 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.gauge-values .gauge-divider{
+  opacity: 0.9;
+}
+
+.mana-gauge .gauge-values{
   justify-content: center;
-  overflow: hidden;
+  padding-right: 0;
+  gap: 2px;
 }
-.health-bar{
-  position: absolute;
-  height: 16px;
-  left: 0;
-  right: 0;
-  width: 100%;
-  border-radius: 3px;
-}
-.barrier-bar{
-  position: absolute;
-  height: 16px;
-  left: 0;
-  right: 0;
-  width: 100%;
-  border-radius: 3px;
-  background: darkblue;
-}
-.health-bar.health-good{
-  background: linear-gradient(to right, green, limegreen);
-}
-.health-bar.health-bad{
-  background: linear-gradient(to right, darkorange, orange);
-}
-.health-bar.health-danger{
-  background: linear-gradient(to right, darkred, red);
-}
+
 .ffxiv.actor .window-content input.health-input,
 .ffxiv.actor input.health-input,
 .ffxiv.actor input.barrier-input{
-  border:none;
-  position: relative;
-  background: transparent;
-  width:30%;
-  height: 16px;
-  min-height: 16px;
-  line-height: 16px;
+  border: none !important;
+  position: static;
+  background: transparent !important;
+  width: 52px;
+  min-width: 52px;
+  height: 15px;
+  min-height: 15px;
+  line-height: 15px;
   color: white;
-  text-align: center;
+  text-align: right;
   padding: 0;
   margin: 0;
-  z-index: 1;
+  z-index: 2;
   box-shadow: none;
   appearance: textfield;
+  font-weight: 700;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.95), 0 1px 2px rgba(0, 0, 0, 0.9);
+  font-size: 15px;
 }
-.health-border span{
-  font-weight: bold;
-  position: relative;
-  z-index: 1;
-  line-height: 16px;
-  color: white;
+
+.ffxiv.actor input.health-input:focus,
+.ffxiv.actor input.barrier-input:focus{
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+
+.ffxiv.actor input.health-input::-webkit-inner-spin-button,
+.ffxiv.actor input.health-input::-webkit-outer-spin-button,
+.ffxiv.actor input.barrier-input::-webkit-inner-spin-button,
+.ffxiv.actor input.barrier-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.ffxiv.actor .barrier-chip input.barrier-input{
+  width: 42px;
+  min-width: 42px;
+  color: #fff;
+  font-weight: 700;
+  height: 14px;
+  line-height: 14px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
+}
+
+.mana-value-current,
+.mana-value-max{
+  min-width: 52px;
+  text-align: center;
 }

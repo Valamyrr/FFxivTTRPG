@@ -5,13 +5,13 @@
 
     {{#each (buildInventoryGrid actor.items 27) as |item|}}
       {{#if item}}  <!-- If there's an item at this position -->
-        <div class="inventory-item rarity-{{item.system.rarity}}"
+        <div class="inventory-item"
              data-item-id="{{item.id}}"
              data-item-position="{{item.system.position}}"
              draggable="true">
              <img class="item-icon" src="{{item.img}}" alt="{{item.name}}">
              <div class="item-shadow"></div>
-          <div class="item-tooltip rarity-{{ delabelize 'rarities' item.system.rarity}}">{{item.name}}</div>
+          <div class="item-tooltip {{rarityTooltipClass item.system.rarity}}">{{item.name}}</div>
           {{#if item.system.stack}}
             <div class="item-quantity">{{item.system.quantity}}</div>
           {{/if}}
@@ -39,7 +39,7 @@
         </div>
         <hr/>
         <div class="currency-info">
-          <div class="currency-name">{{item.name}}</div>
+          <div class="currency-name {{rarityTextClass item.system.rarity}}">{{item.name}}</div>
           <input type="number" class="currency-quantity" data-item-id="{{item._id}}" value="{{item.system.quantity}}">
         </div>
       </div>

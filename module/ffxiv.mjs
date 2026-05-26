@@ -14,6 +14,7 @@ import { debugError, debugLog } from "./helpers/debug.mjs";
 import { SettingsHelpers } from "./helpers/settings.mjs";
 import { updateStatusEffects } from "./helpers/status_effects.mjs";
 import { registerEscapeHandler } from "./helpers/escape.mjs";
+import { formatShopTierDisplay, normalizeShopTier } from "./helpers/shop-tier.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -136,6 +137,57 @@ Handlebars.registerHelper("hasContent", function (value) {
   return text.length > 0;
 });
 
+Handlebars.registerHelper("shopTierDisplay", function (systemOrTier, maybeCustom) {
+  if (systemOrTier && typeof systemOrTier === "object" && !Array.isArray(systemOrTier)) {
+    return formatShopTierDisplay(systemOrTier.shop_tier, systemOrTier.shop_tier_custom, game.i18n);
+  }
+  return formatShopTierDisplay(systemOrTier, maybeCustom, game.i18n);
+});
+
+Handlebars.registerHelper("hasShopTier", function (systemOrTier, maybeCustom) {
+  return Boolean(Handlebars.helpers.shopTierDisplay(systemOrTier, maybeCustom));
+});
+
+function normalizeRarityValue(value) {
+  const normalized = String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+  if (!normalized) return "";
+  const aliasMap = {
+    "1": "basic",
+    "2": "green",
+    "3": "aetherial",
+    "4": "blue",
+    "5": "relic",
+    "6": "unique",
+    basic: "basic",
+    common: "basic",
+    green: "green",
+    uncommon: "green",
+    aetherial: "aetherial",
+    pink: "aetherial",
+    blue: "blue",
+    rare: "blue",
+    relic: "relic",
+    epic: "relic",
+    unique: "unique",
+    legendary: "unique",
+  };
+  return aliasMap[normalized] ?? "";
+}
+
+Handlebars.registerHelper("rarityTextClass", function (rarity) {
+  const key = normalizeRarityValue(rarity);
+  return key ? `text-rarity-${key}` : "";
+});
+
+Handlebars.registerHelper("rarityTooltipClass", function (rarity) {
+  const key = normalizeRarityValue(rarity);
+  return key ? `rarity-${key}` : "";
+});
+
 const BAKED_ACTION_TAG_LABELS = {
   primary_ability: "FFXIV.Tags.Primary",
   secondary_ability: "FFXIV.Tags.Secondary",
@@ -202,6 +254,8 @@ const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_openSheet: "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
   soundNotificationFFXIV_closeSheet: "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
 };
+const FFXIV_BARRIER_OVERLAY_KEY = "ffxivBarrierOverlay";
+const FFXIV_MANA_OVERLAY_KEY = "ffxivManaOverlay";
 
 function playConfiguredSound(setting) {
   const src = game.settings.get("ffxiv", setting) || DEFAULT_SOUNDS[setting];
@@ -245,19 +299,14 @@ Handlebars.registerHelper("labelize", function ( category, value ) {
   return configValue ? configValue.label : value
 });
 Handlebars.registerHelper("delabelize", function ( category, label ) {
-  if(game.settings.get('ffxiv','useRarity')){
-    const configCategory = FF_XIV[category]
-    for (const key in configCategory) {
-      if (configCategory[key].label === label) {
-          return configCategory[key].value;
-      }
+  const configCategory = FF_XIV[category];
+  if (!configCategory) return "";
+  for (const key in configCategory) {
+    if (configCategory[key].label === label) {
+      return configCategory[key].value;
     }
-    debugError("FFXIV | cannot find label for "+label+" in "+category);
-    return "label error"
-  }else{
-    return ""
   }
-
+  return "";
 });
 
 Handlebars.registerHelper('buildInventoryGrid', function(items, gridSize) {
@@ -337,6 +386,8 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 /* -------------------------------------------- */
 
 Hooks.once('ready', function () {
+  installTokenBarrierOverlay();
+
   // Wait to register hotbar drop hook on ready so that modules could register earlier if they want to
   Hooks.on('hotbarDrop', (bar, data, slot) => {
     if (!isFFXIVItemHotbarDrop(data)) return;
@@ -357,6 +408,7 @@ Hooks.once('ready', function () {
 
   if (game.user.isGM) {
     migrateLegacyPetTraits();
+    migrateLegacyShopTiers();
   }
 
 });
@@ -405,6 +457,83 @@ async function migrateLegacyPetTraits() {
       debugLog(`FFXIV | Migrated traits for pet ${pet.name}`);
     } catch (error) {
       console.error("FFXIV | Pet trait migration failed for", pet.name, error);
+    }
+  }
+}
+
+const SHOP_TIER_MIGRATION_VERSION = "2026-05-shop-tier-v1";
+const SHOP_TIER_TYPES = new Set(["consumable", "gear", "augment", "minion"]);
+
+async function migrateLegacyShopTiers() {
+  const currentVersion = game.settings.get("ffxiv", "shopTierMigrationVersion");
+  if (currentVersion === SHOP_TIER_MIGRATION_VERSION) return;
+
+  const worldItemUpdates = [];
+  const actorItemUpdates = [];
+  let pendingCount = 0;
+  let inProgressNotification = null;
+
+  try {
+    for (const item of game.items) {
+      if (!SHOP_TIER_TYPES.has(item.type)) continue;
+      const nextTier = normalizeShopTier(item.system.shop_tier, item.system.shop_tier_custom);
+      if (item.system.shop_tier === nextTier.shop_tier && (item.system.shop_tier_custom ?? "") === nextTier.shop_tier_custom) continue;
+      worldItemUpdates.push({ item, nextTier });
+      pendingCount++;
+    }
+
+    for (const actor of game.actors) {
+      const updates = [];
+      for (const item of actor.items) {
+        if (!SHOP_TIER_TYPES.has(item.type)) continue;
+        const nextTier = normalizeShopTier(item.system.shop_tier, item.system.shop_tier_custom);
+        if (item.system.shop_tier === nextTier.shop_tier && (item.system.shop_tier_custom ?? "") === nextTier.shop_tier_custom) continue;
+
+        updates.push({
+          _id: item.id,
+          "system.shop_tier": nextTier.shop_tier,
+          "system.shop_tier_custom": nextTier.shop_tier_custom
+        });
+      }
+
+      if (!updates.length) continue;
+      actorItemUpdates.push({ actor, updates });
+      pendingCount += updates.length;
+    }
+
+    if (pendingCount === 0) {
+      await game.settings.set("ffxiv", "shopTierMigrationVersion", SHOP_TIER_MIGRATION_VERSION);
+      return;
+    }
+
+    inProgressNotification = ui.notifications?.warn(
+      game.i18n.localize("FFXIV.Notifications.ShopTierMigrationInProgress"),
+      { permanent: true }
+    );
+
+    for (const { item, nextTier } of worldItemUpdates) {
+      await item.update({
+        "system.shop_tier": nextTier.shop_tier,
+        "system.shop_tier_custom": nextTier.shop_tier_custom
+      }, { render: false });
+    }
+
+    for (const { actor, updates } of actorItemUpdates) {
+      await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+    }
+
+    await game.settings.set("ffxiv", "shopTierMigrationVersion", SHOP_TIER_MIGRATION_VERSION);
+    ui.notifications.info(game.i18n.localize("FFXIV.Notifications.ShopTierMigrationComplete"));
+
+  } catch (error) {
+    console.error("FFXIV | Shop tier migration failed", error);
+    ui.notifications.error(game.i18n.localize("FFXIV.Notifications.ShopTierMigrationFailed"));
+  } finally {
+    if (inProgressNotification) {
+      if (typeof ui.notifications?.remove === "function") {
+        ui.notifications.remove(inProgressNotification.id ?? inProgressNotification);
+      }
+      else if (typeof inProgressNotification.remove === "function") inProgressNotification.remove();
     }
   }
 }
@@ -672,8 +801,21 @@ async function refreshOwnedItemActorSheets(item, { preserveTopWindow = false } =
 
   const restoreTopWindow = preserveTopWindow ? captureTopWindowRestore() : null;
   for (const sheet of sheets) {
+    if (sheet instanceof FFXIVActorSheet && typeof sheet._captureSheetScroll === "function") {
+      sheet._captureSheetScroll();
+    }
+  }
+
+  for (const sheet of sheets) {
     await sheet.render({ force: true, focus: false });
   }
+
+  for (const sheet of sheets) {
+    if (sheet instanceof FFXIVActorSheet && typeof sheet._restoreSheetScroll === "function") {
+      sheet._restoreSheetScroll();
+    }
+  }
+
   restoreTopWindow?.();
 }
 
@@ -735,15 +877,241 @@ Hooks.on("renderTokenHUD", (app, html) => {
   const element = getHookHTMLElement(html, app);
   if (!element) return;
 
+  const barRows = {};
   for (const barName of ["bar1", "bar2"]) {
     const attribute = tokenDocument[barName]?.attribute;
-    if (!["health", "barrier"].includes(attribute)) continue;
     const input = element.querySelector(`input[name="${barName}"]`);
-    if (!input) continue;
-    input.disabled = false;
-    input.removeAttribute("disabled");
+    const row = input?.closest(".attribute") ?? null;
+    if (input && ["health", "barrier"].includes(attribute)) {
+      input.disabled = false;
+      input.removeAttribute("disabled");
+      input.classList.toggle("ffxiv-barrier-input", attribute === "barrier");
+    }
+    if (row && attribute) barRows[attribute] = row;
   }
+
+  if (tokenDocument.actor?.type !== "character") {
+    element.querySelector(".attribute.ffxiv-mana-hud")?.remove();
+    return;
+  }
+
+  const barsContainer = barRows.health?.parentElement
+    ?? barRows.barrier?.parentElement
+    ?? element.querySelector(".col.right")
+    ?? element;
+
+  if (barRows.health) barRows.health.classList.add("ffxiv-hud-health");
+  if (barRows.barrier) barRows.barrier.classList.add("ffxiv-hud-barrier");
+
+  if (barRows.barrier) barsContainer.appendChild(barRows.barrier);
+  if (barRows.health) barsContainer.appendChild(barRows.health);
+
+  let manaRow = barsContainer.querySelector(".attribute.ffxiv-mana-hud");
+  if (!manaRow) {
+    manaRow = document.createElement("div");
+    manaRow.classList.add("attribute", "ffxiv-mana-hud");
+    manaRow.innerHTML = `<input type="text" class="ffxiv-mana-input" name="ffxiv-mana" inputmode="numeric" title="MP">`;
+  }
+
+  const manaInput = manaRow.querySelector("input[name='ffxiv-mana']");
+  if (manaInput) {
+    const manaValue = Number(tokenDocument.actor?.system?.mana?.value ?? 0);
+    const manaMax = Math.max(0, Number(tokenDocument.actor?.system?.mana?.max ?? 5) || 5);
+    manaInput.value = String(Math.max(0, Math.min(manaValue, manaMax)));
+    manaInput.disabled = false;
+    manaInput.removeAttribute("disabled");
+
+    if (!manaInput.dataset.ffxivBound) {
+      manaInput.dataset.ffxivBound = "true";
+      const applyMana = async () => {
+        const raw = String(manaInput.value ?? "").trim();
+        const current = Number(tokenDocument.actor?.system?.mana?.value ?? 0);
+        let next = current;
+        if (/^[+-]\d+$/.test(raw)) {
+          next = current + Number(raw);
+        } else {
+          const parsed = Number(raw);
+          next = Number.isFinite(parsed) ? parsed : current;
+        }
+        const manaCap = Math.max(0, Number(tokenDocument.actor?.system?.mana?.max ?? 5) || 5);
+        const nextValue = Math.max(0, Math.min(next, manaCap));
+        manaInput.value = String(nextValue);
+        if (nextValue === current) return;
+        await tokenDocument.actor.update({ "system.mana.value": nextValue }, { render: false });
+        refreshActorTokenBars(tokenDocument.actor);
+      };
+
+      manaInput.addEventListener("change", () => { void applyMana(); });
+      manaInput.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        event.stopPropagation();
+        manaInput.blur();
+      });
+      manaInput.addEventListener("blur", () => { void applyMana(); });
+    }
+  }
+
+  barsContainer.appendChild(manaRow);
 });
+
+Hooks.on("updateActor", (actor, changes) => {
+  if (actor?.type !== "character") return;
+  const manaChanged = foundry.utils.hasProperty(changes, "system.mana.value")
+    || foundry.utils.hasProperty(changes, "system.mana.max");
+  if (!manaChanged) return;
+  refreshActorTokenBars(actor);
+});
+
+function installTokenBarrierOverlay() {
+  const tokenProto = foundry.canvas.placeables.Token?.prototype;
+  if (!tokenProto || tokenProto._ffxivBarrierOverlayPatched) return;
+
+  const originalDrawBars = tokenProto.drawBars;
+  tokenProto.drawBars = function (...args) {
+    const result = originalDrawBars.apply(this, args);
+    drawFFXIVBarrierOverlay(this);
+    drawFFXIVManaOverlay(this);
+    return result;
+  };
+
+  tokenProto._ffxivBarrierOverlayPatched = true;
+}
+
+function drawFFXIVBarrierOverlay(token) {
+  const overlay = getBarrierOverlayGraphic(token);
+  if (!overlay) return;
+
+  overlay.clear();
+  overlay.visible = false;
+
+  if (!token?.actor || !["character", "npc"].includes(token.actor.type)) return;
+
+  const healthBarName = getTokenBarByAttribute(token, "health");
+  if (!healthBarName) return;
+
+  const healthBar = token.bars?.[healthBarName];
+  if (!healthBar || healthBar.visible === false) return;
+
+  const healthData = token.document?.getBarAttribute?.(healthBarName);
+  const maxHealth = Number(healthData?.max) || 0;
+  if (maxHealth <= 0) return;
+
+  const barrierBarName = getTokenBarByAttribute(token, "barrier");
+  if (barrierBarName && token.bars?.[barrierBarName]) {
+    token.bars[barrierBarName].visible = false;
+  }
+
+  const currentHealth = Math.max(Number(healthData?.value) || 0, 0);
+  const barrierValue = Math.max(Number(token.actor.system?.barrier?.value) || 0, 0);
+  if (barrierValue <= 0) return;
+
+  const startPct = Math.clamp(currentHealth, 0, maxHealth) / maxHealth;
+  const barrierPct = barrierValue / maxHealth;
+  const insidePct = Math.clamp(Math.min(barrierPct, 1 - startPct), 0, 1);
+  const overflowPct = Math.max(barrierPct - insidePct, 0);
+  const overflowDisplayPct = Math.min(overflowPct, 1);
+
+  const { width, height } = token.document.getSize();
+  const scale = canvas.dimensions.uiScale;
+  const barHeight = 8 * (token.document.height >= 2 ? 1.5 : 1) * scale;
+  const barY = (healthBarName === "bar1") ? (height - barHeight) : 0;
+  const barWidth = width;
+  const barrierColor = 0xffd54f;
+
+  overlay.position.set(0, 0);
+  overlay.lineStyle(scale, 0x000000, 0.85);
+  if (insidePct > 0) {
+    overlay.beginFill(barrierColor, 0.95);
+    overlay.drawRoundedRect(startPct * barWidth, barY, insidePct * barWidth, barHeight, 2 * scale);
+  }
+
+  if (overflowDisplayPct > 0) {
+    const overflowHeight = Math.max(2 * scale, barHeight * 0.45);
+    const overflowY = barY - overflowHeight - (0.5 * scale);
+    overlay.beginFill(barrierColor, 0.95);
+    overlay.drawRoundedRect(0, overflowY, overflowDisplayPct * barWidth, overflowHeight, 2 * scale);
+  }
+
+  overlay.visible = true;
+}
+
+function getBarrierOverlayGraphic(token) {
+  const bars = token?.bars;
+  if (!bars) return null;
+  if (bars[FFXIV_BARRIER_OVERLAY_KEY]) return bars[FFXIV_BARRIER_OVERLAY_KEY];
+  const overlay = bars.addChild(new PIXI.Graphics());
+  bars[FFXIV_BARRIER_OVERLAY_KEY] = overlay;
+  return overlay;
+}
+
+function drawFFXIVManaOverlay(token) {
+  const overlay = getManaOverlayGraphic(token);
+  if (!overlay) return;
+
+  overlay.clear();
+  overlay.visible = false;
+
+  if (!token?.actor || token.actor.type !== "character") return;
+
+  const healthBarName = getTokenBarByAttribute(token, "health");
+  const healthBar = healthBarName ? token.bars?.[healthBarName] : null;
+  if (!healthBar || healthBar.visible === false) return;
+
+  const currentMana = Math.max(0, Number(token.actor.system?.mana?.value) || 0);
+  const maxMana = Math.max(1, Number(token.actor.system?.mana?.max) || 5);
+  if (currentMana >= maxMana) return;
+  const manaPct = Math.clamp(currentMana / maxMana, 0, 1);
+
+  const { width, height } = token.document.getSize();
+  const scale = canvas.dimensions.uiScale;
+  const barHeight = 7 * (token.document.height >= 2 ? 1.5 : 1) * scale;
+  const barWidth = width;
+  const barY = height + (2 * scale);
+  const manaColor = 0xd064c4;
+  const manaTrackColor = 0x111111;
+
+  overlay.position.set(0, 0);
+  overlay.lineStyle(scale, 0x000000, 0.85);
+  overlay.beginFill(manaTrackColor, 0.85);
+  overlay.drawRoundedRect(0, barY, barWidth, barHeight, 2 * scale);
+
+  if (manaPct > 0) {
+    overlay.beginFill(manaColor, 0.95);
+    overlay.drawRoundedRect(0, barY, manaPct * barWidth, barHeight, 2 * scale);
+  }
+
+  overlay.visible = true;
+}
+
+function getManaOverlayGraphic(token) {
+  const bars = token?.bars;
+  if (!bars) return null;
+  if (bars[FFXIV_MANA_OVERLAY_KEY]) return bars[FFXIV_MANA_OVERLAY_KEY];
+  const overlay = bars.addChild(new PIXI.Graphics());
+  bars[FFXIV_MANA_OVERLAY_KEY] = overlay;
+  return overlay;
+}
+
+function getTokenBarByAttribute(token, attribute) {
+  for (const barName of ["bar1", "bar2"]) {
+    const barAttribute = token.document?.[barName]?.attribute;
+    if (barAttribute === attribute) return barName;
+  }
+  return null;
+}
+
+function refreshActorTokenBars(actor) {
+  if (!actor || !canvas?.tokens) return;
+
+  for (const token of canvas.tokens.placeables) {
+    if (!token?.actor || token.actor.type !== "character") continue;
+    if (token.actor === actor || token.actor.id === actor.id) {
+      if (typeof token.drawBars === "function") token.drawBars();
+      else token.renderFlags?.set?.({ refreshBars: true });
+    }
+  }
+}
 
 function getHookHTMLElement(html, app) {
   return html instanceof HTMLElement ? html
@@ -1654,6 +2022,34 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
   applyFFXIVChatTheme(html);
 
   const jqueryhtml = $(html)
+  const markApplyToChatCard = async ({ kind, amount, count }) => {
+    const typeKey = kind === "heal" ? "FFXIV.Chat.Heal" : "FFXIV.Chat.Damage";
+    const notice = game.i18n.format("FFXIV.Chat.ApplyResult", {
+      type: game.i18n.localize(typeKey),
+      amount: amount,
+      count: count
+    });
+
+    jqueryhtml.find(".ffxiv-apply-dmg, .ffxiv-apply-heal")
+      .prop("disabled", true)
+      .addClass("ffxiv-apply-used");
+
+    const existing = jqueryhtml.find(".ffxiv-apply-result");
+    if (existing.length) {
+      existing.text(notice);
+    } else {
+      const buttonRow = jqueryhtml.find(".ffxiv-apply-dmg, .ffxiv-apply-heal").first().parent();
+      if (buttonRow.length) {
+        buttonRow.after(`<div class="ffxiv-apply-result">${notice}</div>`);
+      } else {
+        jqueryhtml.append(`<div class="ffxiv-apply-result">${notice}</div>`);
+      }
+    }
+
+    const updatedContent = jqueryhtml.find(".message-content").first().html();
+    if (updatedContent) await message.update({ content: updatedContent });
+  };
+
   jqueryhtml.find(".ffxiv-roll-base").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
@@ -1709,6 +2105,10 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const targets = Array.from(game.user.targets);
+    if (targets.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
+      return;
+    }
     const heal = parseInt(eval(ev.currentTarget.dataset.heal));
     debugLog(ev.currentTarget.dataset);
     const ownActors = [];
@@ -1739,11 +2139,17 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
       ui.notifications.info(game.i18n.localize("FFXIV.Notifications.SendSocket"))
     }
 
+    await markApplyToChatCard({ kind: "heal", amount: heal, count: targets.length });
+
   });
   jqueryhtml.find(".ffxiv-apply-dmg").on("click", async ev => {
     const itemId = ev.currentTarget.dataset.itemId;
     const actor = game.actors.get(ev.currentTarget.dataset.actorId);
     const targets = Array.from(game.user.targets);
+    if (targets.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
+      return;
+    }
     const damage = parseInt(eval(ev.currentTarget.dataset.damage));
     const ownActors = [];
     const actorsNeedingGM = [];
@@ -1771,6 +2177,8 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
       });
       ui.notifications.info(game.i18n.localize("FFXIV.Notifications.SendSocket"))
     }
+
+    await markApplyToChatCard({ kind: "damage", amount: damage, count: targets.length });
   });
 
   jqueryhtml.find(".ffxiv-apply-status").on("click", async ev => {

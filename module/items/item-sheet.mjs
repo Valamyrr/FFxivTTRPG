@@ -3,6 +3,7 @@ import {
   prepareActiveEffectCategories,
 } from '../helpers/effects.mjs';
 import { debugError, debugLog } from "../helpers/debug.mjs";
+import { normalizeShopTier } from "../helpers/shop-tier.mjs";
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem: "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
@@ -32,6 +33,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   tabGroups = {
     primary: "description",
   };
+
+  constructor(...args) {
+    super(...args);
+    this.options.window ??= {};
+    this.options.window.resizable = !this._isLimitedDisplayMode();
+  }
 
   /** @override */
   static DEFAULT_OPTIONS = {
@@ -133,6 +140,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
 
+    if (this.item.type === "minion" && this.tabGroups?.primary === "description") {
+      this.tabGroups.primary = "details";
+    }
+
     // Use a safe clone of the item data for further operations.
     const itemData = this.document.toObject(false);
     context.item = this.item;
@@ -148,6 +159,20 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.customTags = this._getCustomActionTags(itemData.system.tags);
     context.hasMarkerTag = this._hasMarkerTag(itemData.system.tags);
     context.hasCheck = this._hasCheck(itemData.system.check);
+    if (Object.hasOwn(context.system, "shop_tier")) {
+      const normalizedShopTier = normalizeShopTier(context.system.shop_tier, context.system.shop_tier_custom);
+      context.system.shop_tier = normalizedShopTier.shop_tier;
+      context.system.shop_tier_custom = normalizedShopTier.shop_tier_custom;
+    }
+    if (Object.hasOwn(context.system, "max_stack")) {
+      const sourceHasMaxStack = foundry.utils.hasProperty(this.item._source?.system ?? {}, "max_stack");
+      const hasMaxStack = context.system.max_stack !== null && context.system.max_stack !== undefined && String(context.system.max_stack).trim() !== "";
+      context.system.max_stack = (!sourceHasMaxStack && context.system.stack)
+        ? 99
+        : (hasMaxStack
+        ? Math.max(1, Number.parseInt(context.system.max_stack, 10) || 1)
+        : (context.system.stack ? 99 : 1));
+    }
     if (this.item.type === "job") {
       context.system.job_name = this._getJobBaseName(context.system.job_name, this.item.name);
       context.system.ability_grants = this._normalizeJobAbilityGrants(context.system.ability_grants)
@@ -157,30 +182,52 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         }));
     }
 
-    const fieldsToEnrich = {
-        description: this.item.system.description || "",
-        traits: this.item.system.traits || "", // Add other fields here
-    };
-
-    // Enrich each field separately
-    for (const [key, value] of Object.entries(fieldsToEnrich)) {
-        context[`enriched${key.charAt(0).toUpperCase() + key.slice(1)}`] =
-            await foundry.applications.ux.TextEditor.implementation.enrichHTML(value, {
-                secrets: this.document.isOwner,
-                async: true,
-                rollData: this.item.getRollData(),
-                relativeTo: this.item,
-            });
-    }
+    context.enriched = await this.constructor.enrichAllStrings(
+      context.system ?? {},
+      this.item.getRollData(),
+      this.item,
+      this.document.isOwner
+    );
+    context.enrichedDescription = context.enriched?.description ?? "";
+    context.enrichedTraits = context.enriched?.traits ?? "";
 
     context.settings = {
-      "useRarity": game.settings.get('ffxiv','useRarity'),
       "jobsAbbrv": game.settings.get('ffxiv','jobsAbbrv').split(",")
     }
 
     // Prepare active effects for easier access
     context.effects = prepareActiveEffectCategories(this.item.effects);
     return context;
+  }
+
+  static async enrichAllStrings(target, rollData, relativeTo, secrets=true) {
+    if (typeof target === "string") {
+      const html = await foundry.applications.ux.TextEditor.implementation.enrichHTML(target, {
+        secrets,
+        async: true,
+        rollData,
+        relativeTo,
+      });
+      return html?.trim() ? html : target;
+    }
+
+    if (Array.isArray(target)) {
+      const enriched = [];
+      for (const value of target) {
+        enriched.push(await this.enrichAllStrings(value, rollData, relativeTo, secrets));
+      }
+      return enriched;
+    }
+
+    if (target && typeof target === "object") {
+      const enriched = {};
+      for (const [key, value] of Object.entries(target)) {
+        enriched[key] = await this.enrichAllStrings(value, rollData, relativeTo, secrets);
+      }
+      return enriched;
+    }
+
+    return target;
   }
 
   /* -------------------------------------------- */
@@ -195,9 +242,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     const limited = this.element.querySelector('.limited-display');
     if (limited) {
+      this.options.window.resizable = false;
       this._fitLimitedDisplayToContent();
-      const limitedDisplay = game.settings.get('ffxiv', 'limitedPhysicalItemsDialog') && this.item.parent != null;
-      if(this.item.type=="gear" && limitedDisplay) this.setPosition({ width: 340 });
     }
 
     this.activateListeners($(this.element));
@@ -236,12 +282,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     event.preventDefault();
     const updateData = { [event.target.name]: this._getChangedFieldValue(event.target) };
-    const render = this.item.type === "job" && ["system.job_name", "system.level"].includes(event.target.name);
+    const render = (this.item.type === "job" && ["system.job_name", "system.level"].includes(event.target.name))
+      || ["system.shop_tier", "system.max_stack", "system.direct_formula", "system.check", "system.origin"].includes(event.target.name);
     this.document.update(updateData, { render })
       .then(async () => {
         await this._syncJobPetVisibility(event.target.name, updateData[event.target.name]);
         await this._syncJobItemName(event.target.name);
-        if (event.target.name === "system.check") this.render({ force: true });
       })
       .catch(err => ui.notifications.error(err, { console: true }));
   }
@@ -587,11 +633,25 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }else {
       var templatePath = "systems/ffxiv/templates/chat/item-chat-card.hbs"
     }
-    ChatMessage.create({
-      content: await foundry.applications.handlebars.renderTemplate(templatePath, { item: this.item, useRarity: game.settings.get('ffxiv','useRarity')}),
+    const enriched = await this.constructor.enrichAllStrings(
+      this.item.system ?? {},
+      this.item.getRollData(),
+      this.item,
+      true
+    );
+    await ChatMessage.create({
+      content: await foundry.applications.handlebars.renderTemplate(templatePath, {
+        item: this.item,
+        enriched
+      }),
       flags: { core: { canParseHTML: true } },
       flavor: game.i18n.format("FFXIV.ItemType."+this.item.type)
     });
+
+    if (typeof this.item._consumeFromInventoryIfNeeded === "function") {
+      await this.item._consumeFromInventoryIfNeeded();
+      if (!this.item?.parent && this.rendered) this.close();
+    }
   }
 
   _decreaseQuantity(event){
@@ -726,16 +786,81 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.element.querySelectorAll(".editor-content[data-edit]").forEach(div => this._activateEditor?.(div));
   }
 
+  _isLimitedDisplayMode() {
+    if (!game.settings.get('ffxiv', 'limitedPhysicalItemsDialog')) return false;
+    if (this.item.type === "consumable") {
+      return this.item.parent != null || Boolean(this.item.flags?.["item-piles"]);
+    }
+    if (this.item.type === "gear") return this.item.parent != null;
+    return false;
+  }
+
   _fitLimitedDisplayToContent() {
-    requestAnimationFrame(() => {
+    const fit = () => requestAnimationFrame(() => {
       const limited = this.element.querySelector(".limited-display");
       if (!limited) return;
 
-      const header = this.element.querySelector(".window-header");
-      const headerHeight = header?.offsetHeight || 0;
-      const contentHeight = Math.ceil(limited.scrollHeight);
-      this.setPosition({ height: contentHeight + headerHeight + 6 });
+      const windowContent = this.element.querySelector(".window-content");
+      if (!windowContent) return;
+      const itemCard = limited.querySelector(".item-card") ?? limited;
+
+      const elementRect = this.element.getBoundingClientRect();
+      const contentRect = windowContent.getBoundingClientRect();
+      const horizontalChrome = Math.max(0, Math.ceil(elementRect.width - contentRect.width));
+      const verticalChrome = Math.max(0, Math.ceil(elementRect.height - contentRect.height));
+
+      const cardRect = itemCard.getBoundingClientRect();
+      const contentWidth = Math.ceil(cardRect.width);
+      const contentHeight = Math.ceil(cardRect.height);
+
+      const defaultWidth = Number(this.constructor.DEFAULT_OPTIONS?.position?.width) || 520;
+      const viewportWidth = Math.max(280, window.innerWidth - 24);
+      const maxWidth = Math.min(defaultWidth, viewportWidth);
+      const maxHeight = Math.max(260, window.innerHeight - 24);
+
+      const targetWidth = Math.min(maxWidth, contentWidth + horizontalChrome + 8);
+      const baseHeight = Math.min(maxHeight, contentHeight + verticalChrome + 4);
+      this.setPosition({ width: targetWidth, height: baseHeight });
+
+      requestAnimationFrame(() => {
+        const liveContentRect = windowContent.getBoundingClientRect();
+        const liveCardRect = itemCard.getBoundingClientRect();
+        const cardOverflow = Math.ceil(liveCardRect.bottom - liveContentRect.bottom);
+        const actionEl = limited.querySelector(".item-roll-button") ?? limited.querySelector(".quantity-form");
+        const actionRect = actionEl?.getBoundingClientRect();
+        const actionOverflow = actionRect ? Math.ceil(actionRect.bottom - liveContentRect.bottom) : 0;
+        const overflow = Math.max(cardOverflow, actionOverflow);
+
+        if (overflow > 0) {
+          const correctedHeight = Math.min(maxHeight, baseHeight + overflow + 8);
+          this.setPosition({ width: targetWidth, height: correctedHeight });
+        }
+      });
     });
+
+    fit();
+
+    const images = this.element.querySelectorAll(".limited-display img");
+    for (const image of images) {
+      if (image.complete) continue;
+      image.addEventListener("load", fit, { once: true });
+      image.addEventListener("error", fit, { once: true });
+    }
+    setTimeout(fit, 60);
+    setTimeout(fit, 180);
+    setTimeout(fit, 360);
+  }
+
+  setPosition(position={}) {
+    if (this._isLimitedDisplayMode()) {
+      const defaultWidth = Number(this.constructor.DEFAULT_OPTIONS?.position?.width) || 520;
+      const viewportWidth = Math.max(280, window.innerWidth - 24);
+      const maxWidth = Math.min(defaultWidth, viewportWidth);
+      const maxHeight = Math.max(260, window.innerHeight - 24);
+      if (Number.isFinite(position.width)) position.width = Math.min(position.width, maxWidth);
+      if (Number.isFinite(position.height)) position.height = Math.min(position.height, maxHeight);
+    }
+    return super.setPosition(position);
   }
 
   _activateJobDropZone() {

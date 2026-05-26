@@ -294,16 +294,6 @@ export class SettingsHelpers {
       requiresReload: false
     });
 
-    game.settings.register("ffxiv", "useRarity", {
-      name: game.i18n.localize("FFXIV.Settings.UseRarity"),
-      hint: game.i18n.localize("FFXIV.Settings.UseRarityHint"),
-      scope: "world",
-      config: true,
-      default: false,
-      type: Boolean,
-      requiresReload: false
-    });
-
     game.settings.register("ffxiv", "customAbilityTags", {
       name: "FFXIV.Settings.CustomAbilityTags",
       hint: "FFXIV.Settings.CustomTagsHint",
@@ -332,6 +322,16 @@ export class SettingsHelpers {
       type: String,
       default: "Primary,Secondary,Instant,Physical,Consumable,Meal,Rest,Utility,Wind-Aspected,Fire-Aspected,Earth-Aspected,Water-Aspected,Lightning-Aspected,Ice-Aspected",
       requiresReload: true
+    });
+
+    game.settings.register("ffxiv", "shopTierMigrationVersion", {
+      name: "FFXIV.Settings.ShopTierMigrationVersion",
+      hint: "FFXIV.Settings.ShopTierMigrationVersionHint",
+      scope: "world",
+      config: false,
+      default: "",
+      type: String,
+      requiresReload: false
     });
 
     game.settings.register("ffxiv", "jobsAbbrv", {

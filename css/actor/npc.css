@@ -10,10 +10,26 @@
 .npc h1 input{
   padding: 20px;
 }
+.npc .sheet-npc-header .charname {
+  font-size: 2.9em;
+  line-height: 1;
+  margin: 0 0 2px;
+  max-width: 100%;
+}
+
+.npc .sheet-npc-header .charname h1,
+.npc .sheet-npc-header .charname h1 input {
+  height: auto;
+  line-height: 1;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+}
 .sheet-npc-header {
   align-items: stretch;
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
+  margin-top: 2px;
   position: relative;
 }
 .sheet-npc-header .charname {
@@ -339,9 +355,13 @@
 
 /*Nav*/
 .npc nav.nav-sub-tabs {
+  --npc-tab-width: 38%;
+  --npc-add-width: 34px;
+  --npc-add-gap: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0;
   padding-top: 10px;
   border:none;
@@ -353,14 +373,20 @@
 }
 
 .npc nav.nav-sub-tabs .sub-tab {
-  width: 38%;
+  flex: 0 0 var(--npc-tab-width);
+  width: var(--npc-tab-width);
 }
 
 .npc nav.nav-sub-tabs .npc-add-ability {
-  width: 34px;
+  position: absolute;
+  left: calc((100% - (2 * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
+  top: calc(50% + 1px);
+  transform: translateY(-50%);
+  transition: none;
+  width: var(--npc-add-width);
   height: 25px;
   min-height: 25px;
-  margin: 4px 6px 4px -2px;
+  margin: 0;
   padding: 0;
   border: none;
   border-radius: 3px;
@@ -377,4 +403,10 @@
   color: var(--invert-text-color);
   box-shadow: none;
   text-shadow: 0 0 4px var(--text-color-strong);
+}
+
+.npc nav.nav-sub-tabs:has(.sub-tab[data-tab="traits"].active) .npc-add-ability {
+  left: auto;
+  right: calc((100% - (2 * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
+  clip-path: polygon(15% 0, 100% 0, 100% 100%, 15% 100%, 0 50%);
 }

@@ -1,5 +1,6 @@
 @import url("item/abilities.css");
 @import url("item/inventory-dialog.css");
+@import url("item/minions.css");
 
 .ffxiv.item .window-content{
   background: var(--background-color);
@@ -368,6 +369,40 @@
   justify-content: center;
   min-height: 70px;
   opacity: 0.75;
+}
+.ffxiv.item .consumable-rarity-row,
+.ffxiv.item .consumable-price-resource {
+  grid-column: 1 / -1;
+}
+
+.ffxiv.item .consumable-price-inline {
+  align-items: center;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: auto minmax(4em, max-content) auto auto minmax(4em, max-content);
+  justify-content: center;
+}
+
+.ffxiv.item .consumable-price-inline input {
+  min-width: 0;
+}
+
+.ffxiv.item .consumable-price-input {
+  max-width: 4.5em;
+  width: 4.5em;
+}
+
+.ffxiv.item .consumable-price-key,
+.ffxiv.item .consumable-price-divider {
+  color: var(--text-color);
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.ffxiv.item .consumable-price-divider {
+  opacity: 0.65;
 }
 
 .ffxiv.actor .actor-job-config h2 {

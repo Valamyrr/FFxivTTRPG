@@ -1,3 +1,5 @@
+import { getShopTierChoices } from "./shop-tier.mjs";
+
 export const FF_XIV = {};
 
 /**
@@ -78,39 +80,6 @@ FF_XIV.attributesAbbreviations = {
 };
 
 
-FF_XIV.rarities = {
-    "basic": {
-      "value": "basic",
-      "label": "FFXIV.Rarities.Basic",
-      "color": "#FFFFFF"
-    },
-    "aetherial": {
-      "value": "aetherial",
-      "label": "FFXIV.Rarities.Aetherial",
-      "color": "#FF337F"
-    },
-    "green": {
-      "value": "green",
-      "label": "FFXIV.Rarities.Green",
-      "color": "#44EE44"
-    },
-    "blue": {
-      "value": "blue",
-      "label": "FFXIV.Rarities.Blue",
-      "color": "#7777EE"
-    },
-    "relic": {
-      "value": "relic",
-      "label": "FFXIV.Rarities.Relic",
-      "color": "#800880"
-    },
-    "Unique": {
-      "value": "unique",
-      "label": "FFXIV.Rarities.Unique",
-      "color": "#CD3131"
-    }
-};
-
 FF_XIV.gear_categories = {
   "Arms": { "label": "FFXIV.GearCategories.Arms" },
   "Armor": { "label": "FFXIV.GearCategories.Armor" },
@@ -168,3 +137,5 @@ FF_XIV.minion_types = [
   "FFXIV.Tags.Minion",
   "FFXIV.Tags.Mount"
 ]
+
+FF_XIV.shop_tiers = getShopTierChoices();

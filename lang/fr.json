@@ -113,20 +113,32 @@
       "Source": "Source",
       "Rarity": "Rareté",
       "Buy": "Prix d'achat",
+      "BuyShort": "Achat",
       "Sell": "Prix de revente",
+      "SellShort": "Vente",
+      "Prices": "Prix",
       "Denomination": "Devise utilisée",
       "Fortune": "Richesse",
       "Weight": "Poids",
       "Quantity": "Quantité",
       "Stack": "Accumulable",
+      "MaxStack": "Pile max",
       "Delete": "Supprimer l'objet",
       "Modifiers": "Modificateurs",
       "Description": "Description",
       "ShopTier": "Niveau de Vente",
-      "MinionType": "Type de Mascotte",
+      "MinionType": "Type",
       "AbilityName": "Nom de la compétence du Familier",
       "GrantedAbility": "ID de la compétence octroyée",
       "JobRequirement": "Pré-requis de Job"
+    },
+    "ShopTier": {
+      "Low": "Faible",
+      "Average": "Moyen",
+      "High": "Élevé",
+      "Special": "Spécial*",
+      "Custom": "Personnalisé",
+      "CustomLabel": "Niveau de Vente Personnalisé"
     },
     "GearCategories": {
       "Category": "Categorie",
@@ -197,6 +209,7 @@
       "DirectHitRoll": "Jet d'Attaque Directe",
       "CriticalHitRoll": "Jet d'Attaque Critique",
       "Origin": "Origine de la zone d'effet",
+      "MarkerOrigin": "Origine du marqueur",
       "StatusEffect": "Effet du statut",
       "StatusAction": "Action sur l'Effet",
       "StatusAdd": "Ajouter",
@@ -291,6 +304,8 @@
       "CustomAbilityTags": "Tags personnalisés pour les compétences",
       "CustomTraitTags": "Tags personnalisés pour les traits",
       "CustomConsumableTags": "Tags personnalisés pour les consommables",
+      "ShopTierMigrationVersion": "Version de migration du Niveau de Vente",
+      "ShopTierMigrationVersionHint": "Paramètre interne utilisé pour suivre la migration unique des données de niveau de vente.",
       "CustomTagsHint": "Liste de tags séparés par des virgules de tags à ajouter aux listes pré-existantes",
       "LimitedPhysicalItemsDialog": "Limiter la boîte de dialogue",
       "LimitedPhysicalItemsDialogHint": "Afficher les objets avec des boîtes de dialogue réduites et des droits limités pour les joueurs ?",
@@ -357,9 +372,13 @@
       "NewPlayer": "{playerName} a rejoint l'équipe.",
       "NoSoundAvailable": "Aucun fichier son ne se trouve dans le répertoire des bruitages.",
       "ReplaceGear": "{oldGear} a été remplacé par {newGear}.",
+      "InventoryFull": "L'inventaire est plein. Libérez une case avant d'ajouter un objet.",
       "StatusChangeRequest": "Demande d'effet de statut",
       "HealChangeRequest": "Demande de soin d'une cible",
       "DamageChangeRequest": "Demande de dégâts sur une cible",
+      "ShopTierMigrationInProgress": "Une migration de données est en cours. Ne fermez pas le monde avant sa fin.",
+      "ShopTierMigrationComplete": "La migration des données est terminée avec succès.",
+      "ShopTierMigrationFailed": "La migration des données a échoué. Consultez la console du navigateur pour plus de détails.",
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)",
       "CharacterSheetLocked": "Cette fiche de personnage est verrouillée. Activez le mode modification pour la changer."
     },
@@ -379,7 +398,8 @@
       "ShowModifiers": "Modificateurs",
       "NoModifiers": "Pas de modificateurs à montrer.",
       "Damage": "Infliger",
-      "Heal": "Soigner"
+      "Heal": "Soigner",
+      "ApplyResult": "{type} {amount} appliqué à {count} cible(s)."
     },
     "RollDialog": {
       "AdvantageDice": "Dés d’avantage",
@@ -439,5 +459,3 @@
     "False": "Faux"
   }
 }
-
-

@@ -1,14 +1,63 @@
 import { debugError, debugLog } from "../helpers/debug.mjs";
+import { normalizeShopTier } from "../helpers/shop-tier.mjs";
+
+const SHOP_TIER_ITEM_TYPES = new Set(["consumable", "gear", "augment", "minion"]);
+const INVENTORY_ITEM_TYPES = new Set(["consumable", "gear", "augment"]);
 
 /**
  * Extend the basic Item with some very simple modifications.
  * @extends {Item}
  */
 export class FFXIVItem extends Item {
+  static _normalizeTag(tag) {
+    return String(tag ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  }
+
+  _hasConsumableTag() {
+    const tags = Array.isArray(this.system?.tags) ? this.system.tags : [];
+    if (!tags.length) return false;
+
+    const normalize = FFXIVItem._normalizeTag;
+    const localizedConsumable = game.i18n.localize("FFXIV.Tags.Consumable");
+    const expected = new Set([
+      normalize("FFXIV.Tags.Consumable"),
+      normalize("Consumable"),
+      normalize(localizedConsumable),
+    ]);
+
+    for (const tag of tags) {
+      const raw = normalize(tag);
+      if (expected.has(raw)) return true;
+
+      const localized = normalize(game.i18n.localize(String(tag)));
+      if (expected.has(localized)) return true;
+    }
+    return false;
+  }
+
+  async _consumeFromInventoryIfNeeded() {
+    if (!this._hasConsumableTag()) return;
+    if (this.parent?.documentName !== "Actor") return;
+    if (!foundry.utils.hasProperty(this.system ?? {}, "quantity")) return;
+
+    const quantity = Number.parseInt(this.system?.quantity, 10);
+    const currentQuantity = Number.isFinite(quantity) ? quantity : 1;
+
+    if (currentQuantity > 1) {
+      await this.update({ "system.quantity": currentQuantity - 1 });
+      return;
+    }
+    await this.delete();
+  }
+
   /** @override */
   async _preCreate(data, options, userId) {
     const result = await super._preCreate(data, options, userId);
     if (result === false) return false;
+    this._normalizeShopTierOnCreate(data);
+    this._normalizeStackConfigOnCreate(data);
     if (this.type === "job") this.updateSource({
       name: this._formatJobName(data.system?.job_name, data.system?.level, data.name)
     });
@@ -19,6 +68,8 @@ export class FFXIVItem extends Item {
   async _preUpdate(changed, options, userId) {
     const result = await super._preUpdate(changed, options, userId);
     if (result === false) return false;
+    this._normalizeShopTierOnUpdate(changed);
+    this._normalizeStackConfigOnUpdate(changed);
     if (this.type !== "job") return result;
 
     const jobName = foundry.utils.getProperty(changed, "system.job_name") ?? this.system.job_name;
@@ -27,6 +78,86 @@ export class FFXIVItem extends Item {
       changed.name = this._formatJobName(jobName, level, this.name);
     }
     return result;
+  }
+
+  _hasShopTier() {
+    return SHOP_TIER_ITEM_TYPES.has(this.type);
+  }
+
+  _normalizeShopTierOnCreate(data) {
+    if (!this._hasShopTier()) return;
+    const normalized = normalizeShopTier(data?.system?.shop_tier, data?.system?.shop_tier_custom);
+    this.updateSource({
+      "system.shop_tier": normalized.shop_tier,
+      "system.shop_tier_custom": normalized.shop_tier_custom
+    });
+  }
+
+  _normalizeShopTierOnUpdate(changed) {
+    if (!this._hasShopTier()) return;
+    const hasShopTierChange = foundry.utils.hasProperty(changed, "system.shop_tier")
+      || foundry.utils.hasProperty(changed, "system.shop_tier_custom");
+    if (!hasShopTierChange) return;
+
+    const nextShopTier = foundry.utils.hasProperty(changed, "system.shop_tier")
+      ? foundry.utils.getProperty(changed, "system.shop_tier")
+      : this.system.shop_tier;
+    const nextShopTierCustom = foundry.utils.hasProperty(changed, "system.shop_tier_custom")
+      ? foundry.utils.getProperty(changed, "system.shop_tier_custom")
+      : this.system.shop_tier_custom;
+    const normalized = normalizeShopTier(nextShopTier, nextShopTierCustom);
+
+    foundry.utils.setProperty(changed, "system.shop_tier", normalized.shop_tier);
+    foundry.utils.setProperty(changed, "system.shop_tier_custom", normalized.shop_tier_custom);
+  }
+
+  _hasInventoryData() {
+    return INVENTORY_ITEM_TYPES.has(this.type);
+  }
+
+  _normalizeStackConfigOnCreate(data) {
+    if (!this._hasInventoryData()) return;
+
+    const maxStackRaw = data?.system?.max_stack;
+    const hasMaxStack = maxStackRaw !== null && maxStackRaw !== undefined && String(maxStackRaw).trim() !== "";
+    const stackFlag = data?.system?.stack === true;
+    const maxStack = hasMaxStack
+      ? Math.max(1, Number.parseInt(maxStackRaw, 10) || 1)
+      : (stackFlag ? 99 : 1);
+
+    this.updateSource({
+      "system.max_stack": maxStack,
+      "system.stack": maxStack > 1
+    });
+  }
+
+  _normalizeStackConfigOnUpdate(changed) {
+    if (!this._hasInventoryData()) return;
+    const hasStackChange = foundry.utils.hasProperty(changed, "system.max_stack")
+      || foundry.utils.hasProperty(changed, "system.stack");
+    if (!hasStackChange) return;
+
+    const incomingMaxStack = foundry.utils.hasProperty(changed, "system.max_stack")
+      ? foundry.utils.getProperty(changed, "system.max_stack")
+      : this.system.max_stack;
+    const incomingStack = foundry.utils.hasProperty(changed, "system.stack")
+      ? foundry.utils.getProperty(changed, "system.stack")
+      : this.system.stack;
+
+    const hasMaxStack = incomingMaxStack !== null && incomingMaxStack !== undefined && String(incomingMaxStack).trim() !== "";
+    const maxStack = hasMaxStack
+      ? Math.max(1, Number.parseInt(incomingMaxStack, 10) || 1)
+      : (incomingStack ? 99 : 1);
+
+    foundry.utils.setProperty(changed, "system.max_stack", maxStack);
+    foundry.utils.setProperty(changed, "system.stack", maxStack > 1);
+
+    const quantity = foundry.utils.hasProperty(changed, "system.quantity")
+      ? Number.parseInt(foundry.utils.getProperty(changed, "system.quantity"), 10) || 0
+      : Number.parseInt(this.system.quantity, 10) || 0;
+    if (quantity > maxStack) {
+      foundry.utils.setProperty(changed, "system.quantity", maxStack);
+    }
   }
 
   _formatJobName(jobName, level, fallbackName=this.name) {
@@ -164,10 +295,26 @@ export class FFXIVItem extends Item {
   async roll(event) {
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id
-    let content = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: this });
+    let content = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", {
+      item: this
+    });
+
+    if (this.type === "minion") {
+      await ChatMessage.create({
+        user,
+        content,
+        speaker,
+        flags: { core: { canParseHTML: true } },
+        flavor: game.i18n.format("FFXIV.ItemType."+this.type)
+      });
+      return;
+    }
+
     if (this.system.granted_ability){ //For augment granting abilities
       if (game.items.get(this.system.granted_ability)){
-        content = content + await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", { item: game.items.get(this.system.granted_ability) });
+        content = content + await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", {
+          item: game.items.get(this.system.granted_ability)
+        });
       }else{
         debugError("Granted ability must be a valid ID. Use `game.items.get(INSERT_ID)` to check your item's data.");
       }
@@ -191,6 +338,8 @@ export class FFXIVItem extends Item {
     if (checkResult && this._shouldAutoRollDirectHit(checkResult.roll)) {
       await this._rollDirect({ critical: checkResult.isCritical, autoFromHit: true });
     }
+
+    await this._consumeFromInventoryIfNeeded();
   }
 
   async _rollHit(options = {}) {
@@ -610,14 +759,10 @@ export class FFXIVItem extends Item {
   }
 
   _getApplyButton(result){
-    if (game.user.targets.first()){
-      let buttons = "<div style='display:flex;flex-wrap: wrap;'>"
-      buttons += `<button class="ffxiv-apply-dmg" data-item-id="${this._id}" data-actor-id="${this.parent._id}" data-damage="${result}">${game.i18n.localize("FFXIV.Chat.Damage")}</button>`
-      buttons += `<button class="ffxiv-apply-heal" data-item-id="${this._id}" data-actor-id="${this.parent._id}" data-heal="${result}">${game.i18n.localize("FFXIV.Chat.Heal")}</button>`
-      return buttons+"</div>"
-    }else{
-      return ""
-    }
+    let buttons = "<div style='display:flex;flex-wrap: wrap;'>"
+    buttons += `<button class="ffxiv-apply-dmg" data-item-id="${this._id}" data-actor-id="${this.parent._id}" data-damage="${result}">${game.i18n.localize("FFXIV.Chat.Damage")}</button>`
+    buttons += `<button class="ffxiv-apply-heal" data-item-id="${this._id}" data-actor-id="${this.parent._id}" data-heal="${result}">${game.i18n.localize("FFXIV.Chat.Heal")}</button>`
+    return buttons+"</div>"
   }
 
   _doubleDiceCounts(input) {

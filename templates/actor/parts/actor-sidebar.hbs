@@ -2,41 +2,42 @@
   <img class="profile-img character-img actor-avatar" src="{{ actor.img }}" {{#if actorEditMode}}data-edit="img"{{/if}} title="{{ actor.name }}" alt="avatar"/>
   <div class="stat-bars">
 
-    <div class="resource flex-group-center">
-      <label for="system.mana.value" class="resource-label">{{ localize "FFXIV.Health.long" }}</label>
+    <div class="resource flex-group-center compact-health-resource">
+      <label for="system.health.value" class="resource-label health-resource-label">
+        <span class="barrier-chip">
+          <span class="barrier-chip-label">{{ localize "FFXIV.Health.barrier" }}</span>
+          <input type="text" inputmode="numeric" class="barrier-input" value="{{ system.barrier.value }}" name="system.barrier.value" />
+        </span>
+      </label>
       <div class="resource-content flexrow flex-center flex-between">
-        <div class="stat-bar">
-          <div class="health-border">
-            <div class="health-bar"></div>
-            <input type="text" inputmode="numeric" class="health-input" value="{{ system.health.value }}" name="system.health.value" />
-            <span>/</span>
-            <input type="number" class="health-input" min="0" value="{{ system.health.max }}" name="system.health.max" />
+        <div class="ffxiv-gauge health-gauge">
+          <div class="gauge-label">{{ localize "FFXIV.Health.abbrv" }}</div>
+          <div class="health-border gauge-track">
+            <div class="health-bar gauge-fill"></div>
+            <div class="barrier-overlay"></div>
+            <div class="barrier-overflow"></div>
+            <div class="gauge-values">
+              <input type="text" inputmode="numeric" class="health-input" value="{{ system.health.value }}" name="system.health.value" />
+              <span class="gauge-divider">/</span>
+              <input type="number" class="health-input" min="0" value="{{ system.health.max }}" name="system.health.max" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="resource flex-group-center">
-      <label for="system.mana.value" class="resource-label">{{ localize "FFXIV.Health.barrier" }}</label>
       <div class="resource-content flexrow flex-center flex-between">
-        <div class="stat-bar">
-          <div class="health-border">
-            <div class="barrier-bar"></div>
-            <input type="text" inputmode="numeric" class="barrier-input" value="{{ system.barrier.value }}" name="system.barrier.value" />
+        <div class="ffxiv-gauge mana-gauge">
+          <div class="gauge-label">{{ localize "FFXIV.Mana.abbrv" }}</div>
+          <div class="mana-bar gauge-track">
+            <div class="mana-fill gauge-fill"></div>
+            <div class="gauge-values">
+              <span class="mana-value-current">{{ system.mana.value }}</span>
+              <span class="gauge-divider">/</span>
+              <span class="mana-value-max">{{ system.mana.max }}</span>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="resource flex-group-center">
-      <label for="system.mana.value" class="resource-label">{{ localize "FFXIV.Mana.long" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        <div class="stat-bar mana-bar">
-          <div class="mana-border"><div class="mana-slot slot-1"></div></div>
-          <div class="mana-border"><div class="mana-slot slot-2"></div></div>
-          <div class="mana-border"><div class="mana-slot slot-3"></div></div>
-          <div class="mana-border"><div class="mana-slot slot-4"></div></div>
-          <div class="mana-border"><div class="mana-slot slot-5"></div></div>
         </div>
       </div>
     </div>

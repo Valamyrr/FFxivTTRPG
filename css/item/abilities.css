@@ -13,15 +13,15 @@
 
 .ffxiv.item .tags-container li{
   align-items: center;
-  display: inline-grid;
+  display: inline-flex;
   gap: 4px;
-  grid-template-columns: minmax(0, 1fr) 26px;
   justify-content: flex-start;
   list-style-type: none;
+  line-height: 1;
 }
 
 .ffxiv.item .tags-container li:has(.baked-action-tag) {
-  grid-template-columns: minmax(0, auto);
+  display: inline-flex;
 }
 
 .ffxiv.item .tags-container .tag-list{
@@ -40,6 +40,7 @@
 .ffxiv.item .tags-container select{
   height: 26px;
   line-height: 26px;
+  margin: 0;
   min-width: 0;
   width: 150px;
 }
@@ -60,11 +61,12 @@
   align-items: center;
   display: inline-flex;
   flex: 0 0 26px;
-  width: 26px;
   height: 26px;
   justify-content: center;
+  margin: 0;
   min-height: 26px;
   padding: 0;
+  width: 26px;
 }
 
 .ffxiv.item .tags-container .add-tag{

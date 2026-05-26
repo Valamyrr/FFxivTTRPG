@@ -13,13 +13,18 @@ let draggedItem = null;
 const NUMERIC_ACTOR_FIELD = /^(?:system\.(?:primary_attributes\.[^.]+\.value|secondary_attributes\.[^.]+\.value|adventuring_rank\.[^.]+|health\.(?:value|max)|barrier\.(?:value|max)|mana\.(?:value|max)|experience\.level\.(?:value|max)|criticalRange)|prototypeToken\.(?:width|height))$/;
 const CHARACTER_LOCK_ALLOWED_FIELDS = new Set([
   "system.health.value",
-  "system.health.max",
   "system.barrier.value",
   "system.barrier.max",
 ]);
 const NPC_LOCK_ALLOWED_FIELDS = new Set([
   "system.health.value",
   "system.barrier.value",
+]);
+const ENTER_COMMIT_FIELDS = new Set([
+  "system.health.value",
+  "system.health.max",
+  "system.barrier.value",
+  "system.barrier.max",
 ]);
 const EDIT_MODE_ACTOR_TYPES = new Set(["character", "npc", "pet"]);
 
@@ -131,7 +136,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.limited = this.actor.limited;
 
     context.settings = {
-      "useRarity": game.settings.get('ffxiv','useRarity'),
       "showGear": game.settings.get('ffxiv','toggleGear'),
       "attributesImg": game.settings.get('ffxiv','attributesImg'),
       "tabHue": game.settings.get('ffxiv','hueTabsIcons'),
@@ -220,8 +224,19 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const updateValue = this._getChangedFieldValue(event.target);
     const updateData = { [event.target.name]: updateValue };
+    if (event.target.name === "system.health.max") {
+      const nextMax = Number(updateValue);
+      const currentValue = Number(this.actor.system?.health?.value ?? 0);
+      if (Number.isFinite(nextMax) && Number.isFinite(currentValue) && currentValue > nextMax) {
+        updateData["system.health.value"] = Math.max(0, nextMax);
+      }
+    }
     this.document.update(updateData, { render: false }).then(() => {
       this._syncResourceInputValue(event.target);
+      if (event.target.name === "system.health.max") {
+        const healthInput = this.element.querySelector('input[name="system.health.value"]');
+        if (healthInput) healthInput.value = Number(this.actor.system?.health?.value ?? 0);
+      }
       this._updateSecondaryAttributeModifierFields();
       if (this.actor.type !== "character") return;
       this._updateManaBar();
@@ -239,11 +254,26 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       const delta = this._getSignedDeltaValue(target);
       if (delta !== null) return delta;
       const value = Number(target.value);
-      return Number.isFinite(value) ? value : 0;
+      if (!Number.isFinite(value)) return 0;
+      return this._normalizeNumericActorField(target.name, value);
     }
     if (dtype === "Boolean") return target.value === "true";
 
     return target.value;
+  }
+
+  _normalizeNumericActorField(name, value) {
+    if (!Number.isFinite(value)) return 0;
+
+    if (name === "system.health.value") {
+      const max = Number(this.actor.system?.health?.max);
+      if (Number.isFinite(max) && max >= 0) return Math.max(0, Math.min(value, max));
+      return Math.max(0, value);
+    }
+
+    if (name === "system.health.max") return Math.max(0, value);
+    if (name === "system.barrier.value" || name === "system.barrier.max") return Math.max(0, value);
+    return value;
   }
 
   _syncResourceInputValue(target) {
@@ -262,7 +292,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const next = current + Number(raw);
     if (target.name === "system.health.value") {
       const max = Number(this.actor.system.health?.max);
-      return Math.max(0, Number.isFinite(max) && max > 0 ? Math.min(next, max) : next);
+      return Math.max(0, Number.isFinite(max) && max >= 0 ? Math.min(next, max) : next);
     }
     return Math.max(0, next);
   }
@@ -593,6 +623,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
         const sourceActor = sourceItem.parent;
         const targetActor = actor;
+        const sourceIsActorItem = sourceActor?.documentName === "Actor";
+        const targetPositionNumber = Number(targetPosition) || 0;
 
         if (sourceActor?.id === targetActor.id) {
           const draggedItemData = targetActor.items.get(sourceItem.id) || targetActor.items.get(draggedItem?.id);
@@ -625,9 +657,40 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         const sourceData = sourceItem.toObject();
         delete sourceData._id;
         sourceData.system = sourceData.system || {};
-        sourceData.system.position = targetPosition;
+        sourceData.system.position = targetPositionNumber;
 
         try {
+          if (!sourceIsActorItem) {
+            if (targetItemId) {
+              const occupied = targetActor.items.get(targetItemId);
+              if (occupied) {
+                const fallbackPosition = this._findNextFreeInventoryPosition(targetActor, { reserved: [targetPositionNumber] });
+                if (!fallbackPosition) {
+                  ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.InventoryFull"));
+                  isDraggingItem = false;
+                  return this.render();
+                }
+                await occupied.update({ "system.position": fallbackPosition }, { render: false });
+              }
+            }
+
+            const [copiedItem] = await targetActor.createEmbeddedDocuments("Item", [sourceData], { render: false });
+            if (!copiedItem) throw new Error("Failed to copy item on target actor");
+
+            if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')){
+              foundry.audio.AudioHelper.play({
+                src: game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem'),
+                volume: 1,
+                autoplay: true,
+                loop: false
+              });
+            }
+
+            isDraggingItem = false;
+            targetActor?.sheet?.render?.({ force: true }).catch(() => {});
+            return;
+          }
+
           const [movedItem] = await targetActor.createEmbeddedDocuments("Item", [sourceData], { render: false });
           if (!movedItem) throw new Error("Failed to create item on target actor");
 
@@ -674,6 +737,21 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
       }, { signal });
     });
+  }
+
+  _findNextFreeInventoryPosition(actor, { reserved = [] } = {}) {
+    const occupied = new Set(reserved.map(value => Number(value) || 0));
+    for (const item of actor.items) {
+      if (!CONFIG.FF_XIV.inventory_items.includes(item.type)) continue;
+      const position = Number(item.system.position) || 0;
+      if (position > 0) occupied.add(position);
+    }
+
+    const gridSize = 27;
+    for (let i = 1; i <= gridSize; i++) {
+      if (!occupied.has(i)) return i;
+    }
+    return null;
   }
 
   /**
@@ -795,6 +873,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     html.find("input, textarea").off("keydown.ffxivActorSheet").on("keydown.ffxivActorSheet", (event) => {
       if (event.key === "Enter") {
+        const target = event.currentTarget;
+        if (target instanceof HTMLInputElement && ENTER_COMMIT_FIELDS.has(target.name)) {
+          event.preventDefault();
+          event.stopPropagation();
+          target.blur();
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
       }
@@ -1437,57 +1522,84 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _updateManaBar() {
       const currentMana = Number(this.actor.system?.mana?.value ?? 0);
+      const maxMana = Number(this.actor.system?.mana?.max ?? 5);
+      const manaCurrentValue = Math.max(0, Number.isFinite(currentMana) ? currentMana : 0);
+      const manaMaxValue = Math.max(1, Number.isFinite(maxMana) ? maxMana : 5);
+      const manaPercent = Math.min(100, Math.max(0, (manaCurrentValue / manaMaxValue) * 100));
+
       let cs = document.getElementById(this.characterSheet)
       if (cs) {
-          const manaBarSlots = cs.querySelectorAll('.mana-slot');
-          // Update each slot based on the current mana value
-          manaBarSlots.forEach((slot, index) => {
-              if (index < currentMana) {
-                  slot.classList.add('mana-filled');
-              } else {
-                  slot.classList.remove('mana-filled');
-              }
-          });
+          const manaFill = cs.querySelector('.mana-fill');
+          if (manaFill) manaFill.style.width = `${manaPercent}%`;
+
+          const manaCurrent = cs.querySelector('.mana-value-current');
+          if (manaCurrent) manaCurrent.textContent = String(manaCurrentValue);
+
+          const manaMax = cs.querySelector('.mana-value-max');
+          if (manaMax) manaMax.textContent = String(manaMaxValue);
       }
   }
-  _onClickManaBar(event) {
+  async _onClickManaBar(event) {
     let currentMana = Number(this.actor.system?.mana?.value ?? 0);
+    const previousMana = currentMana;
+    const maxMana = Math.max(1, Number(this.actor.system?.mana?.max ?? 5) || 5);
     const useLegacyBehavior = game.settings.get("ffxiv", "legacyManaClickBehavior");
 
     if (event.which === 1) {
         currentMana = useLegacyBehavior
           ? Math.max(0, currentMana - 1)
-          : Math.min(5, currentMana + 1);
+          : Math.min(maxMana, currentMana + 1);
     } else if (event.which === 3) {
       event.preventDefault()
       currentMana = useLegacyBehavior
-        ? Math.min(5, currentMana + 1)
+        ? Math.min(maxMana, currentMana + 1)
         : Math.max(0, currentMana - 1);
     }
 
-    this.actor.update({ "system.mana.value": currentMana });
-    this._updateManaBar()
+    if (currentMana === previousMana) return;
+    await this.actor.update({ "system.mana.value": currentMana }, { render: false });
+    this._updateManaBar();
 
   }
 
   _updateHealthBar() {
     const currentHealth = Number(this.actor.system?.health?.value ?? 0);
     const maxHealth = Number(this.actor.system?.health?.max ?? 0);
+    const barrierValue = Number(this.actor.system?.barrier?.value ?? 0);
     const healthPercentage = maxHealth > 0 ? Math.min(100, Math.max(0, (currentHealth / maxHealth) * 100)) : 0;
+    const normalizedHealth = Math.max(0, Math.min(currentHealth, maxHealth || 0));
+    const normalizedBarrier = Math.max(0, barrierValue);
+    const barrierStartPercentage = maxHealth > 0 ? (normalizedHealth / maxHealth) * 100 : 0;
+    const barrierInsidePercentage = maxHealth > 0
+      ? Math.max(0, Math.min((normalizedBarrier / maxHealth) * 100, 100 - barrierStartPercentage))
+      : 0;
+    const barrierOverflowPercentage = maxHealth > 0
+      ? Math.max(0, Math.min(((normalizedBarrier - Math.max(0, maxHealth - normalizedHealth)) / maxHealth) * 100, 100))
+      : 0;
     let cs = document.getElementById(this.characterSheet);
     if (cs) {
-
       const healthBar = cs.querySelectorAll('.health-bar');
       if(healthBar.length > 0){
         healthBar[0].style.width = `${healthPercentage}%`
         healthBar[0].classList.remove('health-good', 'health-bad', 'health-danger')
-        if (healthPercentage >= 70) {
+        if (healthPercentage >= 30) {
           healthBar[0].classList.add('health-good')
-        } else if (healthPercentage >= 30) {
-          healthBar[0].classList.add('health-bad')
         } else {
           healthBar[0].classList.add('health-danger')
         }
+      }
+
+      const barrierOverlay = cs.querySelector('.barrier-overlay');
+      if (barrierOverlay) {
+        barrierOverlay.style.left = `${barrierStartPercentage}%`;
+        barrierOverlay.style.width = `${barrierInsidePercentage}%`;
+        barrierOverlay.style.display = barrierInsidePercentage > 0 ? "" : "none";
+      }
+
+      const barrierOverflow = cs.querySelector('.barrier-overflow');
+      if (barrierOverflow) {
+        barrierOverflow.style.width = `${barrierOverflowPercentage}%`;
+        barrierOverflow.style.display = barrierOverflowPercentage > 0 ? "" : "none";
       }
     }
   }

@@ -3,12 +3,11 @@
     <div class="item-card-info">
       <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon">
       <div class="item-dialog-header">
-        <div class="item-dialog-name text-rarity-{{ delabelize 'rarities' item.system.rarity }}">
+        <div class="item-dialog-name {{rarityTextClass item.system.rarity}}">
           {{item.name}}
         </div>
         <div class="item-dialog-right">
           <div class="item-dialog-tags">
-            {{#if settings.useRarity}}<span class="tag">{{ localize item.system.rarity }}</span>{{#if system.tags }}, {{/if}}{{/if}}
             {{#each system.tags as |tag|}}
               <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
             {{/each}}
@@ -16,36 +15,31 @@
         </div>
       </div>
 
-      <div class="item-dialog-details">
-        {{#if item.system.shop_tier}}<div class="detail"><strong>{{localize "FFXIV.Item.ShopTier"}}:</strong> {{item.system.shop_tier}}{{/if}}
+      <div class="item-dialog-details item-dialog-summary">
+        {{#if (hasShopTier item.system)}}<div class="detail"><strong>{{localize "FFXIV.Item.ShopTier"}}:</strong> {{shopTierDisplay item.system}}</div>{{/if}}
         {{#if (not (eq item.system.price.buy 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{item.system.price.buy}}{{#if item.system.price.denomination}} {{localize item.system.price.denomination}}{{/if}}</div>{{/if}}
-        {{#if (not (eq item.system.price.sell 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Sell" }}:</strong> {{item.system.price.sell}}{{#if item.system.price.denomination}} {{localize item.system.price.denomination}}{{/if}}</div>{{/if}}
-        {{#if item.system.weight}}<div class="detail"><strong>{{ localize "FFXIV.Item.Weight" }}:</strong> {{item.system.weight}}</div>{{/if}}
-
+        {{#if item.system.target}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{{enriched.target}}}</div>{{/if}}
+        {{#if item.system.range}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{{enriched.range}}}</div>{{/if}}
+        {{#if item.system.marker_area}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{{enriched.marker_area}}}</div>{{/if}}
       </div>
 
 
-      <div class="item-dialog-effects">
-        {{#if item.system.condition}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{item.system.condition}}</div>{{/if}}
-        {{#if item.system.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{item.system.base_effect}}</div>{{/if}}
-        {{#if item.system.target}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{item.system.target}}</div>{{/if}}
-        {{#if item.system.range}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{item.system.range}}</div>{{/if}}
-        {{#if (not (eq item.system.check "None")) }}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Check" }}:</strong> {{localize item.system.check}}</div>{{/if}}
-        {{#if item.system.challenge}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{item.system.challenge}}</div>{{/if}}
-        {{#if item.system.trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{item.system.trigger}}</div>{{/if}}
-        {{#if item.system.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{item.system.direct_hit}}</div>{{/if}}
-        {{#if item.system.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{item.system.marker_trigger}}</div>{{/if}}
-        {{#if item.system.marker_area}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{item.system.marker_area}}</div>{{/if}}
-        {{#if item.system.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{item.system.marker_effect}}</div>{{/if}}
-
+      <div class="item-dialog-effects item-dialog-effects-stacked">
+        {{#if item.system.condition}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{{enriched.condition}}}</div>{{/if}}
+        {{#if item.system.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{{enriched.base_effect}}}</div>{{/if}}
+        {{#if item.system.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{{enriched.marker_trigger}}}</div>{{/if}}
+        {{#if item.system.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{{enriched.marker_effect}}}</div>{{/if}}
+        {{#if (and (not (eq item.system.check "None")) (not (eq item.system.check ""))) }}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Check" }}:</strong> {{localize item.system.check}}</div>{{/if}}
+        {{#if item.system.challenge}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{{enriched.challenge}}}</div>{{/if}}
+        {{#if item.system.trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{{enriched.trigger}}}</div>{{/if}}
+        {{#if item.system.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{{enriched.direct_hit}}}</div>{{/if}}
       </div>
 
 
-
-      {{#if system.description}}
-      <div class="item-dialog-description">
-        {{{system.description}}}
-      </div>
+      {{#if (hasContent enriched.description)}}
+        <div class="item-dialog-description item-dialog-flavor">
+          {{{enriched.description}}}
+        </div>
       {{/if}}
 
       <div class="quantity-form">

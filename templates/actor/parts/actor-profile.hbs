@@ -208,7 +208,6 @@
         {{#if (and (eq type "title") (eq name ../system.activeTitle))}}
           <div class="actor-title-data">
             <div class="detail"><strong>{{localize "FFXIV.Item.Name"}}:</strong> {{localize name}}</div>
-            {{#if (and system.rarity settings.useRarity)}}<div class="detail"><strong>{{localize "FFXIV.Item.Rarity"}}:</strong> {{localize system.rarity}}</div>{{/if}}
             {{#if system.source}}<div class="detail"><strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}</div>{{/if}}
             <button type="button" data-item-id="{{_id}}" class="title-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}">&times;</button>
           </div>

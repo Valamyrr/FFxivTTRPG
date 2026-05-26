@@ -56,6 +56,7 @@ function buildPriceField() {
 function buildInventoryFields() {
   return {
     quantity: new fields.NumberField({ required: false, integer: true, min: 0, initial: 1 }),
+    max_stack: new fields.NumberField({ required: false, integer: true, min: 1, initial: 1 }),
     weight: new fields.StringField({ required: false, blank: true, initial: "" }),
     price: buildPriceField(),
     equipped: new fields.BooleanField({ required: false, initial: false }),
@@ -64,7 +65,8 @@ function buildInventoryFields() {
     level: new fields.NumberField({ required: false, integer: true, min: 0, initial: 0 }),
     craft_level: new fields.NumberField({ required: false, integer: true, min: 0, initial: 0 }),
     craft_job: new fields.StringField({ required: false, blank: true, initial: "" }),
-    shop_tier: new fields.StringField({ required: false, blank: true, initial: "" })
+    shop_tier: new fields.StringField({ required: false, blank: true, initial: "" }),
+    shop_tier_custom: new fields.StringField({ required: false, blank: true, initial: "" })
   };
 }
 
@@ -337,6 +339,7 @@ class MinionItemData extends foundry.abstract.TypeDataModel {
       ...buildAbilityFields(),
       traits: new fields.HTMLField({ required: false, blank: true, initial: "" }),
       shop_tier: new fields.StringField({ required: false, blank: true, initial: "" }),
+      shop_tier_custom: new fields.StringField({ required: false, blank: true, initial: "" }),
       minion_type: new fields.StringField({ required: false, blank: true, initial: "" }),
       price: buildPriceField()
     };
