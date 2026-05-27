@@ -12,7 +12,14 @@ import { FF_XIV } from './helpers/config.mjs';
 import { debugError, debugLog } from "./helpers/debug.mjs";
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
-import { updateStatusEffects } from "./helpers/status-effects.mjs";
+import {
+  applyStatusEffectChange,
+  applyStatusEffectStackDelta,
+  getStatusStackCount,
+  isStackableStatusEffect,
+  migrateLegacyStatusStackEffects,
+  updateStatusEffects
+} from "./helpers/status-effects.mjs";
 import { registerEscapeHandler } from "./helpers/escape.mjs";
 import { formatShopTierDisplay, normalizeShopTier } from "./helpers/shop-tier.mjs";
 import { ABILITY_SUBTYPE_TYPES, getAbilitySubtype, ensureAbilitySubtypeTags } from "./helpers/ability-subtype.mjs";
@@ -30,7 +37,8 @@ Hooks.once('init', function () {
   game.ffxivttrpg = {
     FFXIVActor,
     FFXIVItem,
-    runItemMigration: async (force = false) => migrateItemDataStructure({ force })
+    runItemMigration: async (force = false) => migrateItemDataStructure({ force }),
+    applyGlobalArtworkRotationLock: async () => applyGlobalArtworkRotationLock()
   };
 
   // Add custom constants for configuration.
@@ -413,8 +421,17 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 
 Hooks.once('ready', function () {
   installTokenBarrierOverlay();
+  installTokenStatusStackCounterOverlay();
+  refreshAllTokenStatusStackCounters().catch(error => {
+    debugError("FFXIV | Failed to refresh status stack counters:", error);
+  });
   installItemDirectoryCompatibilityPatch();
   installItemCreateTypeFilter();
+  installStackableStatusEffectHudBehavior();
+  installGlobalArtworkRotationLock();
+  applyGlobalArtworkRotationLock().catch(error => {
+    debugError("FFXIV | Failed to apply global artwork rotation lock:", error);
+  });
 
   // Wait to register hotbar drop hook on ready so that modules could register earlier if they want to
   Hooks.on('hotbarDrop', (bar, data, slot) => {
@@ -435,12 +452,115 @@ Hooks.once('ready', function () {
   }
 
   if (game.user.isGM) {
+    migrateLegacyStatusStackEffects().catch(error => {
+      debugError("FFXIV | Failed to migrate legacy status stacks:", error);
+    });
     migrateLegacyPetTraits();
     migrateItemDataStructure();
     migrateActorCurrencyToFortune();
   }
 
 });
+
+function installStackableStatusEffectHudBehavior() {
+  if (globalThis.__ffxivStackableStatusHudInstalled) return;
+  globalThis.__ffxivStackableStatusHudInstalled = true;
+
+  const updateHudTooltips = (actor, root) => {
+    if (!(root instanceof HTMLElement)) return;
+    const statusIcons = root.querySelectorAll(".palette.status-effects img.effect-control[data-status-id]");
+    for (const icon of statusIcons) {
+      const statusId = icon.dataset.statusId;
+      if (!isStackableStatusEffect(statusId)) continue;
+      const status = CONFIG.statusEffects?.find(effect => effect.id === statusId);
+      const baseTitle = game.i18n.localize(status?.name ?? status?.label ?? statusId ?? "");
+      const count = getStatusStackCount(actor, statusId);
+      const title = count > 0 ? `${baseTitle} (x${count})` : baseTitle;
+      icon.setAttribute("data-tooltip-text", title);
+    }
+  };
+
+  Hooks.on("renderTokenHUD", (app, html) => {
+    const actor = app?.actor ?? app?.document?.actor ?? app?.object?.actor ?? app?.object?.document?.actor;
+    if (!actor) return;
+    const element = getHookHTMLElement(html, app);
+    if (!(element instanceof HTMLElement)) return;
+    updateHudTooltips(actor, element);
+
+    app._ffxivStackStatusHudController?.abort?.();
+    app._ffxivStackStatusHudController = new AbortController();
+    const { signal } = app._ffxivStackStatusHudController;
+
+    const onStatusClick = async event => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const icon = target.closest?.(".palette.status-effects img.effect-control[data-status-id]");
+      if (!(icon instanceof HTMLElement)) return;
+
+      const statusId = icon.dataset.statusId;
+      if (!isStackableStatusEffect(statusId)) return;
+
+      // Override core toggle behavior for stackable statuses.
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      if (!actor) {
+        ui.notifications.warn("HUD.WarningEffectNoActor", { localize: true });
+        return;
+      }
+
+      if (event.type === "contextmenu") return;
+      const isRightClick = event.type === "auxclick" && event.button === 2;
+      const delta = isRightClick ? -1 : 1;
+      await applyStatusEffectStackDelta(actor, statusId, delta);
+      await app.render({ force: true });
+    };
+
+    element.addEventListener("click", onStatusClick, { capture: true, signal });
+    element.addEventListener("auxclick", onStatusClick, { capture: true, signal });
+    element.addEventListener("contextmenu", onStatusClick, { capture: true, signal });
+  });
+}
+
+function installGlobalArtworkRotationLock() {
+  if (globalThis.__ffxivGlobalArtworkRotationLockInstalled) return;
+  globalThis.__ffxivGlobalArtworkRotationLockInstalled = true;
+
+  Hooks.on("preCreateToken", (tokenDocument, data) => {
+    if (!game.settings.get("ffxiv", "lockArtworkRotationGlobal")) return;
+    if (foundry.utils.getProperty(data, "lockRotation") === true) return;
+    tokenDocument.updateSource({ lockRotation: true });
+  });
+}
+
+async function applyGlobalArtworkRotationLock() {
+  if (!game.user?.isGM) return;
+  if (!game.settings.get("ffxiv", "lockArtworkRotationGlobal")) return;
+
+  const actorUpdates = game.actors
+    .filter(actor => actor?.prototypeToken?.lockRotation !== true)
+    .map(actor => ({
+      _id: actor.id,
+      "prototypeToken.lockRotation": true
+    }));
+
+  if (actorUpdates.length) {
+    await Actor.updateDocuments(actorUpdates);
+  }
+
+  for (const scene of game.scenes) {
+    const tokenUpdates = scene.tokens
+      .filter(token => token?.lockRotation !== true)
+      .map(token => ({
+        _id: token.id,
+        lockRotation: true
+      }));
+    if (tokenUpdates.length) {
+      await scene.updateEmbeddedDocuments("Token", tokenUpdates);
+    }
+  }
+}
 
 function installItemCreateTypeFilter() {
   if (globalThis.__ffxivItemCreateTypeFilterInstalled) return;
@@ -485,7 +605,7 @@ function installItemCreateTypeFilter() {
 }
 
 function installItemDirectoryCompatibilityPatch() {
-  const DirectoryClass = globalThis.ItemDirectory;
+  const DirectoryClass = foundry?.applications?.sidebar?.tabs?.ItemDirectory;
   if (!DirectoryClass?.prototype?._onClickEntry) return;
   if (DirectoryClass.prototype._ffxivCollectionCompatPatched) return;
 
@@ -612,7 +732,7 @@ async function migrateActorCurrencyToFortune() {
 const SHOP_TIER_TYPES = new Set(["consumable", "gear", "augment", "minion"]);
 const ACTION_FORMULA_TYPES = new Set(["ability", "primary_ability", "secondary_ability", "instant_ability", "limit_break", "augment", "minion"]);
 const HP_COST_MIGRATION_TYPES = new Set(["ability", "primary_ability", "secondary_ability", "instant_ability", "limit_break", "consumable", "augment", "minion"]);
-const ITEM_DATA_MIGRATION_VERSION = "9";
+const ITEM_DATA_MIGRATION_VERSION = "10";
 function getMigratableItemCompendiumPacks() {
   return game.packs.filter(pack => pack.documentName === "Item" && !pack.locked);
 }
@@ -817,6 +937,7 @@ async function migrateAbilityHpCosts() {
 
 async function migrateAbilityItemTypes() {
   const legacyAbilityTypes = new Set(ABILITY_SUBTYPE_TYPES);
+  const grantOwnerTypes = new Set(["job", "augment"]);
   let createdWorldItems = 0;
   let deletedWorldItems = 0;
   let updatedWorldTags = 0;
@@ -829,9 +950,29 @@ async function migrateAbilityItemTypes() {
   let deletedCompendiumItems = 0;
   let updatedCompendiumTags = 0;
   const worldUUIDMap = new Map();
-  const remapAndNormalizeGrantEntries = (rawGrants, UUIDMap) => {
-    const entries = Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {});
+  const worldLegacyIdToUuidMap = new Map();
+  const remapAndNormalizeGrantEntries = (rawGrants, UUIDMap, { ownerItem = null, legacyIdToUuidMap = null } = {}) => {
+    let entries = Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {});
     let changed = false;
+    if (!entries.length && ownerItem?.type === "augment") {
+      const legacyId = String(ownerItem.system?.granted_ability ?? "").trim();
+      if (legacyId) {
+        const legacySource = game.items.get(legacyId) ?? null;
+        let legacyUUID = legacyIdToUuidMap?.get(legacyId) ?? "";
+        if (!legacyUUID && legacySource?.uuid) legacyUUID = legacySource.uuid;
+        if (legacyUUID) {
+          const legacyItem = legacySource ? legacySource.toObject() : null;
+          if (legacyItem) delete legacyItem._id;
+          entries = [{
+            uuid: legacyUUID,
+            name: legacySource?.name || ownerItem.name || "",
+            type: legacySource?.type || "ability",
+            ...(legacyItem ? { item: legacyItem } : {})
+          }];
+          changed = true;
+        }
+      }
+    }
     const nextEntries = entries.map(grant => {
       if (!grant || typeof grant !== "object") return grant;
       let nextGrant = grant;
@@ -946,6 +1087,9 @@ async function migrateAbilityItemTypes() {
     createdWorldItems += created.length;
     for (let i = 0; i < worldLegacyItems.length; i++) {
       worldUUIDMap.set(worldLegacyItems[i].uuid, created[i]?.uuid);
+      if (worldLegacyItems[i]?.id && created[i]?.uuid) {
+        worldLegacyIdToUuidMap.set(worldLegacyItems[i].id, created[i].uuid);
+      }
     }
     const deleteIds = worldLegacyItems.map(item => item.id);
     await Item.deleteDocuments(deleteIds, { render: false });
@@ -955,6 +1099,7 @@ async function migrateAbilityItemTypes() {
   for (const pack of getMigratableItemCompendiumPacks()) {
     const docs = await pack.getDocuments();
     const packUUIDMap = new Map();
+    const packLegacyIdToUuidMap = new Map();
     const packLegacyItems = [];
     const tagUpdates = [];
     for (const item of docs) {
@@ -981,6 +1126,9 @@ async function migrateAbilityItemTypes() {
       createdCompendiumItems += created.length;
       for (let i = 0; i < packLegacyItems.length; i++) {
         packUUIDMap.set(packLegacyItems[i].uuid, created[i]?.uuid);
+        if (packLegacyItems[i]?.id && created[i]?.uuid) {
+          packLegacyIdToUuidMap.set(packLegacyItems[i].id, created[i].uuid);
+        }
       }
       const deleteIds = packLegacyItems.map(item => item.id);
       await pack.documentClass.deleteDocuments(deleteIds, { pack: pack.collection, render: false });
@@ -988,12 +1136,23 @@ async function migrateAbilityItemTypes() {
     }
 
     const refreshedDocs = await pack.getDocuments();
+    const packIdToUuidMap = new Map(refreshedDocs.map(doc => [doc.id, doc.uuid]));
+    for (const [legacyId, nextUuid] of packLegacyIdToUuidMap.entries()) {
+      packIdToUuidMap.set(legacyId, nextUuid);
+    }
     const jobUpdates = [];
     for (const item of refreshedDocs) {
-      if (item.type !== "job") continue;
-      const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, packUUIDMap);
+      if (!grantOwnerTypes.has(item.type)) continue;
+      const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, packUUIDMap, {
+        ownerItem: item,
+        legacyIdToUuidMap: packIdToUuidMap
+      });
       if (!nextGrants) continue;
-      jobUpdates.push({ _id: item.id, "system.ability_grants": nextGrants });
+      const update = { _id: item.id, "system.ability_grants": nextGrants };
+      if (item.type === "augment" && String(item.system?.granted_ability ?? "").trim()) {
+        update["system.granted_ability"] = "";
+      }
+      jobUpdates.push(update);
     }
     if (jobUpdates.length) {
       await pack.documentClass.updateDocuments(jobUpdates, { pack: pack.collection, render: false });
@@ -1002,10 +1161,17 @@ async function migrateAbilityItemTypes() {
   }
 
   for (const item of game.items) {
-    if (item.type !== "job") continue;
-    const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, worldUUIDMap);
+    if (!grantOwnerTypes.has(item.type)) continue;
+    const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, worldUUIDMap, {
+      ownerItem: item,
+      legacyIdToUuidMap: worldLegacyIdToUuidMap
+    });
     if (!nextGrants) continue;
-    await item.update({ "system.ability_grants": nextGrants }, { render: false });
+    const update = { "system.ability_grants": nextGrants };
+    if (item.type === "augment" && String(item.system?.granted_ability ?? "").trim()) {
+      update["system.granted_ability"] = "";
+    }
+    await item.update(update, { render: false });
     updatedJobGrantUUIDs += 1;
   }
 
@@ -1061,11 +1227,27 @@ async function migrateAbilityItemTypes() {
 
     const UUIDMap = new Map([...worldUUIDMap, ...actorUUIDMap]);
     const jobUpdates = [];
+    const actorIdToUuidMap = new Map();
+    for (const worldItem of game.items) actorIdToUuidMap.set(worldItem.id, worldItem.uuid);
+    for (const [legacyId, nextUuid] of worldLegacyIdToUuidMap.entries()) {
+      actorIdToUuidMap.set(legacyId, nextUuid);
+    }
+    for (const [oldUuid, newUuid] of actorUUIDMap.entries()) {
+      const oldId = String(oldUuid).split(".").pop();
+      if (oldId && newUuid) actorIdToUuidMap.set(oldId, newUuid);
+    }
     for (const item of actor.items) {
-      if (item.type !== "job") continue;
-      const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, UUIDMap);
+      if (!grantOwnerTypes.has(item.type)) continue;
+      const nextGrants = remapAndNormalizeGrantEntries(item.system?.ability_grants, UUIDMap, {
+        ownerItem: item,
+        legacyIdToUuidMap: actorIdToUuidMap
+      });
       if (!nextGrants) continue;
-      jobUpdates.push({ _id: item.id, "system.ability_grants": nextGrants });
+      const update = { _id: item.id, "system.ability_grants": nextGrants };
+      if (item.type === "augment" && String(item.system?.granted_ability ?? "").trim()) {
+        update["system.granted_ability"] = "";
+      }
+      jobUpdates.push(update);
     }
     if (jobUpdates.length) {
       await actor.updateEmbeddedDocuments("Item", jobUpdates, { render: false });
@@ -1637,6 +1819,11 @@ Hooks.on("renderTokenHUD", (app, html) => {
       input.disabled = false;
       input.removeAttribute("disabled");
       input.classList.toggle("ffxiv-barrier-input", attribute === "barrier");
+      if (attribute === "health") {
+        input.title = game.i18n.localize("FFXIV.Health.abbrv");
+      } else if (attribute === "barrier") {
+        input.title = game.i18n.localize("FFXIV.Health.barrier");
+      }
     }
     if (row && attribute) barRows[attribute] = row;
   }
@@ -1654,7 +1841,6 @@ Hooks.on("renderTokenHUD", (app, html) => {
   if (barRows.health) barRows.health.classList.add("ffxiv-hud-health");
   if (barRows.barrier) barRows.barrier.classList.add("ffxiv-hud-barrier");
 
-  if (barRows.barrier) barsContainer.appendChild(barRows.barrier);
   if (barRows.health) barsContainer.appendChild(barRows.health);
 
   let manaRow = barsContainer.querySelector(".attribute.ffxiv-mana-hud");
@@ -1703,7 +1889,15 @@ Hooks.on("renderTokenHUD", (app, html) => {
     }
   }
 
-  barsContainer.appendChild(manaRow);
+  let secondaryRow = barsContainer.querySelector(".ffxiv-hud-secondary-row");
+  if (!secondaryRow) {
+    secondaryRow = document.createElement("div");
+    secondaryRow.classList.add("ffxiv-hud-secondary-row");
+  }
+
+  if (barRows.barrier) secondaryRow.appendChild(barRows.barrier);
+  secondaryRow.appendChild(manaRow);
+  barsContainer.appendChild(secondaryRow);
 });
 
 Hooks.on("updateActor", (actor, changes) => {
@@ -1727,6 +1921,96 @@ function installTokenBarrierOverlay() {
   };
 
   tokenProto._ffxivBarrierOverlayPatched = true;
+}
+
+function installTokenStatusStackCounterOverlay() {
+  const tokenProto = foundry.canvas.placeables.Token?.prototype;
+  if (!tokenProto || tokenProto._ffxivStatusStackCounterPatched) return;
+
+  const originalDrawEffect = tokenProto._drawEffect;
+  if (typeof originalDrawEffect === "function") {
+    tokenProto._drawEffect = async function (src, ...args) {
+      const icon = await originalDrawEffect.call(this, src, ...args);
+      if (icon && src) icon.name = src;
+      return icon;
+    };
+  }
+
+  const originalRefreshEffects = tokenProto._refreshEffects;
+  if (typeof originalRefreshEffects === "function") {
+    tokenProto._refreshEffects = function (...args) {
+      const result = originalRefreshEffects.apply(this, args);
+      drawFFXIVStatusStackCounters(this);
+      return result;
+    };
+  } else {
+    const originalDrawEffects = tokenProto._drawEffects;
+    if (typeof originalDrawEffects === "function") {
+      tokenProto._drawEffects = async function (...args) {
+        const result = await originalDrawEffects.apply(this, args);
+        drawFFXIVStatusStackCounters(this);
+        return result;
+      };
+    }
+  }
+
+  tokenProto._ffxivStatusStackCounterPatched = true;
+}
+
+async function refreshAllTokenStatusStackCounters() {
+  const tokens = canvas?.tokens?.placeables ?? [];
+  if (!tokens.length) return;
+  for (const token of tokens) {
+    if (!token?.actor) continue;
+    await token.drawEffects();
+  }
+}
+
+function drawFFXIVStatusStackCounters(token) {
+  const effectsContainer = token?.effects;
+  if (!effectsContainer || !token.actor) return;
+  if (!token._ffxivStatusCounterContainer || !token.children.find(child => child?.name === "ffxivStatusStackCounters")) {
+    const counterContainer = new PIXI.Container();
+    counterContainer.name = "ffxivStatusStackCounters";
+    token._ffxivStatusCounterContainer = token.addChild(counterContainer);
+  }
+
+  const counterContainer = token._ffxivStatusCounterContainer;
+  counterContainer.removeChildren().forEach(child => child.destroy());
+
+  const iconPathToStatusId = new Map();
+  for (const statusEffect of CONFIG.statusEffects ?? []) {
+    if (!isStackableStatusEffect(statusEffect?.id)) continue;
+    if (statusEffect.icon) iconPathToStatusId.set(statusEffect.icon, statusEffect.id);
+    if (statusEffect.img) iconPathToStatusId.set(statusEffect.img, statusEffect.id);
+  }
+
+  for (const sprite of effectsContainer.children.filter(effect => effect?.isSprite && effect !== effectsContainer.overlay)) {
+    const statusId = iconPathToStatusId.get(sprite.name);
+    if (!statusId) continue;
+
+    const stackCount = getStatusStackCount(token.actor, statusId);
+    if (stackCount <= 1) continue;
+
+    const iconSize = sprite.height || 20;
+    const textStyle = CONFIG.canvasTextStyle.clone();
+    textStyle.fontWeight = "700";
+    textStyle.fill = "#ffffff";
+    textStyle.stroke = "#000000";
+    textStyle.strokeThickness = Math.max(2, Math.round((iconSize / 20) * 3));
+    textStyle.fontSize = Math.max(11, Math.round((iconSize / 20) * 14));
+    textStyle.align = "right";
+
+    const label = new PIXI.Text(String(stackCount), textStyle);
+    label.name = `${statusId}-stack-counter`;
+    label.anchor.set(1);
+
+    const sizeRatio = iconSize / 20;
+    label.x = sprite.x + sprite.width + (1 * sizeRatio);
+    label.y = sprite.y + sprite.height + (3 * sizeRatio);
+    label.resolution = Math.max(1, (20 / iconSize) * 1.5);
+    counterContainer.addChild(label);
+  }
 }
 
 function drawFFXIVBarrierOverlay(token) {
@@ -2728,10 +3012,10 @@ Hooks.on("ready", function(){
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
-	                callback: (event, button) => {
+	                callback: async (event, button) => {
 	                  for (const actor of actors) {
 	                    for (const { effect, active } of effects) {
-	                      actor.toggleStatusEffect(effect.id, {active});
+	                      await applyStatusEffectChange(actor, effect.id, active);
 	                      ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(effect.label), actor: actor.name }));
 	                    }
 	                  }
@@ -3005,7 +3289,7 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
 
     for (const actor of ownActors) {
       for (const { effect, active } of statusEntries) {
-        await actor.toggleStatusEffect(effect.id, { active });
+        await applyStatusEffectChange(actor, effect.id, active);
         ui.notifications.info(game.i18n.format("FFXIV.Notifications.EffectApplied", {effect: game.i18n.localize(effect.label), actor: actor.name }));
       }
     }

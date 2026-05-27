@@ -152,3 +152,35 @@
   background: red;
   box-shadow: 0 0 5px red;
 }
+
+.ffxiv.actor.character .actor-companions .abilities-tab-content.modern-panel {
+  padding: 12px;
+}
+
+.ffxiv.actor.character .actor-companions .companions-sub-tab-content {
+  border: 1px solid var(--border-color-2);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.15) 100%);
+  padding: 8px;
+}
+
+.ffxiv.actor.character.blue_theme .actor-companions .companions-sub-tab-content {
+  border-color: rgba(154, 198, 255, 0.52);
+  background: linear-gradient(180deg, rgba(15, 43, 101, 0.72) 0%, rgba(9, 30, 74, 0.78) 100%);
+}
+
+.companions-empty-hint {
+  border: 1px dashed var(--border-color-2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  text-align: center;
+  color: var(--text-color-strong);
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.ffxiv.actor.blue_theme .companions-empty-hint {
+  border-color: rgba(154, 198, 255, 0.58);
+  background: rgba(10, 29, 70, 0.58);
+  color: #d4e9ff;
+}

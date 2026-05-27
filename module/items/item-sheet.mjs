@@ -176,6 +176,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           typeLabel: this._getJobGrantTypeLabel(grant.type)
         }));
     }
+    if (this.item.type === "augment") {
+      context.system.ability_grants = this._getJobAbilityGrants()
+        .map(grant => ({
+          ...grant,
+          typeLabel: this._getJobGrantTypeLabel(grant.type)
+        }));
+    }
 
     context.enriched = await this.constructor.enrichAllStrings(
       context.system ?? {},
@@ -556,6 +563,21 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         this.render();
       });
     }
+    if (this.item.type === "augment") {
+      html.on('click.ffxivItemSheet', '.augment-ability-edit', this._onEditJobAbility.bind(this));
+      html.on('click.ffxivItemSheet', '.remove-augment-ability', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = Number(event.currentTarget.dataset.index);
+        const grants = this._getJobAbilityGrants();
+        grants.splice(index, 1);
+        this.item.update({
+          "system.ability_grants": grants,
+          "system.granted_ability": ""
+        });
+        this.render();
+      });
+    }
 
 
 
@@ -921,9 +943,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _activateJobDropZone() {
     this._jobDropController?.abort();
-    if (this.item.type !== "job" || !this.document.isOwner) return;
+    if (!["job", "augment"].includes(this.item.type) || !this.document.isOwner) return;
 
-    const dropZone = this.element.querySelector(".job-progression-tab");
+    const dropZoneSelector = this.item.type === "augment"
+      ? ".augment-grants-dropzone"
+      : ".job-progression-tab";
+    const dropZone = this.element.querySelector(dropZoneSelector);
     if (!dropZone) return;
 
     this._jobDropController = new AbortController();
@@ -985,7 +1010,33 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _getJobAbilityGrants() {
-    return this._normalizeJobAbilityGrants(this.item.system.ability_grants);
+    const grants = this._normalizeJobAbilityGrants(this.item.system.ability_grants);
+    if (grants.length || this.item.type !== "augment") return grants;
+
+    const legacyId = String(this.item.system?.granted_ability ?? "").trim();
+    if (!legacyId) return grants;
+    const legacyItem = game.items.get(legacyId);
+    if (!legacyItem) return grants;
+
+    const legacyData = legacyItem.toObject();
+    delete legacyData._id;
+    let legacyType = legacyItem.type;
+    if (["primary_ability", "secondary_ability", "instant_ability", "limit_break"].includes(legacyType)) {
+      legacyType = "ability";
+      legacyData.type = "ability";
+      legacyData.system = legacyData.system || {};
+      legacyData.system.tags = ensureAbilitySubtypeTags(
+        [getSubtypeTagLabel(getAbilitySubtype(legacyItem)), ...(Array.isArray(legacyData.system.tags) ? legacyData.system.tags : [])],
+        "primary_ability"
+      );
+    }
+
+    return [{
+      uuid: legacyItem.uuid,
+      name: legacyItem.name,
+      type: legacyType,
+      item: legacyData
+    }];
   }
 
   _getJobGrantTypeLabel(type) {
@@ -1059,7 +1110,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         type: nextData.type,
         item: nextData
       };
-      await this.item.update({ "system.ability_grants": grants }, { render: false });
+      const updateData = { "system.ability_grants": grants };
+      if (this.item.type === "augment") updateData["system.granted_ability"] = "";
+      await this.item.update(updateData, { render: false });
 
       foundry.utils.mergeObject(itemData, nextData, { inplace: true, overwrite: true });
       tempItem.updateSource(update);
@@ -1082,7 +1135,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
     const validTypes = ["ability", "primary_ability", "secondary_ability", "instant_ability", "limit_break", "trait"];
     if (!item || !validTypes.includes(item.type)) {
-      ui.notifications.warn("Drop an ability, limit break, or trait item onto the job ability list.");
+      ui.notifications.warn(this.item.type === "augment"
+        ? game.i18n.localize("FFXIV.Augment.DropAbilities")
+        : game.i18n.localize("FFXIV.Job.DropAbilities"));
       return;
     }
 
@@ -1106,7 +1161,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       type: itemType,
       item: itemData
     });
-    await this.item.update({ "system.ability_grants": grants }, { render: false });
+    const updateData = { "system.ability_grants": grants };
+    if (this.item.type === "augment") updateData["system.granted_ability"] = "";
+    await this.item.update(updateData, { render: false });
     this.render({ force: true });
   }
 }

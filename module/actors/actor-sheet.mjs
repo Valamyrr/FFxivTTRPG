@@ -56,7 +56,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @override */
   constructor(...args) {
     super(...args);
-    this.hidingSidebar = false;
     this.currentAbilityTab = "primary";
     this.actorEditMode = false;
     this._enrichedCache = null;
@@ -191,7 +190,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     context.effects = prepareActiveEffectCategories(this.actor.allApplicableEffects());
-    context.hidingSidebar = this.hidingSidebar;
     return context;
   }
 
@@ -354,7 +352,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const fields = this.element.querySelectorAll(".secondary-attribute-modifier[data-modifier-for]");
     if (!fields.length) return;
 
-    const rollData = this.actor.getRollData();
+    let rollData = {};
+    try {
+      rollData = this.actor.getRollData() || {};
+    } catch (error) {
+      debugError("FFXIV | Failed to read roll data for secondary attribute modifiers:", error);
+    }
     const modifiers = {
       defense: this._secondaryAttributeModifier(rollData.def, this.actor.system?.secondary_attributes?.defense?.value),
       magic_defense: this._secondaryAttributeModifier(rollData.mdef, this.actor.system?.secondary_attributes?.magic_defense?.value),
@@ -1058,8 +1061,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     html.on('click.ffxivActorSheet', '.roll-attribute', this._rollAttribute.bind(this));
 
-    html.on('click.ffxivActorSheet', '.arrow-sidebar', this._toggleSidebar.bind(this))
-
     html.on('change.ffxivActorSheet', '.ability-limitations .limitation', this._onChangeLimitations.bind(this))
 
     html.on('change.ffxivActorSheet', '.ability-limitations .job_resource', this._onChangeJobResource.bind(this))
@@ -1759,7 +1760,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._switchAbilityTab(tab)
   }
   _applyStoredCompanionTab() {
-    const tab = this.currentCompanionTab || 'minions';
+    const hasPetsTab = this.actor?.system?.showPets === "true";
+    const tab = (!hasPetsTab || this.currentCompanionTab === "pets")
+      ? (hasPetsTab ? (this.currentCompanionTab || "minions") : "minions")
+      : (this.currentCompanionTab || "minions");
     this._switchCompanionTab(tab)
   }
   _switchAbilityTab(tab){
@@ -1778,44 +1782,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     $(`#${this.characterSheet} .sub-tab-content[data-tab=${tab}]`).addClass('active').show();
   }
   _switchCompanionTab(tab){
-    let characterSheet;
-    if (this.token){
-      if(!this.token.actorLink){ //If no actor data linked but token sheet is used
-          characterSheet =  `FFXIVActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
-      }
-    }
-    if(!characterSheet){
-      characterSheet = `FFXIVActorSheet-Actor-${this.actor._id}`;
-    }
+    const characterSheet = this.characterSheet;
+    const hasPetsTab = this.actor?.system?.showPets === "true";
+    const resolvedTab = (!hasPetsTab && tab === "pets") ? "minions" : (tab || "minions");
+    this.currentCompanionTab = resolvedTab;
+
     $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab`).removeClass("active");
     $(`#${characterSheet} .companions-sub-tab-content`).removeClass('active').hide();
-    $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab[data-tab=${tab}]`).addClass("active");
-    $(`#${characterSheet} .companions-sub-tab-content[data-tab=${tab}]`).addClass('active').show();
-  }
-
-  _toggleSidebar(event){
-    this.hidingSidebar = !this.hidingSidebar
-    this._applySidebarPreference()
-  }
-  _applySidebarPreference(){
-    let characterSheet;
-    if (this.token){
-      if(!this.token.actorLink){ //If no actor data linked but token sheet is used
-          characterSheet =  `FFXIVActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
-      }
-    }
-    if(!characterSheet){
-      characterSheet = `FFXIVActorSheet-Actor-${this.actor._id}`;
-    }
-    const wrapper = $(`#${characterSheet} .sheet-body-wrapper`);
-    const arrow = $(`#${characterSheet} .arrow-sidebar .fa`);
-    if (this.hidingSidebar) {
-        wrapper.addClass("full-width");
-        arrow.removeClass("fa-left").addClass("fa-right");
-    } else {
-        wrapper.removeClass("full-width");
-        arrow.removeClass("fa-right").addClass("fa-left");
-    }
+    $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab[data-tab=${resolvedTab}]`).addClass("active");
+    $(`#${characterSheet} .companions-sub-tab-content[data-tab=${resolvedTab}]`).addClass('active').show();
   }
 
   async _onChangeLimitations(event){
@@ -2002,6 +1977,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     if (data?.type === "Item") {
       const item = data.uuid ? await fromUuid(data.uuid) : null;
+      const allowLockedAugmentDrop = this.actor.type === "character"
+        && !this._isActorEditMode()
+        && item?.documentName === "Item"
+        && item.type === "augment";
       if (item?.documentName === "Item" && item.parent?.id === this.actor.id && this._isManualAbilityDrop(item)) {
         debugLog('Ignored intra-actor ability drop for item', item.id);
         return;
@@ -2009,7 +1988,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
       if (item && this.actor.type === "character" && !this._isActorEditMode()) {
         const inventoryTypes = CONFIG.FF_XIV?.inventory_items || [];
-        if (inventoryTypes.includes(item.type)) return;
+        if (inventoryTypes.includes(item.type) && !allowLockedAugmentDrop) return;
       }
 
       const characterLocked = this.actor.type === "character" && !this._isActorEditMode();
@@ -2033,7 +2012,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         return;
       }
 
-      if (sheetLocked) {
+      if (sheetLocked && !allowLockedAugmentDrop) {
         this._notifyActorSheetLocked();
         return;
       }

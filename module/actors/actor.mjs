@@ -14,7 +14,45 @@ export class FFXIVActor extends Actor {
     };
   }
 
+  _ensureAttributeValue(attribute, defaultLabel="") {
+    const normalized = attribute && typeof attribute === "object" ? attribute : {};
+    return {
+      value: Number.isFinite(normalized.value) ? normalized.value : 0,
+      label: typeof normalized.label === "string" ? normalized.label : defaultLabel
+    };
+  }
+
+  _ensurePrimaryAttributes(primaryAttributes) {
+    const normalized = primaryAttributes && typeof primaryAttributes === "object" ? primaryAttributes : {};
+    return {
+      strength: this._ensureAttributeValue(normalized.strength, "FFXIV.Attributes.Strength.long"),
+      dexterity: this._ensureAttributeValue(normalized.dexterity, "FFXIV.Attributes.Dexterity.long"),
+      vitality: this._ensureAttributeValue(normalized.vitality, "FFXIV.Attributes.Vitality.long"),
+      intelligence: this._ensureAttributeValue(normalized.intelligence, "FFXIV.Attributes.Intelligence.long"),
+      mind: this._ensureAttributeValue(normalized.mind, "FFXIV.Attributes.Mind.long")
+    };
+  }
+
+  _ensureSecondaryAttributes(secondaryAttributes) {
+    const normalized = secondaryAttributes && typeof secondaryAttributes === "object" ? secondaryAttributes : {};
+    const speed = normalized.speed && typeof normalized.speed === "object" ? normalized.speed : {};
+    return {
+      defense: this._ensureAttributeValue(normalized.defense, "FFXIV.Attributes.Defense"),
+      magic_defense: this._ensureAttributeValue(normalized.magic_defense, "FFXIV.Attributes.MagicDefense"),
+      vigilance: this._ensureAttributeValue(normalized.vigilance, "FFXIV.Attributes.Vigilance"),
+      speed: {
+        value: Number.isFinite(speed.value) ? speed.value : 0,
+        unit: typeof speed.unit === "string" ? speed.unit : "squares",
+        label: typeof speed.label === "string" ? speed.label : "FFXIV.Attributes.Speed"
+      }
+    };
+  }
+
   _ensureCharacterSystemDefaults() {
+    if (!["character", "npc"].includes(this.type)) return;
+
+    this.system.primary_attributes = this._ensurePrimaryAttributes(this.system.primary_attributes);
+    this.system.secondary_attributes = this._ensureSecondaryAttributes(this.system.secondary_attributes);
     if (this.type !== "character") return;
 
     this.system.health = this._ensureResource(this.system.health);
@@ -101,8 +139,13 @@ export class FFXIVActor extends Actor {
     if (await super._preCreate(data, options, user) === false) return false;
 
     const prototypeToken = {};
+    const lockArtworkRotationGlobal = game.settings.get("ffxiv", "lockArtworkRotationGlobal");
+    if (lockArtworkRotationGlobal && foundry.utils.getProperty(data, "prototypeToken.lockRotation") !== true) {
+      prototypeToken["prototypeToken.lockRotation"] = true;
+    }
+
     if (this.type === "character") {
-      if (!foundry.utils.hasProperty(data, "prototypeToken.actorLink")) {
+      if (foundry.utils.getProperty(data, "prototypeToken.actorLink") !== true) {
         prototypeToken["prototypeToken.actorLink"] = true;
       }
       if (!foundry.utils.hasProperty(data, "prototypeToken.disposition")) {
@@ -247,24 +290,39 @@ export class FFXIVActor extends Actor {
     // Starts off by populating the roll data with a shallow copy of `this.system`
     const data = { ...this.system };
 
+    data.str = 0;
+    data.dex = 0;
+    data.vit = 0;
+    data.int = 0;
+    data.mnd = 0;
+    data.def = 0;
+    data.mdef = 0;
+    data.vigilance = 0;
+
     //Get attributes from actor
-    if (data.primary_attributes) {
-      for (let [k, v] of Object.entries(data.primary_attributes)) {
+    const primaryAttributes = data.primary_attributes && typeof data.primary_attributes === "object"
+      ? data.primary_attributes
+      : {};
+    if (Object.keys(primaryAttributes).length) {
+      for (let [k, v] of Object.entries(primaryAttributes)) {
         data[k] = foundry.utils.deepClone(v);
       }
-      data.str = data.primary_attributes.strength.value ?? 0;
-      data.dex = data.primary_attributes.dexterity.value ?? 0;
-      data.vit = data.primary_attributes.vitality.value ?? 0;
-      data.int = data.primary_attributes.intelligence.value ?? 0;
-      data.mnd = data.primary_attributes.mind.value ?? 0;
+      data.str = Number(primaryAttributes?.strength?.value) || 0;
+      data.dex = Number(primaryAttributes?.dexterity?.value) || 0;
+      data.vit = Number(primaryAttributes?.vitality?.value) || 0;
+      data.int = Number(primaryAttributes?.intelligence?.value) || 0;
+      data.mnd = Number(primaryAttributes?.mind?.value) || 0;
     }
-    if (data.secondary_attributes) {
-      for (let [k, v] of Object.entries(data.secondary_attributes)) {
+    const secondaryAttributes = data.secondary_attributes && typeof data.secondary_attributes === "object"
+      ? data.secondary_attributes
+      : {};
+    if (Object.keys(secondaryAttributes).length) {
+      for (let [k, v] of Object.entries(secondaryAttributes)) {
         data[k] = foundry.utils.deepClone(v);
       }
-      data.def = data.secondary_attributes.defense.value ?? 0;
-      data.mdef = data.secondary_attributes.magic_defense.value ?? 0;
-      data.vigilance = data.secondary_attributes.vigilance.value ?? 0;
+      data.def = Number(secondaryAttributes?.defense?.value) || 0;
+      data.mdef = Number(secondaryAttributes?.magic_defense?.value) || 0;
+      data.vigilance = Number(secondaryAttributes?.vigilance?.value) || 0;
     }
     // Add modifiers from items
      for (let item of this.items) {
@@ -283,14 +341,14 @@ export class FFXIVActor extends Actor {
          const [modName, modValue] = modifier;
          const numericModifier = Number(modValue);
          const modifierValue = Number.isFinite(numericModifier) ? numericModifier : 0;
-         if (data.primary_attributes) {
+         if (Object.keys(primaryAttributes).length) {
            if (modName == CONFIG.FF_XIV.attributes.Strength.label) data.str += modifierValue;
            if (modName == CONFIG.FF_XIV.attributes.Dexterity.label) data.dex += modifierValue;
            if (modName == CONFIG.FF_XIV.attributes.Vitality.label) data.vit += modifierValue;
            if (modName == CONFIG.FF_XIV.attributes.Intelligence.label) data.int += modifierValue;
            if (modName == CONFIG.FF_XIV.attributes.Mind.label) data.mnd += modifierValue;
          }
-         if (data.secondary_attributes) {
+         if (Object.keys(secondaryAttributes).length) {
            if (modName == CONFIG.FF_XIV.attributes.Defense.label) data.def += modifierValue;
            if (modName == CONFIG.FF_XIV.attributes.MagicDefense.label) data.mdef += modifierValue;
            if (modName == CONFIG.FF_XIV.attributes.Vigilance.label) data.vigilance += modifierValue;
@@ -354,7 +412,7 @@ export class FFXIVActor extends Actor {
     const rollData = this.getRollData();
     const modifiers = rollData[attrKey] ?? 0;
     const roll = new Roll(`1d20 + ${modifiers}`, rollData);
-    await roll.evaluate({ async: true });
+    await roll.evaluate();
 
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),

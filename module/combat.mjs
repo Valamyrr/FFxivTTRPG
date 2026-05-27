@@ -8,6 +8,13 @@ function getTurnStep(combatant) {
 
 export class FFXIVCombat extends Combat {
   /** @override */
+  async startCombat() {
+    const startedCombat = await super.startCombat();
+    await this._applyStartingMpOverrides();
+    return startedCombat;
+  }
+
+  /** @override */
   _sortCombatants(a, b) {
     const stepDifference = getTurnStep(a) - getTurnStep(b);
     if (stepDifference !== 0) return stepDifference;
@@ -70,5 +77,39 @@ export class FFXIVCombat extends Combat {
       .map(combatant => Number(combatant.initiative))
       .filter(Number.isFinite);
     return used.length ? Math.max(...used) + 1 : 1;
+  }
+
+  async _applyStartingMpOverrides() {
+    const characterActors = new Map();
+    for (const combatant of this.combatants) {
+      const actor = combatant?.actor;
+      if (!actor || actor.type !== "character" || characterActors.has(actor.id)) continue;
+      characterActors.set(actor.id, actor);
+    }
+
+    for (const actor of characterActors.values()) {
+      const override = this._getStartingMpOverride(actor);
+      if (!Number.isFinite(override)) continue;
+      await actor.update({ "system.mana.value": override });
+    }
+  }
+
+  _getStartingMpOverride(actor) {
+    let highestOverride = null;
+    for (const item of actor.items) {
+      if (item.type !== "augment") continue;
+      if (item.system.equipped !== true) continue;
+
+      const overrideValue = item.system.starting_mp_override;
+      if (overrideValue === null || overrideValue === undefined || overrideValue === "") continue;
+
+      const numericOverride = Number(overrideValue);
+      if (!Number.isFinite(numericOverride)) continue;
+
+      highestOverride = highestOverride === null
+        ? numericOverride
+        : Math.max(highestOverride, numericOverride);
+    }
+    return highestOverride;
   }
 }

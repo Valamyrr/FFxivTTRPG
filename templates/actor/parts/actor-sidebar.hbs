@@ -41,5 +41,45 @@
         </div>
       </div>
     </div>
+
+    <div class="sidebar-stat-summary">
+      <div class="sidebar-stat-primary" aria-label="{{ localize 'FFXIV.Attributes.Primary' }}">
+        <div class="sidebar-stat-cell roll-attribute" data-attribute="strength" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Strength.long' }}">
+          <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Strength.abbrv" }}</span>
+          <span class="sidebar-stat-value">{{ add rollData.str 0 }}</span>
+        </div>
+        <div class="sidebar-stat-cell roll-attribute" data-attribute="dexterity" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Dexterity.long' }}">
+          <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Dexterity.abbrv" }}</span>
+          <span class="sidebar-stat-value">{{ add rollData.dex 0 }}</span>
+        </div>
+        <div class="sidebar-stat-cell roll-attribute" data-attribute="vitality" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Vitality.long' }}">
+          <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Vitality.abbrv" }}</span>
+          <span class="sidebar-stat-value">{{ add rollData.vit 0 }}</span>
+        </div>
+        <div class="sidebar-stat-cell roll-attribute" data-attribute="intelligence" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Intelligence.long' }}">
+          <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Intelligence.abbrv" }}</span>
+          <span class="sidebar-stat-value">{{ add rollData.int 0 }}</span>
+        </div>
+        <div class="sidebar-stat-cell roll-attribute" data-attribute="mind" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Mind.long' }}">
+          <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Mind.abbrv" }}</span>
+          <span class="sidebar-stat-value">{{ add rollData.mnd 0 }}</span>
+        </div>
+      </div>
+
+      <div class="sidebar-stat-secondary" aria-label="{{ localize 'FFXIV.Attributes.Secondary' }}">
+        <div class="sidebar-secondary-cell" title="{{ localize 'FFXIV.Attributes.Defense' }}">
+          {{#if settings.attributesImgDefense}}<img src="{{ settings.attributesImgDefense }}" alt="{{ localize 'FFXIV.Attributes.Defense' }}">{{/if}}
+          <span class="sidebar-secondary-value">{{ add rollData.def 0 }}</span>
+        </div>
+        <div class="sidebar-secondary-cell" title="{{ localize 'FFXIV.Attributes.MagicDefense' }}">
+          {{#if settings.attributesImgMagicDefense}}<img src="{{ settings.attributesImgMagicDefense }}" alt="{{ localize 'FFXIV.Attributes.MagicDefense' }}">{{/if}}
+          <span class="sidebar-secondary-value">{{ add rollData.mdef 0 }}</span>
+        </div>
+        <div class="sidebar-secondary-cell" title="{{ localize 'FFXIV.Attributes.Vigilance' }}">
+          {{#if settings.attributesImgVigilance}}<img src="{{ settings.attributesImgVigilance }}" alt="{{ localize 'FFXIV.Attributes.Vigilance' }}">{{/if}}
+          <span class="sidebar-secondary-value">{{ add rollData.vigilance 0 }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

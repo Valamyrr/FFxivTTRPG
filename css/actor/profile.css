@@ -1,15 +1,23 @@
 .actor-profile h2{
   text-decoration: none;
   border: none;
-  margin: auto;
-  width: fit-content;
-  padding: 15px 0 5px 0
+  margin: 0 0 10px;
+  width: auto;
+  padding: 0;
+  text-align: left;
+}
+
+.actor-profile .actor-titles,
+.actor-profile .actor-profiletrait,
+.actor-profile .actor-biography{
+  margin-bottom: 12px;
 }
 
 .actor-titles .actor-titles-box{
   border:solid 1px var(--color-border-light-tertiary);
-  border-radius: 5px;
+  border-radius: 8px;
   margin-top: 5px;
+  background: rgba(0, 0, 0, 0.12);
 }
 .actor-titles .actor-title-description{
   padding: 10px;
@@ -58,9 +66,9 @@
 }
 
 .actor-profile .profile-field-value {
-  background: rgba(0, 0, 0, 0.06);
-  border: 1px solid transparent;
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
   box-sizing: border-box;
   margin: 0;
   min-height: 28px;
@@ -78,9 +86,9 @@
 }
 
 .actor-profile .profile-paragraph-block {
-  background: rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--color-border-light-tertiary);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
   margin: 10px;
   min-height: 80px;
   overflow-wrap: anywhere;
@@ -114,4 +122,16 @@
   color: var(--text-color);
   font-size: inherit;
   font-weight: inherit;
+}
+
+.ffxiv.actor.blue_theme .actor-profile .profile-field-value,
+.ffxiv.actor.blue_theme .actor-profile .profile-short-text,
+.ffxiv.actor.blue_theme .actor-profile .profile-paragraph-block {
+  border-color: rgba(157, 202, 255, 0.34);
+  background: rgba(10, 29, 70, 0.58);
+}
+
+.ffxiv.actor.blue_theme .actor-titles .actor-titles-box {
+  border-color: rgba(157, 202, 255, 0.42);
+  background: rgba(10, 29, 70, 0.48);
 }

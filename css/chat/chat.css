@@ -67,32 +67,47 @@
 
 .chat-ffxiv.blue_theme .item-card .item-dialog-header,
 .blue_theme .chat-ffxiv .item-card .item-dialog-header{
-  border-bottom-color: rgba(210, 230, 255, 0.9);
-  box-shadow: 0px 7px 3px -2px rgba(7, 25, 68, 0.85);
+  border-bottom-color: rgba(188, 218, 255, 0.74);
+  box-shadow: 0px 7px 3px -2px rgba(8, 27, 70, 0.68);
 }
 
 .chat-ffxiv.blue_theme .item-card,
 .blue_theme .chat-ffxiv .item-card{
-  border-color: #9dc0ff;
+  border-color: rgba(147, 190, 255, 0.62);
+  background: linear-gradient(180deg, rgba(20, 48, 106, 0.92) 0%, rgba(10, 30, 75, 0.94) 100%);
+  box-shadow: inset 0 0 0 1px rgba(177, 212, 255, 0.18);
 }
 
 .chat-ffxiv.blue_theme .item-card .item-card-info,
 .blue_theme .chat-ffxiv .item-card .item-card-info{
-  background: linear-gradient(180deg, #3d8ef1 0%, #2f7fe3 55%, #276fca 100%);
+  background: linear-gradient(180deg, rgba(61, 125, 217, 0.78) 0%, rgba(46, 101, 188, 0.8) 60%, rgba(32, 79, 154, 0.86) 100%);
+}
+
+.chat-ffxiv.blue_theme .message-content button,
+.blue_theme .chat-ffxiv .message-content button{
+  background: linear-gradient(180deg, rgba(35, 84, 162, 0.88) 0%, rgba(21, 58, 120, 0.9) 100%);
+  border: 1px solid rgba(163, 206, 255, 0.52);
+  color: #e3f2ff;
 }
 
 .chat-ffxiv.blue_theme .message-content button.ffxiv-apply-dmg,
 .blue_theme .chat-ffxiv .message-content button.ffxiv-apply-dmg{
-  background: #a73447;
-  border: 1px solid #ffd2dc;
-  color: #fff;
+  background: linear-gradient(180deg, rgba(151, 54, 75, 0.92) 0%, rgba(114, 36, 56, 0.95) 100%);
+  border: 1px solid rgba(255, 201, 213, 0.78);
+  color: #fff7fa;
 }
 
 .chat-ffxiv.blue_theme .message-content button.ffxiv-apply-heal,
 .blue_theme .chat-ffxiv .message-content button.ffxiv-apply-heal{
-  background: #1f7f55;
-  border: 1px solid #ccffe7;
-  color: #fff;
+  background: linear-gradient(180deg, rgba(44, 128, 94, 0.92) 0%, rgba(28, 93, 67, 0.95) 100%);
+  border: 1px solid rgba(198, 248, 225, 0.74);
+  color: #f3fff9;
+}
+
+.chat-ffxiv.blue_theme .ffxiv-apply-result,
+.blue_theme .chat-ffxiv .ffxiv-apply-result{
+  border-top-color: rgba(157, 202, 255, 0.42);
+  color: #cfe6ff;
 }
 
 .chat-ffxiv .item-card .item-dialog-details.minion-typeline,

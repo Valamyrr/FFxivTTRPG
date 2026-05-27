@@ -348,7 +348,14 @@ class AugmentItemData extends foundry.abstract.TypeDataModel {
       ...buildItemFields(),
       ...buildInventoryFields(),
       ...buildAbilityFields(),
-      granted_ability: new fields.StringField({ required: false, blank: true, initial: "" })
+      granted_ability: new fields.StringField({ required: false, blank: true, initial: "" }),
+      ability_grants: new fields.ArrayField(new fields.SchemaField({
+        uuid: new fields.StringField({ required: false, blank: true, initial: "" }),
+        name: new fields.StringField({ required: false, blank: true, initial: "" }),
+        type: new fields.StringField({ required: false, blank: true, initial: "" }),
+        item: new fields.AnyField({ required: false })
+      })),
+      starting_mp_override: new fields.NumberField({ required: false, nullable: true, integer: true, min: 0, initial: null })
     };
   }
 }

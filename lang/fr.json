@@ -90,6 +90,8 @@
       "CustomClassRole": "Rôle du Job",
       "CustomClassIcon": "Icône du Job personnalisé",
       "ShowPets": "Montrer l'onglet des Familiers",
+      "MinionsEmptyHint": "Aucune mascotte pour le moment. Glissez une mascotte sur cette fiche pour en ajouter une.",
+      "PetsEmptyHint": "Aucun familier pour le moment. Glissez un acteur familier sur cette fiche pour en ajouter un.",
       "Banner": "Bannière",
       "CriticalRange": "Limite pour Coups Critiques",
       "EditSheet": "Modifier la fiche",
@@ -134,7 +136,13 @@
       "MinionType": "Type",
       "AbilityName": "Nom de la compétence du Familier",
       "GrantedAbility": "ID de la compétence octroyée",
+      "GrantedAbilities": "Compétences octroyées",
+      "OverrideStartingMP": "Remplacer les PM de départ",
+      "OverrideStartingMPHint": "Si défini, ce personnage commence le combat avec cette valeur de PM actuels, même au-dessus du maximum.",
       "JobRequirement": "Pré-requis de Job"
+    },
+    "Augment": {
+      "DropAbilities": "Déposez des compétences, transcendances ou traits ici."
     },
     "ShopTier": {
       "Low": "Faible",
@@ -285,6 +293,8 @@
     "Settings": {
       "ToggleGear": "Afficher l'onglet d'équipements",
       "ToggleGearHint": "Utilisez-vous des règles faites maison pour l'équipement?",
+      "LockArtworkRotationGlobal": "Verrouiller la rotation de l'illustration globalement",
+      "LockArtworkRotationGlobalHint": "Quand activé, les nouveaux prototypes de token et tokens de scène auront toujours la rotation de l'illustration verrouillée.",
       "LegacyManaClickBehavior": "Inverser les clics gauche/droite pour le mana",
       "LegacyManaClickBehaviorHint": "Inverse le comportement des clics gauche et droit pour le mana. Quand activé, le clic gauche retire du mana et le clic droit en ajoute.",
       "AutoRollDirectHitDamage": "Lancer automatiquement les dégâts d'attaque directe",
@@ -389,7 +399,7 @@
       "ItemMigrationPhaseHpCostStart": "Migration des objets : mise à jour des coûts en PV...",
       "ItemMigrationPhaseHpCostDone": "Migration des objets : coûts en PV terminés ({updatedWorldItems} objets monde, {updatedActorItems} objets d'acteur).",
       "ItemMigrationPhaseAbilityTypeStart": "Migration des objets : conversion des anciens types de compétences...",
-      "ItemMigrationPhaseAbilityTypeDone": "Migration des objets : conversion des anciens types terminée ({createdWorldItems}/{deletedWorldItems} monde recréés, {createdActorItems}/{deletedActorItems} acteur recréés, {updatedWorldTags} tags monde, {updatedActorTags} tags acteur, {updatedAbilityOrders} ordres de tri d'acteur, {updatedJobGrantUUIDs} liens de compétences de job remappés).",
+      "ItemMigrationPhaseAbilityTypeDone": "Migration des objets : conversion des anciens types terminée ({createdWorldItems}/{deletedWorldItems} monde recréés, {createdActorItems}/{deletedActorItems} acteur recréés, {updatedWorldTags} tags monde, {updatedActorTags} tags acteur, {updatedAbilityOrders} ordres de tri d'acteur, {updatedJobGrantUUIDs} liens de compétences de job/amélioration remappés).",
       "ItemMigrationComplete": "La migration des données d'objets est terminée avec succès.",
       "ItemMigrationFailed": "La migration des données d'objets a échoué. Consultez la console du navigateur pour plus de détails.",
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)",

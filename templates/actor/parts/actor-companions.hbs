@@ -1,5 +1,5 @@
-<div class="actor-abilities">
-  <div class="abilities-tab-content">
+<div class="actor-abilities actor-companions modern-tab-layout">
+  <div class="abilities-tab-content modern-panel">
     <!-- Sub-tab navigation for abilities -->
     {{#if (eq actor.system.showPets "true")}}
       <nav class="companions-sub-tabs" data-group="companions-sub-tabs">
@@ -25,6 +25,8 @@
               {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="minion">▼</button>{{/unless}}
             </div>
           </div>
+      {{else}}
+        <div class="companions-empty-hint">{{ localize "FFXIV.CharacterSheet.MinionsEmptyHint" }}</div>
       {{/each}}
 
     </section>
@@ -41,6 +43,8 @@
                 {{#unless @last}}<button type="button" class="pet-move-down" data-item-id="{{this}}" data-type="pet">▼</button>{{/unless}}
               </div>
             </div>
+        {{else}}
+          <div class="companions-empty-hint">{{ localize "FFXIV.CharacterSheet.PetsEmptyHint" }}</div>
         {{/each}}
 
       </section>

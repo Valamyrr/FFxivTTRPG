@@ -129,17 +129,6 @@
   width: 100%;
 }
 
-.ffxiv.actor.character .sheet-body-wrapper.full-width .fixed-part,
-.ffxiv.actor.character .full-width .fixed-part {
-  transform: translateX(-100%);
-}
-
-.ffxiv.actor.character .sheet-body-wrapper.full-width .sheet-body,
-.ffxiv.actor.character .full-width .sheet-body {
-  min-width: 100%;
-  transform: translateX(-230px);
-}
-
 .ffxiv.actor .sheet-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -370,4 +359,87 @@
   width: 64px;
   margin: auto;
   margin-top: 3px;
+}
+
+.ffxiv.actor.character .modern-tab-layout h2 {
+  border: 0;
+  margin: 0 0 10px;
+  padding: 0;
+  color: var(--text-color);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: left;
+}
+
+.ffxiv.actor.character .sheet-body .tab h2 {
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+}
+
+.ffxiv.actor.character .modern-panel {
+  border: 1px solid var(--border-color-2);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--gradient-color-2) 0%, var(--gradient-color-1) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  padding: 10px;
+}
+
+.ffxiv.actor.character.blue_theme .modern-panel {
+  border-color: rgba(147, 190, 255, 0.58);
+  background: linear-gradient(180deg, rgba(20, 48, 106, 0.92) 0%, rgba(10, 30, 75, 0.94) 100%);
+  box-shadow: inset 0 0 0 1px rgba(177, 212, 255, 0.2);
+}
+
+.ffxiv.actor .actor-job-config h2 {
+  margin-bottom: 8px;
+}
+
+.ffxiv.actor .actor-job-slot {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+}
+
+.ffxiv.actor .actor-job-slot.empty {
+  border-style: dashed;
+}
+
+.ffxiv.actor .actor-job-card {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr) 28px;
+}
+
+.ffxiv.actor .actor-job-card .job-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+}
+
+.ffxiv.actor .actor-job-card .job-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ffxiv.actor .actor-job-card .job-info strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ffxiv.actor .actor-job-card .job-delete {
+  width: 28px;
+  min-height: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.ffxiv.actor .settings-grid {
+  gap: 12px;
 }

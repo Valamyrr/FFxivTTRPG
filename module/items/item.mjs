@@ -191,6 +191,18 @@ export class FFXIVItem extends Item {
     if (game.user.id !== userId) return;
     if (options.ffxivSkipAutoJobAssignment) return;
     this._assignJob(options).catch(err => ui.notifications.error(err, { console: true }));
+    this._assignAugmentGrantedAbilities(options).catch(err => ui.notifications.error(err, { console: true }));
+  }
+
+  /** @override */
+  _onUpdate(changed, options, userId) {
+    super._onUpdate(changed, options, userId);
+    if (game.user.id !== userId) return;
+    if (this.type !== "augment") return;
+    if (this.parent?.documentName !== "Actor" || this.parent.type !== "character") return;
+    if (!foundry.utils.hasProperty(changed, "system.ability_grants")
+      && !foundry.utils.hasProperty(changed, "system.granted_ability")) return;
+    this._grantAugmentAbilities({ render: false }).catch(err => ui.notifications.error(err, { console: true }));
   }
 
   async _assignJob(options={}) {
@@ -228,9 +240,34 @@ export class FFXIVItem extends Item {
     ui.notifications.info(`${this.name} assigned as ${this.parent.name}'s job.`);
   }
 
+  _getNormalizedAbilityGrants(rawGrants) {
+    return (Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {}))
+      .filter(grant => grant?.uuid);
+  }
+
+  _getLegacyAugmentGrant() {
+    if (this.type !== "augment") return null;
+    const legacyId = String(this.system?.granted_ability ?? "").trim();
+    if (!legacyId) return null;
+    const sourceItem = game.items.get(legacyId);
+    if (!sourceItem) return null;
+    return {
+      uuid: sourceItem.uuid,
+      name: sourceItem.name,
+      type: sourceItem.type,
+      item: sourceItem.toObject()
+    };
+  }
+
+  _getAugmentAbilityGrants() {
+    const grants = this._getNormalizedAbilityGrants(this.system.ability_grants);
+    if (grants.length) return grants;
+    const legacyGrant = this._getLegacyAugmentGrant();
+    return legacyGrant ? [legacyGrant] : [];
+  }
+
   async _grantJobAbilities(options={}) {
-    const rawGrants = this.system.ability_grants;
-    const grants = (Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {})).filter(grant => grant.uuid);
+    const grants = this._getNormalizedAbilityGrants(this.system.ability_grants);
     if (!grants.length) return;
 
     const jobSources = new Set(this.parent.items.map(item => item.flags?.ffxiv?.jobSourceUuid).filter(Boolean));
@@ -266,6 +303,92 @@ export class FFXIVItem extends Item {
     }
 
     if (itemsToCreate.length) await this.parent.createEmbeddedDocuments("Item", itemsToCreate, options);
+  }
+
+  async _assignAugmentGrantedAbilities(options={}) {
+    if (this.type !== "augment") return;
+    if (this.parent?.documentName !== "Actor" || this.parent.type !== "character") return;
+    const renderOptions = options.render === false ? { render: false } : {};
+    await this._grantAugmentAbilities(renderOptions);
+  }
+
+  async _grantAugmentAbilities(options={}) {
+    const grants = this._getAugmentAbilityGrants();
+    if (!grants.length) return;
+
+    const augmentSources = new Set(this.parent.items.map(item => item.flags?.ffxiv?.augmentSourceUuid).filter(Boolean));
+    const itemsToCreate = [];
+
+    for (const grant of grants) {
+      if (!grant?.uuid || augmentSources.has(grant.uuid)) continue;
+
+      let itemData = grant.item ? foundry.utils.deepClone(grant.item) : null;
+      if (!itemData) {
+        const sourceItem = await fromUuid(grant.uuid);
+        if (!sourceItem) continue;
+        itemData = sourceItem.toObject();
+      }
+      if (ABILITY_SUBTYPE_TYPES.includes(itemData.type)) {
+        const legacySubtype = getAbilitySubtype(itemData) || itemData.type || "primary_ability";
+        const existingTags = Array.isArray(itemData?.system?.tags) ? itemData.system.tags : [];
+        itemData.type = "ability";
+        itemData.system = itemData.system || {};
+        itemData.system.tags = ensureAbilitySubtypeTags(
+          [getSubtypeTagLabel(legacySubtype), ...existingTags],
+          legacySubtype
+        );
+      }
+      delete itemData._id;
+      itemData.flags = foundry.utils.mergeObject(itemData.flags || {}, {
+        ffxiv: {
+          augmentId: this.id,
+          augmentSourceUuid: grant.uuid
+        }
+      });
+      itemsToCreate.push(itemData);
+    }
+
+    if (itemsToCreate.length) await this.parent.createEmbeddedDocuments("Item", itemsToCreate, options);
+  }
+
+  async _deleteAugmentWithGrantedAbilities(options={}) {
+    if (!this.parent || this.type !== "augment") return;
+    const grants = this._getAugmentAbilityGrants();
+    const grantedUuids = new Set(grants.map(grant => grant.uuid).filter(Boolean));
+    const otherAugmentGrantUuids = new Set(
+      this.parent.items
+        .filter(item => item.type === "augment" && item.id !== this.id)
+        .flatMap(item => {
+          const raw = Array.isArray(item.system?.ability_grants)
+            ? item.system.ability_grants
+            : Object.values(item.system?.ability_grants || {});
+          const uuids = raw.map(grant => grant?.uuid).filter(Boolean);
+          if (uuids.length) return uuids;
+          const legacyId = String(item.system?.granted_ability ?? "").trim();
+          if (!legacyId) return [];
+          const legacyItem = game.items.get(legacyId);
+          return legacyItem?.uuid ? [legacyItem.uuid] : [];
+        })
+    );
+    const grantedItems = this.parent.items.filter(item =>
+      item.flags?.ffxiv?.augmentId === this.id
+      || (
+        grantedUuids.has(item.flags?.ffxiv?.augmentSourceUuid)
+        && !otherAugmentGrantUuids.has(item.flags?.ffxiv?.augmentSourceUuid)
+      )
+    );
+    const idsToDelete = grantedItems.map(item => item.id);
+    if (idsToDelete.length) await this.parent.deleteEmbeddedDocuments("Item", idsToDelete, options);
+  }
+
+  /** @override */
+  async _preDelete(options, user) {
+    const result = await super._preDelete(options, user);
+    if (result === false) return false;
+    if (this.type === "augment" && this.parent?.documentName === "Actor") {
+      await this._deleteAugmentWithGrantedAbilities({ render: false });
+    }
+    return result;
   }
 
   async _deleteJobsWithGrantedAbilities(jobs, options={}) {
@@ -338,13 +461,19 @@ export class FFXIVItem extends Item {
       return;
     }
 
-    if (this.system.granted_ability){ //For augment granting abilities
-      if (game.items.get(this.system.granted_ability)){
+    if (this.type === "augment") {
+      const grants = this._getAugmentAbilityGrants();
+      for (const grant of grants) {
+        let grantedItem = null;
+        if (grant?.item) {
+          grantedItem = new CONFIG.Item.documentClass(foundry.utils.deepClone(grant.item), { temporary: true });
+        } else if (grant?.uuid) {
+          grantedItem = await fromUuid(grant.uuid);
+        }
+        if (!grantedItem) continue;
         content = content + await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/ability-chat-card.hbs", {
-          item: game.items.get(this.system.granted_ability)
+          item: grantedItem
         });
-      }else{
-        debugError("Granted ability must be a valid ID. Use `game.items.get(INSERT_ID)` to check your item's data.");
       }
     }
     content = content + this._getRollButtons()
@@ -683,8 +812,14 @@ export class FFXIVItem extends Item {
         : game.i18n.localize("FFXIV.Chat.RollHitFormula");
       buttons += `<button class="ffxiv-roll-hit" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${hitLabel}</button>`
     }
-    if(this.type !="trait" && this.parent.system.showModifiers=="true") buttons += `<button class="ffxiv-show-modifiers" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.ShowModifiers")}</button>`
+    if(this.type !="trait" && this.parent?.system?.showModifiers=="true" && this._hasDisplayableModifiers()) {
+      buttons += `<button class="ffxiv-show-modifiers" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.ShowModifiers")}</button>`
+    }
     return buttons+"</div>"
+  }
+
+  _hasDisplayableModifiers() {
+    return this.parent?.items?.some(item => item?.type === "trait" && item?.system?.active === true) ?? false;
   }
 
   _getStatusEffectEntries(){

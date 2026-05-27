@@ -90,6 +90,8 @@
       "CustomClassRole": "Job Role",
       "CustomClassIcon": "Custom Job Icon",
       "ShowPets": "Show Pets Tab",
+      "MinionsEmptyHint": "No minions yet. Drag a Minion item onto this sheet to add one.",
+      "PetsEmptyHint": "No pets yet. Drag a Pet actor onto this sheet to add one.",
       "Banner": "Header",
       "CriticalRange": "Treshold to score Critical Hits",
       "EditSheet": "Edit Sheet",
@@ -134,7 +136,13 @@
       "MinionType": "Type",
       "AbilityName": "Pet's ability Name",
       "GrantedAbility": "Granted Ability's ID",
+      "GrantedAbilities": "Granted Abilities",
+      "OverrideStartingMP": "Override Starting MP",
+      "OverrideStartingMPHint": "If set, this character starts combat at this current MP value, even above Max MP.",
       "JobRequirement": "Job Requirement"
+    },
+    "Augment": {
+      "DropAbilities": "Drop abilities, limit breaks, or traits here."
     },
     "ShopTier": {
       "Low": "Low",
@@ -283,8 +291,10 @@
       "Unique": "Unique"
     },
     "Settings": {
-      "ToggleGear": "Display Gear Tab on Character Sheet",
-      "ToggleGearHint": "Do you use homebrew rules for gear?",
+      "ToggleGear": "Show Gear Tab on Character Sheet",
+      "ToggleGearHint": "Enable this if you use homebrew gear rules.",
+      "LockArtworkRotationGlobal": "Lock Artwork Rotation Globally",
+      "LockArtworkRotationGlobalHint": "When enabled, newly created prototype and scene tokens always have Lock Artwork Rotation turned on.",
       "LegacyManaClickBehavior": "Invert Left/Right Mana Clicks",
       "LegacyManaClickBehaviorHint": "Invert left-click and right-click behavior for mana. When enabled, left-click removes mana and right-click adds mana.",
       "AutoRollDirectHitDamage": "Auto Roll Direct Hit Damage",
@@ -311,7 +321,7 @@
       "CustomConsumableTags": "Custom Consumable Tags",
       "CustomTagsHint": "Comma-separated list of tags to add to this category",
       "LimitedPhysicalItemsDialog": "Limited Physical Items Dialog",
-      "LimitedPhysicalItemsDialogHint": "Display shorted dialog windows with limited rights for items to players ?",
+      "LimitedPhysicalItemsDialogHint": "Display shortened item dialogs with limited permissions for players.",
       "ColorScheme": "Color Preferences",
       "ColorSchemeHint": "Color Theme for sheets of any type. Does not change FoundryVTT core interfaces.",
       "AttributesImg": "Primary Attributes Border Image",
@@ -389,7 +399,7 @@
       "ItemMigrationPhaseHpCostStart": "Item migration: updating HP cost fields...",
       "ItemMigrationPhaseHpCostDone": "Item migration: HP cost update complete ({updatedWorldItems} world, {updatedActorItems} actor items).",
       "ItemMigrationPhaseAbilityTypeStart": "Item migration: converting legacy ability types...",
-      "ItemMigrationPhaseAbilityTypeDone": "Item migration: legacy ability conversion complete ({createdWorldItems}/{deletedWorldItems} world recreated, {createdActorItems}/{deletedActorItems} actor recreated, {updatedWorldTags} world tags, {updatedActorTags} actor tags, {updatedAbilityOrders} actor sort orders, {updatedJobGrantUUIDs} job grant links remapped).",
+      "ItemMigrationPhaseAbilityTypeDone": "Item migration: legacy ability conversion complete ({createdWorldItems}/{deletedWorldItems} world recreated, {createdActorItems}/{deletedActorItems} actor recreated, {updatedWorldTags} world tags, {updatedActorTags} actor tags, {updatedAbilityOrders} actor sort orders, {updatedJobGrantUUIDs} job/augment grant links remapped).",
       "ItemMigrationComplete": "Item data migration completed successfully.",
       "ItemMigrationFailed": "Item data migration failed. Check the browser console for details.",
       "NotEnoughHP": "Not Enough HP to cast this ability (HP Cost)",

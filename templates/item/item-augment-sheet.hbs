@@ -26,17 +26,14 @@
 
       <div class="resources grid grid-2col">
 
-        <div class="resource flex-group-center">
-          <label for="system.price.buy" class="resource-label">{{ localize "FFXIV.Item.Buy" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.price.buy" type="number" value="{{item.system.price.buy}}"/>
-          </div>
-        </div>
-
-        <div class="resource flex-group-center">
-          <label for="system.price.sell" class="resource-label">{{ localize "FFXIV.Item.Sell" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.price.sell" type="number" value="{{item.system.price.sell}}"/>
+        <div class="resource flex-group-center consumable-price-resource">
+          <label for="system.price.buy" class="resource-label">{{ localize "FFXIV.Item.Prices" }}</label>
+          <div class="resource-content consumable-price-inline">
+            <span class="consumable-price-key">{{ localize "FFXIV.Item.BuyShort" }}</span>
+            <input class="consumable-price-input" name="system.price.buy" type="number" value="{{item.system.price.buy}}"/>
+            <span class="consumable-price-divider">|</span>
+            <span class="consumable-price-key">{{ localize "FFXIV.Item.SellShort" }}</span>
+            <input class="consumable-price-input" name="system.price.sell" type="number" value="{{item.system.price.sell}}"/>
           </div>
         </div>
 
@@ -92,11 +89,39 @@
         </div>
 
         <div class="resource flex-group-center">
-          <label for="system.granted_ability" class="resource-label">{{ localize "FFXIV.Item.GrantedAbility" }}</label>
+          <label for="system.starting_mp_override" class="resource-label">{{ localize "FFXIV.Item.OverrideStartingMP" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.granted_ability" type="text" value="{{item.system.granted_ability}}"/>
+            <input
+              name="system.starting_mp_override"
+              type="number"
+              min="0"
+              step="1"
+              value="{{#if (or (eq item.system.starting_mp_override 0) item.system.starting_mp_override)}}{{item.system.starting_mp_override}}{{/if}}"
+              placeholder="{{ localize 'FFXIV.None' }}"
+              title="{{ localize 'FFXIV.Item.OverrideStartingMPHint' }}"
+            />
           </div>
         </div>
+      </div>
+
+      <hr>
+
+      <div class="augment-grants-dropzone job-progression-tab">
+        <label class="resource-label">{{ localize "FFXIV.Item.GrantedAbilities" }}</label>
+        <ol class="job-ability-list">
+          {{#unless system.ability_grants.length}}
+            <li class="job-ability-empty">{{ localize "FFXIV.Augment.DropAbilities" }}</li>
+          {{/unless}}
+          {{#each system.ability_grants as |grant index|}}
+            <li class="job-ability-row augment-ability-edit" data-index="{{index}}">
+              <span class="job-ability-name">{{grant.name}}</span>
+              <span class="job-ability-type">{{grant.typeLabel}}</span>
+              <button type="button" class="remove-augment-ability" data-index="{{index}}" aria-label="{{localize 'FFXIV.Item.Delete'}}">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </li>
+          {{/each}}
+        </ol>
       </div>
 
     </div>

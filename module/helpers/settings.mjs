@@ -349,6 +349,21 @@ export class SettingsHelpers {
       requiresReload: true
     });
 
+    game.settings.register("ffxiv", "lockArtworkRotationGlobal", {
+      name: game.i18n.localize("FFXIV.Settings.LockArtworkRotationGlobal"),
+      hint: game.i18n.localize("FFXIV.Settings.LockArtworkRotationGlobalHint"),
+      scope: "world",
+      config: true,
+      default: true,
+      type: Boolean,
+      onChange: value => {
+        if (!value || !game.user?.isGM) return;
+        Promise.resolve(game.ffxivttrpg?.applyGlobalArtworkRotationLock?.())
+          .catch(error => console.error("FFXIV | Failed to apply global artwork rotation lock", error));
+      },
+      requiresReload: false
+    });
+
     game.settings.register("ffxiv", "legacyManaClickBehavior", {
       name: game.i18n.localize("FFXIV.Settings.LegacyManaClickBehavior"),
       hint: game.i18n.localize("FFXIV.Settings.LegacyManaClickBehaviorHint"),

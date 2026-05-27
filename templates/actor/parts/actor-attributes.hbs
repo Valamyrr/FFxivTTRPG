@@ -1,106 +1,106 @@
 
 <div class="actor-attributes-tab">
-  <div class="actor-attributes">
-    <div class="primary-attributes">
-      <h2>{{ localize "FFXIV.Attributes.Primary"}}</h2>
-      <div class="primary-attributes-list">
+  <section class="attribute-panel primary-attributes-panel">
+    <h2>{{ localize "FFXIV.Attributes.Primary"}}</h2>
+    <div class="primary-attributes-grid">
+      <article class="primary-attribute-card">
+        <button type="button" class="primary-roll-trigger roll-attribute" data-attribute="strength" title="{{ localize 'FFXIV.Attributes.Strength.long' }}">
+          <span>{{ localize "FFXIV.Attributes.Strength.abbrv" }}</span>
+          <i class="fa-solid fa-dice-d20"></i>
+        </button>
+        <div class="primary-attribute-values">
+          <input type="number" class="primary-attribute-input" name="system.primary_attributes.strength.value" value="{{ system.primary_attributes.strength.value }}">
+        </div>
+      </article>
 
-          <div class="primary-attribute">
-            <div class="meteor-value">
-              <img src="{{ settings.attributesImg }}">
-              <input type="number" class="value" name="system.primary_attributes.strength.value" value="{{ system.primary_attributes.strength.value }}">
-            </div>
-            <span class="label roll-attribute" data-attribute="strength"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Strength.long" }}</span>
-          </div>
+      <article class="primary-attribute-card">
+        <button type="button" class="primary-roll-trigger roll-attribute" data-attribute="dexterity" title="{{ localize 'FFXIV.Attributes.Dexterity.long' }}">
+          <span>{{ localize "FFXIV.Attributes.Dexterity.abbrv" }}</span>
+          <i class="fa-solid fa-dice-d20"></i>
+        </button>
+        <div class="primary-attribute-values">
+          <input type="number" class="primary-attribute-input" name="system.primary_attributes.dexterity.value" value="{{ system.primary_attributes.dexterity.value }}">
+        </div>
+      </article>
 
-          <div class="primary-attribute">
-            <div class="meteor-value">
-              <img src="{{ settings.attributesImg }}">
-              <input type="number" class="value" name="system.primary_attributes.dexterity.value" value="{{ system.primary_attributes.dexterity.value }}">
-            </div>
-            <span class="label roll-attribute" data-attribute="dexterity"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Dexterity.long" }}</span>
-          </div>
+      <article class="primary-attribute-card">
+        <button type="button" class="primary-roll-trigger roll-attribute" data-attribute="vitality" title="{{ localize 'FFXIV.Attributes.Vitality.long' }}">
+          <span>{{ localize "FFXIV.Attributes.Vitality.abbrv" }}</span>
+          <i class="fa-solid fa-dice-d20"></i>
+        </button>
+        <div class="primary-attribute-values">
+          <input type="number" class="primary-attribute-input" name="system.primary_attributes.vitality.value" value="{{ system.primary_attributes.vitality.value }}">
+        </div>
+      </article>
 
-          <div class="primary-attribute">
-            <div class="meteor-value">
-              <img src="{{ settings.attributesImg }}">
-              <input type="number" class="value" name="system.primary_attributes.vitality.value" value="{{ system.primary_attributes.vitality.value }}">
-            </div>
-            <span class="label roll-attribute" data-attribute="vitality"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Vitality.long" }}</span>
-          </div>
+      <article class="primary-attribute-card">
+        <button type="button" class="primary-roll-trigger roll-attribute" data-attribute="intelligence" title="{{ localize 'FFXIV.Attributes.Intelligence.long' }}">
+          <span>{{ localize "FFXIV.Attributes.Intelligence.abbrv" }}</span>
+          <i class="fa-solid fa-dice-d20"></i>
+        </button>
+        <div class="primary-attribute-values">
+          <input type="number" class="primary-attribute-input" name="system.primary_attributes.intelligence.value" value="{{ system.primary_attributes.intelligence.value }}">
+        </div>
+      </article>
 
-          <div class="primary-attribute">
-            <div class="meteor-value">
-              <img src="{{ settings.attributesImg }}">
-              <input type="number" class="value" name="system.primary_attributes.intelligence.value" value="{{ system.primary_attributes.intelligence.value }}">
-            </div>
-            <span class="label roll-attribute" data-attribute="intelligence"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Intelligence.long" }}</span>
-          </div>
-
-          <div class="primary-attribute">
-            <div class="meteor-value">
-              <img src="{{ settings.attributesImg }}">
-              <input type="number" class="value" name="system.primary_attributes.mind.value" value="{{ system.primary_attributes.mind.value }}">
-            </div>
-            <span class="label roll-attribute" data-attribute="mind"><i class="fa-solid fa-dice-d20"></i> {{ localize "FFXIV.Attributes.Mind.long" }}</span>
-          </div>
-
-      </div>
+      <article class="primary-attribute-card">
+        <button type="button" class="primary-roll-trigger roll-attribute" data-attribute="mind" title="{{ localize 'FFXIV.Attributes.Mind.long' }}">
+          <span>{{ localize "FFXIV.Attributes.Mind.abbrv" }}</span>
+          <i class="fa-solid fa-dice-d20"></i>
+        </button>
+        <div class="primary-attribute-values">
+          <input type="number" class="primary-attribute-input" name="system.primary_attributes.mind.value" value="{{ system.primary_attributes.mind.value }}">
+        </div>
+      </article>
     </div>
+  </section>
 
-    <div class="secondary-attributes">
-      <h2>{{ localize "FFXIV.Attributes.Secondary"}}</h2>
-
-      <div class="s-attribute-grid">
-
-        <div class="s-attribute-card">
-          <div class="s-attribute-header">
-            {{#if settings.attributesImgDefense }}<img src="{{ settings.attributesImgDefense }}">{{/if}}
-            <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Defense" }}</div>
-          </div>
-          <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}" placeholder="0">
-            <input type="text" class="s-attribute-value secondary-attribute-modifier" data-modifier-for="defense" disabled value="+{{ sub rollData.def system.secondary_attributes.defense.value }}">
-          </div>
+  <section class="attribute-panel secondary-attributes-panel">
+    <h2>{{ localize "FFXIV.Attributes.Secondary"}}</h2>
+    <div class="secondary-attributes-grid">
+      <article class="secondary-attribute-card">
+        <div class="secondary-attribute-header">
+          {{#if settings.attributesImgDefense }}<img src="{{ settings.attributesImgDefense }}" alt="{{ localize 'FFXIV.Attributes.Defense' }}">{{/if}}
+          <div class="secondary-attribute-name">{{ localize "FFXIV.Attributes.Defense" }}</div>
         </div>
-
-        <div class="s-attribute-card">
-          <div class="s-attribute-header">
-            {{#if settings.attributesImgMagicDefense }}<img src="{{ settings.attributesImgMagicDefense }}">{{/if}}
-            <div class="s-attribute-name">{{ localize "FFXIV.Attributes.MagicDefense" }}</div>
-          </div>
-          <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}" placeholder="0">
-            <input type="text" class="s-attribute-value secondary-attribute-modifier" data-modifier-for="magic_defense" disabled value="+{{ sub rollData.mdef system.secondary_attributes.magic_defense.value }}">
-          </div>
+        <div class="secondary-attribute-values">
+          <input type="number" class="secondary-attribute-input" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}" placeholder="0">
+          <input type="text" class="secondary-attribute-input secondary-attribute-modifier" data-modifier-for="defense" disabled value="+{{ sub rollData.def system.secondary_attributes.defense.value }}">
         </div>
+      </article>
 
-        <div class="s-attribute-card">
-          <div class="s-attribute-header">
-            {{#if settings.attributesImgVigilance }}<img src="{{ settings.attributesImgVigilance }}">{{/if}}
-            <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Vigilance" }}</div>
-          </div>
-          <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}" placeholder="0">
-            <input type="text" class="s-attribute-value secondary-attribute-modifier" data-modifier-for="vigilance" disabled value="+{{ sub rollData.vigilance system.secondary_attributes.vigilance.value }}">
-          </div>
+      <article class="secondary-attribute-card">
+        <div class="secondary-attribute-header">
+          {{#if settings.attributesImgMagicDefense }}<img src="{{ settings.attributesImgMagicDefense }}" alt="{{ localize 'FFXIV.Attributes.MagicDefense' }}">{{/if}}
+          <div class="secondary-attribute-name">{{ localize "FFXIV.Attributes.MagicDefense" }}</div>
         </div>
-
-        <div class="s-attribute-card">
-          <div class="s-attribute-header">
-            {{#if settings.attributesImgSpeed }}<img src="{{ settings.attributesImgSpeed }}">{{/if}}
-            <div class="s-attribute-name">{{ localize "FFXIV.Attributes.Speed" }}</div>
-          </div>
-          <div class="s-attribute-info">
-            <input type="number" class="s-attribute-value" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}" placeholder="0">
-            <span class="s-attribute-value">squares</span>
-          </div>
+        <div class="secondary-attribute-values">
+          <input type="number" class="secondary-attribute-input" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}" placeholder="0">
+          <input type="text" class="secondary-attribute-input secondary-attribute-modifier" data-modifier-for="magic_defense" disabled value="+{{ sub rollData.mdef system.secondary_attributes.magic_defense.value }}">
         </div>
+      </article>
 
+      <article class="secondary-attribute-card">
+        <div class="secondary-attribute-header">
+          {{#if settings.attributesImgVigilance }}<img src="{{ settings.attributesImgVigilance }}" alt="{{ localize 'FFXIV.Attributes.Vigilance' }}">{{/if}}
+          <div class="secondary-attribute-name">{{ localize "FFXIV.Attributes.Vigilance" }}</div>
+        </div>
+        <div class="secondary-attribute-values">
+          <input type="number" class="secondary-attribute-input" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}" placeholder="0">
+          <input type="text" class="secondary-attribute-input secondary-attribute-modifier" data-modifier-for="vigilance" disabled value="+{{ sub rollData.vigilance system.secondary_attributes.vigilance.value }}">
+        </div>
+      </article>
 
-      </div>
+      <article class="secondary-attribute-card">
+        <div class="secondary-attribute-header">
+          {{#if settings.attributesImgSpeed }}<img src="{{ settings.attributesImgSpeed }}" alt="{{ localize 'FFXIV.Attributes.Speed' }}">{{/if}}
+          <div class="secondary-attribute-name">{{ localize "FFXIV.Attributes.Speed" }}</div>
+        </div>
+        <div class="secondary-attribute-values">
+          <input type="number" class="secondary-attribute-input" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}" placeholder="0">
+          <span class="secondary-attribute-input secondary-attribute-unit">{{ or system.secondary_attributes.speed.unit "squares" }}</span>
+        </div>
+      </article>
     </div>
+  </section>
   </div>
-
-
-</div>

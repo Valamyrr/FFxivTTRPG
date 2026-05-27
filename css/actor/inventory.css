@@ -5,17 +5,63 @@
 .inventory h2{
   text-decoration: none;
   border: none;
-  margin: auto;
-  width: fit-content;
+  margin: 0 0 10px;
+  width: auto;
+  text-align: left;
 }
 .ffxiv-fortune-row{
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 12px 0 12px 0;
+  width: fit-content;
+  padding: 4px 8px;
+  border: 1px solid rgba(225, 190, 95, 0.75);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(44, 38, 24, 0.9) 0%, rgba(24, 21, 13, 0.95) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 231, 156, 0.12), 0 0 3px rgba(0, 0, 0, 0.55);
 }
 .ffxiv-fortune-row input{
   max-width: 120px;
+}
+
+.inventory-grid.modern-panel{
+  padding: 10px;
+}
+
+.augments.modern-panel{
+  margin-top: 10px;
+}
+.ffxiv-fortune-row input#ffxiv-fortune{
+  min-width: 88px;
+  width: 110px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid rgba(225, 190, 95, 0.5);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(32, 28, 40, 0.95) 0%, rgba(24, 20, 30, 0.98) 100%);
+  color: #f5d27c;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 245, 210, 0.08);
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.ffxiv-fortune-row input#ffxiv-fortune:focus{
+  border-color: rgba(255, 224, 132, 0.95);
+  box-shadow: 0 0 0 1px rgba(255, 230, 150, 0.35), 0 0 6px rgba(255, 199, 91, 0.35);
+  outline: none;
+}
+.ffxiv-fortune-row input#ffxiv-fortune:disabled{
+  opacity: 0.75;
+  cursor: default;
+}
+.ffxiv-fortune-row input#ffxiv-fortune::-webkit-inner-spin-button,
+.ffxiv-fortune-row input#ffxiv-fortune::-webkit-outer-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
 }
 .ffxiv-fortune-icon{
   width: 24px;
@@ -179,4 +225,58 @@
 
 .ffxiv-inventory-context-option.discard {
   color: #f5b4b4;
+}
+
+.gear-summary.modern-panel {
+  overflow-x: auto;
+}
+
+.gear-bonuses {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border-color-2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gear-bonuses th,
+.gear-bonuses td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 8px;
+}
+
+.gear-bonuses th:last-child,
+.gear-bonuses td:last-child {
+  border-right: 0;
+}
+
+.gear-bonuses tr:last-child td {
+  border-bottom: 0;
+}
+
+.gear-bonuses thead th {
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--text-color-strong);
+  font-weight: 700;
+}
+
+.gear-bonuses tbody td:first-child {
+  font-weight: 700;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.ffxiv.actor.blue_theme .ffxiv-fortune-row{
+  border-color: rgba(156, 198, 255, 0.78);
+  background: linear-gradient(180deg, rgba(24, 58, 122, 0.9) 0%, rgba(14, 37, 84, 0.95) 100%);
+  box-shadow: inset 0 0 0 1px rgba(184, 217, 255, 0.18), 0 0 3px rgba(0, 0, 0, 0.55);
+}
+
+.ffxiv.actor.blue_theme .ffxiv-fortune-row input#ffxiv-fortune{
+  border-color: rgba(170, 214, 255, 0.66);
+  background: linear-gradient(180deg, rgba(11, 32, 76, 0.95) 0%, rgba(8, 24, 57, 0.98) 100%);
+  color: #dceeff;
+  box-shadow: inset 0 0 0 1px rgba(196, 224, 255, 0.12);
 }

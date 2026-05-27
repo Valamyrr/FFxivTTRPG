@@ -47,7 +47,24 @@ input:disabled{
 }
 
 #token-hud .attribute.ffxiv-hud-health {
-  transform: translateY(-34px);
+  transform: none;
+}
+
+#token-hud .ffxiv-hud-secondary-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  flex: 0 0 var(--control-size);
+}
+
+#token-hud .ffxiv-hud-secondary-row .attribute {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+#token-hud .ffxiv-hud-secondary-row .attribute input {
+  font-size: var(--font-size-20);
 }
 
 .ffxiv-settings-submenu {
