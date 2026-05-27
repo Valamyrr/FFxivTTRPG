@@ -5,19 +5,28 @@ import { debugError, debugLog } from "../helpers/debug.mjs";
  * @extends {Actor}
  */
 export class FFXIVActor extends Actor {
+  _toFiniteNumber(value, fallback = 0) {
+    if (Number.isFinite(value)) return value;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
 
   _ensureResource(resource, { value = 0, max = null } = {}) {
     const normalized = resource && typeof resource === "object" ? resource : {};
+    const normalizedValue = this._toFiniteNumber(normalized.value, value);
+    const normalizedMax = (max === null)
+      ? this._toFiniteNumber(normalized.max, null)
+      : this._toFiniteNumber(normalized.max, max);
     return {
-      value: Number.isFinite(normalized.value) ? normalized.value : value,
-      max: Number.isFinite(normalized.max) ? normalized.max : max
+      value: normalizedValue,
+      max: normalizedMax
     };
   }
 
   _ensureAttributeValue(attribute, defaultLabel = "") {
     const normalized = attribute && typeof attribute === "object" ? attribute : {};
     return {
-      value: Number.isFinite(normalized.value) ? normalized.value : 0,
+      value: this._toFiniteNumber(normalized.value, 0),
       label: typeof normalized.label === "string" ? normalized.label : defaultLabel
     };
   }
@@ -41,7 +50,7 @@ export class FFXIVActor extends Actor {
       magic_defense: this._ensureAttributeValue(normalized.magic_defense, "FFXIV.Attributes.MagicDefense"),
       vigilance: this._ensureAttributeValue(normalized.vigilance, "FFXIV.Attributes.Vigilance"),
       speed: {
-        value: Number.isFinite(speed.value) ? speed.value : 0,
+        value: this._toFiniteNumber(speed.value, 0),
         unit: typeof speed.unit === "string" ? speed.unit : "squares",
         label: typeof speed.label === "string" ? speed.label : "FFXIV.Attributes.Speed"
       }
@@ -277,6 +286,13 @@ export class FFXIVActor extends Actor {
 
   _preparePetData(actorData) {
     if (actorData.type !== 'pet') return;
+    const speed = actorData.system?.speed;
+    if (!speed || typeof speed !== "object") {
+      actorData.system.speed = { value: 5, unit: "squares" };
+      return;
+    }
+    if (!Number.isFinite(speed.value)) speed.value = 5;
+    if (typeof speed.unit !== "string") speed.unit = "squares";
   }
 
 

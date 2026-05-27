@@ -1,47 +1,107 @@
 .ffxiv.actor.pet .profile-img {
-  width: 142.5px;
-  height: auto;
-  border: none;
-  flex: 0 0 142.5px;
+  width: 144px;
+  height: 144px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 4px;
+  box-sizing: border-box;
   object-fit: contain;
+  object-position: center;
+  align-self: start;
+  justify-self: center;
+  margin-top: 2px;
 }
 
 .ffxiv.actor.pet {
   min-width: 650px;
-  max-width: 920px;
+  max-width: 650px;
 }
 
 .ffxiv.actor.pet .sheet-header {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 14px;
   height: auto;
-  min-height: 150px;
+  min-height: 168px;
+  padding: 8px 10px;
   position: relative;
+  background: linear-gradient(90deg, rgba(179, 140, 58, 0.28) 0%, rgba(179, 140, 58, 0.14) 42%, rgba(0, 0, 0, 0.12) 100%), var(--banner-img) !important;
 }
 
 .ffxiv.actor.pet .header-fields {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   text-align: center;
-  gap: 0.75rem;
+  gap: 0.2rem;
   box-sizing: border-box;
   padding-right: 48px;
+  min-width: 0;
 }
 
 .ffxiv.actor.pet .charname {
   max-width: 100%;
+  width: 100%;
+  margin: 0;
+  font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+  line-height: 0.94;
+  letter-spacing: 0.02em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.ffxiv.actor.pet .header-fields .charname,
+.ffxiv.actor.pet .header-fields .charname input,
+.ffxiv.actor.pet .header-fields .charname textarea,
+.ffxiv.actor.pet .header-fields .charname h1 {
+  font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+  line-height: 0.94;
+  min-height: 0;
+  margin: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ffxiv.actor.pet .header-fields .charname input,
+.ffxiv.actor.pet .header-fields .charname textarea {
+  padding: 0;
+  text-align: center;
+  width: 100%;
+}
+
+.ffxiv.actor.pet .header-fields .charname textarea {
+  min-height: calc(2 * 0.94em);
+  max-height: calc(2 * 0.94em);
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  border: none;
 }
 
 .ffxiv.actor.pet .pet-header-fields {
   width: 100%;
+  min-width: 0;
+  margin-top: 0;
 }
 
 .ffxiv.actor.pet .pet-header-speed {
-  display: flex;
-  flex-direction: row;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  margin: 2px auto 0;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
   font-size: 1rem;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .ffxiv.actor.pet .pet-header-speed img {
@@ -50,26 +110,29 @@
 }
 
 .ffxiv.actor.pet .pet-speed-number.actor-locked {
-  font-size: 1.5rem;
-  min-width: 2.2ch;
-  max-width: 3ch;
-  width: 2.2ch;
+  font-size: 1.3rem;
+  min-width: 2.6ch;
+  width: 2.6ch;
   text-align: left;
   background: transparent;
   border: none;
+  line-height: 1.2;
 }
 
 .ffxiv.actor.pet .pet-speed-number {
-  font-size: 1.5rem;
-  min-width: 2.2ch;
-  max-width: 3ch;
-  width: 2.2ch;
+  font-size: 1.3rem;
+  min-width: 2.6ch;
+  width: 2.6ch;
+  height: 1.25em;
+  line-height: 1.2;
+  padding: 0 0.1em;
+  box-sizing: border-box;
   border: none;
   text-align: left;
 }
 
 .ffxiv.actor.pet .attribute-display-text {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   max-width: 5ch;
   border: none;
   text-align: left;
@@ -81,11 +144,6 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-}
-
-.ffxiv.actor.pet .pet-header-fields {
-  width: 100%;
-  margin-top: 0.4rem;
 }
 
 .ffxiv.actor.pet .pet-header-speed .s-attribute-name {
@@ -196,7 +254,12 @@
 }
 
 .pet nav.nav-sub-tabs .sub-tab {
-  width: 45%;
+  width: calc((100% - 34px - 12px) / 2) !important;
+  flex: 0 0 calc((100% - 34px - 12px) / 2) !important;
+  min-height: 28px;
+  padding: 3px 8px !important;
+  font-size: 12px;
+  line-height: 1.1;
 }
 
 .pet nav.nav-sub-tabs .npc-add-ability {
@@ -230,9 +293,10 @@
 }
 
 .ffxiv.actor.pet .actor-abilities {
-  padding: 0 12px;
+  padding: 0;
   flex: 1 1 auto;
   overflow-y: auto;
+  min-height: 0;
   max-height: 100%;
 }
 

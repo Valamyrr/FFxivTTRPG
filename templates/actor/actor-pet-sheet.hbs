@@ -10,7 +10,9 @@
     <div class="header-fields">
       <h1 class="charname">
         {{#if actorEditMode }}
-          <input name="name" type="text" value="{{actor.name}}" placeholder="Name" />
+          <textarea name="name"
+                    rows="2"
+                    placeholder="Name">{{actor.name}}</textarea>
         {{else}}
           {{actor.name}}
         {{/if}}
@@ -55,9 +57,10 @@
     <div class="chip"></div>
   </a>
 </nav>
+<div class="sheet-body-wrapper">
 {{! Sheet Body }}
-<section class="sheet-body">
-  <div class="tab fight actor-abilities"
+<section class="sheet-body modern-tab-layout">
+  <div class="tab fight actor-abilities modern-panel"
        data-group="primary"
        data-tab="fight">
     {{#each (sortAbilities items system.ability_order "primary_ability") }}
@@ -117,11 +120,20 @@
 </div>
 </div>
 {{/each}}
-</div>
-<div class="tab traits actor-abilities"
+{{#unless hasPetFightAbilities}}
+  <div class="abilities-empty-hint">
+    {{#if actorEditMode}}
+      Drag an Ability item onto this sheet, or use the + button to create one.
+    {{else}}
+      No abilities yet. Enable edit mode to use +, or drag an Ability item onto this sheet.
+    {{/if}}
+  </div>
+{{/unless}}
+  </div>
+<div class="tab traits actor-abilities modern-panel"
      data-group="primary"
      data-tab="traits">
-  {{#each (sortAbilities items system.ability_order "trait") }}
+{{#each (sortAbilities items system.ability_order "trait") }}
     <div class="ability-container">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
       <div class="move-buttons">
@@ -140,6 +152,16 @@
   </div>
 </div>
 {{/each}}
+{{#unless hasPetTraitAbilities}}
+  <div class="abilities-empty-hint">
+    {{#if actorEditMode}}
+      Drag a Trait item onto this sheet, or use the + button to create one.
+    {{else}}
+      No traits yet. Enable edit mode to use +, or drag a Trait item onto this sheet.
+    {{/if}}
+  </div>
+{{/unless}}
 </div>
 </section>
+</div>
 </div>

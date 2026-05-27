@@ -16,6 +16,7 @@ function onActivate(event) {
 
 function onEscape(event) {
   if (event.key !== "Escape") return;
+  if (hasNativeAppPriority(event)) return;
 
   const app = getActiveApp(event);
   if (!app) return;
@@ -37,7 +38,7 @@ function onEscape(event) {
 }
 
 function getActiveApp(event) {
-  const apps = getOpenApps();
+  const apps = getOpenApps({ ffxivOnly: true });
   if (!apps.length) return null;
 
   const targeted = getEventApp(event, apps);
@@ -76,7 +77,7 @@ function getEventApp(event, apps = getOpenApps()) {
   );
 }
 
-function getOpenApps() {
+function getOpenApps({ ffxivOnly = false } = {}) {
   const apps = [
     ...Object.values(ui.windows ?? {}),
     ...Array.from(foundry.applications.instances?.values?.() ?? []),
@@ -86,9 +87,26 @@ function getOpenApps() {
     if (typeof app?.close !== "function") return false;
     const element = getAppElement(app);
     if (!element || !document.body.contains(element)) return false;
-    if (!isFFXIVApp(app, element)) return false;
+    if (ffxivOnly && !isFFXIVApp(app, element)) return false;
     return app.rendered ?? true;
   });
+}
+
+function hasNativeAppPriority(event) {
+  const apps = getOpenApps({ ffxivOnly: false });
+  if (!apps.length) return false;
+
+  const topmost = getTopmostApp(apps);
+  if (topmost) {
+    const element = getAppElement(topmost);
+    if (element && !isFFXIVApp(topmost, element)) return true;
+  }
+
+  const targeted = getEventApp(event, apps);
+  if (!targeted) return false;
+  const element = getAppElement(targeted);
+  if (!element) return false;
+  return !isFFXIVApp(targeted, element);
 }
 
 function isFFXIVApp(app, element) {

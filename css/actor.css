@@ -41,7 +41,7 @@
 
 .application.ffxiv.actor:has(.ffxiv.actor.pet) {
   min-width: 650px;
-  max-width: 920px;
+  max-width: 650px;
 }
 
 .ffxiv.actor .window-content {
@@ -120,7 +120,7 @@
   flex-basis: 46px;
 }
 
-.ffxiv.actor.character .sheet-body-wrapper {
+.ffxiv.actor .sheet-body-wrapper {
   display: flex;
   flex-direction: row;
   flex: 1 1 auto;
@@ -149,6 +149,7 @@
   min-width: 0;
   width: 100%;
   transform: none;
+  height: 100%;
 }
 
 .ffxiv.actor .tab {
@@ -367,7 +368,7 @@
   margin-top: 3px;
 }
 
-.ffxiv.actor.character .modern-tab-layout h2 {
+.ffxiv.actor:is(.character, .npc, .pet) .modern-tab-layout h2 {
   border: 0;
   margin: 0 0 10px;
   padding: 0;
@@ -378,13 +379,13 @@
   text-align: left;
 }
 
-.ffxiv.actor.character .sheet-body .tab h2 {
+.ffxiv.actor:is(.character, .npc, .pet) .sheet-body .tab h2 {
   width: 100%;
   text-align: center;
   font-size: 20px;
 }
 
-.ffxiv.actor.character .modern-panel {
+.ffxiv.actor:is(.character, .npc, .pet) .modern-panel {
   border: 1px solid var(--border-color-2);
   border-radius: 10px;
   background: linear-gradient(180deg, var(--gradient-color-2) 0%, var(--gradient-color-1) 100%);
@@ -392,7 +393,7 @@
   padding: 10px;
 }
 
-.ffxiv.actor.character.blue_theme .modern-panel {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .modern-panel {
   border-color: rgba(147, 190, 255, 0.58);
   background: linear-gradient(180deg, rgba(20, 48, 106, 0.92) 0%, rgba(10, 30, 75, 0.94) 100%);
   box-shadow: inset 0 0 0 1px rgba(177, 212, 255, 0.2);

@@ -45,8 +45,7 @@
           {{/if}}
           )
         </span>
-      </div>
-      <div class="statblock-meta-line">
+        <span>-</span>
         {{#if actorEditMode }}
           <input class="input-transparent npc-specie"
                  type="text"
@@ -62,58 +61,92 @@
       <div class="npc-combat-stats">
         <div class="npc-main-stats">
           <div class="resource flex-group-left">
-            <span class="npc-stat-label">{{ localize "FFXIV.Health.long" }}:</span>
-            <span class="npc-stat-control">
-              <input class="input-window"
-                     type="text"
-                     name="system.health.value"
-                     value="{{ system.health.value }}" />
-              /
-              {{#if actorEditMode }}
-                <input class="input-window"
-                       type="text"
-                       name="system.health.max"
-                       value="{{ system.health.max }}" />
-              {{else}}
-                <span class="npc-plain-value npc-stat-number">{{system.health.max}}</span>
-              {{/if}}
-            </span>
-          </div>
-          <div class="resource flex-group-left">
-            <span class="npc-stat-label">{{ localize "FFXIV.Attributes.Vigilance" }}:</span>
-            <span class="npc-stat-control">
-              {{#if actorEditMode }}
-                <input class="input-window"
-                       type="number"
-                       name="system.secondary_attributes.vigilance.value"
-                       value="{{ system.secondary_attributes.vigilance.value }}"
-                       placeholder="0" />
-              {{else}}
-                <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.vigilance.value}}</span>
-              {{/if}}
-            </span>
-          </div>
-          <div class="resource flex-group-left">
-            <span class="npc-stat-label">{{ localize "FFXIV.Attributes.Speed" }}:</span>
-            <span class="npc-stat-control">
-              {{#if actorEditMode }}
-                <input class="input-window"
-                       type="number"
-                       name="system.secondary_attributes.speed.value"
-                       value="{{ system.secondary_attributes.speed.value }}"
-                       placeholder="0" />
-              {{else}}
-                <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.speed.value}}</span>
-              {{/if}}
-            </span>
-          </div>
-          <div class="resource flex-group-left">
-            <span class="npc-stat-label">{{ localize "FFXIV.Health.barrier" }}:</span>
-            <span class="npc-stat-control">
-              <input class="input-window"
-                     type="text"
-                     name="system.barrier.value"
-                     value="{{ system.barrier.value }}" />
+            <span class="npc-stat-control npc-health-gauge-wrap">
+              <div class="npc-health-row">
+                <div class="ffxiv-gauge health-gauge npc-health-gauge">
+                <div class="gauge-label" aria-hidden="true"></div>
+                <div class="health-border gauge-track">
+                  <div class="health-bar gauge-fill"></div>
+                  <div class="barrier-overlay"></div>
+                  <div class="barrier-overflow"></div>
+                  <div class="gauge-values">
+                    <input type="text"
+                           inputmode="numeric"
+                           class="health-input"
+                           value="{{ system.health.value }}"
+                           name="system.health.value" />
+                    <span class="gauge-divider">/</span>
+                    {{#if actorEditMode }}
+                      <input type="number"
+                             class="health-input"
+                             min="0"
+                             value="{{ system.health.max }}"
+                             name="system.health.max" />
+                    {{else}}
+                      <span class="health-input npc-health-max-readonly">{{system.health.max}}</span>
+                    {{/if}}
+                  </div>
+                </div>
+              </div>
+                <span class="barrier-chip">
+                  <span class="barrier-chip-label">{{ localize "FFXIV.Health.barrier" }}</span>
+                  <input type="text"
+                         inputmode="numeric"
+                         class="barrier-input"
+                         value="{{ system.barrier.value }}"
+                         name="system.barrier.value" />
+                </span>
+              </div>
+              <div class="resource flex-group-left npc-secondary-row">
+                <div class="npc-secondary-stat">
+                  <span class="npc-secondary-stat-label" title="{{ localize 'FFXIV.Attributes.Vigilance' }}">
+                    <span class="npc-stat-label npc-icon-label">
+                      {{#if settings.attributesImgVigilance }}
+                        <img src="{{ settings.attributesImgVigilance }}"
+                             alt="{{ localize 'FFXIV.Attributes.Vigilance' }}" width="20" height="20" />
+                      {{else}}
+                        {{ localize "FFXIV.Attributes.Vigilance" }}
+                      {{/if}}
+                    </span>
+                    <span class="npc-secondary-label">{{ localize "FFXIV.Attributes.Vigilance" }}</span>
+                  </span>
+                  <span class="npc-stat-control">
+                    {{#if actorEditMode }}
+                      <input class="input-window"
+                             type="number"
+                             name="system.secondary_attributes.vigilance.value"
+                             value="{{ system.secondary_attributes.vigilance.value }}"
+                             placeholder="0" />
+                    {{else}}
+                      <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.vigilance.value}}</span>
+                    {{/if}}
+                  </span>
+                </div>
+                <div class="npc-secondary-stat">
+                  <span class="npc-secondary-stat-label" title="{{ localize 'FFXIV.Attributes.Speed' }}">
+                    <span class="npc-stat-label npc-icon-label">
+                      {{#if settings.attributesImgSpeed }}
+                        <img src="{{ settings.attributesImgSpeed }}"
+                             alt="{{ localize 'FFXIV.Attributes.Speed' }}" width="20" height="20" />
+                      {{else}}
+                        {{ localize "FFXIV.Attributes.Speed" }}
+                      {{/if}}
+                    </span>
+                    <span class="npc-secondary-label">{{ localize "FFXIV.Attributes.Speed" }}</span>
+                  </span>
+                  <span class="npc-stat-control">
+                    {{#if actorEditMode }}
+                      <input class="input-window"
+                             type="number"
+                             name="system.secondary_attributes.speed.value"
+                             value="{{ system.secondary_attributes.speed.value }}"
+                             placeholder="0" />
+                    {{else}}
+                      <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.speed.value}}</span>
+                    {{/if}}
+                  </span>
+                </div>
+              </div>
             </span>
           </div>
         </div>

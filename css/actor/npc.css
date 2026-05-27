@@ -1,8 +1,13 @@
 .npc .profile-img {
   width: 100%;
   height: 100%;
-  border-color: var(--border-color-1);
-  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 4px;
+  box-sizing: border-box;
+  object-fit: contain;
+  object-position: center;
 }
 
 .npc h1 {
@@ -14,27 +19,72 @@
 }
 
 .npc .sheet-npc-header .charname {
-  font-size: 2.9em;
-  line-height: 1;
-  margin: 0 0 2px;
+  align-self: start;
+  box-sizing: border-box;
+  font-size: clamp(1.4rem, 2.2vw, 2rem);
+  line-height: 1.02;
+  margin: 0 0 6px;
   max-width: 100%;
+  padding: 0 56px;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .npc .sheet-npc-header .charname h1,
-.npc .sheet-npc-header .charname h1 input {
+.npc .sheet-npc-header .charname h1 input,
+.npc .sheet-npc-header .charname h1 textarea {
   height: auto;
-  line-height: 1;
+  line-height: 1.02;
   margin: 0;
   min-height: 0;
   padding: 0;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  width: 100%;
+  font-family: "Cinzel", serif;
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: inherit;
+}
+
+.npc .sheet-npc-header .charname h1 textarea {
+  min-height: calc(2 * 1.02em);
+  max-height: calc(2 * 1.02em);
+  resize: none;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  color: inherit;
 }
 
 .sheet-npc-header {
   align-items: stretch;
+  background: linear-gradient(90deg, rgba(167, 140, 87, 0.22) 0%, rgba(0, 0, 0, 0.1) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
-  margin-top: 2px;
+  gap: 10px;
+  margin-top: 0;
+  padding: 8px 10px 10px;
   position: relative;
+}
+
+.sheet-npc-header.npc-disposition-friendly {
+  background: linear-gradient(90deg, rgba(84, 146, 102, 0.26) 0%, rgba(30, 68, 44, 0.2) 48%, rgba(0, 0, 0, 0.1) 100%);
+}
+
+.sheet-npc-header.npc-disposition-hostile {
+  background: linear-gradient(90deg, rgba(150, 73, 73, 0.28) 0%, rgba(89, 37, 37, 0.22) 48%, rgba(0, 0, 0, 0.1) 100%);
+}
+
+.sheet-npc-header.npc-disposition-secret {
+  background: linear-gradient(90deg, rgba(167, 140, 87, 0.22) 0%, rgba(94, 77, 47, 0.18) 48%, rgba(0, 0, 0, 0.1) 100%);
 }
 
 .sheet-npc-header .charname {
@@ -43,13 +93,15 @@
 
 .sheet-npc-header-left {
   align-self: stretch;
-  min-height: 100%;
+  min-height: 190px;
   width: 190px;
+  display: flex;
+  align-items: center;
 }
 
 .sheet-npc-header-right {
   min-width: 0;
-  width: 100%
+  width: 100%;
 }
 
 .sheet-npc-header-right .header-fields,
@@ -59,7 +111,11 @@
 
 /*statblock*/
 .npc-statblock {
-  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(40, 40, 44, 0.3) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  padding: 12px;
   font-weight: bold;
 }
 
@@ -127,27 +183,34 @@
 
 .npc-main-stats {
   display: grid;
-  gap: 0.35em 1em;
-  grid-template-columns: minmax(13em, 1fr) minmax(10em, 0.75fr);
-  grid-template-rows: 28px 28px;
+  gap: 0.3em;
+  grid-template-columns: minmax(13em, 1fr);
+  grid-template-rows: auto;
 }
 
 .npc-main-stats .resource {
   align-items: center;
   display: grid;
   gap: 0.35em;
-  grid-template-columns: var(--npc-stat-label-width, 4.65em) max-content;
+  grid-template-columns: minmax(0, 1fr);
   justify-content: start;
   white-space: nowrap;
 }
 
-.npc-main-stats .resource:nth-child(2),
-.npc-main-stats .resource:nth-child(3) {
-  --npc-stat-label-width: 5.55em;
-}
-
 .npc-stat-label {
-  text-align: right;
+  background: linear-gradient(180deg, rgba(95, 95, 102, 0.66) 0%, rgba(62, 62, 68, 0.66) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  color: #ececec;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  min-height: 26px;
+  padding: 0 6px;
+  text-align: center;
 }
 
 .npc-stat-control {
@@ -156,42 +219,125 @@
   gap: 0.35em;
 }
 
+.npc-main-stats {
+  --npc-hp-track-offset: 36px;
+  --npc-secondary-icon-width: 22px;
+  --npc-secondary-icon-gap: 6px;
+  --npc-health-track-width: 180px;
+}
+
 .npc-main-stats .resource:first-child {
-  grid-row: 1;
-}
-
-.npc-main-stats .resource:nth-child(2) {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.npc-main-stats .resource:nth-child(3) {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.npc-main-stats .resource:nth-child(4) {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 1;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.npc-secondary-row {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35em;
+  padding-left: var(--npc-hp-track-offset);
+  margin-left: 0 !important;
+  margin-top: 4px;
+  width: auto;
+  max-width: 100%;
+}
+
+.npc-main-stats .resource.npc-secondary-row:has(.npc-stat-label.npc-icon-label) {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  max-width: max-content;
+}
+
+.npc-secondary-row {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.npc-secondary-stat {
+  display: grid;
+  grid-template-columns: auto 2.4em;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-width: 0;
+  flex: 0 0 auto;
+  border: 1px solid rgba(233, 199, 112, 0.34);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(58, 58, 62, 0.58) 0%, rgba(35, 35, 38, 0.68) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.08);
+  padding: 3px 6px;
+}
+
+.npc-secondary-stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.npc-secondary-label {
+  color: #ececec;
+  font-size: 1.05em;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  opacity: 0.95;
+  text-align: left;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.npc-secondary-stat .npc-stat-control {
+  justify-content: flex-start;
+}
+
+.npc-secondary-stat .npc-stat-number,
+.npc-secondary-stat .input-window {
+  min-width: 2.4em !important;
+  width: 2.4em !important;
+  text-align: center !important;
 }
 
 .npc-defense-table {
   display: grid;
-  grid-template-rows: 28px auto 28px;
+  grid-template-rows: auto auto auto;
   justify-self: end;
   min-width: min(100%, 16em);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  gap: 4px;
 }
 
 .npc-defense-heading {
+  color: #ececec;
+  font-size: 0.95em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   align-self: center;
   line-height: 1.2;
   text-align: center;
+  padding: 2px 8px;
 }
 
 .npc-defense-divider {
   align-self: center;
-  border-top: 1px solid var(--border-color-1);
-  opacity: 0.9;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  opacity: 1;
 }
 
 .npc-defense-values {
@@ -199,21 +345,27 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 28px;
+  gap: 8px;
 }
 
 .npc-defense-cell {
   align-items: center;
-  display: grid;
-  gap: 0.3em;
-  grid-template-columns: auto auto;
+  display: inline-flex;
+  gap: 0.45em;
   min-height: 28px;
   justify-content: center;
   white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 4px 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .npc-defense-cell+.npc-defense-cell {
-  border-left: 2px solid var(--border-color-1);
-  padding-left: 0.65em;
+  border-left: none;
+  padding-left: 0;
 }
 
 .npc-defense-icon {
@@ -228,25 +380,223 @@
   opacity: 0.85;
 }
 
+.npc-defense-cell .npc-stat-number,
+.npc-defense-cell .input-window {
+  min-width: 2.3em !important;
+  width: 2.3em !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  font-family: inherit !important;
+  font-size: 1em !important;
+  font-weight: 700 !important;
+  line-height: 28px !important;
+  letter-spacing: 0 !important;
+}
+
+.npc-defense-cell .npc-stat-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+}
+
+.npc-defense-cell .input-window {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+.npc-defense-cell .input-window:focus {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.npc-main-stats .resource .npc-stat-control > input.input-window {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 6px;
+}
+
+.npc-health-gauge-wrap {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.npc-health-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.npc-health-gauge {
+  width: var(--npc-health-track-width) !important;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  max-width: none;
+  min-width: 0 !important;
+  margin-left: 0;
+}
+
+.npc-health-gauge .gauge-label {
+  display: none;
+}
+
+.npc-health-gauge .gauge-track {
+  width: 100%;
+}
+
+.npc-health-gauge .gauge-values .health-input {
+  display: inline-block;
+}
+
+.npc-health-gauge .gauge-values {
+  justify-content: center;
+  padding-right: 0;
+}
+
+.npc-health-row .barrier-chip {
+  align-self: flex-end;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.npc-health-max-readonly {
+  min-width: 52px;
+  text-align: center;
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.95), 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.npc-main-stats .npc-stat-control .npc-stat-number,
+.npc-main-stats .npc-stat-control .input-window {
+  min-width: 2.4em !important;
+  width: 2.4em !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  font-family: inherit !important;
+  font-size: 1em !important;
+  font-weight: 700 !important;
+  line-height: 28px !important;
+  letter-spacing: 0 !important;
+}
+
+.npc-main-stats .npc-stat-control .npc-stat-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.npc-main-stats .npc-stat-control .input-window,
+.npc-defense-cell .input-window {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Make key NPC edit fields more visible in edit mode */
+.ffxiv.actor.npc.actor-editing input[name="system.secondary_attributes.vigilance.value"].input-window,
+.ffxiv.actor.npc.actor-editing input[name="system.secondary_attributes.speed.value"].input-window,
+.ffxiv.actor.npc.actor-editing input[name="system.secondary_attributes.defense.value"].input-window,
+.ffxiv.actor.npc.actor-editing input[name="system.secondary_attributes.magic_defense.value"].input-window {
+  background: rgba(20, 20, 24, 0.72) !important;
+  border: 1px solid rgba(233, 199, 112, 0.62) !important;
+  border-radius: 6px !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 225, 140, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.35) !important;
+  color: #f6f2e8 !important;
+}
+
+.npc-stat-label.npc-icon-label {
+  padding: 0;
+  justify-content: center;
+  min-height: 22px;
+  width: 22px;
+  min-width: 22px;
+  border-radius: 6px;
+}
+
+.npc-stat-label.npc-icon-label img {
+  border: none;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.85));
+}
+
+.npc-main-stats .resource:not(.npc-secondary-row):has(.npc-stat-label.npc-icon-label) {
+  --npc-stat-label-width: 2em;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(74, 74, 80, 0.44) 0%, rgba(46, 46, 52, 0.5) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  padding: 3px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  grid-template-columns: none;
+  justify-self: start;
+  width: max-content;
+  max-width: fit-content;
+}
+
+.npc-main-stats .resource:not(.npc-secondary-row):has(.npc-stat-label.npc-icon-label) .npc-stat-label {
+  flex: 0 0 auto;
+}
+
+.npc-main-stats .resource:not(.npc-secondary-row):has(.npc-stat-label.npc-icon-label) .npc-stat-control {
+  flex: 0 0 auto;
+  margin-left: 0;
+}
+
+.npc-main-stats .resource:not(.npc-secondary-row):has(.npc-stat-label.npc-icon-label) .npc-stat-control .input-window,
+.npc-main-stats .resource:not(.npc-secondary-row):has(.npc-stat-label.npc-icon-label) .npc-stat-control .npc-plain-value {
+  min-width: 2.4em;
+  width: 2.4em;
+  text-align: center;
+}
+
 .statblock-header {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   align-items: center;
-  column-gap: 1.5em;
-  row-gap: 0.35em;
-  background: linear-gradient(0deg, var(--gradient-color-3) 20%, var(--gradient-color-2) 50%, var(--gradient-color-3) 80%);
-  border-radius: 20px;
-  padding: 3px 20px;
+  column-gap: 0.5em;
+  row-gap: 0;
+  background: #4a4a4e;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 4px 12px;
   position: relative;
   z-index: 2;
 }
 
 .statblock-content {
-  padding: 42px 10px 1px 10px;
-  margin: -30px 3px 0 3px;
-  background: linear-gradient(90deg, var(--primary-color) 90%, var(--gradient-color-2) 100%);
-  border-radius: 5px;
+  padding: 38px 10px 8px;
+  margin: -24px 3px 0;
+  background: linear-gradient(180deg, rgba(60, 60, 66, 0.7) 0%, rgba(40, 40, 44, 0.76) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
   position: relative;
   z-index: 1
 }
@@ -263,6 +613,7 @@
 .statblock-header-left {
   flex-wrap: nowrap;
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .statblock-meta-line {
@@ -272,6 +623,20 @@
   margin-left: auto;
   min-width: min(100%, 24ch);
   white-space: nowrap;
+}
+
+.statblock-size-line .npc-specie {
+  margin-left: 0.15em;
+  flex: 0 1 auto;
+  width: auto !important;
+  min-width: 0;
+  max-width: none;
+  text-align: left;
+}
+
+.statblock-size-line .npc-plain-value.npc-specie,
+.statblock-size-line input.npc-specie {
+  text-align: left !important;
 }
 
 .statblock-vigilance {
@@ -357,6 +722,16 @@
   color: var(--text-color-input);
 }
 
+.npc-statblock .statblock-size-line select.input-transparent {
+  width: auto;
+  min-width: 0;
+  max-width: 10.5em;
+  height: 24px;
+  min-height: 24px;
+  line-height: 24px;
+  padding: 0 1.35em 0 0.35em;
+}
+
 .npc-statblock select.input-transparent option {
   background: var(--option-background-color);
   color: var(--text-color-input);
@@ -386,8 +761,12 @@
 }
 
 .npc nav.nav-sub-tabs .sub-tab {
-  flex: 0 0 var(--npc-tab-width);
-  width: var(--npc-tab-width);
+  flex: 0 0 var(--npc-tab-width) !important;
+  width: var(--npc-tab-width) !important;
+  min-height: 28px;
+  padding: 3px 8px !important;
+  font-size: 12px;
+  line-height: 1.1;
 }
 
 .npc nav.nav-sub-tabs .npc-add-ability {
@@ -422,4 +801,88 @@
   left: auto;
   right: calc((100% - (2 * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
   clip-path: polygon(15% 0, 100% 0, 100% 100%, 15% 100%, 0 50%);
+}
+
+.ffxiv.actor.npc .sheet-body,
+.ffxiv.actor.npc .actor-abilities {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.ffxiv.actor.npc .actor-abilities {
+  padding: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 100%;
+}
+
+@media (max-width: 780px) {
+  .ffxiv.actor.npc .npc-combat-stats {
+    grid-template-columns: 1fr;
+    gap: 0.75em;
+  }
+
+  .ffxiv.actor.npc .npc-defense-table {
+    justify-self: stretch;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .ffxiv.actor.npc .npc-defense-values {
+    justify-items: center;
+  }
+}
+
+/* NPC primary attribute roll controls: align with player-sheet button language */
+.npc-statblock .resources.grid-5col .resource {
+  border: 1px solid rgba(233, 199, 112, 0.34);
+  border-radius: 8px;
+  padding: 6px 6px 8px;
+  background: linear-gradient(180deg, rgba(58, 58, 62, 0.78) 0%, rgba(35, 35, 38, 0.88) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.npc-statblock .resources.grid-5col .resource .resource-label.roll-attribute {
+  align-items: center;
+  background: linear-gradient(180deg, rgba(80, 64, 36, 0.7) 0%, rgba(50, 39, 20, 0.7) 100%);
+  border: 1px solid rgba(227, 196, 117, 0.65);
+  border-radius: 6px;
+  color: #efd699;
+  cursor: pointer;
+  display: flex;
+  font-size: 11px;
+  font-weight: 700;
+  justify-content: center;
+  gap: 6px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  min-height: 24px;
+  padding: 3px 6px;
+  text-transform: uppercase;
+  width: 100%;
+  margin: 0;
+}
+
+.npc-statblock .resources.grid-5col .resource .resource-label.roll-attribute i {
+  color: #f8e3b3;
+  font-size: 11px;
+}
+
+.npc-statblock .resources.grid-5col .resource .resource-label.roll-attribute:hover {
+  box-shadow: 0 0 0 1px rgba(255, 226, 143, 0.4), inset 0 0 5px rgba(255, 231, 177, 0.15);
+}
+
+/* Keep race inline with size row; override generic npc-specie sizing rules. */
+.sheet-npc-header .statblock-size-line .npc-plain-value.npc-specie,
+.sheet-npc-header .statblock-size-line input.npc-specie {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin-left: 0.15em !important;
+  text-align: left !important;
 }

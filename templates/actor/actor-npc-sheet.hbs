@@ -1,13 +1,12 @@
 <div class="{{cssClass}} {{actor.type}} flexcol">
   {{!-- Sheet Header --}}
-  <header class="sheet-npc-header">
+  <header class="sheet-npc-header npc-disposition-{{npcHeaderDisposition}}">
     <div class="charname">
       {{#if actorEditMode }}
         <h1>
-          <input name="name"
-                 type="text"
-                 value="{{actor.name}}"
-                 placeholder="{{localize 'FFXIV.Name'}}" />
+          <textarea name="name"
+                    rows="2"
+                    placeholder="{{localize 'FFXIV.Name'}}">{{actor.name}}</textarea>
         </h1>
       {{else}}
         <h1>{{actor.name}}</h1>
@@ -49,9 +48,10 @@
     <div class="chip"></div>
   </a>
 </nav>
-{{!-- Sheet Body --}}
-<section class="sheet-body">
-  <div class="tab fight actor-abilities"
+<div class="sheet-body-wrapper">
+  {{!-- Sheet Body --}}
+  <section class="sheet-body modern-tab-layout">
+    <div class="tab fight actor-abilities modern-panel"
        data-group="primary"
        data-tab="fight">
     {{#each (sortAbilities items system.ability_order "primary_ability") }}
@@ -111,8 +111,17 @@
 </div>
 </div>
 {{/each}}
-</div>
-<div class="tab traits actor-abilities"
+{{#unless hasNpcFightAbilities}}
+  <div class="abilities-empty-hint">
+    {{#if actorEditMode}}
+      Drag an Ability item onto this sheet, or use the + button to create one.
+    {{else}}
+      No abilities yet. Enable edit mode to use +, or drag an Ability item onto this sheet.
+    {{/if}}
+  </div>
+{{/unless}}
+  </div>
+  <div class="tab traits actor-abilities modern-panel"
      data-group="primary"
      data-tab="traits">
   {{#each (reverse items) }}
@@ -120,7 +129,7 @@
       {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
     {{/if}}
   {{/each}}
-  {{#each (sortAbilities items system.ability_order "trait") }}
+{{#each (sortAbilities items system.ability_order "trait") }}
     <div class="ability-container">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
       <div class="move-buttons">
@@ -139,6 +148,16 @@
   </div>
 </div>
 {{/each}}
+{{#unless hasNpcTraitAbilities}}
+  <div class="abilities-empty-hint">
+    {{#if actorEditMode}}
+      Drag a Trait or Limit Break onto this sheet, or use the + button to create one.
+    {{else}}
+      No traits yet. Enable edit mode to use +, or drag a Trait/Limit Break onto this sheet.
+    {{/if}}
+  </div>
+{{/unless}}
+  </div>
+  </section>
 </div>
-</section>
 </div>

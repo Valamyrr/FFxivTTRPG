@@ -146,6 +146,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       "attributesImgMagicDefense": this._settingOrDefault("attributesImgMagicDefense", DEFAULT_ATTRIBUTE_ICONS),
       "attributesImgVigilance": this._settingOrDefault("attributesImgVigilance", DEFAULT_ATTRIBUTE_ICONS)
     }
+    context.npcHeaderDisposition = this._getNpcHeaderDisposition();
 
     if (actorData.type === 'character') {
       this._prepareItems(context);
@@ -174,6 +175,18 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (actorData.type === 'npc' || actorData.type === 'pet') {
       this._prepareItems(context);
       this._prepareSharedData(context);
+      const fightAbilityTypes = new Set(["primary_ability", "secondary_ability", "instant_ability"]);
+      const hasFightAbilities = (context.items || []).some((item) => fightAbilityTypes.has(getAbilitySubtype(item)));
+      const hasTraits = (context.items || []).some((item) => item.type === "trait");
+      const hasLimitBreak = (context.items || []).some((item) => getAbilitySubtype(item) === "limit_break");
+
+      if (actorData.type === "npc") {
+        context.hasNpcFightAbilities = hasFightAbilities;
+        context.hasNpcTraitAbilities = hasTraits || hasLimitBreak;
+      } else {
+        context.hasPetFightAbilities = hasFightAbilities;
+        context.hasPetTraitAbilities = hasTraits;
+      }
     }
 
     if (!skipEnrichment) {
@@ -190,6 +203,16 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     context.effects = prepareActiveEffectCategories(this.actor.allApplicableEffects());
     return context;
+  }
+
+  _getNpcHeaderDisposition() {
+    if (this.actor?.type !== "npc") return "secret";
+    const disposition = Number(this.token?.disposition ?? this.actor?.prototypeToken?.disposition);
+    const tokenDispositions = CONST?.TOKEN_DISPOSITIONS ?? {};
+    if (disposition === Number(tokenDispositions.FRIENDLY)) return "friendly";
+    if (disposition === Number(tokenDispositions.HOSTILE)) return "hostile";
+    if (disposition === Number(tokenDispositions.SECRET)) return "secret";
+    return "secret";
   }
 
   _cacheEnrichedContext(context) {
@@ -253,10 +276,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     if (this.actor.type == "character") {
       this._updateManaBar();
-      this._updateHealthBar();
       this._applyStoredAbilityTab();
       this._applyStoredCompanionTab();
-    };
+    }
+
+    if (this.actor.type === "character" || this.actor.type === "npc") {
+      this._updateHealthBar();
+    }
 
     this._restoreSheetScroll();
 
@@ -282,16 +308,33 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         updateData["system.health.value"] = Math.max(0, nextMax);
       }
     }
+    if (this.actor.type === "npc" && event.target.name === "system.size") {
+      const SIZE_DIMENSIONS = {
+        Small: [1, 1],
+        Medium: [1, 1],
+        Large: [2, 2],
+        Huge: [3, 3],
+        Colossal: [4, 4]
+      };
+      const [width, height] = SIZE_DIMENSIONS[String(updateValue)] || [1, 1];
+      updateData["prototypeToken.width"] = width;
+      updateData["prototypeToken.height"] = height;
+    }
     this.document.update(updateData, { render: false }).then(() => {
       this._syncResourceInputValue(event.target);
       if (event.target.name === "system.health.max") {
         const healthInput = this.element.querySelector('input[name="system.health.value"]');
         if (healthInput) healthInput.value = Number(this.actor.system?.health?.value ?? 0);
       }
+      if (event.target.name === "system.size" && this.actor.type === "npc") {
+        const widthInput = this.element.querySelector('input[name="prototypeToken.width"]');
+        const heightInput = this.element.querySelector('input[name="prototypeToken.height"]');
+        if (widthInput) widthInput.value = Number(this.actor.prototypeToken?.width ?? 1);
+        if (heightInput) heightInput.value = Number(this.actor.prototypeToken?.height ?? 1);
+      }
       this._updateSecondaryAttributeModifierFields();
-      if (this.actor.type !== "character") return;
-      this._updateManaBar();
-      this._updateHealthBar();
+      if (this.actor.type === "character") this._updateManaBar();
+      if (this.actor.type === "character" || this.actor.type === "npc") this._updateHealthBar();
       if (event.target.name === "system.banner") this._updateHeaderBanner(event.target.value);
     }).catch(err => ui.notifications.error(err, { console: true }));
   }
@@ -379,6 +422,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @override */
   async _onFirstRender(context, options) {
     if (typeof super._onFirstRender === "function") await super._onFirstRender(context, options);
+    if (this.actor?.type === "npc") {
+      const defaultHeight = Number(this.constructor.DEFAULT_OPTIONS?.position?.height ?? 735);
+      const currentHeight = Number(this.position?.height);
+      if (Number.isFinite(currentHeight) && Math.abs(currentHeight - defaultHeight) < 1) {
+        this.setPosition({ height: 830 });
+      }
+    }
     this._playConfiguredSound("soundNotificationFFXIV_openSheet");
   }
 
@@ -1022,27 +1072,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }
 
-    if (this.actor.type == "npc") {
-      // Scale NPC tokens based on size category.
-      html.find('select[name="system.size"]').off("change.ffxivActorSheet").on("change.ffxivActorSheet", async (event) => {
-        const SIZE_DIMENSIONS = {
-          "Small": [1, 1],
-          "Medium": [1, 1],
-          "Large": [2, 2],
-          "Huge": [3, 3],
-          "Colossal": [4, 4]
-        };
-
-        const newSize = event.currentTarget.value;
-        const [width, height] = SIZE_DIMENSIONS[newSize] || [1, 1];
-
-        await this.actor.update({
-          "prototypeToken.width": width,
-          "prototypeToken.height": height
-        });
-      });
-    }
-
     // Add linebreaks to rich text ability descriptions.
     // Since for whatever reason, it seems to hate including those when saving the descriptions.
     // Inserts a <br> tag after every <p> except the last.
@@ -1142,7 +1171,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }
 
-    const abilityTypes = ["primary_ability", "secondary_ability", "instant_ability", "limit_break"];
+    const abilityTypes = ["primary_ability", "secondary_ability", "instant_ability"];
     const createAbility = async (type) => {
       const label = game.i18n.localize(`FFXIV.ItemType.${type}`);
       await this._createEmbeddedItem({

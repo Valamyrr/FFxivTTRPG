@@ -364,16 +364,16 @@
   text-align: center;
 }
 
-.ffxiv.actor.character .abilities-tab-content.modern-panel {
+.ffxiv.actor:is(.character, .npc, .pet) .abilities-tab-content.modern-panel {
   padding: 12px;
 }
 
-.ffxiv.actor.character .actor-abilities:not(.actor-companions) .abilities-tab-content.modern-panel {
+.ffxiv.actor:is(.character, .npc, .pet) .actor-abilities:not(.actor-companions) .abilities-tab-content.modern-panel {
   background: linear-gradient(180deg, rgba(24, 24, 26, 0.92) 0%, rgba(34, 34, 38, 0.92) 100%);
 }
 
-.ffxiv.actor.character .abilities-sub-tabs,
-.ffxiv.actor.character .companions-sub-tabs {
+.ffxiv.actor:is(.character, .npc, .pet) .abilities-sub-tabs,
+.ffxiv.actor:is(.character, .npc, .pet) .companions-sub-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
@@ -383,8 +383,8 @@
   filter: none;
 }
 
-.ffxiv.actor.character .sub-tab,
-.ffxiv.actor.character .companions-sub-tab {
+.ffxiv.actor:is(.character, .npc, .pet) .sub-tab,
+.ffxiv.actor:is(.character, .npc, .pet) .companions-sub-tab {
   align-items: center;
   box-sizing: border-box;
   clip-path: none;
@@ -405,63 +405,75 @@
   text-align: center;
 }
 
-.ffxiv.actor.character .sub-tab .chip,
-.ffxiv.actor.character .companions-sub-tab .chip {
+.ffxiv.actor:is(.character, .npc, .pet) .sub-tab .chip,
+.ffxiv.actor:is(.character, .npc, .pet) .companions-sub-tab .chip {
   display: none;
 }
 
-.ffxiv.actor.character .ability-card,
-.ffxiv.actor.character .pet-card,
-.ffxiv.actor.character .augment-card {
+.ffxiv.actor:is(.character, .npc, .pet) .ability-card,
+.ffxiv.actor:is(.character, .npc, .pet) .pet-card,
+.ffxiv.actor:is(.character, .npc, .pet) .augment-card {
   border-radius: 10px;
 }
 
-.ffxiv.actor.character .move-buttons button {
+.ffxiv.actor:is(.character, .npc, .pet) .move-buttons button {
   border-radius: 6px;
 }
 
-.ffxiv.actor.character.blue_theme .actor-abilities .ability-card {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .actor-abilities .ability-card {
   border-color: rgba(156, 199, 255, 0.48);
   background: linear-gradient(180deg, rgba(28, 62, 126, 0.86) 0%, rgba(17, 43, 95, 0.9) 100%);
 }
 
-.ffxiv.actor.character.blue_theme .actor-abilities:not(.actor-companions) .abilities-tab-content.modern-panel {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .actor-abilities:not(.actor-companions) .abilities-tab-content.modern-panel {
   background: linear-gradient(180deg, rgba(21, 46, 92, 0.88) 0%, rgba(27, 57, 110, 0.88) 100%);
 }
 
-.ffxiv.actor.character.blue_theme .actor-abilities .ability-card-info {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .actor-abilities .ability-card-info {
   background: linear-gradient(180deg, rgba(61, 125, 217, 0.78) 0%, rgba(46, 101, 188, 0.8) 60%, rgba(32, 79, 154, 0.86) 100%);
 }
 
-.ffxiv.actor.character.blue_theme .actor-abilities .ability-header {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .actor-abilities .ability-header {
   border-bottom-color: rgba(190, 221, 255, 0.6);
   box-shadow: 0 7px 3px -2px rgba(8, 27, 70, 0.7);
 }
 
-.ffxiv.actor.character.blue_theme .actor-abilities .ability-roll-button,
-.ffxiv.actor.character.blue_theme .pet-ability-roll-button {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .actor-abilities .ability-roll-button,
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .pet-ability-roll-button {
   background: linear-gradient(180deg, rgba(43, 100, 188, 0.88) 0%, rgba(27, 73, 143, 0.9) 100%);
   color: #d7ebff;
 }
 
-.ffxiv.actor.character.blue_theme .actor-abilities .ability-roll-button::before,
-.ffxiv.actor.character.blue_theme .pet-ability-roll-button::before {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .actor-abilities .ability-roll-button::before,
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .pet-ability-roll-button::before {
   background: linear-gradient(to right, rgba(152, 201, 255, 0.38) 0%, rgba(152, 201, 255, 0.15) 55%, rgba(0, 0, 0, 0) 100%);
 }
 
-.ffxiv.actor.character.blue_theme .actor-abilities .ability-roll-button:hover,
-.ffxiv.actor.character.blue_theme .pet-ability-roll-button:hover {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .actor-abilities .ability-roll-button:hover,
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .pet-ability-roll-button:hover {
   color: #ffffff !important;
 }
 
-.ffxiv.actor.character.blue_theme .abilities-sub-tabs .sub-tab {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .abilities-sub-tabs .sub-tab {
   background: linear-gradient(180deg, rgba(33, 78, 152, 0.75) 0%, rgba(20, 52, 111, 0.78) 100%);
   border-color: rgba(160, 206, 255, 0.62);
   color: #dff0ff;
   box-shadow: inset 0 0 0 1px rgba(194, 225, 255, 0.14);
 }
 
-.ffxiv.actor.character.blue_theme .abilities-sub-tabs .sub-tab.active {
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .abilities-sub-tabs .sub-tab.active {
   background: linear-gradient(180deg, rgba(62, 127, 216, 0.8) 0%, rgba(38, 94, 176, 0.84) 100%);
   box-shadow: inset 0 0 0 1px rgba(208, 232, 255, 0.22);
+}
+
+.abilities-empty-hint {
+  margin: 6px 0 10px;
+  padding: 10px 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(240, 240, 240, 0.9);
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.35;
 }
