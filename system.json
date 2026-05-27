@@ -6,7 +6,7 @@
     "minimum": "14",
     "verified": "14.363"
   },
-  "version": "4.0.1-dev",
+  "version": "4.0.2",
   "authors": [
     {
       "name": "Valamyrr",
@@ -91,8 +91,8 @@
     }
   ],
   "url": "https://github.com/Valamyrr/FFxivTTRPG",
-  "manifest": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v4.0.0-dev/system.json",
-  "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v4.0.0-dev/system.zip",
+  "manifest": "https://github.com/Valamyrr/FFxivTTRPG/releases/latest/download/system.json",
+  "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v4.0.2/system.zip",
   "license": "LICENSE.txt",
   "socket": true
 }
