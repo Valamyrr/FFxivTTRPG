@@ -1,5 +1,9 @@
-<nav class="sheet-tabs tabs nav-{{system.class.role}} {{#unless settings.tabHue}}no-{{/unless}}hue" data-group="primary" style="{{#if (and (eq limited true) (eq displayLimited false)) }}display:none;{{/if}}">
-  {{#each items}}
-  <a class="item" data-tab="{{tab}}" title="{{label}}"><img src="{{icon}}"></img></a>
-  {{/each}}
+<nav class="sheet-tabs tabs nav-{{system.class.role}} {{#unless settings.tabHue}}no-{{/unless}}hue"
+     data-group="primary"
+     {{#if (and (eq limited true) (eq displayLimited false)) }}hidden{{/if }}>
+  {{#each items }}
+    <a class="item" data-tab="{{tab}}" title="{{label}}">
+      <img src="{{icon}}" alt="{{label}}" width="32" height="32" />
+  </a>
+{{/each}}
 </nav>

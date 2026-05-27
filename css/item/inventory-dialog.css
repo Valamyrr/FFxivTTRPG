@@ -1,32 +1,45 @@
-.ffxiv.item .window-content:has(.limited-display){
+.ffxiv.item .window-content:has(.limited-display) {
+  overflow: hidden;
   padding: 0
 }
-.ffxiv.item:has(.limited-display) .window-resizable-handle{
+
+.ffxiv.item:has(.limited-display) .window-resizable-handle {
   display: none;
 }
 
 
 /* Rarity Title*/
+.text-rarity-basic,
 .limited-display .text-rarity-basic {
   color: var(--rarity-basic);
   text-shadow: var(--shadow-improve-readability-white);
 }
+
+.text-rarity-green,
 .limited-display .text-rarity-green {
   color: var(--rarity-green);
   text-shadow: var(--shadow-improve-readability-light);
 }
+
+.text-rarity-aetherial,
 .limited-display .text-rarity-aetherial {
   color: var(--rarity-aetherial);
   text-shadow: var(--shadow-improve-readability-light);
 }
+
+.text-rarity-blue,
 .limited-display .text-rarity-blue {
   color: var(--rarity-blue);
   text-shadow: var(--shadow-improve-readability-light);
 }
+
+.text-rarity-relic,
 .limited-display .text-rarity-relic {
   color: var(--rarity-relic);
   text-shadow: var(--shadow-improve-readability-dark);
 }
+
+.text-rarity-unique,
 .limited-display .text-rarity-unique {
   color: var(--rarity-unique);
   text-shadow: var(--shadow-improve-readability-dark);
@@ -42,7 +55,7 @@
   overflow: hidden;
 }
 
-.item-card strong{
+.item-card strong {
   color: var(--text-color-strong);
 }
 
@@ -52,7 +65,7 @@
   min-height: 66px;
 }
 
-.item-card .item-dialog-header{
+.item-card .item-dialog-header {
   border-bottom: solid 2px var(--border-color-2);
   box-shadow: 0px 7px 3px -2px var(--border-shadow-1);
   display: inline-block;
@@ -71,6 +84,10 @@
   margin: 5px 5px 5px 0;
 }
 
+.limited-display .item-dialog-icon {
+  cursor: default;
+}
+
 .item-card .item-dialog-name {
   font-size: 1.4em;
   display: inline;
@@ -81,7 +98,7 @@
   display: inline;
 }
 
-.item-card .item-dialog-tags{
+.item-card .item-dialog-tags {
   display: inline-block;
   vertical-align: super;
 }
@@ -97,6 +114,12 @@
   padding-top: 5px;
 }
 
+.item-card .item-dialog-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+
 .item-card .detail {
   display: inline-block;
   margin-right: 3px;
@@ -105,11 +128,14 @@
 .item-card .item-dialog-effects {
   padding: 5px;
 }
-.item-dialog-effects td{ /*modifiers table*/
+
+.item-dialog-effects td {
+  /*modifiers table*/
   width: 33.33%;
   padding: 1px;
 }
-.item-card .item-dialog-effects table{
+
+.item-card .item-dialog-effects table {
   width: 100%;
   border-collapse: collapse;
   background: rgba(0, 0, 0, 0.05);
@@ -117,8 +143,24 @@
   border-bottom: 1px solid var(--border-color-1);
   margin: 0.5em 0;
 }
+
 .item-card .effect {
   display: inline-block;
+}
+
+.item-card .item-dialog-effects-stacked .effect {
+  display: block;
+}
+
+.item-card .item-dialog-flavor {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.item-card .item-dialog-flavor *,
+.item-card .item-dialog-flavor strong {
+  font-style: italic;
+  font-weight: 400 !important;
 }
 
 .item-card .item-dialog-roll-button {
@@ -132,18 +174,20 @@
   transition: color 0.2s ease;
 }
 
-.item-card .item-dialog-button:hover{
+.item-card .item-dialog-button:hover {
   box-shadow: none;
   color: var(--text-color);
 }
-.item-card .item-dialog-button:focus{
-  box-shadow: none;
-}
-.item-card .item-dialog-button:active{
+
+.item-card .item-dialog-button:focus {
   box-shadow: none;
 }
 
-.ability-description{
+.item-card .item-dialog-button:active {
+  box-shadow: none;
+}
+
+.ability-description {
   padding: 10px;
 }
 
@@ -155,20 +199,38 @@
 
 /* Quantity buttons */
 
-.quantity-form{
-  margin: auto;
-  width: fit-content;
+.quantity-form {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+  margin: 4px 0 0 auto;
+  white-space: nowrap;
+  width: 100%;
 }
-.item-qty-btn{
+
+.quantity-form .detail {
+  display: inline-flex;
+  margin-right: 0;
+}
+
+.item-qty-btn {
   width: 1.5em;
   line-height: 1em;
 }
-.ffxiv.item .item-card .quantity-form .delete{
+
+.ffxiv.item .item-card .quantity-form .delete {
+  align-items: center;
   color: red;
   border-color: red;
-  width: fit-content;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 6px;
+  width: auto;
 }
-.gear-equip{
+
+.gear-equip {
   padding: 1px;
 }
 
@@ -188,7 +250,8 @@
   overflow: hidden;
   width: calc(100% + 10px)
 }
-.item-roll-button:hover{
+
+.item-roll-button:hover {
   box-shadow: none;
   color: var(--invert-text-color) !important;
 }
@@ -200,20 +263,24 @@
   left: 0;
   width: 0;
   height: 100%;
-  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0, 0, 0, 0) 100%);
   z-index: -1;
-  transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
+  transition: width 0.4s cubic-bezier(.8, .8, 1, .8);
+  /*cubic-bezier(.64,.14,.62,1.05)*/
 }
+
 .item-roll-button:hover::before {
   width: 150%;
 }
 
-.item-button:hover{
+.item-button:hover {
   box-shadow: none;
 }
-.item-roll-button:focus{
+
+.item-roll-button:focus {
   box-shadow: none;
 }
-.item-roll-button:active{
+
+.item-roll-button:active {
   box-shadow: none;
 }

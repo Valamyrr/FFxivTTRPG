@@ -1,3 +1,85 @@
-.ffxiv.sheet.item .sub-tab{
-  width: 33.33%
+.ffxiv.item.minion-mount-sheet .sheet-tabs.nav-sub-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 10px;
+  width: 100%;
+}
+
+.ffxiv.item.minion-mount-sheet .sheet-tabs.nav-sub-tabs .sub-tab {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 calc(50% - 4px);
+  justify-content: center;
+  margin: 4px 0;
+  min-height: 25px;
+  position: relative;
+  text-align: center;
+  width: calc(50% - 4px);
+}
+
+.ffxiv.item.minion-mount-sheet .sheet-tabs.nav-sub-tabs .sub-tab .chip {
+  background: var(--chip-color);
+  border-radius: 2px;
+  bottom: 3px;
+  height: 5px;
+  left: 12px;
+  margin: 0;
+  position: absolute;
+  transform: rotate(35deg);
+  width: 10px;
+}
+
+.ffxiv.item.minion-mount-sheet .sheet-tabs.nav-sub-tabs .sub-tab.active .chip {
+  background: var(--chip-color-active);
+}
+
+.ffxiv.item.minion-mount-sheet .details-tab {
+  padding: 2px 2px 6px;
+}
+
+.ffxiv.item.minion-mount-sheet .minion-details-card {
+  background: linear-gradient(180deg, rgba(255, 248, 228, 0.1) 0%, rgba(0, 0, 0, 0.14) 100%);
+  border: 1px solid rgba(190, 161, 122, 0.65);
+  border-radius: 8px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  padding: 10px;
+}
+
+.ffxiv.item.minion-mount-sheet .minion-details-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.ffxiv.item.minion-mount-sheet .minion-meta-pill {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(190, 161, 122, 0.65);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 9px;
+}
+
+.ffxiv.item.minion-mount-sheet .minion-details-section+.minion-details-section {
+  margin-top: 10px;
+}
+
+.ffxiv.item.minion-mount-sheet .minion-details-section h3 {
+  border: 0;
+  font-size: 14px;
+  line-height: 1.1;
+  margin: 0 0 6px;
+}
+
+.ffxiv.item.minion-mount-sheet .minion-details-editor {
+  min-height: 120px;
+}
+
+.ffxiv.item.minion-mount-sheet .minion-details-editor .editor-content {
+  min-height: 110px;
 }

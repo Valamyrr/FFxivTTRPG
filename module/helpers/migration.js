@@ -4,11 +4,11 @@
  * @returns {*}
  */
 export function migrateDataToSystem(updateData) {
-  if (Object.keys(updateData).includes('data')) {
-    if (Object.keys(updateData).includes('system')) {
+  if (Object.keys(updateData).includes("data")) {
+    if (Object.keys(updateData).includes("system")) {
       updateData.system = foundry.utils.mergeObject(
-          updateData.system,
-          updateData.data,
+        updateData.system,
+        updateData.data,
       );
     } else {
       updateData.system = updateData.data;
@@ -16,8 +16,8 @@ export function migrateDataToSystem(updateData) {
     delete updateData.data;
   }
   for (const curKey of Object.keys(updateData)) {
-    if (curKey.includes('data.')) {
-      updateData[curKey.replace('data.', 'system.')] = updateData[curKey];
+    if (curKey.includes("data.")) {
+      updateData[curKey.replace("data.", "system.")] = updateData[curKey];
       delete updateData[curKey];
     }
   }

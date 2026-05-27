@@ -1,74 +1,163 @@
-<form class="{{cssClass}} {{actor.type}} flexcol" autocomplete="off">
-
+<div class="{{cssClass}} {{actor.type}} flexcol">
   {{!-- Sheet Header --}}
-  <header class="sheet-npc-header">
-    <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
-    <div class="sheet-npc-header-left">
-      <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}"/>
+  <header class="sheet-npc-header npc-disposition-{{npcHeaderDisposition}}">
+    <div class="charname">
+      {{#if actorEditMode }}
+        <h1>
+          <textarea name="name"
+                    rows="2"
+                    placeholder="{{localize 'FFXIV.Name'}}">{{actor.name}}</textarea>
+        </h1>
+      {{else}}
+        <h1>{{actor.name}}</h1>
+      {{/if}}
     </div>
-    <div class="sheet-npc-header-right">
-      <div class="header-fields">
-        {{> "systems/ffxiv/templates/actor/parts/actor-npc-statblock.hbs"}}
-      </div>
-    </div>
-  </header>
-
-  {{!-- Sheet Tab Navigation --}}
-  <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
-    <a class="sub-tab" data-tab="fight">{{ localize "FFXIV.Abilities.Abilities" }}<div class="chip"></div></a>
-    <a class="sub-tab" data-tab="traits">{{ localize "FFXIV.Abilities.TraitsShort" }}<div class="chip"></div></a>
-  </nav>
-
+    {{#if editable }}
+    <button type="button"
+            class="actor-edit-toggle {{#if actorEditMode }}active{{/if }}"
+            aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet'}}"
+            aria-pressed="{{#if actorEditMode }}true{{else }}false{{/if}}"
+            title="{{#if actorEditMode }}{{localize 'FFXIV.CharacterSheet.LockSheet' }}{{else}}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+      <i class="fa-solid {{#if actorEditMode }}fa-lock-open{{else }}fa-lock{{/if}}"></i>
+    </button>
+  {{/if}}
+  <div class="sheet-npc-header-left">
+    <img class="profile-img actor-avatar"
+         src="{{actor.img}}"
+         {{#if actorEditMode }}
+         data-edit="img"
+         {{/if }}
+         title="{{actor.name}}"
+         alt="avatar"  width="32" height="32" />
+  </div>
+  <div class="sheet-npc-header-right">
+    <div class="header-fields">{{> "systems/ffxiv/templates/actor/parts/actor-npc-statblock.hbs"}}</div>
+  </div>
+</header>
+{{!-- Sheet Tab Navigation --}}
+<nav class="sheet-tabs nav-sub-tabs" data-group="primary">
+  {{#if editable }}
+    <button type="button" class="npc-add-ability" title="Add Ability">
+      <i class="fa-solid fa-plus"></i>
+    </button>
+  {{/if}}
+  <a class="sub-tab" data-tab="fight">{{ localize "FFXIV.Abilities.Abilities" }}
+    <div class="chip"></div>
+  </a>
+  <a class="sub-tab" data-tab="traits">{{ localize "FFXIV.Abilities.TraitsShort" }}
+    <div class="chip"></div>
+  </a>
+</nav>
+<div class="sheet-body-wrapper">
   {{!-- Sheet Body --}}
-  <section class="sheet-body">
-    <div class="tab fight actor-abilities" data-group="primary" data-tab="fight">
-      {{#each (sortAbilities items system.ability_order "primary_ability")}}
-        <div class="ability-container">
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-          <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="primary_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="primary_ability">▼</button>{{/unless}}
-          </div>
-        </div>
-      {{/each}}
-
-      {{#each (sortAbilities items system.ability_order "secondary_ability")}}
-        <div class="ability-container">
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-          <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="secondary_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="secondary_ability">▼</button>{{/unless}}
-          </div>
-        </div>
-      {{/each}}
-
-      {{#each (sortAbilities items system.ability_order "instant_ability")}}
-        <div class="ability-container">
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-          <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="instant_ability">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="instant_ability">▼</button>{{/unless}}
-          </div>
-        </div>
-      {{/each}}
+  <section class="sheet-body modern-tab-layout">
+    <div class="tab fight actor-abilities modern-panel"
+       data-group="primary"
+       data-tab="fight">
+    {{#each (sortAbilities items system.ability_order "primary_ability") }}
+      <div class="ability-container">
+        {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+        <div class="move-buttons">
+          {{#unless @first}}
+          <button type="button"
+                  class="move-up"
+                  data-item-id="{{_id}}"
+                  data-type="primary_ability">▲</button>
+        {{/unless}}
+        {{#unless @last}}
+        <button type="button"
+                class="move-down"
+                data-item-id="{{_id}}"
+                data-type="primary_ability">▼</button>
+      {{/unless}}
     </div>
-
-    <div class="tab traits actor-abilities" data-group="primary" data-tab="traits">
-      {{#each (reverse items)}}
-        {{#if (eq type "limit_break")}}
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
-        {{/if}}
-      {{/each}}
-
-      {{#each (sortAbilities items system.ability_order "trait")}}
-        <div class="ability-container">
-          {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
-          <div class="move-buttons">
-            {{#unless @first}}<button class="move-up" data-item-id="{{_id}}" data-type="trait">▲</button>{{/unless}}
-            {{#unless @last}}<button class="move-down" data-item-id="{{_id}}" data-type="trait">▼</button>{{/unless}}
-          </div>
-        </div>
-      {{/each}}
-    </div>
+  </div>
+{{/each}}
+{{#each (sortAbilities items system.ability_order "secondary_ability") }}
+  <div class="ability-container">
+    {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+    <div class="move-buttons">
+      {{#unless @first}}
+      <button type="button"
+              class="move-up"
+              data-item-id="{{_id}}"
+              data-type="secondary_ability">▲</button>
+    {{/unless}}
+    {{#unless @last}}
+    <button type="button"
+            class="move-down"
+            data-item-id="{{_id}}"
+            data-type="secondary_ability">▼</button>
+  {{/unless}}
+</div>
+</div>
+{{/each}}
+{{#each (sortAbilities items system.ability_order "instant_ability") }}
+  <div class="ability-container">
+    {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+    <div class="move-buttons">
+      {{#unless @first}}
+      <button type="button"
+              class="move-up"
+              data-item-id="{{_id}}"
+              data-type="instant_ability">▲</button>
+    {{/unless}}
+    {{#unless @last}}
+    <button type="button"
+            class="move-down"
+            data-item-id="{{_id}}"
+            data-type="instant_ability">▼</button>
+  {{/unless}}
+</div>
+</div>
+{{/each}}
+{{#unless hasNpcFightAbilities}}
+  <div class="abilities-empty-hint">
+    {{#if actorEditMode}}
+      Drag an Ability item onto this sheet, or use the + button to create one.
+    {{else}}
+      No abilities yet. Enable edit mode to use +, or drag an Ability item onto this sheet.
+    {{/if}}
+  </div>
+{{/unless}}
+  </div>
+  <div class="tab traits actor-abilities modern-panel"
+     data-group="primary"
+     data-tab="traits">
+  {{#each (reverse items) }}
+    {{#if (isAbilitySubtype this "limit_break") }}
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
+    {{/if}}
+  {{/each}}
+{{#each (sortAbilities items system.ability_order "trait") }}
+    <div class="ability-container">
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
+      <div class="move-buttons">
+        {{#unless @first}}
+        <button type="button"
+                class="move-up"
+                data-item-id="{{_id}}"
+                data-type="trait">▲</button>
+      {{/unless}}
+      {{#unless @last}}
+      <button type="button"
+              class="move-down"
+              data-item-id="{{_id}}"
+              data-type="trait">▼</button>
+    {{/unless}}
+  </div>
+</div>
+{{/each}}
+{{#unless hasNpcTraitAbilities}}
+  <div class="abilities-empty-hint">
+    {{#if actorEditMode}}
+      Drag a Trait or Limit Break onto this sheet, or use the + button to create one.
+    {{else}}
+      No traits yet. Enable edit mode to use +, or drag a Trait/Limit Break onto this sheet.
+    {{/if}}
+  </div>
+{{/unless}}
+  </div>
   </section>
-</form>
+</div>
+</div>

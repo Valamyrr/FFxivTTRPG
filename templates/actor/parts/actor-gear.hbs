@@ -1,20 +1,28 @@
-<table class="gear-bonuses">
-    <thead>
-        <tr>
-            <th>Attribute</th>
-            {{#each (gearBonuses actor.items) as |item|}}
-                <th><img src="{{item.img}}" title="{{item.name}}" width="32" height="32"></th>
+<div class="gear-summary modern-panel">
+  {{#if (gearBonuses actor.items) }}
+    <table class="gear-bonuses">
+        <thead>
+            <tr>
+                <th>Attribute</th>
+                {{#each (gearBonuses actor.items) as |item| }}
+                    <th>
+                        <img src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="32" height="32">
+                    </th>
+                {{/each}}
+            </tr>
+        </thead>
+        <tbody>
+            {{#each (attributeList) as |attr| }}
+                <tr>
+                    <td>{{attr}}</td>
+                    {{#each (getAttributeBonus (gearBonuses ../actor.items) attr) }}
+                        <td>{{this}}</td>
+                    {{/each}}
+                </tr>
             {{/each}}
-        </tr>
-    </thead>
-    <tbody>
-        {{#each (attributeList) as |attr|}}
-        <tr>
-            <td>{{attr}}</td>
-            {{#each (getAttributeBonus (gearBonuses ../actor.items) attr)}}
-                <td>{{this}}</td>
-            {{/each}}
-        </tr>
-        {{/each}}
-    </tbody>
-</table>
+        </tbody>
+    </table>
+  {{else}}
+    <p class="gear-summary-empty">{{ localize "FFXIV.CharacterSheet.NoEquippedGear" }}</p>
+  {{/if}}
+</div>

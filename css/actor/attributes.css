@@ -1,108 +1,236 @@
-.ffxiv.actor .actor-attributes-tab > *:not(hr){
-  padding: 5px;
-  margin: 5px;
-}
-
-.actor-attributes-tab h2{
-  text-decoration: none;
-  border: none;
-  margin: auto;
-  width: fit-content;
-  padding: 15px 0 5px 0
-}
-
-.primary-attributes-list{
+.ffxiv.actor .actor-attributes-tab {
   display: flex;
-  width: 100%;
-  margin: 10px 0 10px 0;
-}
-.primary-attribute{
-  flex-grow:1;
-  text-align: center;
-}
-.primary_attribute .label{
-  font-weight: bold;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.meteor-value{
-  height: 68px;
-  width: 68px;
-  position: relative;
-  margin: auto;
-}
-.meteor-value img{
-  height: 68px;
-  width: 68px;
-  border: none;
-  position: relative;
-}
-.meteor-value .value{
-  position: absolute;
-  margin:0;
-  top:50%;
-  left: 50%;
-  transform: translate(-48%, -49%);
-}
-.meteor-value input.value{
-  width: 30px;
-  border: none;
-}
-.meteor-value input.value:focus{
-  border-radius: 1000px;
-  box-shadow: 0px 0px 0px 3px silver;
-}
-.roll-attribute{
-  cursor: pointer;
+.ffxiv.actor .actor-attributes-tab h2 {
+  border: 0;
+  margin: 0 0 8px;
+  padding: 0;
+  color: #e4cc85;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.85);
 }
 
-
-/* Secondary Attributes */
-.secondary-attributes{
-  margin: 10px 0 10px 0
-}
-.s-attribute-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  margin-top: 10px;
-}
-.s-attribute-card {
+.ffxiv.actor .attribute-panel {
+  border: 1px solid rgba(216, 188, 112, 0.62);
+  border-radius: 10px;
   padding: 10px;
-  border: 1px solid var(--secondary-color);
-  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(36, 36, 36, 0.93) 0%, rgba(19, 19, 19, 0.95) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 233, 173, 0.09);
+}
+
+.ffxiv.actor .primary-attributes-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ffxiv.actor .primary-attribute-card {
+  border: 1px solid rgba(233, 199, 112, 0.45);
+  border-radius: 8px;
+  padding: 7px 6px 8px;
+  background: linear-gradient(180deg, rgba(60, 60, 60, 0.8) 0%, rgba(34, 34, 34, 0.9) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ffxiv.actor .primary-roll-trigger {
   align-items: center;
+  background: linear-gradient(180deg, rgba(80, 64, 36, 0.7) 0%, rgba(50, 39, 20, 0.7) 100%);
+  border: 1px solid rgba(227, 196, 117, 0.65);
+  border-radius: 6px;
+  color: #efd699;
+  cursor: pointer;
+  display: flex;
+  font-size: 11px;
+  font-weight: 700;
   justify-content: space-between;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  min-height: 24px;
+  padding: 3px 6px;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.ffxiv.actor .primary-roll-trigger i {
+  color: #f8e3b3;
+  font-size: 11px;
+}
+
+.ffxiv.actor .primary-roll-trigger:hover {
+  box-shadow: 0 0 0 1px rgba(255, 226, 143, 0.4), inset 0 0 5px rgba(255, 231, 177, 0.15);
+}
+
+.ffxiv.actor .primary-attribute-values {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.ffxiv.actor input.primary-attribute-input {
+  background: rgba(17, 17, 17, 0.85);
+  border: 1px solid rgba(255, 220, 127, 0.32);
+  border-radius: 6px;
+  color: #f5f5f5;
+  font-size: 15px;
+  font-weight: 700;
+  height: 30px;
+  line-height: 30px;
+  min-height: 30px;
+  min-width: 0;
+  padding: 0 6px;
   text-align: center;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.95);
 }
-.s-attribute-header{
+
+.ffxiv.actor .secondary-attributes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ffxiv.actor .secondary-attribute-card {
+  border: 1px solid rgba(216, 188, 112, 0.4);
+  border-radius: 8px;
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(49, 49, 49, 0.82) 0%, rgba(25, 25, 25, 0.9) 100%);
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
 }
-.s-attribute-header img {
-  width: 28px;
-  height: 28px;
-  border: none;
-}
-.s-attribute-info {
-  margin-top:5px;
+
+.ffxiv.actor .secondary-attribute-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 7px;
 }
-.s-attribute-name {
-  margin-top: 2px;
-  margin-left: 5px;
+
+.ffxiv.actor .secondary-attribute-header img {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.85));
+}
+
+.ffxiv.actor .secondary-attribute-name {
+  color: #e6ce88;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.ffxiv.actor .secondary-attribute-values {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+}
+
+.ffxiv.actor input.secondary-attribute-input,
+.ffxiv.actor .secondary-attribute-input {
+  background: rgba(16, 16, 16, 0.84);
+  border: 1px solid rgba(255, 220, 127, 0.32);
+  border-radius: 6px;
+  color: #f5f5f5;
   font-size: 14px;
-  color: var(--text-color);
-  font-weight: bold;
-}
-.s-attribute-value {
-  width: 60px;
+  font-weight: 700;
+  height: 30px;
+  line-height: 30px;
+  min-height: 30px;
+  min-width: 0;
+  padding: 0 6px;
   text-align: center;
-  background: #393939;
-  color: var(--text-color);
-  border: 1px solid #a3a3a3;
-  border-radius: 3px;
-  flex:1
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.95);
+}
+
+.ffxiv.actor .secondary-attribute-modifier {
+  color: #f6de9e;
+}
+
+.ffxiv.actor .secondary-attribute-unit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d9d9d9;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.ffxiv.actor.blue_theme .actor-attributes-tab h2 {
+  color: #d9ebff;
+  text-shadow: 0 0 4px rgba(0, 28, 84, 0.86);
+}
+
+.ffxiv.actor.blue_theme .attribute-panel {
+  border-color: rgba(137, 186, 255, 0.68);
+  background: linear-gradient(180deg, rgba(16, 42, 97, 0.93) 0%, rgba(9, 26, 66, 0.95) 100%);
+  box-shadow: inset 0 0 0 1px rgba(175, 213, 255, 0.2);
+}
+
+.ffxiv.actor.blue_theme .primary-attribute-card {
+  border-color: rgba(163, 206, 255, 0.46);
+  background: linear-gradient(180deg, rgba(43, 88, 172, 0.83) 0%, rgba(24, 54, 111, 0.9) 100%);
+}
+
+.ffxiv.actor.blue_theme .primary-roll-trigger {
+  background: linear-gradient(180deg, rgba(73, 129, 213, 0.78) 0%, rgba(44, 86, 162, 0.8) 100%);
+  border-color: rgba(170, 214, 255, 0.7);
+  color: #e7f3ff;
+}
+
+.ffxiv.actor.blue_theme .primary-roll-trigger i {
+  color: #f2f8ff;
+}
+
+.ffxiv.actor.blue_theme .primary-roll-trigger:hover {
+  box-shadow: 0 0 0 1px rgba(168, 213, 255, 0.56), inset 0 0 5px rgba(219, 237, 255, 0.22);
+}
+
+.ffxiv.actor.blue_theme input.primary-attribute-input {
+  background: rgba(11, 30, 72, 0.86);
+  border-color: rgba(159, 203, 255, 0.44);
+  color: #f2f8ff;
+  text-shadow: 0 0 3px rgba(0, 23, 66, 0.95);
+}
+
+.ffxiv.actor.blue_theme .secondary-attribute-card {
+  border-color: rgba(159, 203, 255, 0.43);
+  background: linear-gradient(180deg, rgba(37, 77, 151, 0.84) 0%, rgba(19, 44, 95, 0.9) 100%);
+}
+
+.ffxiv.actor.blue_theme .secondary-attribute-name {
+  color: #d3e8ff;
+}
+
+.ffxiv.actor.blue_theme input.secondary-attribute-input,
+.ffxiv.actor.blue_theme .secondary-attribute-input {
+  background: rgba(11, 30, 72, 0.86);
+  border-color: rgba(159, 203, 255, 0.44);
+  color: #f2f8ff;
+  text-shadow: 0 0 3px rgba(0, 23, 66, 0.95);
+}
+
+.ffxiv.actor.blue_theme .secondary-attribute-modifier {
+  color: #cbe4ff;
+}
+
+.ffxiv.actor.blue_theme .secondary-attribute-unit {
+  color: #d6e9ff;
+}
+
+@media (max-width: 860px) {
+  .ffxiv.actor .primary-attributes-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ffxiv.actor .secondary-attributes-grid {
+    grid-template-columns: 1fr;
+  }
 }

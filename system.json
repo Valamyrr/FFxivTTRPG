@@ -4,9 +4,9 @@
   "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
   "compatibility": {
     "minimum": "14",
-    "verified": "14.359"
+    "verified": "14.363"
   },
-  "version": "3.0.1",
+  "version": "4.0.1-dev",
   "authors": [
     {
       "name": "Valamyrr",
@@ -22,8 +22,8 @@
   "media": [
     {
       "type": "setup",
-      "url": "systems/ffxiv/assets/header_logo.png",
-      "thumbnail": "systems/ffxiv/assets/header_logo.png"
+      "url": "systems/ffxiv/assets/header-logo.webp",
+      "thumbnail": "systems/ffxiv/assets/header-logo.webp"
     }
   ],
   "esmodules": ["module/ffxiv.mjs"],
@@ -38,6 +38,9 @@
       "pet": {}
     },
     "Item": {
+      "ability": {
+        "htmlFields": ["description"]
+      },
       "consumable": {
         "htmlFields": ["description"]
       },
@@ -56,9 +59,6 @@
       "trait": {
         "htmlFields": ["description"]
       },
-      "currency": {
-        "htmlFields": ["description"]
-      },
       "title": {
         "htmlFields": ["description"]
       },
@@ -69,6 +69,9 @@
         "htmlFields": ["description", "traits"]
       },
       "augment": {
+        "htmlFields": ["description"]
+      },
+      "job": {
         "htmlFields": ["description"]
       }
     }
@@ -88,8 +91,8 @@
     }
   ],
   "url": "https://github.com/Valamyrr/FFxivTTRPG",
-  "manifest": "https://github.com/Valamyrr/FFxivTTRPG/releases/latest/download/system.json",
-  "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v3.0.1/system.zip",
+  "manifest": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v4.0.0-dev/system.json",
+  "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v4.0.0-dev/system.zip",
   "license": "LICENSE.txt",
   "socket": true
 }

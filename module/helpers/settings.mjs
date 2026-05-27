@@ -1,7 +1,294 @@
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
+  constructor(options = {}) {
+    options.id ??= `ffxiv-${new.target.menuId}`;
+    options.window ??= {};
+    options.window.title ??= game.i18n.localize(new.target.titleKey);
+    super(options);
+  }
+
+  static DEFAULT_OPTIONS = {
+    classes: ["ffxiv", "settings-submenu"],
+    position: {
+      width: 560,
+      height: 640,
+    },
+    window: {
+      resizable: true,
+    },
+  };
+
+  static PARTS = {
+    sheet: {
+      template: "systems/ffxiv/templates/settings-submenu.hbs",
+      scrollable: [".settings-list"],
+    },
+  };
+
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    const placeholders = this.constructor.placeholders ?? {};
+    context.settings = this.constructor.settingKeys.map((key) => {
+      const config = game.settings.settings.get(`ffxiv.${key}`);
+      const value = game.settings.get("ffxiv", key);
+      const type = config?.type;
+      return {
+        key,
+        name: this._localize(config?.name ?? key),
+        hint: this._localize(config?.hint ?? ""),
+        value,
+        disabled: config?.scope === "world" && !game.user.isGM,
+        isBoolean: type === Boolean,
+        isNumber: type === Number,
+        isString: type === String,
+        pickerType: config?.filePicker,
+        min: config?.range?.min,
+        max: config?.range?.max,
+        step: config?.range?.step,
+        hasMin: config?.range?.min !== undefined,
+        hasMax: config?.range?.max !== undefined,
+        hasStep: config?.range?.step !== undefined,
+        placeholder: placeholders[key] ?? "",
+      };
+    });
+    return context;
+  }
+
+  _localize(value) {
+    if (!value) return "";
+    return game.i18n.localize(value);
+  }
+
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+    this._settingsController?.abort();
+    this._settingsController = new AbortController();
+    const { signal } = this._settingsController;
+
+    this.element.querySelectorAll("[data-file-picker]").forEach((button) => {
+      button.addEventListener("click", (event) => this._onFilePicker(event), {
+        signal,
+      });
+    });
+
+    const form = this.element.querySelector("form");
+    form?.addEventListener(
+      "submit",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      },
+      { capture: true, signal },
+    );
+
+    this.element
+      .querySelector("[data-action='save-settings']")
+      ?.addEventListener(
+        "click",
+        async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const reload = await this._saveSettings();
+          await this.close();
+          if (reload.required) {
+            await foundry.applications.settings.SettingsConfig.reloadConfirm({
+              world: reload.world,
+            });
+          }
+        },
+        { signal },
+      );
+  }
+
+  async _onClose(options) {
+    this._settingsController?.abort();
+    this._settingsController = null;
+    await super._onClose(options);
+  }
+
+  _onFilePicker(event) {
+    event.preventDefault();
+    const button = event.currentTarget;
+    const input = this.element.querySelector(
+      `[name="${button.dataset.target}"]`,
+    );
+    if (!input) return;
+
+    const FilePickerImpl = foundry.applications.apps.FilePicker.implementation;
+    new FilePickerImpl({
+      type: button.dataset.filePicker,
+      current: input.value,
+      callback: (path) => (input.value = path),
+    }).render(true);
+  }
+
+  async _saveSettings() {
+    const form = this.element.querySelector("form");
+    if (!form) return { required: false, world: false };
+
+    const changedScopes = new Set();
+    const updates = this.constructor.settingKeys.map(async (key) => {
+      const config = game.settings.settings.get(`ffxiv.${key}`);
+      const input = form.elements[key];
+      if (!config || !input) return;
+      if (config.scope === "world" && !game.user.isGM) return;
+
+      let value = input.value;
+      if (config.type === Boolean) value = input.checked;
+      else if (config.type === Number) value = Number(value);
+
+      const current = game.settings.get("ffxiv", key);
+      if (current === value) return;
+
+      changedScopes.add(config.scope);
+      await game.settings.set("ffxiv", key, value);
+    });
+    await Promise.all(updates);
+    return {
+      required: changedScopes.size > 0,
+      world: changedScopes.has("world"),
+    };
+  }
+}
+
+class FFXIVSoundSettingsMenu extends FFXIVSettingsSubmenu {
+  static menuId = "sound-settings";
+  static titleKey = "FFXIV.Settings.SoundSettingsMenu";
+  static settingKeys = [
+    "soundNotificationFFXIV_critical",
+    "soundNotificationFFXIV_deleteItem",
+    "soundNotificationFFXIV_moveItem",
+    "soundNotificationFFXIV_enterChat",
+    "soundNotificationFFXIV_openSheet",
+    "soundNotificationFFXIV_closeSheet",
+  ];
+}
+
+class FFXIVIconSettingsMenu extends FFXIVSettingsSubmenu {
+  static menuId = "icon-settings";
+  static titleKey = "FFXIV.Settings.IconSettingsMenu";
+  static settingKeys = [
+    "attributesImgDefense",
+    "attributesImgMagicDefense",
+    "attributesImgVigilance",
+    "attributesImgSpeed",
+  ];
+  static placeholders = {
+    attributesImgDefense: "systems/ffxiv/assets/attribute-icons/rampart.webp",
+    attributesImgMagicDefense: "systems/ffxiv/assets/attribute-icons/dark-mind.webp",
+    attributesImgVigilance: "systems/ffxiv/assets/attribute-icons/duty-finder.webp",
+    attributesImgSpeed: "systems/ffxiv/assets/attribute-icons/sightseeing-log.webp",
+  };
+}
+
+class FFXIVTabIconSettingsMenu extends FFXIVSettingsSubmenu {
+  static menuId = "tab-icon-settings";
+  static titleKey = "FFXIV.Settings.TabIconSettingsMenu";
+  static settingKeys = [
+    "hueTabsIcons",
+    "imgTabAbilities",
+    "imgTabAttributes",
+    "imgTabRoleplay",
+    "imgTabItems",
+    "imgTabCompanions",
+    "imgTabSettings",
+  ];
+  static placeholders = {
+    imgTabAbilities: "systems/ffxiv/assets/tab-icons/actions-and-traits.webp",
+    imgTabAttributes: "systems/ffxiv/assets/tab-icons/pvp-profile.webp",
+    imgTabRoleplay: "systems/ffxiv/assets/tab-icons/character.webp",
+    imgTabItems: "systems/ffxiv/assets/tab-icons/inventory.webp",
+    imgTabCompanions: "systems/ffxiv/assets/tab-icons/companions.webp",
+    imgTabSettings: "systems/ffxiv/assets/tab-icons/system-configuration.webp",
+  };
+}
+
+class FFXIVCustomTagsSettingsMenu extends FFXIVSettingsSubmenu {
+  static menuId = "custom-tags-settings";
+  static titleKey = "FFXIV.Settings.CustomTagsSettingsMenu";
+  static settingKeys = [
+    "customAbilityTags",
+    "customTraitTags",
+    "customConsumableTags",
+  ];
+  static placeholders = {
+    customAbilityTags: "Arcane, Bleed, Teleport",
+    customTraitTags: "Passive, Stance, Combo",
+    customConsumableTags: "Elixir, Tonic, Field Kit",
+  };
+}
+
+class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(
+  ApplicationV2,
+) {
+  static menuId = "migration-tools";
+  static DEFAULT_OPTIONS = {
+    id: "ffxiv-migration-tools",
+    classes: ["ffxiv", "settings-submenu"],
+    position: {
+      width: 520,
+      height: "auto",
+    },
+    window: {
+      title: "FFXIV Migration Tools",
+      resizable: false,
+    },
+  };
+
+  static PARTS = {
+    sheet: {
+      template: "systems/ffxiv/templates/migration-tools.hbs",
+    },
+  };
+
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    context.currentVersion =
+      game.settings.get("ffxiv", "itemMigrationVersion") || "(none)";
+    return context;
+  }
+
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+    this._controller?.abort();
+    this._controller = new AbortController();
+    const { signal } = this._controller;
+
+    this.element
+      .querySelector("[data-action='run-item-migration']")
+      ?.addEventListener(
+        "click",
+        async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!game.user.isGM) {
+            ui.notifications.warn("Only a GM can run item migration.");
+            return;
+          }
+
+          const runButton = event.currentTarget;
+          runButton.disabled = true;
+          try {
+            await game.ffxivttrpg?.runItemMigration?.(true);
+          } finally {
+            runButton.disabled = false;
+            this.render({ force: true });
+          }
+        },
+        { signal },
+      );
+  }
+
+  async _onClose(options) {
+    this._controller?.abort();
+    this._controller = null;
+    await super._onClose(options);
+  }
+}
+
 export class SettingsHelpers {
-
-  static initSettings(){
-
+  static initSettings() {
     game.settings.register("ffxiv", "debugLogging", {
       name: game.i18n.localize("FFXIV.Settings.DebugLogging"),
       hint: game.i18n.localize("FFXIV.Settings.DebugLoggingHint"),
@@ -9,7 +296,52 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: false
+      requiresReload: false,
+    });
+
+    game.settings.registerMenu("ffxiv", "soundSettingsMenu", {
+      name: game.i18n.localize("FFXIV.Settings.SoundSettingsMenu"),
+      label: game.i18n.localize("FFXIV.Settings.OpenSettingsMenu"),
+      hint: game.i18n.localize("FFXIV.Settings.SoundSettingsMenuHint"),
+      icon: "fas fa-volume-high",
+      type: FFXIVSoundSettingsMenu,
+      restricted: true,
+    });
+
+    game.settings.registerMenu("ffxiv", "iconSettingsMenu", {
+      name: game.i18n.localize("FFXIV.Settings.IconSettingsMenu"),
+      label: game.i18n.localize("FFXIV.Settings.OpenSettingsMenu"),
+      hint: game.i18n.localize("FFXIV.Settings.IconSettingsMenuHint"),
+      icon: "fas fa-icons",
+      type: FFXIVIconSettingsMenu,
+      restricted: true,
+    });
+
+    game.settings.registerMenu("ffxiv", "tabIconSettingsMenu", {
+      name: game.i18n.localize("FFXIV.Settings.TabIconSettingsMenu"),
+      label: game.i18n.localize("FFXIV.Settings.OpenSettingsMenu"),
+      hint: game.i18n.localize("FFXIV.Settings.TabIconSettingsMenuHint"),
+      icon: "fas fa-table-cells-large",
+      type: FFXIVTabIconSettingsMenu,
+      restricted: false,
+    });
+
+    game.settings.registerMenu("ffxiv", "customTagsSettingsMenu", {
+      name: game.i18n.localize("FFXIV.Settings.CustomTagsSettingsMenu"),
+      label: game.i18n.localize("FFXIV.Settings.OpenSettingsMenu"),
+      hint: game.i18n.localize("FFXIV.Settings.CustomTagsSettingsMenuHint"),
+      icon: "fas fa-tags",
+      type: FFXIVCustomTagsSettingsMenu,
+      restricted: true,
+    });
+
+    game.settings.registerMenu("ffxiv", "migrationToolsMenu", {
+      name: "Migration Tools",
+      label: "Open Tools",
+      hint: "Run system item-data migration on demand.",
+      icon: "fas fa-arrows-rotate",
+      type: FFXIVMigrationToolsMenu,
+      restricted: true,
     });
 
     game.settings.register("ffxiv", "overrideColorScheme", {
@@ -19,47 +351,26 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: true
+      requiresReload: true,
     });
 
-    game.settings.register("ffxiv", "soundNotificationFFxiv", {
-      name: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxiv"),
-      hint: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivHint"),
+    game.settings.register("ffxiv", "soundNotificationFFXIV", {
+      name: "FFXIV.Settings.SoundNotificationFFXIV",
+      hint: "FFXIV.Settings.SoundNotificationFFXIVHint",
       scope: "client",
       config: true,
       default: true,
       type: Boolean,
-      requiresReload: false
+      requiresReload: false,
     });
-    game.settings.register("ffxiv", "soundNotificationFFxivVolume", {
-      name: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivVolume"),
-      hint: game.i18n.localize("FFXIV.Settings.SoundNotificationFFxivHintVolume"),
-      scope: "client",
-      config: true,
-      type: Number,
-      default: 0.5,
-      range: {min: 0, max: 1, step: 0.01},
-      requiresReload: false
-    });
-
-    game.settings.register("ffxiv", "limitedPhysicalItemsDialog", {
-      name: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialog"),
-      hint: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialogHint"),
-      scope: "client",
-      config: true,
-      default: true,
-      type: Boolean,
-      requiresReload: false
-    });
-
     game.settings.register("ffxiv", "hueTabsIcons", {
-      name: game.i18n.localize("FFXIV.Settings.HueTabsIcons"),
-      hint: game.i18n.localize("FFXIV.Settings.HueTabsIconsHint"),
+      name: "FFXIV.Settings.HueTabsIcons",
+      hint: "FFXIV.Settings.HueTabsIconsHint",
       scope: "client",
-      config: true,
+      config: false,
       default: false,
       type: Boolean,
-      requiresReload: false
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "toggleGear", {
@@ -69,7 +380,28 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: false
+      requiresReload: true,
+    });
+
+    game.settings.register("ffxiv", "lockArtworkRotationGlobal", {
+      name: game.i18n.localize("FFXIV.Settings.LockArtworkRotationGlobal"),
+      hint: game.i18n.localize("FFXIV.Settings.LockArtworkRotationGlobalHint"),
+      scope: "world",
+      config: true,
+      default: true,
+      type: Boolean,
+      onChange: (value) => {
+        if (!value || !game.user?.isGM) return;
+        Promise.resolve(
+          game.ffxivttrpg?.applyGlobalArtworkRotationLock?.(),
+        ).catch((error) =>
+          console.error(
+            "FFXIV | Failed to apply global artwork rotation lock",
+            error,
+          ),
+        );
+      },
+      requiresReload: false,
     });
 
     game.settings.register("ffxiv", "legacyManaClickBehavior", {
@@ -79,47 +411,57 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: true
+      requiresReload: true,
     });
 
-    game.settings.register("ffxiv", "useRarity", {
-      name: game.i18n.localize("FFXIV.Settings.UseRarity"),
-      hint: game.i18n.localize("FFXIV.Settings.UseRarityHint"),
-      scope: "world",
+    game.settings.register("ffxiv", "autoRollDirectHitDamage", {
+      name: game.i18n.localize("FFXIV.Settings.AutoRollDirectHitDamage"),
+      hint: game.i18n.localize("FFXIV.Settings.AutoRollDirectHitDamageHint"),
+      scope: "client",
       config: true,
-      default: false,
+      default: true,
       type: Boolean,
-      requiresReload: false
+      requiresReload: false,
     });
 
     game.settings.register("ffxiv", "customAbilityTags", {
-      name: game.i18n.localize("FFXIV.Settings.CustomAbilityTags"),
-      hint: game.i18n.localize("FFXIV.Settings.CustomTagsHint"),
+      name: "FFXIV.Settings.CustomAbilityTags",
+      hint: "FFXIV.Settings.CustomTagsHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "Physical,Ranged,Magic,Unique,Primary,Secondary,Instant,Invoked,Gem,Wind-Aspected,Fire-Aspected,Earth-Aspected,Water-Aspected,Lightning-Aspected,Ice-Aspected,Thunder Spell,Flurry,Poison,Song,Ninjutsu,Technique,Pet,Limit Break,Stationary Marker,Mobile Marker",
-      requiresReload: true
+      default: "",
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "customTraitTags", {
-      name: game.i18n.localize("FFXIV.Settings.CustomTraitTags"),
-      hint: game.i18n.localize("FFXIV.Settings.CustomTagsHint"),
+      name: "FFXIV.Settings.CustomTraitTags",
+      hint: "FFXIV.Settings.CustomTagsHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "Trait,Enhancement,Job Resource,Machine",
-      requiresReload: true
+      default: "",
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "customConsumableTags", {
-      name: game.i18n.localize("FFXIV.Settings.CustomConsumableTags"),
-      hint: game.i18n.localize("FFXIV.Settings.CustomTagsHint"),
+      name: "FFXIV.Settings.CustomConsumableTags",
+      hint: "FFXIV.Settings.CustomTagsHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "Primary,Secondary,Instant,Physical,Consumable,Meal,Rest,Utility,Wind-Aspected,Fire-Aspected,Earth-Aspected,Water-Aspected,Lightning-Aspected,Ice-Aspected",
-      requiresReload: true
+      default: "",
+      requiresReload: true,
+    });
+
+    game.settings.register("ffxiv", "itemMigrationVersion", {
+      name: "Item migration version",
+      hint: "Internal setting used to track one-time item data migration progress.",
+      scope: "world",
+      config: false,
+      default: "",
+      type: String,
+      requiresReload: false,
     });
 
     game.settings.register("ffxiv", "jobsAbbrv", {
@@ -129,199 +471,180 @@ export class SettingsHelpers {
       config: true,
       default: "MNK,DRG,NIN,BRD,MCH,BLM,SMN,WHM,SCH,AST,DRK,WAR,PLD",
       type: String,
-      requiresReload: true
+      requiresReload: true,
     });
 
-    game.settings.register("ffxiv", "attributesImg", {
-      name: game.i18n.localize("FFXIV.Settings.AttributesImg"),
-      hint: game.i18n.localize("FFXIV.Settings.AttributesImgHint"),
+    game.settings.register("ffxiv", "soundNotificationFFXIV_critical", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_critical",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
-      config: true,
-      default: "systems/ffxiv/assets/circle.png",
-      type: String,
-      requiresReload: false,
-      filePicker: "image"
-    });
-
-    game.settings.register("ffxiv", "soundNotificationFFxiv_critical", {
-      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_critical"),
-      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
-      scope: "world",
-      config: true,
+      config: false,
       default: "",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
-    game.settings.register("ffxiv", "soundNotificationFFxiv_deleteItem", {
-      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_deleteItem"),
-      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+    game.settings.register("ffxiv", "soundNotificationFFXIV_deleteItem", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_deleteItem",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
-      config: true,
-      default: "",
+      config: false,
+      default: "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
-    game.settings.register("ffxiv", "soundNotificationFFxiv_moveItem", {
-      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_moveItem"),
-      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+    game.settings.register("ffxiv", "soundNotificationFFXIV_moveItem", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_moveItem",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
-      config: true,
-      default: "",
+      config: false,
+      default: "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
-    game.settings.register("ffxiv", "soundNotificationFFxiv_enterChat", {
-      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_enterChat"),
-      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+    game.settings.register("ffxiv", "soundNotificationFFXIV_enterChat", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_enterChat",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
-      config: true,
-      default: "",
+      config: false,
+      default: "systems/ffxiv/assets/sfx/ffxiv-full-party.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
-    game.settings.register("ffxiv", "soundNotificationFFxiv_openSheet", {
-      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_openSheet"),
-      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+    game.settings.register("ffxiv", "soundNotificationFFXIV_openSheet", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_openSheet",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
-      config: true,
-      default: "",
+      config: false,
+      default: "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
-    game.settings.register("ffxiv", "soundNotificationFFxiv_closeSheet", {
-      name: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_closeSheet"),
-      hint: game.i18n.localize("FFXIV.Settings.soundNotificationFFxiv_Hint"),
+    game.settings.register("ffxiv", "soundNotificationFFXIV_closeSheet", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_closeSheet",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
-      config: true,
-      default: "",
+      config: false,
+      default: "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
-    });
-
-    game.settings.register("ffxiv", "attributesImg", {
-      name: game.i18n.localize("FFXIV.Settings.AttributesImg"),
-      hint: game.i18n.localize("FFXIV.Settings.AttributesImgHint"),
-      scope: "world",
-      config: true,
-      default: "systems/ffxiv/assets/circle.png",
-      type: String,
-      requiresReload: false,
-      filePicker: "image"
+      filePicker: "media",
     });
 
     game.settings.register("ffxiv", "attributesImgDefense", {
-      name: game.i18n.localize("FFXIV.Settings.AttributesImgDefense"),
+      name: "FFXIV.Settings.AttributesImgDefense",
       hint: "",
       scope: "world",
-      config: true,
+      config: false,
       default: "",
       type: String,
-      requiresReload: false,
-      filePicker: "image"
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "attributesImgMagicDefense", {
-      name: game.i18n.localize("FFXIV.Settings.AttributesImgMagicDefense"),
+      name: "FFXIV.Settings.AttributesImgMagicDefense",
       hint: "",
       scope: "world",
-      config: true,
+      config: false,
       default: "",
       type: String,
-      requiresReload: false,
-      filePicker: "image"
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "attributesImgVigilance", {
-      name: game.i18n.localize("FFXIV.Settings.AttributesImgVigilance"),
+      name: "FFXIV.Settings.AttributesImgVigilance",
       hint: "",
       scope: "world",
-      config: true,
+      config: false,
       default: "",
       type: String,
-      requiresReload: false,
-      filePicker: "image"
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "attributesImgSpeed", {
-      name: game.i18n.localize("FFXIV.Settings.AttributesImgSpeed"),
+      name: "FFXIV.Settings.AttributesImgSpeed",
       hint: "",
       scope: "world",
-      config: true,
+      config: false,
       default: "",
       type: String,
-      requiresReload: false,
-      filePicker: "image"
+      requiresReload: true,
+      filePicker: "image",
     });
 
     game.settings.register("ffxiv", "imgTabAbilities", {
-      name: game.i18n.localize("FFXIV.Settings.TabAbilitiesImg"),
-      hint: game.i18n.localize("FFXIV.Settings.TabAbilitiesImgHint"),
+      name: "FFXIV.Settings.TabAbilitiesImg",
+      hint: "FFXIV.Settings.TabAbilitiesImgHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "icons/weapons/swords/swords-short.webp",
-      filePicker: "image"
+      default: "",
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabAttributes", {
-      name: game.i18n.localize("FFXIV.Settings.TabAttributesImg"),
-      hint: game.i18n.localize("FFXIV.Settings.TabAttributesImgHint"),
+      name: "FFXIV.Settings.TabAttributesImg",
+      hint: "FFXIV.Settings.TabAttributesImgHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "icons/creatures/eyes/human-single-brown.webp",
-      filePicker: "image"
+      default: "",
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabGear", {
-      name: game.i18n.localize("FFXIV.Settings.TabGearImg"),
-      hint: game.i18n.localize("FFXIV.Settings.TabGearImgHint"),
+      name: "FFXIV.Settings.TabGearImg",
+      hint: "FFXIV.Settings.TabGearImgHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "icons/equipment/chest/breastplate-cuirass-steel-grey.webp",
-      filePicker: "image"
+      default: "",
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabRoleplay", {
-      name: game.i18n.localize("FFXIV.Settings.TabRoleplayImg"),
-      hint: game.i18n.localize("FFXIV.Settings.TabRoleplayImgHint"),
+      name: "FFXIV.Settings.TabRoleplayImg",
+      hint: "FFXIV.Settings.TabRoleplayImgHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "icons/sundries/documents/document-official-capital.webp",
-      filePicker: "image"
+      default: "",
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabItems", {
-      name: game.i18n.localize("FFXIV.Settings.TabItemsImg"),
-      hint: game.i18n.localize("FFXIV.Settings.TabItemsImgHint"),
+      name: "FFXIV.Settings.TabItemsImg",
+      hint: "FFXIV.Settings.TabItemsImgHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "icons/containers/bags/pack-leather-gold-brown.webp",
-      filePicker: "image"
+      default: "",
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabCompanions", {
-      name: game.i18n.localize("FFXIV.Settings.TabCompanionsImg"),
-      hint: game.i18n.localize("FFXIV.Settings.TabCompanionsImgHint"),
+      name: "FFXIV.Settings.TabCompanionsImg",
+      hint: "FFXIV.Settings.TabCompanionsImgHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "icons/creatures/mammals/rabbit-movement-glowing-green.webp",
-      filePicker: "image"
+      default: "",
+      requiresReload: true,
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabSettings", {
-      name: game.i18n.localize("FFXIV.Settings.TabSettingsImg"),
-      hint: game.i18n.localize("FFXIV.Settings.TabSettingsImgHint"),
+      name: "FFXIV.Settings.TabSettingsImg",
+      hint: "FFXIV.Settings.TabSettingsImgHint",
       scope: "world",
-      config: true,
+      config: false,
       type: String,
-      default: "icons/tools/fasteners/washer-hex-copper-brown.webp",
-      filePicker: "image"
+      default: "",
+      requiresReload: true,
+      filePicker: "image",
     });
-
-
-
   }
-
 }

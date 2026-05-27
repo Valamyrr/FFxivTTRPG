@@ -10,59 +10,427 @@
 @import url("actor/profile.css");
 @import url("actor/pet.css");
 
-.ffxiv.actor .window-content{
+.application.ffxiv.actor {
+  overflow: visible;
+}
+
+.application.ffxiv.actor:not(.closing):not(.minimizing):not(.minimized):not(.maximized):not(.maximizing) {
+  min-height: 750px;
+  overflow: visible;
+}
+
+.application.ffxiv.actor.closing,
+.application.ffxiv.actor.minimizing,
+.application.ffxiv.actor.minimized,
+.application.ffxiv.actor.maximized,
+.application.ffxiv.actor.maximizing {
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+
+.application.ffxiv.actor:has(.ffxiv.actor.character) {
+  min-height: 750px;
+  min-width: 780px;
+  max-width: 840px;
+}
+
+.application.ffxiv.actor:has(.ffxiv.actor.npc) {
+  min-width: 730px;
+  max-width: 920px;
+}
+
+.application.ffxiv.actor:has(.ffxiv.actor.pet) {
+  min-width: 650px;
+  max-width: 650px;
+}
+
+.ffxiv.actor .window-content {
   background: var(--background-color);
   color: var(--text-color);
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   padding: 0;
-  overflow-y: auto;
+  overflow: visible;
 }
 
-.ffxiv.actor a:hover{
-  text-shadow: none;
+.ffxiv.actor .window-content>.ffxiv.actor,
+.ffxiv.actor form.ffxiv.actor {
+  background: var(--background-color);
+  color: var(--text-color);
+  height: 100%;
+  max-height: 100%;
+  min-height: 100%;
+  min-width: 0;
+  position: relative;
+  overflow: visible;
 }
 
-.ffxiv.actor .sheet-body {
-  flex: auto;
-  padding: 10px;
-  min-width: calc(100% - 230px);
-  transition: all 0.8s ease;
+.ffxiv.actor.npc,
+.ffxiv.actor.pet {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.ffxiv.actor .window-content button {
-  color: var(--text-color-input);
+.ffxiv.actor.character>nav.sheet-tabs.tabs {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: absolute;
+  top: 150px;
+  right: -44px;
+  width: 48px;
+  border: 0;
+  z-index: 1000;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.ffxiv.actor.character>nav.sheet-tabs.tabs .item {
+  display: block;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  margin: 0;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.ffxiv.actor.character>nav.sheet-tabs.tabs .item img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .ffxiv.actor .sheet-body-wrapper {
   display: flex;
   flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
   width: 100%;
 }
-.ffxiv.actor .full-width .fixed-part{
-  transform: translateX(-100%);
-}
-.ffxiv.actor .full-width .sheet-body{
-  min-width: 100%;
-  transform: translateX(-230px);
+
+.ffxiv.actor .sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  padding: 10px;
+  overflow: hidden auto;
+  transition: all 0.8s ease;
 }
 
+.ffxiv.actor.character .sheet-body {
+  min-width: calc(100% - 230px);
+  min-height: 360px;
+}
 
-.ffxiv.actor .window-content input{
+.ffxiv.actor.npc .sheet-body,
+.ffxiv.actor.pet .sheet-body {
+  min-width: 0;
+  width: 100%;
+  transform: none;
+  height: 100%;
+}
+
+.ffxiv.actor .tab {
+  min-height: 0;
+}
+
+.ffxiv.actor.character .actor-abilities,
+.ffxiv.actor.character .actor-profile,
+.ffxiv.actor.character .inventory,
+.ffxiv.actor.character .actor-attributes-tab,
+.ffxiv.actor.character .actor-job-config {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ffxiv.actor a:hover {
+  text-shadow: none;
+}
+
+.ffxiv.actor .window-content button,
+.ffxiv.actor button {
   color: var(--text-color-input);
 }
-.ffxiv.actor .window-content select{
+
+.ffxiv.actor .window-content input,
+.ffxiv.actor input {
   color: var(--text-color-input);
 }
-.ffxiv.actor .window-content option{
+
+.ffxiv.actor .window-content input:not([type="checkbox"]):not([type="radio"]),
+.ffxiv.actor input:not([type="checkbox"]):not([type="radio"]),
+.ffxiv.actor .window-content select,
+.ffxiv.actor select,
+.ffxiv.actor textarea {
+  text-align: center;
+}
+
+.ffxiv.actor .resource-content input:not([type="checkbox"]):not([type="radio"]),
+.ffxiv.actor .resource-content select,
+.ffxiv.actor .title-selector select,
+.ffxiv.actor textarea {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  box-shadow: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.ffxiv.actor .resource-content input:not([type="checkbox"]):not([type="radio"]),
+.ffxiv.actor .resource-content select,
+.ffxiv.actor .title-selector select {
+  height: 28px;
+  line-height: 28px;
+}
+
+.ffxiv.actor .actor-attributes-tab .meteor-value input.value,
+.ffxiv.actor .fixed-part input.health-input,
+.ffxiv.actor .fixed-part input.barrier-input {
+  background: transparent;
+  border: 0;
+}
+
+.ffxiv.actor .window-content select,
+.ffxiv.actor select {
+  color: var(--text-color-input);
+}
+
+.ffxiv.actor .window-content option,
+.ffxiv.actor option {
   background: var(--option-background-color);
   color: var(--text-color-input);
 }
 
-.ffxiv.actor .settings .class-icon{
+.ffxiv.actor input:focus,
+.ffxiv.actor select:focus,
+.ffxiv.actor textarea:focus {
+  box-shadow: 0 0 4px var(--secondary-color);
+  outline: none;
+}
+
+.ffxiv.actor .form-fields {
+  width: 100%;
+}
+
+.ffxiv.actor .form-fields input.image {
+  text-align: left;
+}
+
+.ffxiv.actor .file-picker {
+  flex: 0 0 32px;
+  width: 32px;
+  min-height: 28px;
+  padding: 0;
+}
+
+.ffxiv.actor .actor-avatar {
+  cursor: pointer;
+}
+
+.ffxiv.actor.character .actor-edit-toggle,
+.ffxiv.actor.npc .actor-edit-toggle,
+.ffxiv.actor.pet .actor-edit-toggle {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  color: white;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 32px;
+  z-index: 2;
+}
+
+.ffxiv.actor.character .actor-edit-toggle i,
+.ffxiv.actor.npc .actor-edit-toggle i,
+.ffxiv.actor.pet .actor-edit-toggle i {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.ffxiv.actor.character .actor-edit-toggle.active,
+.ffxiv.actor.npc .actor-edit-toggle.active,
+.ffxiv.actor.pet .actor-edit-toggle.active {
+  background: var(--secondary-color);
+  border-color: white;
+}
+
+.ffxiv.actor.character.actor-locked input,
+.ffxiv.actor.character.actor-locked select,
+.ffxiv.actor.character.actor-locked textarea,
+.ffxiv.actor.character.actor-locked prose-mirror,
+.ffxiv.actor.npc.actor-locked input,
+.ffxiv.actor.npc.actor-locked select,
+.ffxiv.actor.npc.actor-locked textarea,
+.ffxiv.actor.npc.actor-locked prose-mirror,
+.ffxiv.actor.pet.actor-locked input,
+.ffxiv.actor.pet.actor-locked select,
+.ffxiv.actor.pet.actor-locked textarea,
+.ffxiv.actor.pet.actor-locked prose-mirror {
+  cursor: default;
+  opacity: 0.82;
+}
+
+.ffxiv.actor.character.actor-locked input[name="system.health.value"],
+.ffxiv.actor.character.actor-locked input[name="system.health.max"],
+.ffxiv.actor.character.actor-locked input[name="system.barrier.value"],
+.ffxiv.actor.character.actor-locked input[name="system.barrier.max"],
+.ffxiv.actor.npc.actor-locked input[name="system.health.value"],
+.ffxiv.actor.npc.actor-locked input[name="system.health.max"],
+.ffxiv.actor.npc.actor-locked input[name="system.barrier.value"] {
+  cursor: text;
+  opacity: 1;
+}
+
+.ffxiv.actor.character.actor-locked .ability-limitations input.limitation,
+.ffxiv.actor.character.actor-locked .ability-limitations input.job_resource,
+.ffxiv.actor.character.actor-locked .ability-limitations input.active,
+.ffxiv.actor.npc.actor-locked .ability-limitations input.limitation,
+.ffxiv.actor.npc.actor-locked .ability-limitations input.job_resource,
+.ffxiv.actor.npc.actor-locked .ability-limitations input.active,
+.ffxiv.actor.pet.actor-locked .ability-limitations input.limitation,
+.ffxiv.actor.pet.actor-locked .ability-limitations input.job_resource,
+.ffxiv.actor.pet.actor-locked .ability-limitations input.active {
+  cursor: pointer;
+}
+
+.ffxiv.actor.npc.actor-locked .ability-limitations .checkmark,
+.ffxiv.actor.pet.actor-locked .ability-limitations .checkmark {
+  cursor: default;
+}
+
+.ffxiv.actor.character.actor-locked .actor-edit-locked,
+.ffxiv.actor.character.actor-locked prose-mirror,
+.ffxiv.actor.npc.actor-locked .actor-edit-locked,
+.ffxiv.actor.npc.actor-locked prose-mirror,
+.ffxiv.actor.pet.actor-locked .actor-edit-locked,
+.ffxiv.actor.pet.actor-locked prose-mirror {
+  pointer-events: none;
+}
+
+.ffxiv.actor.character.actor-locked .file-picker,
+.ffxiv.actor.character.actor-locked .item-create,
+.ffxiv.actor.npc.actor-locked .npc-add-ability,
+.ffxiv.actor.pet.actor-locked .npc-add-ability,
+.ffxiv.actor.character.actor-locked .job-delete,
+.ffxiv.actor.character.actor-locked .ability-delete,
+.ffxiv.actor.npc.actor-locked .ability-delete,
+.ffxiv.actor.pet.actor-locked .ability-delete,
+.ffxiv.actor.character.actor-locked .item-delete,
+.ffxiv.actor.character.actor-locked .title-delete,
+.ffxiv.actor.character.actor-locked .move-up,
+.ffxiv.actor.character.actor-locked .move-down,
+.ffxiv.actor.npc.actor-locked .move-up,
+.ffxiv.actor.npc.actor-locked .move-down,
+.ffxiv.actor.pet.actor-locked .move-up,
+.ffxiv.actor.pet.actor-locked .move-down,
+.ffxiv.actor.character.actor-locked .pet-move-up,
+.ffxiv.actor.character.actor-locked .pet-move-down,
+.ffxiv.actor.character.actor-locked .pet-remove {
+  display: none !important;
+}
+
+.ffxiv.actor .settings .class-icon {
   max-height: 64px;
   max-width: 64px;
   height: 64px;
   width: 64px;
   margin: auto;
   margin-top: 3px;
+}
+
+.ffxiv.actor:is(.character, .npc, .pet) .modern-tab-layout h2 {
+  border: 0;
+  margin: 0 0 10px;
+  padding: 0;
+  color: var(--text-color);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: left;
+}
+
+.ffxiv.actor:is(.character, .npc, .pet) .sheet-body .tab h2 {
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+}
+
+.ffxiv.actor:is(.character, .npc, .pet) .modern-panel {
+  border: 1px solid var(--border-color-2);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--gradient-color-2) 0%, var(--gradient-color-1) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  padding: 10px;
+}
+
+.ffxiv.actor:is(.character, .npc, .pet).blue_theme .modern-panel {
+  border-color: rgba(147, 190, 255, 0.58);
+  background: linear-gradient(180deg, rgba(20, 48, 106, 0.92) 0%, rgba(10, 30, 75, 0.94) 100%);
+  box-shadow: inset 0 0 0 1px rgba(177, 212, 255, 0.2);
+}
+
+.ffxiv.actor .actor-job-config h2 {
+  margin-bottom: 8px;
+}
+
+.ffxiv.actor .actor-job-slot {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+}
+
+.ffxiv.actor .actor-job-slot.empty {
+  border-style: dashed;
+}
+
+.ffxiv.actor .actor-job-card {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr) 28px;
+}
+
+.ffxiv.actor .actor-job-card .job-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+}
+
+.ffxiv.actor .actor-job-card .job-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ffxiv.actor .actor-job-card .job-info strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ffxiv.actor .actor-job-card .job-delete {
+  width: 28px;
+  min-height: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.ffxiv.actor .settings-grid {
+  gap: 12px;
 }

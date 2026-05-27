@@ -1,4 +1,3 @@
-
 .companions-sub-tabs {
   margin-bottom: 10px;
   width: 100%;
@@ -21,7 +20,7 @@
   background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
 }
 
-.companions-sub-tab .chip{
+.companions-sub-tab .chip {
   position: absolute;
   width: 10px;
   height: 5px;
@@ -31,10 +30,11 @@
   transform: rotate(35deg);
 }
 
-.companions-sub-tab.active .chip{
+.companions-sub-tab.active .chip {
   background: var(--chip-color-active);
   /*background: radial-gradient(circle, rgba(237,210,99,1) 65%, rgba(255,255,255,0) 100%);*/
 }
+
 .companions-sub-tab.active {
   filter: var(--subtabactive-filter);
   background: var(--subtabactive-background);
@@ -48,44 +48,144 @@
   display: block;
 }
 
+.companions-sub-tab-content .ability-card.minion-card .ability-header {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 5px 0;
+  padding: 5px 0;
+  width: 100%;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-name {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-right {
+  display: inline-flex;
+  float: none;
+  flex: 0 0 auto;
+  margin-left: 10px;
+  margin-right: 4px;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-tags {
+  display: inline-flex;
+  text-align: right;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-card-info {
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-icon {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.companions-sub-tab-content .ability-card.minion-card .ability-header,
+.companions-sub-tab-content .ability-card.minion-card .ability-details {
+  grid-column: 2;
+}
+
 .pet-card {
-  padding: 10px 10px 0 10px;
+  padding: 10px;
   box-shadow: 0px 0px 5px 0px #111;
   border-radius: 7px;
   background: var(--pet-color);
   color: var(--text-color);
   overflow: hidden;
   margin-bottom: 15px;
-  flex:1;
+  flex: 1;
 }
 
-.pet-header{
-  margin-left: 3px;
+.pet-header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 6px 3px;
+  gap: 12px;
 }
-.pet-name{
+
+.pet-heading {
+  min-width: 0;
+}
+
+.pet-name {
   font-size: 1.6em;
-  display: inline;
+  line-height: 1.05;
 }
-.pet-header-right{
-  float: right;
+
+.pet-tag {
+  flex: 0 0 auto;
+  line-height: 1.2;
 }
-.pet-tag{
-  display: inline-block;
+
+.pet-speed {
+  font-weight: bold;
+  margin-top: 2px;
 }
-.pet-speed{
-  margin: 2px 0 5px 3px;
-}
-.pet-traits{
+
+.pet-traits {
   padding: 8px;
   border: 2px solid var(--border-color-1);
   border-radius: 7px;
   background: var(--primary-color);
   overflow: hidden;
   margin-bottom: 8px;
-  flex:1;
+  flex: 1;
   padding: 5px;
 }
 
-.ffxiv .pet-remove.fa.fa-trash-can{
+.ffxiv .pet-remove {
+  background: #b00000;
+  border: 1px solid white;
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
   line-height: 28px;
+  font-family: Arial, sans-serif;
+}
+
+.ffxiv .pet-remove:hover {
+  background: red;
+  box-shadow: 0 0 5px red;
+}
+
+.ffxiv.actor.character .actor-companions .abilities-tab-content.modern-panel {
+  padding: 12px;
+}
+
+.ffxiv.actor.character .actor-companions .companions-sub-tab-content {
+  border: 1px solid var(--border-color-2);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.15) 100%);
+  padding: 8px;
+}
+
+.ffxiv.actor.character.blue_theme .actor-companions .companions-sub-tab-content {
+  border-color: rgba(154, 198, 255, 0.52);
+  background: linear-gradient(180deg, rgba(15, 43, 101, 0.72) 0%, rgba(9, 30, 74, 0.78) 100%);
+}
+
+.companions-empty-hint {
+  border: 1px dashed var(--border-color-2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  text-align: center;
+  color: var(--text-color-strong);
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.ffxiv.actor.blue_theme .companions-empty-hint {
+  border-color: rgba(154, 198, 255, 0.58);
+  background: rgba(10, 29, 70, 0.58);
+  color: #d4e9ff;
 }

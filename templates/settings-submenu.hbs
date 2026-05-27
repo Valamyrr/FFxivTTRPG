@@ -1,0 +1,75 @@
+<form class="ffxiv-settings-submenu" autocomplete="off">
+  <section class="settings-list">
+    {{#each settings }}
+      <div class="setting-row">
+        <div class="setting-info">
+          <label for="ffxiv-setting-{{key}}">{{name}}</label>
+          {{#if hint }}
+            <p class="hint">{{hint}}</p>
+          {{/if}}
+        </div>
+        <div class="setting-control">
+          {{#if isBoolean }}
+            <input id="ffxiv-setting-{{key}}"
+                   name="{{key}}"
+                   type="checkbox"
+                   {{#if value }}
+                   checked
+                   {{/if}}
+                   {{#if disabled }}
+                   disabled
+                   {{/if}}>
+            {{else if isNumber}}
+            <input id="ffxiv-setting-{{key}}"
+                   name="{{key}}"
+                   type="number"
+                   value="{{value}}"
+                   {{#if placeholder }}
+                   placeholder="{{placeholder}}"
+                   {{/if}}
+                   {{#if hasMin }}
+                   min="{{min}}"
+                   {{/if}}
+                   {{#if hasMax }}
+                   max="{{max}}"
+                   {{/if}}
+                   {{#if hasStep }}
+                   step="{{step}}"
+                   {{/if}}
+                   {{#if disabled }}
+                   disabled
+                   {{/if}}>
+          {{else}}
+            <input id="ffxiv-setting-{{key}}"
+                   name="{{key}}"
+                   type="text"
+                   value="{{value}}"
+                   {{#if placeholder }}
+                   placeholder="{{placeholder}}"
+                   {{/if}}
+                   {{#if disabled }}
+                   disabled
+                   {{/if}}>
+            {{#if pickerType }}
+              <button type="button"
+                      class="ffxiv-file-picker"
+                      data-file-picker="{{pickerType}}"
+                      data-target="{{key}}"
+                      {{#if disabled }}
+                      disabled
+                      {{/if}}>
+                <i class="fas fa-folder-open"></i>
+              </button>
+            {{/if}}
+          {{/if}}
+        </div>
+      </div>
+    {{/each}}
+  </section>
+  <footer class="form-footer">
+    <button type="button" data-action="save-settings">
+      <i class="fas fa-save"></i>
+      {{localize "SETTINGS.Save"}}
+    </button>
+  </footer>
+</form>

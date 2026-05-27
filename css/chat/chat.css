@@ -1,24 +1,150 @@
-.chat-ffxiv{
-
-}
-.chat-ffxiv .item-card .item-dialog-icon{
+.chat-ffxiv .item-card .item-dialog-icon,
+.chat-ffxiv.item-card .item-dialog-icon {
   width: 45px;
   height: 45px;
+  cursor: default;
+  pointer-events: none;
 }
-.chat-ffxiv .item-card .item-dialog-header{
+
+.chat-ffxiv .item-card .item-dialog-header,
+.chat-ffxiv.item-card .item-dialog-header {
   width: calc(100% - 55px);
 }
-.chat-ffxiv .item-card .item-dialog-details{
+
+.chat-ffxiv .item-card .item-dialog-details,
+.chat-ffxiv.item-card .item-dialog-details {
   padding: 5px;
 }
-.chat-ffxiv .item-dialog-icon{
+
+.chat-ffxiv .item-card .item-dialog-summary,
+.chat-ffxiv.item-card .item-dialog-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+
+.chat-ffxiv .item-card .item-dialog-effects.item-dialog-effects-stacked .effect,
+.chat-ffxiv.item-card .item-dialog-effects.item-dialog-effects-stacked .effect {
+  display: block;
+}
+
+.chat-ffxiv .item-dialog-icon {
   border-width: 0;
 }
-.chat-ffxiv .item-card .item-dialog-header.modifier{
-  width:100%
+
+.chat-ffxiv .item-card .item-dialog-header.modifier,
+.chat-ffxiv.item-card .item-dialog-header.modifier {
+  width: 100%
 }
-.chat-ffxiv .message-content button{
-  flex:50%;
+
+.chat-ffxiv .message-content button,
+.chat-ffxiv.message-content button {
+  flex: 50%;
   color: var(--text-color);
   background: var(--primary-color);
+}
+
+.chat-ffxiv .message-content button.ffxiv-apply-dmg,
+.chat-ffxiv.message-content button.ffxiv-apply-dmg {
+  background: color-mix(in srgb, var(--primary-color) 88%, #8f2f2f);
+}
+
+.chat-ffxiv .message-content button.ffxiv-apply-heal,
+.chat-ffxiv.message-content button.ffxiv-apply-heal {
+  background: color-mix(in srgb, var(--primary-color) 88%, #2f7d46);
+}
+
+.chat-ffxiv .message-content button.ffxiv-apply-used,
+.chat-ffxiv.message-content button.ffxiv-apply-used {
+  opacity: 0.65;
+  filter: grayscale(0.25);
+}
+
+.chat-ffxiv .ffxiv-apply-result,
+.chat-ffxiv.ffxiv-apply-result {
+  border-top: 1px solid var(--border-color-1);
+  color: var(--text-color-strong);
+  font-size: 0.9rem;
+  margin-top: 6px;
+  padding-top: 6px;
+  text-align: center;
+}
+
+.chat-ffxiv.blue_theme .item-card .item-dialog-header,
+.blue_theme .chat-ffxiv .item-card .item-dialog-header {
+  border-bottom-color: rgba(188, 218, 255, 0.74);
+  box-shadow: 0px 7px 3px -2px rgba(8, 27, 70, 0.68);
+}
+
+.chat-ffxiv.blue_theme .item-card,
+.blue_theme .chat-ffxiv .item-card {
+  border-color: rgba(147, 190, 255, 0.62);
+  background: linear-gradient(180deg, rgba(20, 48, 106, 0.92) 0%, rgba(10, 30, 75, 0.94) 100%);
+  box-shadow: inset 0 0 0 1px rgba(177, 212, 255, 0.18);
+}
+
+.chat-ffxiv.blue_theme .item-card .item-card-info,
+.blue_theme .chat-ffxiv .item-card .item-card-info {
+  background: linear-gradient(180deg, rgba(61, 125, 217, 0.78) 0%, rgba(46, 101, 188, 0.8) 60%, rgba(32, 79, 154, 0.86) 100%);
+}
+
+.chat-ffxiv.blue_theme .message-content button,
+.blue_theme .chat-ffxiv .message-content button {
+  background: linear-gradient(180deg, rgba(35, 84, 162, 0.88) 0%, rgba(21, 58, 120, 0.9) 100%);
+  border: 1px solid rgba(163, 206, 255, 0.52);
+  color: #e3f2ff;
+}
+
+.chat-ffxiv.blue_theme .message-content button.ffxiv-apply-dmg,
+.blue_theme .chat-ffxiv .message-content button.ffxiv-apply-dmg {
+  background: linear-gradient(180deg, rgba(151, 54, 75, 0.92) 0%, rgba(114, 36, 56, 0.95) 100%);
+  border: 1px solid rgba(255, 201, 213, 0.78);
+  color: #fff7fa;
+}
+
+.chat-ffxiv.blue_theme .message-content button.ffxiv-apply-heal,
+.blue_theme .chat-ffxiv .message-content button.ffxiv-apply-heal {
+  background: linear-gradient(180deg, rgba(44, 128, 94, 0.92) 0%, rgba(28, 93, 67, 0.95) 100%);
+  border: 1px solid rgba(198, 248, 225, 0.74);
+  color: #f3fff9;
+}
+
+.chat-ffxiv.blue_theme .ffxiv-apply-result,
+.blue_theme .chat-ffxiv .ffxiv-apply-result {
+  border-top-color: rgba(157, 202, 255, 0.42);
+  color: #cfe6ff;
+}
+
+.chat-ffxiv .item-card .item-dialog-details.minion-typeline,
+.chat-ffxiv.item-card .item-dialog-details.minion-typeline {
+  margin-top: -3px;
+  padding-top: 2px;
+}
+
+.chat-ffxiv .item-card .item-dialog-effects .effect.minion-traits .minion-traits-text p,
+.chat-ffxiv.item-card .item-dialog-effects .effect.minion-traits .minion-traits-text p {
+  display: inline;
+  margin: 0;
+}
+
+.chat-ffxiv .item-card .item-dialog-effects .effect.minion-flavor,
+.chat-ffxiv.item-card .item-dialog-effects .effect.minion-flavor {
+  font-weight: 400;
+}
+
+.chat-ffxiv .item-card .item-dialog-effects .effect.minion-flavor *,
+.chat-ffxiv.item-card .item-dialog-effects .effect.minion-flavor * {
+  font-weight: 400 !important;
+}
+
+.chat-ffxiv .item-card .item-dialog-flavor,
+.chat-ffxiv.item-card .item-dialog-flavor {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.chat-ffxiv .item-card .item-dialog-flavor *,
+.chat-ffxiv.item-card .item-dialog-flavor * {
+  font-style: italic;
+  font-weight: 400 !important;
 }

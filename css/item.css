@@ -1,39 +1,172 @@
 @import url("item/abilities.css");
 @import url("item/inventory-dialog.css");
+@import url("item/minions.css");
 
-.ffxiv.item .window-content{
+.ffxiv.item .window-content {
   background: var(--background-color);
   color: var(--text-color);
   display: block;
+  overflow: auto;
+  padding: 0;
 }
 
-.ffxiv.item .item-delete{
-  height: 50px;
-  max-width: 50px;
+.ffxiv.item .window-content>.ffxiv.item,
+.ffxiv.item form.ffxiv.item {
+  background: var(--background-color);
+  color: var(--text-color);
+}
+
+.ffxiv.item form.ffxiv.item:not(.limited-display) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.ffxiv.item form.ffxiv.item:not(.limited-display)>hr {
+  flex: 0 0 auto;
+  margin: 10px;
+  width: calc(100% - 20px);
+}
+
+.ffxiv.item .sheet-header {
+  align-items: center;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 10px;
+  min-height: 116px;
+  overflow: visible;
+  padding: 15px 10px;
+}
+
+.ffxiv.item .sheet-header .profile-img {
+  flex: 0 0 100px;
+  height: 100px;
+  margin-right: 0;
+  width: 100px;
+}
+
+.ffxiv.item .sheet-header .header-fields {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ffxiv.item .sheet-header h1.charname {
+  border: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.ffxiv.item .sheet-header h1.charname input {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  box-shadow: none;
+  color: var(--text-color-input);
+  font-family: "Roboto", sans-serif;
+  font-size: 28px;
+  height: 38px;
+  line-height: 38px;
+  margin: 0;
+  overflow: hidden;
+  padding: 0 5px;
+  text-align: left;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.ffxiv.item .item-delete {
+  align-items: center;
   margin-left: 15px;
-  background-color: red;
+  border-radius: 4px;
+  background-color: #b00000;
+  border: 1px solid white;
+  color: white;
+  display: inline-flex;
+  flex: 0 0 50px;
+  height: 50px;
+  justify-content: center;
+  line-height: 1;
+  max-width: 50px;
+  min-height: 50px;
+  padding: 0;
+  width: 50px;
+  font-family: Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
 }
 
-.ffxiv.item .window-content select{
+.ffxiv.item .window-content select {
   color: var(--text-color-input);
 }
-.ffxiv.item .window-content input{
+
+.ffxiv.item .window-content input {
   color: var(--text-color-input);
 }
-.ffxiv.item .window-content button{
+
+.ffxiv.item .window-content button {
   color: var(--text-color-input);
 }
-.ffxiv.item .window-content option{
+
+.ffxiv.item .window-content button.item-delete,
+.ffxiv.item .window-content button.remove-job-ability {
+  color: white;
+}
+
+.ffxiv.item .window-content option {
   background: var(--option-background-color);
   color: var(--text-color-input);
 }
 
-.ffxiv.item .profile-img{
-  border:none;
+.ffxiv.item .profile-img {
+  border: none;
 }
 
-.ffxiv.item .sheet-body{
-  height: 100%;
+.ffxiv.item .profile-img[data-edit="img"] {
+  cursor: pointer;
+}
+
+.ffxiv.item .sheet-body {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px;
+}
+
+.ffxiv.item .sheet-body>.attributes:first-child {
+  margin-top: -6px;
+}
+
+.ffxiv.item .resource,
+.ffxiv.item .resource-content {
+  min-width: 0;
+}
+
+.ffxiv.item input:not([type='checkbox']):not([type='radio']),
+.ffxiv.item select,
+.ffxiv.item textarea {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  box-shadow: none;
+  color: var(--text-color-input);
+  min-width: 0;
+  text-align: center;
+  width: 100%;
+}
+
+.ffxiv.item input:not([type='checkbox']):not([type='radio']),
+.ffxiv.item select {
+  height: 28px;
+  line-height: 28px;
+}
+
+.ffxiv.item input::placeholder,
+.ffxiv.item textarea::placeholder {
+  color: var(--placeholder-color);
+  opacity: 1;
 }
 
 .delete-item-btn {
@@ -50,10 +183,346 @@
   background-color: #c9302c;
 }
 
-.ffxiv.item .attributes input[type='checkbox']{
+.ffxiv.item .attributes input[type='checkbox'] {
   margin: 3px auto auto auto;
 }
 
-.ffxiv.item .modifier-value{
+.ffxiv.item .modifier-value {
+  flex: 0 0 5em;
+  width: 5em;
+}
+
+.ffxiv.item .job-tabs {
+  margin-bottom: 10px;
+  text-align: center;
+  filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+}
+
+.ffxiv.item .job-tabs .sub-tab {
+  align-items: center;
+  height: 25px;
+  justify-content: center;
+  line-height: 1;
+  margin: 4px -2px;
+  overflow: hidden;
+  padding: 0 10px !important;
+  position: relative;
+  text-align: center;
+  width: 40%;
+  background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+  border-radius: 3px;
+  clip-path: polygon(5% 0, 95% 0, 100% 30%, 95% 100%, 5% 100%, 0 70%);
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.ffxiv.item .job-tabs .chip {
+  background: var(--chip-color);
+  border-radius: 2px;
+  bottom: 3px;
+  height: 5px;
+  left: 12px;
+  position: absolute;
+  transform: rotate(35deg);
+  width: 10px;
+}
+
+.ffxiv.item .job-tabs .sub-tab.active {
+  filter: var(--subtabactive-filter);
+  background: var(--subtabactive-background);
+}
+
+.ffxiv.item .job-tabs .sub-tab.active .chip {
+  background: var(--chip-color-active);
+}
+
+.ffxiv.item .job-progression-tab {
+  min-height: 180px;
+  padding: 8px;
+}
+
+.ffxiv.item .job-overview-basics {
+  margin-bottom: 12px;
+}
+
+.ffxiv.item .job-attribute-section {
+  margin: 12px 0;
+}
+
+.ffxiv.item .job-attribute-section h2 {
+  border: 0;
+  color: var(--text-color);
+  font-family: "Georgia", serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.ffxiv.item .job-primary-attributes,
+.ffxiv.item .job-secondary-attributes {
+  display: grid;
+  gap: 8px;
+}
+
+.ffxiv.item .job-primary-attributes {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.ffxiv.item .job-secondary-attributes {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.ffxiv.item .job-primary-attributes .resource,
+.ffxiv.item .job-secondary-attributes .resource {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ffxiv.item .job-secondary-attributes .resource {
+  grid-column: span 2;
+}
+
+.ffxiv.item .job-secondary-attributes .resource:nth-last-child(2) {
+  grid-column: 2 / span 2;
+}
+
+.ffxiv.item .job-secondary-attributes .resource:last-child {
+  grid-column: 4 / span 2;
+}
+
+.ffxiv.item .job-ability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  min-height: 80px;
+  padding: 0;
+}
+
+.ffxiv.item .job-progression-tab.drag-over {
+  outline: 2px solid var(--border-color-1);
+  outline-offset: 3px;
+}
+
+.ffxiv.item .job-ability-row {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(10em, 1fr) minmax(8em, auto) 32px;
+}
+
+.ffxiv.item .job-ability-edit {
+  cursor: pointer;
+}
+
+.ffxiv.item .job-ability-edit:hover .job-ability-name,
+.ffxiv.item .job-ability-edit:hover .job-ability-type {
+  text-shadow: 0 0 8px var(--text-shadow-color);
+}
+
+.ffxiv.item .job-ability-name,
+.ffxiv.item .job-ability-type {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  display: flex;
+  justify-content: center;
+  line-height: 1.2;
+  min-height: 28px;
+  overflow: hidden;
+  padding: 4px 6px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ffxiv.item .job-ability-name {
+  font-weight: 700;
+}
+
+.ffxiv.item .job-ability-row button {
+  min-height: 28px;
+  padding: 0;
+}
+
+.ffxiv.item .job-ability-row button.remove-job-ability {
+  align-items: center;
+  background: #b00000;
+  border: 1px solid white;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.ffxiv.item .job-ability-row button.remove-job-ability:hover {
+  background: red;
+  box-shadow: 0 0 5px red;
+}
+
+.ffxiv.item .job-ability-empty {
+  align-items: center;
+  border: 1px dashed var(--color-border-light-tertiary);
+  border-radius: 5px;
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  min-height: 70px;
+  opacity: 0.75;
+}
+
+.ffxiv.item .consumable-rarity-row,
+.ffxiv.item .consumable-price-resource {
+  grid-column: 1 / -1;
+}
+
+.ffxiv.item .consumable-price-inline {
+  align-items: center;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: auto minmax(4em, max-content) auto auto minmax(4em, max-content);
+  justify-content: center;
+}
+
+.ffxiv.item .consumable-price-inline input {
+  min-width: 0;
+}
+
+.ffxiv.item .consumable-price-input {
+  max-width: 4.5em;
+  width: 4.5em;
+}
+
+.ffxiv.item .consumable-price-key,
+.ffxiv.item .consumable-price-divider {
+  color: var(--text-color);
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.ffxiv.item .consumable-price-divider {
+  opacity: 0.65;
+}
+
+.ffxiv.actor .actor-job-config h2 {
+  border: 0;
+  margin: 10px auto;
+  text-align: center;
   width: fit-content;
+}
+
+.ffxiv.actor .actor-job-slot {
+  border: 1px dashed var(--color-border-light-tertiary);
+  border-radius: 5px;
+  margin: 8px 0 14px;
+  min-height: 58px;
+  padding: 8px;
+}
+
+.ffxiv.actor .actor-job-slot.drag-over {
+  outline: 2px solid var(--border-color-1);
+  outline-offset: 3px;
+}
+
+.ffxiv.actor .actor-job-card {
+  align-items: center;
+  background: var(--primary-color);
+  border: 1px solid var(--border-color-1);
+  border-radius: 5px;
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+}
+
+.ffxiv.actor .job-icon {
+  border: none;
+  cursor: pointer;
+  flex: 0 0 40px;
+  height: 40px;
+  width: 40px;
+}
+
+.ffxiv.actor .job-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ffxiv.actor .job-info strong,
+.ffxiv.actor .job-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ffxiv.actor .job-delete {
+  align-items: center;
+  background: #b00000;
+  border: 1px solid white;
+  color: white;
+  display: inline-flex;
+  flex: 0 0 28px;
+  height: 28px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 28px;
+}
+
+.ffxiv.actor .job-delete:hover,
+.ffxiv.item .item-delete:hover {
+  background: red;
+  box-shadow: 0 0 5px red;
+}
+
+.ffxiv.actor .actor-job-empty {
+  align-items: center;
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+  opacity: 0.75;
+  text-align: center;
+}
+
+.ffxiv.item.item-modern-sheet .sheet-body {
+  padding: 0 10px 12px;
+}
+
+.ffxiv.item.item-modern-sheet .sheet-body>.attributes,
+.ffxiv.item.item-modern-sheet .sheet-body>.resources,
+.ffxiv.item.item-modern-sheet .sheet-body>.tags-container,
+.ffxiv.item.item-modern-sheet .sheet-body>prose-mirror {
+  background: rgba(10, 12, 20, 0.35);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 10px;
+  margin: 10px 0;
+  padding: 12px;
+}
+
+.ffxiv.item.item-modern-sheet .item-details-card>hr,
+.ffxiv.item.item-modern-sheet .sheet-body>hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 12px 0;
+}
+
+.ffxiv.item.item-modern-sheet .tags-container .resource-label,
+.ffxiv.item.item-modern-sheet .resource-label {
+  letter-spacing: 0.02em;
+}
+
+.ffxiv.item.item-modern-sheet .gear-equip {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  width: 100%;
 }

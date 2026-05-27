@@ -1,61 +1,57 @@
-<div class="inventory">
+<div class="inventory modern-tab-layout">
   <h2>{{ localize "FFXIV.CharacterSheet.Inventory"}}</h2>
-  <div class="inventory-grid">
+  <div class="inventory-grid modern-panel">
     {{!-- Build inventory grid with 20 slots --}}
-
-    {{#each (buildInventoryGrid actor.items 27) as |item|}}
-      {{#if item}}  <!-- If there's an item at this position -->
-        <div class="inventory-item rarity-{{item.system.rarity}}"
+    {{#each (buildInventoryGrid actor.items 27) as |item| }}
+      {{#if item }}
+        <!-- If there's an item at this position -->
+        <div class="inventory-item"
              data-item-id="{{item.id}}"
              data-item-position="{{item.system.position}}"
              draggable="true">
-             <img class="item-icon" src="{{item.img}}" alt="{{item.name}}">
-             <div class="item-shadow"></div>
-          <div class="item-tooltip rarity-{{ delabelize 'rarities' item.system.rarity}}">{{item.name}}</div>
-          {{#if item.system.stack}}
+          <img class="item-icon" src="{{item.img}}" alt="{{item.name}}" width="32" height="32">
+          <div class="item-shadow"></div>
+          <div class="item-tooltip {{rarityTooltipClass item.system.rarity}}">{{item.name}}</div>
+          {{#if item.system.stack }}
             <div class="item-quantity">{{item.system.quantity}}</div>
           {{/if}}
         </div>
-      {{else}}  <!-- If this slot is empty -->
+        {{else}}  <!-- If this slot is empty -->
         <div class="inventory-item empty-slot"
              data-item-position="{{add @index 1}}"
              draggable="false">
-             <div class="item-shadow"></div>
+          <div class="item-shadow"></div>
         </div>
       {{/if}}
     {{/each}}
   </div>
-  {{#if (hasItemType items "currency")}}<h2>{{ localize "FFXIV.CharacterSheet.Currencies"}}</h2>{{/if}}
-
-  <div class="currencies">
-
-    <div class="currencies-grid">
-    {{#each items as |item|}}
-      {{#if (eq item.type "currency")}}
-      <div class="currency-card">
-        <div class="currency-image">
-          <img src="{{item.img}}" alt="{{item.name}}">
-        </div>
-        <hr/>
-        <div class="currency-info">
-          <div class="currency-name">{{item.name}}</div>
-          <input type="number" class="currency-quantity" data-item-id="{{item._id}}" value="{{item.system.quantity}}">
-        </div>
-      </div>
-      {{/if}}
-    {{/each}}
+  <div class="ffxiv-fortune-row modern-panel">
+    <img class="ffxiv-fortune-icon"
+         src="systems/ffxiv/assets/currency/fortune.webp"
+         alt="{{localize 'FFXIV.Item.Fortune'}}"
+         title="{{localize 'FFXIV.Item.Fortune'}}" width="32" height="32">
+    <input id="ffxiv-fortune"
+           type="number"
+           name="system.fortune"
+           value="{{system.fortune}}"
+           min="0"
+           data-dtype="Number"
+           {{#unless editable}}
+           disabled
+           {{/unless}}>
+  </div>
+  {{#if settings.showGear }}
+    <h2>{{ localize "FFXIV.CharacterSheet.Gear"}}</h2>
+    {{> "systems/ffxiv/templates/actor/parts/actor-gear.hbs"}}
+  {{/if}}
+  {{#if (hasItemType items "augment") }}
+    <h2>{{ localize "FFXIV.CharacterSheet.Augments"}}</h2>
+    <div class="augments modern-panel">
+      {{#each items as |item| }}
+        {{#if (eq item.type "augment") }}
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-augment.hbs" this}}
+        {{/if}}
+      {{/each}}
     </div>
-
-  </div>
-
-  {{#if (hasItemType items "augment")}}<h2>{{ localize "FFXIV.CharacterSheet.Augments"}}</h2>{{/if}}
-
-  <div class="augments">
-    {{#each items as |item|}}
-      {{#if (eq item.type "augment")}}
-        {{> "systems/ffxiv/templates/actor/parts/actor-card-augment.hbs" this}}
-      {{/if}}
-    {{/each}}
-  </div>
-
+  {{/if}}
 </div>

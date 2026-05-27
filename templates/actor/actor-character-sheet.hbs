@@ -1,94 +1,80 @@
-<form class="{{cssClass}} {{actor.type}} flexcol" autocomplete="off">
+<div class="{{cssClass}} {{actor.type}} flexcol">
   {{!-- Sheet Header --}}
-  <header class="sheet-header" style="background: linear-gradient(90deg, var(--{{system.class.role}}) 0%, rgba(255,255,255,0) 100%), url('{{system.banner}}');background-size: cover;background-position: top 20% left 40%;">
-{{!--
-<img class="class-img" src="systems/ffxiv/assets/classes/{{system.class.name}}.png" alt="class icon">
-<div class="class-level">
-  {{system.experience.level.value}}
-</div>
-<div>
-  <h1 class="charname">{{actor.name}}</h1>
-</div>
---}}
+  <header class="sheet-header">
     <div class="header-fields">
-        <div class="charname">
+      <div class="charname">
+        {{#if actorEditMode }}
+          <h1>
+            <input name="name"
+                   type="text"
+                   value="{{actor.name}}"
+                   placeholder="{{localize 'FFXIV.Name'}}" />
+          </h1>
+        {{else}}
           <h1>{{actor.name}}</h1>
-        </div>
-        <div class="header-info">
-          {{#if (and (eq "custom" system.class.name) system.class.customIcon)}}
-            <img class="class-icon" src="{{system.class.customIcon}}" alt="class icon">
+        {{/if}}
+      </div>
+      {{#if editable }}
+      <button type="button"
+              class="actor-edit-toggle {{#if actorEditMode }}active{{/if }}"
+              aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet' }}"
+              aria-pressed="{{#if actorEditMode }}true{{else }}false{{/if }}"
+              title="{{#if actorEditMode }}{{localize 'FFXIV.CharacterSheet.LockSheet' }}{{else }}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+        <i class="fa-solid {{#if actorEditMode }}fa-lock-open{{else }}fa-lock{{/if }}"></i>
+      </button>
+    {{/if}}
+    <div class="header-info">
+      {{#if system.class.customIcon }}
+        <img class="class-icon" src="{{system.class.customIcon}}" alt="class icon" width="48" height="48">
+      {{/if}}
+      <div class="class-info">
+        <div class="level">{{system.experience.level.value}}</div>
+        <div class="class-name">
+          {{#if (eq "custom" system.class.name) }}
+            <span>{{ localize (labelize 'classes' system.class.name_custom)}}</span>
           {{else}}
-            <img class="class-icon" src="{{actor.img}}" alt="class icon">
+            <span>{{ localize (labelize 'classes' system.class.name)}}</span>
           {{/if}}
-          <div class="class-info">
-            <div class="level">{{system.experience.level.value}}</div>
-            <div class="class-name">
-              {{#if (eq "custom" system.class.name)}}
-                <span>{{ localize (labelize 'classes' system.class.name_custom)}}</span>
-              {{else}}
-                <span>{{ localize (labelize 'classes' system.class.name)}}</span>
-              {{/if}}
-              {{#if (not (eq system.activeTitle ""))}}<span> - {{system.activeTitle}}</span>{{/if}}
-
-            </div>
+          {{#if (not (eq system.activeTitle "")) }}
+            <span>- {{system.activeTitle}}</span>{{/if}}
+          </div>
         </div>
       </div>
     </div>
   </header>
-
   {{!-- Sheet Tab Navigation --}}
   {{> "systems/ffxiv/templates/actor/parts/tabs.hbs" displayLimited=true limited=limited
-    items=(characterTabs settings)
+  items=(characterTabs settings)
   }}
-
-
-  <div class="sheet-body-wrapper {{#if hidingSidebar}}full-width{{/if}}">
+  <div class="sheet-body-wrapper">
     <!-- The fixed part to the left -->
     {{> "systems/ffxiv/templates/actor/parts/actor-sidebar.hbs"}}
-
-    <div class="arrow-sidebar">
-      <div class="fa {{#if hidingSidebar}}fa-right{{else}}fa-left{{/if}}"></div>
-    </div>
-  {{!-- Sheet Body --}}
+    {{!-- Sheet Body --}}
     <section class="sheet-body">
-
       {{!-- Fight Tab --}}
       <div class="tab abilities" data-group="primary" data-tab="abilities">
-            {{> "systems/ffxiv/templates/actor/parts/actor-abilities.hbs" }}
+        {{> "systems/ffxiv/templates/actor/parts/actor-abilities.hbs" }}
       </div>
-
       {{!-- Biography Tab --}}
       <div class="tab attributes" data-group="primary" data-tab="attributes">
         {{> "systems/ffxiv/templates/actor/parts/actor-attributes.hbs" }}
       </div>
-
       {{!-- Biography Tab --}}
       <div class="tab profile" data-group="primary" data-tab="roleplay">
         {{> "systems/ffxiv/templates/actor/parts/actor-profile.hbs" }}
       </div>
-
-      {{!-- Gear Tab --}}
-      {{#if settings.showGear}}
-      <div class="tab gear" data-group="primary" data-tab="gear">
-         {{> "systems/ffxiv/templates/actor/parts/actor-gear.hbs"}}
-      </div>
-      {{/if}}
-
       {{!-- Owned Items Tab --}}
       <div class="tab items" data-group="primary" data-tab="items">
-         {{> "systems/ffxiv/templates/actor/parts/actor-items.hbs"}}
+        {{> "systems/ffxiv/templates/actor/parts/actor-items.hbs"}}
       </div>
-
       {{!-- Companions Tab --}}
       <div class="tab items" data-group="primary" data-tab="companions">
-         {{> "systems/ffxiv/templates/actor/parts/actor-companions.hbs"}}
+        {{> "systems/ffxiv/templates/actor/parts/actor-companions.hbs"}}
       </div>
-
       {{!-- Configuration Tab --}}
       <div class="tab settings" data-group="primary" data-tab="settings">
         {{> "systems/ffxiv/templates/actor/parts/actor-settings.hbs"}}
       </div>
-
     </section>
   </div>
-</form>
+</div>

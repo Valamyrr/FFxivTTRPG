@@ -4,22 +4,69 @@ import { debugError, debugLog } from "../helpers/debug.mjs";
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
  * @extends {Actor}
  */
-export class FfxivActor extends Actor {
+export class FFXIVActor extends Actor {
+  _toFiniteNumber(value, fallback = 0) {
+    if (Number.isFinite(value)) return value;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
 
-  _ensureResource(resource, { max = null } = {}) {
+  _ensureResource(resource, { value = 0, max = null } = {}) {
     const normalized = resource && typeof resource === "object" ? resource : {};
+    const normalizedValue = this._toFiniteNumber(normalized.value, value);
+    const normalizedMax = (max === null)
+      ? this._toFiniteNumber(normalized.max, null)
+      : this._toFiniteNumber(normalized.max, max);
     return {
-      value: Number.isFinite(normalized.value) ? normalized.value : 0,
-      max: Number.isFinite(normalized.max) ? normalized.max : max
+      value: normalizedValue,
+      max: normalizedMax
+    };
+  }
+
+  _ensureAttributeValue(attribute, defaultLabel = "") {
+    const normalized = attribute && typeof attribute === "object" ? attribute : {};
+    return {
+      value: this._toFiniteNumber(normalized.value, 0),
+      label: typeof normalized.label === "string" ? normalized.label : defaultLabel
+    };
+  }
+
+  _ensurePrimaryAttributes(primaryAttributes) {
+    const normalized = primaryAttributes && typeof primaryAttributes === "object" ? primaryAttributes : {};
+    return {
+      strength: this._ensureAttributeValue(normalized.strength, "FFXIV.Attributes.Strength.long"),
+      dexterity: this._ensureAttributeValue(normalized.dexterity, "FFXIV.Attributes.Dexterity.long"),
+      vitality: this._ensureAttributeValue(normalized.vitality, "FFXIV.Attributes.Vitality.long"),
+      intelligence: this._ensureAttributeValue(normalized.intelligence, "FFXIV.Attributes.Intelligence.long"),
+      mind: this._ensureAttributeValue(normalized.mind, "FFXIV.Attributes.Mind.long")
+    };
+  }
+
+  _ensureSecondaryAttributes(secondaryAttributes) {
+    const normalized = secondaryAttributes && typeof secondaryAttributes === "object" ? secondaryAttributes : {};
+    const speed = normalized.speed && typeof normalized.speed === "object" ? normalized.speed : {};
+    return {
+      defense: this._ensureAttributeValue(normalized.defense, "FFXIV.Attributes.Defense"),
+      magic_defense: this._ensureAttributeValue(normalized.magic_defense, "FFXIV.Attributes.MagicDefense"),
+      vigilance: this._ensureAttributeValue(normalized.vigilance, "FFXIV.Attributes.Vigilance"),
+      speed: {
+        value: this._toFiniteNumber(speed.value, 0),
+        unit: typeof speed.unit === "string" ? speed.unit : "squares",
+        label: typeof speed.label === "string" ? speed.label : "FFXIV.Attributes.Speed"
+      }
     };
   }
 
   _ensureCharacterSystemDefaults() {
+    if (!["character", "npc"].includes(this.type)) return;
+
+    this.system.primary_attributes = this._ensurePrimaryAttributes(this.system.primary_attributes);
+    this.system.secondary_attributes = this._ensureSecondaryAttributes(this.system.secondary_attributes);
     if (this.type !== "character") return;
 
     this.system.health = this._ensureResource(this.system.health);
     this.system.barrier = this._ensureResource(this.system.barrier);
-    this.system.mana = this._ensureResource(this.system.mana, { max: 5 });
+    this.system.mana = this._ensureResource(this.system.mana, { value: 5, max: 5 });
 
     const currentClass = this.system.class && typeof this.system.class === "object" ? this.system.class : {};
     this.system.class = {
@@ -31,12 +78,48 @@ export class FfxivActor extends Actor {
 
     if (!Array.isArray(this.system.pets)) this.system.pets = [];
     if (!Array.isArray(this.system.pet_order)) this.system.pet_order = [];
+    if (!["true", "false"].includes(this.system.showPets)) this.system.showPets = "false";
     if (!this.system.ability_order || typeof this.system.ability_order !== "object" || Array.isArray(this.system.ability_order)) {
       this.system.ability_order = {};
     }
+
+    const profileTrait = this.system.profile_trait;
+    if (!profileTrait || typeof profileTrait !== "object" || Array.isArray(profileTrait)) {
+      this.system.profile_trait = { name: "", effect: "" };
+    } else {
+      this.system.profile_trait = {
+        name: typeof profileTrait.name === "string" ? profileTrait.name : "",
+        effect: typeof profileTrait.effect === "string" ? profileTrait.effect : ""
+      };
+    }
+
+    const appearance = this.system.appearance;
+    if (!appearance || typeof appearance !== "object" || Array.isArray(appearance)) {
+      this.system.appearance = {
+        race: "",
+        size: "",
+        age: "",
+        gender: "",
+        weight: "",
+        hair: "",
+        eyes: "",
+        skin: ""
+      };
+    } else {
+      this.system.appearance = {
+        race: typeof appearance.race === "string" ? appearance.race : "",
+        size: typeof appearance.size === "string" ? appearance.size : "",
+        age: typeof appearance.age === "string" ? appearance.age : "",
+        gender: typeof appearance.gender === "string" ? appearance.gender : "",
+        weight: typeof appearance.weight === "string" ? appearance.weight : "",
+        hair: typeof appearance.hair === "string" ? appearance.hair : "",
+        eyes: typeof appearance.eyes === "string" ? appearance.eyes : "",
+        skin: typeof appearance.skin === "string" ? appearance.skin : ""
+      };
+    }
   }
 
-  //The ensure and reset methods exist to fix issues spawned in V14 with active effects.
+  // The ensure and reset methods exist to fix issues spawned in V14 with active effects.
   _ensureActiveEffectState() {
     this.overrides ??= {};
     this.statuses ??= new Set();
@@ -58,6 +141,79 @@ export class FfxivActor extends Actor {
   prepareData() {
     this._resetActiveEffectState();
     return super.prepareData();
+  }
+
+  /** @override */
+  async _preCreate(data, options, user) {
+    if (await super._preCreate(data, options, user) === false) return false;
+
+    const prototypeToken = {};
+    const lockArtworkRotationGlobal = game.settings.get("ffxiv", "lockArtworkRotationGlobal");
+    if (lockArtworkRotationGlobal && foundry.utils.getProperty(data, "prototypeToken.lockRotation") !== true) {
+      prototypeToken["prototypeToken.lockRotation"] = true;
+    }
+
+    if (this.type === "character") {
+      if (foundry.utils.getProperty(data, "prototypeToken.actorLink") !== true) {
+        prototypeToken["prototypeToken.actorLink"] = true;
+      }
+      if (!foundry.utils.hasProperty(data, "prototypeToken.disposition")) {
+        prototypeToken["prototypeToken.disposition"] = CONST.TOKEN_DISPOSITIONS.FRIENDLY;
+      }
+      if (!foundry.utils.hasProperty(data, "prototypeToken.displayBars")) {
+        prototypeToken["prototypeToken.displayBars"] = CONST.TOKEN_DISPLAY_MODES.OWNER;
+      }
+      if (!foundry.utils.hasProperty(data, "prototypeToken.bar1.attribute")) {
+        prototypeToken["prototypeToken.bar1.attribute"] = "health";
+      }
+      if (!foundry.utils.hasProperty(data, "prototypeToken.bar2.attribute")) {
+        prototypeToken["prototypeToken.bar2.attribute"] = "barrier";
+      }
+    }
+    if (this.type === "npc") {
+      if (!foundry.utils.hasProperty(data, "prototypeToken.displayBars")) {
+        prototypeToken["prototypeToken.displayBars"] = CONST.TOKEN_DISPLAY_MODES.OWNER;
+      }
+      if (!foundry.utils.hasProperty(data, "prototypeToken.bar1.attribute")) {
+        prototypeToken["prototypeToken.bar1.attribute"] = "health";
+      }
+      if (!foundry.utils.hasProperty(data, "prototypeToken.bar2.attribute")) {
+        prototypeToken["prototypeToken.bar2.attribute"] = "barrier";
+      }
+    }
+
+    if (!foundry.utils.isEmpty(prototypeToken)) this.updateSource(prototypeToken);
+  }
+
+  /** @override */
+  async _onCreate(data, options, userId) {
+    super._onCreate(data, options, userId);
+    if (game.user.id !== userId || this.type !== "character") return;
+    await this.update({
+      "system.mana.value": 5,
+      "system.mana.max": 5
+    }, { render: false });
+  }
+
+  /** @override */
+  async modifyTokenAttribute(attribute, value, isDelta = false, isBar = true) {
+    if (isBar && ["health", "barrier"].includes(attribute)) {
+      const attr = foundry.utils.getProperty(this.system, attribute);
+      if (!attr || typeof attr !== "object" || !("value" in attr)) return super.modifyTokenAttribute(attribute, value, isDelta, isBar);
+
+      const current = Number(attr.value) || 0;
+      const numericValue = Number(value) || 0;
+      const update = isDelta ? current + numericValue : numericValue;
+      let next = Math.max(0, update);
+      const max = Number(attr.max);
+      if (attribute === "health" && Number.isFinite(max) && max > 0) next = Math.min(next, max);
+
+      const updates = { [`system.${attribute}.value`]: next };
+      const allowed = Hooks.call("modifyTokenAttribute", { attribute, value, isDelta, isBar }, updates, this);
+      return allowed !== false ? this.update(updates) : this;
+    }
+
+    return super.modifyTokenAttribute(attribute, value, isDelta, isBar);
   }
 
   /** @override */
@@ -94,11 +250,6 @@ export class FfxivActor extends Actor {
    * is queried and has a roll executed directly from it).
    */
   prepareDerivedData() {
-    const systemData = this.system;
-    const flags = this.flags.ffxivttrpg || {};
-
-    // Make separate methods for each Actor type (character, npc, etc.) to keep
-    // things organized.
     this._prepareSharedData(this)
     this._prepareCharacterData(this);
     this._prepareNpcData(this);
@@ -108,7 +259,7 @@ export class FfxivActor extends Actor {
   /**
    * Prepare shared data
    */
-  _prepareSharedData(actorData) {
+  _prepareSharedData() {
     return;
   }
 
@@ -133,6 +284,13 @@ export class FfxivActor extends Actor {
 
   _preparePetData(actorData) {
     if (actorData.type !== 'pet') return;
+    const speed = actorData.system?.speed;
+    if (!speed || typeof speed !== "object") {
+      actorData.system.speed = { value: 5, unit: "squares" };
+      return;
+    }
+    if (!Number.isFinite(speed.value)) speed.value = 5;
+    if (typeof speed.unit !== "string") speed.unit = "squares";
   }
 
 
@@ -140,69 +298,82 @@ export class FfxivActor extends Actor {
    * Override getRollData() that's supplied to rolls.
    */
   getRollData() {
-    // Starts off by populating the roll data with a shallow copy of `this.system`
     const data = { ...this.system };
 
-    //Get attributes from actor
-    if (data.primary_attributes) {
-      for (let [k, v] of Object.entries(data.primary_attributes)) {
+    data.str = 0;
+    data.dex = 0;
+    data.vit = 0;
+    data.int = 0;
+    data.mnd = 0;
+    data.def = 0;
+    data.mdef = 0;
+    data.vigilance = 0;
+
+    const primaryAttributes = data.primary_attributes && typeof data.primary_attributes === "object"
+      ? data.primary_attributes
+      : {};
+    if (Object.keys(primaryAttributes).length) {
+      for (let [k, v] of Object.entries(primaryAttributes)) {
         data[k] = foundry.utils.deepClone(v);
       }
-      data.str = data.primary_attributes.strength.value ?? 0;
-      data.dex = data.primary_attributes.dexterity.value ?? 0;
-      data.vit = data.primary_attributes.vitality.value ?? 0;
-      data.int = data.primary_attributes.intelligence.value ?? 0;
-      data.mnd = data.primary_attributes.mind.value ?? 0;
+      data.str = Number(primaryAttributes?.strength?.value) || 0;
+      data.dex = Number(primaryAttributes?.dexterity?.value) || 0;
+      data.vit = Number(primaryAttributes?.vitality?.value) || 0;
+      data.int = Number(primaryAttributes?.intelligence?.value) || 0;
+      data.mnd = Number(primaryAttributes?.mind?.value) || 0;
     }
-    if (data.secondary_attributes) {
-      for (let [k, v] of Object.entries(data.secondary_attributes)) {
+    const secondaryAttributes = data.secondary_attributes && typeof data.secondary_attributes === "object"
+      ? data.secondary_attributes
+      : {};
+    if (Object.keys(secondaryAttributes).length) {
+      for (let [k, v] of Object.entries(secondaryAttributes)) {
         data[k] = foundry.utils.deepClone(v);
       }
-      data.def = data.secondary_attributes.defense.value ?? 0;
-      data.mdef = data.secondary_attributes.magic_defense.value ?? 0;
-      data.vigilance = data.secondary_attributes.vigilance.value ?? 0;
+      data.def = Number(secondaryAttributes?.defense?.value) || 0;
+      data.mdef = Number(secondaryAttributes?.magic_defense?.value) || 0;
+      data.vigilance = Number(secondaryAttributes?.vigilance?.value) || 0;
     }
-    // Add modifiers from items
-     for (let item of this.items) {
-       if (!Array.isArray(item.system.modifiers)) continue; // Skip if item has no modifiers
-       if (item.system.activable){
-         if (!item.system.active) continue; // Skip if activable but not active
-       }
-       if (item.system.hasOwnProperty("equipped")){
-         if (!item.system.equipped) continue; // Skip if equipped exists but is false
-       }
-       if (item.type === "title"){
-         if (item.name != data.activeTitle) continue; //Skip titles if not active one
-       }
+    for (let item of this.items) {
+      if (!Array.isArray(item.system.modifiers)) continue; // Skip if item has no modifiers
+      if (item.system.activable) {
+        if (!item.system.active) continue; // Skip if activable but not active
+      }
+      if (Object.prototype.hasOwnProperty.call(item.system, "equipped")) {
+        if (!item.system.equipped) continue; // Skip if equipped exists but is false
+      }
+      if (item.type === "title") {
+        if (item.name != data.activeTitle) continue; //Skip titles if not active one
+      }
 
-       for (const modifier of item.system.modifiers) {
-         const [modName, modValue] = modifier;
-         if (data.primary_attributes) {
-           if (modName == CONFIG.FF_XIV.attributes.Strength.label) data.str += modValue;
-           if (modName == CONFIG.FF_XIV.attributes.Dexterity.label) data.dex += modValue;
-           if (modName == CONFIG.FF_XIV.attributes.Vitality.label) data.vit += modValue;
-           if (modName == CONFIG.FF_XIV.attributes.Intelligence.label) data.int += modValue;
-           if (modName == CONFIG.FF_XIV.attributes.Mind.label) data.mnd += modValue;
-         }
-         if (data.secondary_attributes) {
-           if (modName == CONFIG.FF_XIV.attributes.Defense.label) data.def += modValue;
-           if (modName == CONFIG.FF_XIV.attributes.MagicDefense.label) data.mdef += modValue;
-           if (modName == CONFIG.FF_XIV.attributes.Vigilance.label) data.vigilance += modValue;
-         }
-         data.dmg = data.dmg || "";
-         if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += "+"+modValue;
+      for (const modifier of item.system.modifiers) {
+        const [modName, modValue] = modifier;
+        const numericModifier = Number(modValue);
+        const modifierValue = Number.isFinite(numericModifier) ? numericModifier : 0;
+        if (Object.keys(primaryAttributes).length) {
+          if (modName == CONFIG.FF_XIV.attributes.Strength.label) data.str += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Dexterity.label) data.dex += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Vitality.label) data.vit += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Intelligence.label) data.int += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Mind.label) data.mnd += modifierValue;
+        }
+        if (Object.keys(secondaryAttributes).length) {
+          if (modName == CONFIG.FF_XIV.attributes.Defense.label) data.def += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.MagicDefense.label) data.mdef += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Vigilance.label) data.vigilance += modifierValue;
+        }
+        data.dmg = data.dmg || "";
+        if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += "+" + modifierValue;
 
-         data.cdmg = data.cdmg || "";
-         if (modName == CONFIG.FF_XIV.characteristics.CriticalDamage.label) data.cdmg += "+"+modValue;
+        data.cdmg = data.cdmg || "";
+        if (modName == CONFIG.FF_XIV.characteristics.CriticalDamage.label) data.cdmg += "+" + modifierValue;
 
-         data.hit = data.hit || "";
-         if (modName == CONFIG.FF_XIV.characteristics.BonusToHit.label) data.hit += "+"+modValue;
+        data.hit = data.hit || "";
+        if (modName == CONFIG.FF_XIV.characteristics.BonusToHit.label) data.hit += "+" + modifierValue;
 
-       }
-     }
-     if (data.dmg=="") data.dmg="0"
-     if (data.cdmg=="") data.cdmg="0"
-    //Add adventuring ranks
+      }
+    }
+    if (data.dmg == "") data.dmg = "0"
+    if (data.cdmg == "") data.cdmg = "0"
     if (data.adventuring_rank) {
       data.arank_min = data.adventuring_rank.miner
       data.arank_bot = data.adventuring_rank.botanist
@@ -219,16 +390,16 @@ export class FfxivActor extends Actor {
     return data;
   }
 
-  async _showModifiers(){
+  async _showModifiers() {
     debugLog("showModifiers");
-    if (this.items.some(item => item.system.active == true)){
+    if (this.items.some(item => item.system.active == true)) {
       ChatMessage.create({
         content: await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/modifiers-chat-card.hbs", { items: this.items }),
         flags: { core: { canParseHTML: true } },
         flavor: game.i18n.localize("FFXIV.Traits.Modifiers") + " | " + game.i18n.localize("FFXIV.Traits.TraitsOnly")
       });
-    }else{
-      debugError("No modifier to display",this.items);
+    } else {
+      debugError("No modifier to display", this.items);
       ui.notifications.warn(game.i18n.localize("FFXIV.Chat.NoModifiers"));
     }
   }
@@ -243,12 +414,10 @@ export class FfxivActor extends Actor {
     }
 
     const attrKey = abbreviationEntry.value;
-    const attributeValue = foundry.utils.getProperty(this.system, `primary_attributes.${attribute}.value`) || 0;
-
     const rollData = this.getRollData();
     const modifiers = rollData[attrKey] ?? 0;
     const roll = new Roll(`1d20 + ${modifiers}`, rollData);
-    await roll.evaluate({ async: true });
+    await roll.evaluate();
 
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
@@ -260,6 +429,4 @@ export class FfxivActor extends Actor {
 
     return roll;
   }
-
-
 }
