@@ -59,11 +59,12 @@
           <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
         </div>
         <div class="resource-content">
-          <input name="system.activable"
-                 type="checkbox"
-                 {{#if item.system.activable }}
-                 checked
-                 {{/if}} />
+          <select class="ffxiv-text-center"
+                  name="system.activable"
+                  data-dtype="Boolean">
+            <option value="true" {{#if item.system.activable}}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}</option>
+            <option value="false" {{#unless item.system.activable}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}</option>
+          </select>
         </div>
       </div>
       <hr>

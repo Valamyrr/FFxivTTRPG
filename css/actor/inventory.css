@@ -163,8 +163,14 @@
 
 
 /* Display tooltip on hover */
-.inventory-item:hover .item-tooltip {
+.item-tooltip.inventory-floating-tooltip {
+  bottom: auto;
   display: block;
+  left: 0;
+  position: fixed;
+  top: 0;
+  transform: none;
+  z-index: 10000;
 }
 
 .item-tooltip.rarity-basic {
@@ -243,6 +249,14 @@
 
 .gear-summary.modern-panel {
   overflow-x: auto;
+}
+
+.gear-summary-empty {
+  color: var(--text-color);
+  font-style: italic;
+  margin: 4px 0;
+  opacity: 0.8;
+  text-align: center;
 }
 
 .gear-bonuses {

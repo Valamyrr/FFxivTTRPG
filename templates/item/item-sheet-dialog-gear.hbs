@@ -65,12 +65,20 @@
           <div class="detail">
             <strong>{{ localize "FFXIV.CharacterSheet.Equip" }} :</strong>
           </div>
-          <button type="button" class="item-qty-btn gear-equip fa fa-user"></button>
+          <button type="button"
+                  class="item-qty-btn gear-equip"
+                  aria-label="{{localize 'FFXIV.CharacterSheet.Equip'}}">
+            <i class="fa-solid fa-user"></i>
+          </button>
         {{else}}
           <div class="detail">
             <strong>{{ localize "FFXIV.CharacterSheet.Unequip" }} :</strong>
           </div>
-          <button type="button" class="item-qty-btn gear-equip fa fa-user"></button>
+          <button type="button"
+                  class="item-qty-btn gear-equip"
+                  aria-label="{{localize 'FFXIV.CharacterSheet.Unequip'}}">
+            <i class="fa-solid fa-user"></i>
+          </button>
         {{/if}}
         <br>
         <div class="detail">

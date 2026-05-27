@@ -118,6 +118,12 @@ input:disabled {
   width: 100%;
 }
 
+.ffxiv-settings-submenu .setting-control input::placeholder {
+  color: var(--placeholder-color, #8d8d8d);
+  font-style: italic;
+  opacity: 0.68;
+}
+
 .ffxiv-settings-submenu .ffxiv-file-picker {
   flex: 0 0 32px;
   width: 32px;

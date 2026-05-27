@@ -380,12 +380,6 @@ Handlebars.registerHelper("characterTabs", function (settings) {
       icon: getCharacterTabIcon("imgTabRoleplay"),
     },
   ];
-  if (settings.showGear)
-    items.push({
-      tab: "gear",
-      label: game.i18n.localize("FFXIV.CharacterSheet.Gear"),
-      icon: getCharacterTabIcon("imgTabGear"),
-    });
   items.push({
     tab: "items",
     label: game.i18n.localize("FFXIV.CharacterSheet.Inventory"),
@@ -911,7 +905,7 @@ const HP_COST_MIGRATION_TYPES = new Set([
   "augment",
   "minion",
 ]);
-const ITEM_DATA_MIGRATION_VERSION = "10";
+const ITEM_DATA_MIGRATION_VERSION = "11";
 function getMigratableItemCompendiumPacks() {
   return game.packs.filter(
     (pack) => pack.documentName === "Item" && !pack.locked,
@@ -1189,6 +1183,107 @@ async function migrateAbilityHpCosts() {
   return { updatedWorldItems, updatedActorItems, updatedCompendiumItems };
 }
 
+function _remapUUIDLinksInValue(value, UUIDMap) {
+  if (typeof value === "string") {
+    let replacements = 0;
+    const nextValue = value.replace(/@UUID\[([^\]]+)\]/g, (match, uuid) => {
+      const nextUUID = UUIDMap.get(uuid);
+      if (!nextUUID || nextUUID === uuid) return match;
+      replacements += 1;
+      return `@UUID[${nextUUID}]`;
+    });
+    return { value: nextValue, replacements };
+  }
+
+  if (Array.isArray(value)) {
+    let replacements = 0;
+    const nextValue = value.map((entry) => {
+      const rewritten = _remapUUIDLinksInValue(entry, UUIDMap);
+      replacements += rewritten.replacements;
+      return rewritten.value;
+    });
+    return { value: nextValue, replacements };
+  }
+
+  if (value && typeof value === "object") {
+    let replacements = 0;
+    const nextValue = {};
+    for (const [key, entry] of Object.entries(value)) {
+      const rewritten = _remapUUIDLinksInValue(entry, UUIDMap);
+      replacements += rewritten.replacements;
+      nextValue[key] = rewritten.value;
+    }
+    return { value: nextValue, replacements };
+  }
+
+  return { value, replacements: 0 };
+}
+
+function _buildUUIDTextLinkUpdate(item, UUIDMap) {
+  const system = item.toObject(false).system ?? {};
+  const rewritten = _remapUUIDLinksInValue(system, UUIDMap);
+  if (!rewritten.replacements) return null;
+  return {
+    update: { _id: item.id, system: rewritten.value },
+    replacements: rewritten.replacements,
+  };
+}
+
+async function remapMigratedItemUUIDTextLinks(UUIDMap) {
+  const stats = {
+    updatedWorldUUIDTextItems: 0,
+    updatedActorUUIDTextItems: 0,
+    updatedCompendiumUUIDTextItems: 0,
+    updatedUUIDTextLinks: 0,
+  };
+  if (!UUIDMap.size) return stats;
+
+  const worldUpdates = [];
+  for (const item of game.items) {
+    const rewritten = _buildUUIDTextLinkUpdate(item, UUIDMap);
+    if (!rewritten) continue;
+    worldUpdates.push(rewritten.update);
+    stats.updatedWorldUUIDTextItems += 1;
+    stats.updatedUUIDTextLinks += rewritten.replacements;
+  }
+  if (worldUpdates.length) {
+    await Item.updateDocuments(worldUpdates, { render: false });
+  }
+
+  for (const actor of game.actors) {
+    const updates = [];
+    for (const item of actor.items) {
+      const rewritten = _buildUUIDTextLinkUpdate(item, UUIDMap);
+      if (!rewritten) continue;
+      updates.push(rewritten.update);
+      stats.updatedActorUUIDTextItems += 1;
+      stats.updatedUUIDTextLinks += rewritten.replacements;
+    }
+    if (updates.length) {
+      await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+    }
+  }
+
+  for (const pack of getMigratableItemCompendiumPacks()) {
+    const updates = [];
+    for (const item of await pack.getDocuments()) {
+      const rewritten = _buildUUIDTextLinkUpdate(item, UUIDMap);
+      if (!rewritten) continue;
+      updates.push(rewritten.update);
+      stats.updatedCompendiumUUIDTextItems += 1;
+      stats.updatedUUIDTextLinks += rewritten.replacements;
+    }
+    if (updates.length) {
+      await pack.documentClass.updateDocuments(updates, {
+        pack: pack.collection,
+        render: false,
+      });
+    }
+  }
+
+  return stats;
+}
+
 async function migrateAbilityItemTypes() {
   const legacyAbilityTypes = new Set(ABILITY_SUBTYPE_TYPES);
   const grantOwnerTypes = new Set(["job", "augment"]);
@@ -1203,6 +1298,7 @@ async function migrateAbilityItemTypes() {
   let createdCompendiumItems = 0;
   let deletedCompendiumItems = 0;
   let updatedCompendiumTags = 0;
+  const migratedUUIDMap = new Map();
   const worldUUIDMap = new Map();
   const worldLegacyIdToUuidMap = new Map();
   const remapAndNormalizeGrantEntries = (
@@ -1377,6 +1473,9 @@ async function migrateAbilityItemTypes() {
     createdWorldItems += created.length;
     for (let i = 0; i < worldLegacyItems.length; i++) {
       worldUUIDMap.set(worldLegacyItems[i].uuid, created[i]?.uuid);
+      if (worldLegacyItems[i].uuid && created[i]?.uuid) {
+        migratedUUIDMap.set(worldLegacyItems[i].uuid, created[i].uuid);
+      }
       if (worldLegacyItems[i]?.id && created[i]?.uuid) {
         worldLegacyIdToUuidMap.set(worldLegacyItems[i].id, created[i].uuid);
       }
@@ -1427,6 +1526,9 @@ async function migrateAbilityItemTypes() {
       createdCompendiumItems += created.length;
       for (let i = 0; i < packLegacyItems.length; i++) {
         packUUIDMap.set(packLegacyItems[i].uuid, created[i]?.uuid);
+        if (packLegacyItems[i].uuid && created[i]?.uuid) {
+          migratedUUIDMap.set(packLegacyItems[i].uuid, created[i].uuid);
+        }
         if (packLegacyItems[i]?.id && created[i]?.uuid) {
           packLegacyIdToUuidMap.set(packLegacyItems[i].id, created[i].uuid);
         }
@@ -1517,6 +1619,9 @@ async function migrateAbilityItemTypes() {
       for (let i = 0; i < toMigrate.length; i++) {
         idMap.set(toMigrate[i].id, created[i].id);
         actorUUIDMap.set(toMigrate[i].uuid, created[i]?.uuid);
+        if (toMigrate[i].uuid && created[i]?.uuid) {
+          migratedUUIDMap.set(toMigrate[i].uuid, created[i].uuid);
+        }
       }
       await actor.deleteEmbeddedDocuments(
         "Item",
@@ -1606,6 +1711,7 @@ async function migrateAbilityItemTypes() {
       updatedJobGrantUUIDs += jobUpdates.length;
     }
   }
+  const uuidTextStats = await remapMigratedItemUUIDTextLinks(migratedUUIDMap);
   return {
     createdWorldItems,
     deletedWorldItems,
@@ -1618,6 +1724,7 @@ async function migrateAbilityItemTypes() {
     updatedActorTags,
     updatedAbilityOrders,
     updatedJobGrantUUIDs,
+    ...uuidTextStats,
   };
 }
 
@@ -1981,40 +2088,32 @@ Hooks.on("renderActorSheet", async (app) => {
   if (isDraggingItem && !isOwner) return;
   const items = actor.items.contents;
 
-  // Step 1: Get all current positions and identify invalid ones
   const occupiedPositions = new Set();
   const itemsToUpdate = [];
 
-  // Iterate through the items and check for duplicates or invalid positions
   items.forEach((item) => {
     if (FF_XIV.inventory_items.indexOf(item.type) > -1) {
       const position = Number(item.system.position) || 0;
       if (occupiedPositions.has(position) || position === 0) {
-        // Invalid or duplicate position, needs to be updated
         itemsToUpdate.push(item);
       } else {
-        // Valid unique position, mark it as occupied
         occupiedPositions.add(position);
       }
     }
   });
 
-  // Step 2: Assign the next available position to items with invalid positions
   let nextFreePosition = 1;
   itemsToUpdate.forEach((item) => {
     if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1) {
-      // Find the next free position
       while (occupiedPositions.has(nextFreePosition)) {
         nextFreePosition++;
       }
 
-      // Update the item with the new position
       item.update({ "system.position": nextFreePosition });
       occupiedPositions.add(nextFreePosition); // Mark the new position as occupied
     }
   });
 
-  // Step 3: Re-render the inventory grid if changes were made
   if (itemsToUpdate.length > 0) {
     app.render();
   }
@@ -2033,7 +2132,6 @@ Hooks.on("renderActorSheet", (app, html) => {
 
   html.find(".inventory-item").off("dragstart drop dragover");
 
-  // Handle drag start
   html.find(".inventory-item").on("dragstart", (event) => {
     debugLog("Drag started:", event.currentTarget.dataset.itemId);
     draggedItem = {
@@ -2065,12 +2163,10 @@ Hooks.on("renderActorSheet", (app, html) => {
     );
   });
 
-  // Handle drag over (for both items and empty slots)
   html.find(".inventory-item").on("dragover", (event) => {
     debugLog("Drag over:", event.currentTarget.dataset.itemId || "empty slot");
   });
 
-  // Handle drop event (for both items and empty slots)
   html.find(".inventory-item").on("drop", async (event) => {
     event.preventDefault();
     debugLog(event);
@@ -2079,30 +2175,25 @@ Hooks.on("renderActorSheet", (app, html) => {
 
     debugLog("Dropped on:", targetPosition || "empty slot");
 
-    // If dropped on an empty slot, there's no item ID
     const targetItemId = event.currentTarget.dataset.itemId;
 
     const draggedItemData = actor.items.get(draggedItem.id);
 
     if (targetItemId) {
-      // If there's an item in the target slot, swap the items
       const targetItemData = actor.items.get(targetItemId);
       await draggedItemData.update({ "system.position": targetPosition });
       await targetItemData.update({ "system.position": draggedItem.position });
     } else {
-      // If it's an empty slot, move the dragged item there
       await draggedItemData.update({ "system.position": targetPosition });
     }
 
     playConfiguredSound("soundNotificationFFXIV_moveItem");
 
-    // Re-render the inventory after dropping
     app.render();
   });
 });
 
 Hooks.on("preCreateItem", (itemData) => {
-  //Default Images for Items
   if (!itemData.img || itemData.img === "icons/svg/item-bag.svg") {
     const defaultImages = {};
     const defaultImg = defaultImages[itemData.type] || "icons/svg/item-bag.svg";
@@ -2112,7 +2203,6 @@ Hooks.on("preCreateItem", (itemData) => {
 
 Hooks.on("userConnected", (player, login) => {
   if (login && !game.paused) {
-    //If the game is paused or the player logouts, do not play anything
     ui.notifications.info(
       game.i18n.format("FFXIV.Notifications.NewPlayer", {
         playerName: player.name,

@@ -104,22 +104,6 @@
   object-fit: contain;
 }
 
-.ffxiv.actor.character>nav.sheet-tabs.tabs.has-gear-tab {
-  gap: 6px;
-  right: -42px;
-  width: 46px;
-}
-
-.ffxiv.actor.character>nav.sheet-tabs.tabs.has-gear-tab .item,
-.ffxiv.actor.character>nav.sheet-tabs.tabs.has-gear-tab .item img {
-  width: 46px;
-  height: 46px;
-}
-
-.ffxiv.actor.character>nav.sheet-tabs.tabs.has-gear-tab .item {
-  flex-basis: 46px;
-}
-
 .ffxiv.actor .sheet-body-wrapper {
   display: flex;
   flex-direction: row;

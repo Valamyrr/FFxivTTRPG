@@ -237,9 +237,6 @@
           {{#each items }}
             {{#if (and (eq type "title") (eq name ../system.activeTitle)) }}
               <div class="actor-title-data">
-                <div class="detail">
-                  <strong>{{localize "FFXIV.Item.Name"}}:</strong> {{localize name}}
-                </div>
                 {{#if system.source }}
                   <div class="detail">
                     <strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}

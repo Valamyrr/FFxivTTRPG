@@ -191,7 +191,7 @@ function buildPriceField() {
     denomination: new fields.StringField({
       required: false,
       blank: true,
-      initial: "FFXIV.Item.Fortune",
+      initial: "Fortune",
     }),
   });
 }
@@ -342,7 +342,7 @@ function buildPrimaryAttributesField() {
   });
 }
 
-function buildSecondaryAttributesField() {
+function buildSecondaryAttributesField(speedInitial = 0) {
   return new fields.SchemaField({
     defense: new fields.SchemaField({
       value: new fields.NumberField({
@@ -384,7 +384,7 @@ function buildSecondaryAttributesField() {
       value: new fields.NumberField({
         required: false,
         integer: true,
-        initial: 0,
+        initial: speedInitial,
       }),
       unit: new fields.StringField({
         required: false,
@@ -684,14 +684,14 @@ class NpcActorData extends foundry.abstract.TypeDataModel {
         blank: true,
         initial: "",
       }),
-      health: buildResourceField(),
+      health: buildResourceField(0),
       barrier: buildResourceField(),
       ability_order: new fields.ObjectField({ required: false, initial: {} }),
       pet_order: new fields.ArrayField(
         new fields.StringField({ required: false, blank: true, initial: "" }),
       ),
       primary_attributes: buildPrimaryAttributesField(),
-      secondary_attributes: buildSecondaryAttributesField(),
+      secondary_attributes: buildSecondaryAttributesField(5),
       size: new fields.StringField({
         required: false,
         blank: true,
@@ -829,7 +829,7 @@ class GearItemData extends foundry.abstract.TypeDataModel {
       category: new fields.StringField({
         required: false,
         blank: true,
-        initial: "",
+        initial: "FFXIV.GearCategories.Arms",
       }),
       subcategory: new fields.StringField({
         required: false,

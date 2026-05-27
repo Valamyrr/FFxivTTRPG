@@ -540,8 +540,6 @@ export class FFXIVItem extends Item {
    * Augment the basic Item data model with additional dynamic data.
    */
   prepareData() {
-    // As with the actor class, items are documents that can have their data
-    // preparation methods overridden (such as prepareBaseData()).
     debugLog("FFXIV | Item ", this);
     super.prepareData();
   }
@@ -551,17 +549,14 @@ export class FFXIVItem extends Item {
    * @override
    */
   getRollData() {
-    // Starts off by populating the roll data with a shallow copy of `this.system`
     const rollData = { ...this.system };
 
     const target = game.user.targets.first();
     if (target) {
-      //If player has selected any target
       rollData.target = game.actors.get(target.document.actorId).getRollData(); //Adds the target's RollData
     }
 
     if (this.parent) {
-      //If an actor is present
       Object.assign(rollData, this.parent.getRollData());
     }
     return rollData;
@@ -671,11 +666,9 @@ export class FFXIVItem extends Item {
 
   async _rollHit(options = {}) {
     if (options instanceof Event) options = {};
-    // Identify the actor and user performing the roll
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
 
-    // Get the roll data, including the base formula
     const rollData = this.getRollData();
     const baseFormula = this._getHitBaseFormula(rollData);
     const resolveFormula = (formula) => {
@@ -686,7 +679,6 @@ export class FFXIVItem extends Item {
     };
     let result = { advantageDice: 0, flatModifier: 0 };
 
-    // Display a DialogV2 for roll options and wait for user input
     if (!options.auto)
       result = await foundry.applications.api.DialogV2.wait({
         id: "ffxiv-hit-roll-dialog",
@@ -719,14 +711,12 @@ export class FFXIVItem extends Item {
           <strong>${game.i18n.localize("FFXIV.RollDialog.Preview")}:</strong> <span id="roll-preview">...</span>
         </div>
       `,
-        // Buttons with i18n and form value capture
         buttons: [
           {
             label: game.i18n.localize("FFXIV.RollDialog.ButtonRoll"),
             action: "roll",
             type: "submit",
             callback: (_event, button) => {
-              // Extract advantage and modifier values from form
               const form = button.form;
               const advantageDice =
                 parseInt(form.elements.advantageDice.value) || 0;
@@ -741,7 +731,6 @@ export class FFXIVItem extends Item {
             type: "cancel",
           },
         ],
-        // Update roll preview dynamically as inputs change
         render: (_event, dialog) => {
           const html = dialog.element;
           const advInput = html.querySelector('input[name="advantageDice"]');
@@ -780,7 +769,6 @@ export class FFXIVItem extends Item {
             preview.textContent = previewFormula;
           };
 
-          // Bind plus/minus buttons to adjust input values
           html.querySelectorAll(".btn-adjust").forEach((btn) =>
             btn.addEventListener("click", (event) => {
               const target = event.currentTarget.dataset.target;
@@ -803,12 +791,10 @@ export class FFXIVItem extends Item {
         width: 360,
       });
 
-    // Cancelled or closed dialog
     if (!result || typeof result !== "object") return;
 
     const { advantageDice, flatModifier } = result;
 
-    // Build final roll formula based on inputs
     let formula = resolveFormula(baseFormula);
     const d20Pattern = /(\d*)d20/i;
     if (d20Pattern.test(formula)) {
@@ -829,11 +815,9 @@ export class FFXIVItem extends Item {
           : ` - ${Math.abs(flatModifier)}`);
     }
 
-    // Roll the formula
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
 
-    // Determine if the roll is a critical hit or failure
     const d20 = roll.dice.find((die) => die.faces === 20);
     const activeD20Results =
       d20?.results?.filter((result) => result.active !== false) ||
@@ -846,7 +830,6 @@ export class FFXIVItem extends Item {
     const isCritical = d20Result !== null && d20Result >= criticalRange;
     const isCriticalFailure = false;
 
-    // Play sound for critical hits
     if (
       isCritical &&
       game.settings.get("ffxiv", "soundNotificationFFXIV") &&
@@ -860,7 +843,6 @@ export class FFXIVItem extends Item {
       });
     }
 
-    // Prepare additional roll buttons for follow-up actions
     let extraButtons = "<div style='display:flex;flex-wrap: wrap;'>";
     if (this._hasDirectRoll()) {
       extraButtons += `<button class="ffxiv-roll-direct" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`;
@@ -870,12 +852,10 @@ export class FFXIVItem extends Item {
       extraButtons += `<button class="ffxiv-roll-critical-alternate" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollAlternateCriticalHitFormula")}</button>`;
     extraButtons += "</div>";
 
-    // Render the roll result
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
     if (isCritical) rollHTML.find(".dice-total").css({ color: "blue" });
     if (isCriticalFailure) rollHTML.find(".dice-total").css({ color: "red" });
 
-    // Post the final chat message
     await ChatMessage.create({
       user,
       speaker,

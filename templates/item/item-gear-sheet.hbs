@@ -18,6 +18,21 @@
   {{! Sheet Body }}
   <section class="sheet-body">
     <div class="resources grid grid-3col">
+      {{#if item.parent }}
+        <div class="resource flex-group-center">
+          <label class="resource-label">{{ localize "FFXIV.CharacterSheet.Gear" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <button type="button" class="item-qty-btn gear-equip">
+              <i class="fa-solid fa-user"></i>
+              {{#if system.equipped }}
+                {{ localize "FFXIV.CharacterSheet.Unequip" }}
+              {{else}}
+                {{ localize "FFXIV.CharacterSheet.Equip" }}
+              {{/if}}
+            </button>
+          </div>
+        </div>
+      {{/if}}
       <div class="resource flex-group-center">
         <label for="system.category" class="resource-label">{{ localize "FFXIV.GearCategories.Category" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
@@ -118,7 +133,7 @@
         {{#each system.classes as |class index| }}
           <li>
             <select class="ffxiv-text-center select-classes">
-              <option value="" {{#if (eq "" class) }}selected {{/if }}>{{ localize "FFXIV.Tags.Default" }}
+              <option value="" {{#if (eq "" class) }}selected {{/if }}>{{ localize "FFXIV.None" }}
               </option>
               {{#each ../settings.jobsAbbrv as |c| }}
                 <option value="{{c}}" {{#if (eq c class) }}selected {{/if }}>{{ localize c }}

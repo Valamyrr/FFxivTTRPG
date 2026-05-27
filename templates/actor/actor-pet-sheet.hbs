@@ -12,24 +12,35 @@
         {{#if actorEditMode }}
           <textarea name="name"
                     rows="2"
-                    placeholder="Name">{{actor.name}}</textarea>
+                    placeholder="{{localize 'FFXIV.Name'}}">{{actor.name}}</textarea>
         {{else}}
           {{actor.name}}
         {{/if}}
       </h1>
       <div class="pet-header-fields">
-        <div class="pet-header-speed">
-          <img src="{{settings.attributesImgSpeed}}"
-               alt="{{ localize "FFXIV.Attributes.Speed" }}" width="32" height="32">
-          <p class="s-attribute-value attribute-display-text">{{ localize "FFXIV.Attributes.Speed" }}:</p>
-          {{#if actorEditMode }}
-            <input type="number"
-                   class="s-attribute-value pet-speed-number"
-                   name="system.speed.value"
-                   value="{{ system.speed.value }}">
-          {{else}}
-            <span class="s-attribute-value pet-speed-number actor-locked">{{system.speed.value}}</span>
-          {{/if}}
+        <div class="pet-header-speed npc-secondary-stat">
+          <span class="npc-secondary-stat-label" title="{{ localize 'FFXIV.Attributes.Speed' }}">
+            <span class="npc-stat-label npc-icon-label">
+              {{#if settings.attributesImgSpeed }}
+                <img src="{{settings.attributesImgSpeed}}"
+                     alt="{{ localize 'FFXIV.Attributes.Speed' }}" width="20" height="20">
+              {{else}}
+                {{ localize "FFXIV.Attributes.Speed" }}
+              {{/if}}
+            </span>
+            <span class="npc-secondary-label">{{ localize "FFXIV.Attributes.Speed" }}</span>
+          </span>
+          <span class="npc-stat-control">
+            {{#if actorEditMode }}
+              <input type="number"
+                     class="input-window pet-speed-number"
+                     name="system.speed.value"
+                     value="{{ system.speed.value }}"
+                     placeholder="0">
+            {{else}}
+              <span class="npc-plain-value npc-stat-number pet-speed-number">{{system.speed.value}}</span>
+            {{/if}}
+          </span>
         </div>
       </div>
     </div>

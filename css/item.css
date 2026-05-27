@@ -518,3 +518,11 @@
 .ffxiv.item.item-modern-sheet .resource-label {
   letter-spacing: 0.02em;
 }
+
+.ffxiv.item.item-modern-sheet .gear-equip {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  width: 100%;
+}

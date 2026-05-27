@@ -53,9 +53,9 @@
           <label for="system.has_pets" class="resource-label">{{ localize "FFXIV.Job.HasPets" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <select name="system.has_pets" data-dtype="Boolean">
-              <option value="true" {{#if system.has_pets }}selected{{/if}}>{{ localize "FFXIV.True" }}
+              <option value="true" {{#if system.has_pets }}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}
               </option>
-              <option value="false" {{#unless system.has_pets}}selected{{/unless}}>{{ localize "FFXIV.False" }}
+              <option value="false" {{#unless system.has_pets}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}
               </option>
             </select>
           </div>

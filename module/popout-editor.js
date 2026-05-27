@@ -58,11 +58,9 @@ export default class PopoutEditor extends HandlebarsApplicationMixin(
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    // Get current value
     const systemPath = this.attribute.replace(/^(data|system)\./, "");
     let attr = foundry.utils.getProperty(this.object.system, systemPath);
 
-    // Return data
     context.value = attr;
     context.cssClass = "editable popout-editor-window";
     return context;
@@ -74,7 +72,6 @@ export default class PopoutEditor extends HandlebarsApplicationMixin(
     const updateData = {};
     updateData[`${this.attribute}`] = formData.object.value;
 
-    // Update the object
     await this.object.update(migrateDataToSystem(updateData));
   }
 }

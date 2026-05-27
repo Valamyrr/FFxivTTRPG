@@ -12,6 +12,8 @@ import {
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem:
     "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
+  soundNotificationFFXIV_moveItem:
+    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
   soundNotificationFFXIV_openSheet:
     "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
   soundNotificationFFXIV_closeSheet:
@@ -69,7 +71,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (this.item.type == "consumable") {
       if (
         !forceFullSheet &&
-        game.settings.get("ffxiv", "limitedPhysicalItemsDialog") &&
         (this.item.parent != null || this.item.flags["item-piles"])
       ) {
         return `${path}/item-sheet-dialog.hbs`;
@@ -114,7 +115,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (this.item.type == "gear") {
       if (
         !forceFullSheet &&
-        game.settings.get("ffxiv", "limitedPhysicalItemsDialog") &&
         this.item.parent != null
       ) {
         return `${path}/item-sheet-dialog-gear.hbs`;
@@ -328,6 +328,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       [event.target.name]: this._getChangedFieldValue(event.target),
     };
     const render =
+      event.target.name === "name" ||
       (this.item.type === "job" &&
         ["system.job_name", "system.level"].includes(event.target.name)) ||
       [
@@ -596,7 +597,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           $(event.currentTarget).closest("li").index(),
       );
       const value = $(event.currentTarget).val(); // Get the selected value
-      const tags = this.item.system.tags || []; // Ensure tags is initialized
+      const tags = this.item.system.tags || [];
       tags[index] = value; // Update the correct index in the array
       this.item.update({ "system.tags": tags }); // Update the item with the new tags array
     });
@@ -946,43 +947,51 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }).render({ force: true });
   }
 
-  _toggleEquip(event) {
+  async _toggleEquip(event) {
     event.preventDefault();
     event.stopPropagation();
-    let actor = game.actors.get(this.item.parent._id);
+    const actor = this.item.parent;
+    if (actor?.documentName !== "Actor") return;
 
-    // Ensure equippedGear is initialized with category keys, not localized labels
-    let equippedGear =
-      actor.system.equippedGear ||
-      Object.fromEntries(
+    const equippedGear = {
+      ...Object.fromEntries(
         Object.keys(CONFIG.FF_XIV.gear_subcategories).map((k) => [k, ""]),
-      );
+      ),
+      ...foundry.utils.deepClone(actor.system.equippedGear || {}),
+    };
 
     debugLog("Before:", equippedGear);
 
-    // Find the category key corresponding to this item's category (localized label)
-    let categoryKey = Object.keys(CONFIG.FF_XIV.gear_subcategories).find(
+    // Blank stored categories represent the default Arms option.
+    const defaultCategory =
+      CONFIG.FF_XIV.gear_subcategories.Arms?.label ??
+      Object.values(CONFIG.FF_XIV.gear_subcategories)[0]?.label ??
+      "";
+    const selectedCategory = this.item.system.category || defaultCategory;
+    const categoryKey = Object.keys(CONFIG.FF_XIV.gear_subcategories).find(
       (key) =>
         CONFIG.FF_XIV.gear_subcategories[key].label ===
-        this.item.system.category,
+        selectedCategory,
     );
 
     if (!categoryKey) {
-      debugError(`Category not found for ${this.item.system.category}`);
+      debugError(`Category not found for ${selectedCategory}`);
+      ui.notifications.warn("Choose a gear category before equipping this item.");
       return;
     }
 
+    const itemUpdate = {};
+    if (!this.item.system.category) itemUpdate["system.category"] = selectedCategory;
+
     if (this.item.system.equipped) {
-      // Unequip item
       equippedGear[categoryKey] = "";
-      this.item.update({ "system.equipped": false });
+      itemUpdate["system.equipped"] = false;
     } else {
-      // Replace currently equipped gear in this category
       const currentEquipped = equippedGear[categoryKey];
       if (currentEquipped) {
         let oldItem = actor.items.get(currentEquipped);
         if (oldItem) {
-          oldItem.update({ "system.equipped": false });
+          await oldItem.update({ "system.equipped": false }, { render: false });
           ui.notifications.info(
             game.i18n.format("FFXIV.Notifications.ReplaceGear", {
               oldGear: oldItem.name,
@@ -992,11 +1001,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         }
       }
       equippedGear[categoryKey] = this.item._id;
-      this.item.update({ "system.equipped": true });
+      itemUpdate["system.equipped"] = true;
     }
 
+    await this.item.update(itemUpdate, { render: false });
     debugLog("After:", equippedGear);
-    actor.update({ "system.equippedGear": equippedGear });
+    await actor.update({ "system.equippedGear": equippedGear }, { render: false });
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    await this.render({ force: true });
+    actor.sheet?.render?.({ force: true });
   }
 
   _onPopoutEditor(event) {
@@ -1076,7 +1089,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _isLimitedDisplayMode() {
     if (this.options?.ffxivForceFullSheet) return false;
-    if (!game.settings.get("ffxiv", "limitedPhysicalItemsDialog")) return false;
     if (this.item.type === "consumable") {
       return (
         this.item.parent != null || Boolean(this.item.flags?.["item-piles"])

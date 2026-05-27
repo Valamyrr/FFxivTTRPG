@@ -89,8 +89,13 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
         async (event) => {
           event.preventDefault();
           event.stopPropagation();
-          await this._saveSettings();
+          const reload = await this._saveSettings();
           await this.close();
+          if (reload.required) {
+            await foundry.applications.settings.SettingsConfig.reloadConfirm({
+              world: reload.world,
+            });
+          }
         },
         { signal },
       );
@@ -120,8 +125,9 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _saveSettings() {
     const form = this.element.querySelector("form");
-    if (!form) return;
+    if (!form) return { required: false, world: false };
 
+    const changedScopes = new Set();
     const updates = this.constructor.settingKeys.map(async (key) => {
       const config = game.settings.settings.get(`ffxiv.${key}`);
       const input = form.elements[key];
@@ -135,9 +141,14 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
       const current = game.settings.get("ffxiv", key);
       if (current === value) return;
 
+      changedScopes.add(config.scope);
       await game.settings.set("ffxiv", key, value);
     });
     await Promise.all(updates);
+    return {
+      required: changedScopes.size > 0,
+      world: changedScopes.has("world"),
+    };
   }
 }
 
@@ -145,7 +156,6 @@ class FFXIVSoundSettingsMenu extends FFXIVSettingsSubmenu {
   static menuId = "sound-settings";
   static titleKey = "FFXIV.Settings.SoundSettingsMenu";
   static settingKeys = [
-    "soundNotificationFFXIV",
     "soundNotificationFFXIV_critical",
     "soundNotificationFFXIV_deleteItem",
     "soundNotificationFFXIV_moveItem",
@@ -164,6 +174,12 @@ class FFXIVIconSettingsMenu extends FFXIVSettingsSubmenu {
     "attributesImgVigilance",
     "attributesImgSpeed",
   ];
+  static placeholders = {
+    attributesImgDefense: "systems/ffxiv/assets/attribute-icons/rampart.webp",
+    attributesImgMagicDefense: "systems/ffxiv/assets/attribute-icons/dark-mind.webp",
+    attributesImgVigilance: "systems/ffxiv/assets/attribute-icons/duty-finder.webp",
+    attributesImgSpeed: "systems/ffxiv/assets/attribute-icons/sightseeing-log.webp",
+  };
 }
 
 class FFXIVTabIconSettingsMenu extends FFXIVSettingsSubmenu {
@@ -173,12 +189,19 @@ class FFXIVTabIconSettingsMenu extends FFXIVSettingsSubmenu {
     "hueTabsIcons",
     "imgTabAbilities",
     "imgTabAttributes",
-    "imgTabGear",
     "imgTabRoleplay",
     "imgTabItems",
     "imgTabCompanions",
     "imgTabSettings",
   ];
+  static placeholders = {
+    imgTabAbilities: "systems/ffxiv/assets/tab-icons/actions-and-traits.webp",
+    imgTabAttributes: "systems/ffxiv/assets/tab-icons/pvp-profile.webp",
+    imgTabRoleplay: "systems/ffxiv/assets/tab-icons/character.webp",
+    imgTabItems: "systems/ffxiv/assets/tab-icons/inventory.webp",
+    imgTabCompanions: "systems/ffxiv/assets/tab-icons/companions.webp",
+    imgTabSettings: "systems/ffxiv/assets/tab-icons/system-configuration.webp",
+  };
 }
 
 class FFXIVCustomTagsSettingsMenu extends FFXIVSettingsSubmenu {
@@ -282,7 +305,7 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.SoundSettingsMenuHint"),
       icon: "fas fa-volume-high",
       type: FFXIVSoundSettingsMenu,
-      restricted: false,
+      restricted: true,
     });
 
     game.settings.registerMenu("ffxiv", "iconSettingsMenu", {
@@ -335,21 +358,11 @@ export class SettingsHelpers {
       name: "FFXIV.Settings.SoundNotificationFFXIV",
       hint: "FFXIV.Settings.SoundNotificationFFXIVHint",
       scope: "client",
-      config: false,
-      default: true,
-      type: Boolean,
-      requiresReload: false,
-    });
-    game.settings.register("ffxiv", "limitedPhysicalItemsDialog", {
-      name: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialog"),
-      hint: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialogHint"),
-      scope: "client",
       config: true,
       default: true,
       type: Boolean,
       requiresReload: false,
     });
-
     game.settings.register("ffxiv", "hueTabsIcons", {
       name: "FFXIV.Settings.HueTabsIcons",
       hint: "FFXIV.Settings.HueTabsIconsHint",
@@ -527,7 +540,7 @@ export class SettingsHelpers {
       hint: "",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/attribute-icons/rampart.webp",
+      default: "",
       type: String,
       requiresReload: true,
       filePicker: "image",
@@ -537,7 +550,7 @@ export class SettingsHelpers {
       hint: "",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/attribute-icons/dark-mind.webp",
+      default: "",
       type: String,
       requiresReload: true,
       filePicker: "image",
@@ -547,7 +560,7 @@ export class SettingsHelpers {
       hint: "",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/attribute-icons/duty-finder.webp",
+      default: "",
       type: String,
       requiresReload: true,
       filePicker: "image",
@@ -557,7 +570,7 @@ export class SettingsHelpers {
       hint: "",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/attribute-icons/sightseeing-log.webp",
+      default: "",
       type: String,
       requiresReload: true,
       filePicker: "image",
@@ -569,7 +582,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "systems/ffxiv/assets/tab-icons/actions-and-traits.webp",
+      default: "",
       requiresReload: true,
       filePicker: "image",
     });
@@ -579,7 +592,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "systems/ffxiv/assets/tab-icons/pvp-profile.webp",
+      default: "",
       requiresReload: true,
       filePicker: "image",
     });
@@ -589,7 +602,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "systems/ffxiv/assets/tab-icons/armoury-chest.webp",
+      default: "",
       requiresReload: true,
       filePicker: "image",
     });
@@ -599,7 +612,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "systems/ffxiv/assets/tab-icons/character.webp",
+      default: "",
       requiresReload: true,
       filePicker: "image",
     });
@@ -609,7 +622,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "systems/ffxiv/assets/tab-icons/inventory.webp",
+      default: "",
       requiresReload: true,
       filePicker: "image",
     });
@@ -619,7 +632,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "systems/ffxiv/assets/tab-icons/companions.webp",
+      default: "",
       requiresReload: true,
       filePicker: "image",
     });
@@ -629,7 +642,7 @@ export class SettingsHelpers {
       scope: "world",
       config: false,
       type: String,
-      default: "systems/ffxiv/assets/tab-icons/system-configuration.webp",
+      default: "",
       requiresReload: true,
       filePicker: "image",
     });

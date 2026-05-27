@@ -452,6 +452,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _onClose(options) {
     this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
     this._closeInventoryContextMenu();
+    this._closeInventoryItemTooltip();
 
     await super._onClose(options);
   }
@@ -720,14 +721,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             await draggedItemData.update({ 'system.position': targetPosition });
           }
 
-          if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')) {
-            foundry.audio.AudioHelper.play({
-              src: game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem'),
-              volume: 1,
-              autoplay: true,
-              loop: false
-            });
-          }
+          this._playConfiguredSound("soundNotificationFFXIV_moveItem");
 
           isDraggingItem = false;
           return this._renderWithoutEnrichment();
@@ -756,14 +750,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             const [copiedItem] = await targetActor.createEmbeddedDocuments("Item", [sourceData], { render: false });
             if (!copiedItem) throw new Error("Failed to copy item on target actor");
 
-            if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')) {
-              foundry.audio.AudioHelper.play({
-                src: game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem'),
-                volume: 1,
-                autoplay: true,
-                loop: false
-              });
-            }
+            this._playConfiguredSound("soundNotificationFFXIV_moveItem");
 
             isDraggingItem = false;
             targetActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => { });
@@ -796,14 +783,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             await sourceItem.delete();
           }
 
-          if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')) {
-            foundry.audio.AudioHelper.play({
-              src: game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem'),
-              volume: 1,
-              autoplay: true,
-              loop: false
-            });
-          }
+          this._playConfiguredSound("soundNotificationFFXIV_moveItem");
 
           isDraggingItem = false;
           targetActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => { });
@@ -855,7 +835,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           }
         );
 
-        // Use enriched if it's different and not blank, else fallback to original
         enriched[key] = html?.trim() ? html : value;
       } else if (typeof value === "object" && value !== null) {
         enriched[key] = await this.enrichAllStrings(value, rollData, relativeTo);
@@ -900,7 +879,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {object} context The context object to mutate
    */
   _prepareItems(context) {
-    // Initialize containers.
     const consumables = [];
     const primary_abilities = [];
     const secondary_abilities = [];
@@ -932,7 +910,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     }
 
-    // Assign and return
     context.consumables = consumables;
     context.primary_abilities = primary_abilities;
     context.secondary_abilities = secondary_abilities;
@@ -976,8 +953,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     html.on('click.ffxivActorSheet', '.actor-edit-toggle', this._toggleActorEditMode.bind(this));
     html.on('click.ffxivActorSheet', '.actor-avatar', this._onActorAvatarClick.bind(this));
 
-    // -------------------------------------------------------------
-    // Everything below here is only needed if the sheet is editable
     if (!this.document.isOwner) return;
 
     // Add Inventory Item
@@ -1072,9 +1047,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }
 
-    // Add linebreaks to rich text ability descriptions.
-    // Since for whatever reason, it seems to hate including those when saving the descriptions.
-    // Inserts a <br> tag after every <p> except the last.
     html.find(".ability-description p:not(:last-of-type)").each(function () {
       $(this).after("<br>");
     });
@@ -1082,6 +1054,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     html.on('click.ffxivActorSheet', '.inventory-item', this._renderItem.bind(this));
     html.on('contextmenu.ffxivActorSheet', '.inventory-item[data-item-id]', this._onInventoryItemContextMenu.bind(this));
+    html.on('mouseenter.ffxivActorSheet', '.inventory-item[data-item-id]', this._showInventoryItemTooltip.bind(this));
+    html.on('mouseleave.ffxivActorSheet', '.inventory-item[data-item-id]', this._closeInventoryItemTooltip.bind(this));
 
 
     html.on('mousedown.ffxivActorSheet', '.mana-bar', this._onClickManaBar.bind(this));
@@ -1274,6 +1248,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async _renderItem(event) {
+    this._closeInventoryItemTooltip();
     const itemId = event.currentTarget.dataset.itemId
     const item = this.actor.items.get(itemId);
 
@@ -1293,6 +1268,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(itemId);
     if (!item) return;
 
+    this._closeInventoryItemTooltip();
     this._closeInventoryContextMenu();
 
     const menu = document.createElement("div");
@@ -1315,12 +1291,23 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const useItem = document.createElement("button");
     useItem.type = "button";
     useItem.className = "ffxiv-inventory-context-option";
-    useItem.textContent = game.i18n.localize("FFXIV.Item.UseItem");
+    const isGear = item.type === "gear";
+    useItem.textContent = isGear
+      ? game.i18n.localize(
+          item.system.equipped
+            ? "FFXIV.CharacterSheet.Unequip"
+            : "FFXIV.CharacterSheet.Equip",
+        )
+      : game.i18n.localize("FFXIV.Item.UseItem");
     useItem.addEventListener("click", async (clickEvent) => {
       clickEvent.preventDefault();
       clickEvent.stopPropagation();
       this._closeInventoryContextMenu();
-      await item.roll();
+      if (isGear) {
+        await this._toggleInventoryGear(item);
+      } else {
+        await item.roll();
+      }
     });
 
     const discard = document.createElement("button");
@@ -1371,6 +1358,86 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!menu) return;
     menu.element?.remove();
     this._inventoryContextMenu = null;
+  }
+
+  _showInventoryItemTooltip(event) {
+    const source = event.currentTarget?.querySelector?.(".item-tooltip");
+    if (!source?.textContent?.trim()) return;
+
+    this._closeInventoryItemTooltip();
+    const tooltip = source.cloneNode(true);
+    tooltip.classList.add("inventory-floating-tooltip", `${CONFIG.theme}_theme`);
+    document.body.appendChild(tooltip);
+
+    const itemRect = event.currentTarget.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const margin = 8;
+    const left = Math.min(
+      Math.max(margin, itemRect.left + ((itemRect.width - tooltipRect.width) / 2)),
+      window.innerWidth - tooltipRect.width - margin,
+    );
+    const top = Math.max(margin, itemRect.top - tooltipRect.height - 4);
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    this._inventoryItemTooltip = tooltip;
+  }
+
+  _closeInventoryItemTooltip() {
+    this._inventoryItemTooltip?.remove();
+    this._inventoryItemTooltip = null;
+  }
+
+  async _toggleInventoryGear(item) {
+    const equippedGear = {
+      ...Object.fromEntries(
+        Object.keys(CONFIG.FF_XIV.gear_subcategories).map((key) => [key, ""]),
+      ),
+      ...foundry.utils.deepClone(this.actor.system.equippedGear || {}),
+    };
+
+    const defaultCategory =
+      CONFIG.FF_XIV.gear_subcategories.Arms?.label ??
+      Object.values(CONFIG.FF_XIV.gear_subcategories)[0]?.label ??
+      "";
+    const selectedCategory = item.system.category || defaultCategory;
+    const categoryKey = Object.keys(CONFIG.FF_XIV.gear_subcategories).find(
+      (key) => CONFIG.FF_XIV.gear_subcategories[key].label === selectedCategory,
+    );
+
+    if (!categoryKey) {
+      debugError(`Category not found for ${selectedCategory}`);
+      ui.notifications.warn("Choose a gear category before equipping this item.");
+      return;
+    }
+
+    const itemUpdate = {};
+    if (!item.system.category) itemUpdate["system.category"] = selectedCategory;
+
+    if (item.system.equipped) {
+      equippedGear[categoryKey] = "";
+      itemUpdate["system.equipped"] = false;
+    } else {
+      const currentEquipped = equippedGear[categoryKey];
+      if (currentEquipped) {
+        const oldItem = this.actor.items.get(currentEquipped);
+        if (oldItem) {
+          await oldItem.update({ "system.equipped": false }, { render: false });
+          ui.notifications.info(
+            game.i18n.format("FFXIV.Notifications.ReplaceGear", {
+              oldGear: oldItem.name,
+              newGear: item.name,
+            }),
+          );
+        }
+      }
+      equippedGear[categoryKey] = item.id;
+      itemUpdate["system.equipped"] = true;
+    }
+
+    await item.update(itemUpdate, { render: false });
+    await this.actor.update({ "system.equippedGear": equippedGear }, { render: false });
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    await this.render({ force: true });
   }
 
   _confirmDiscardInventoryItem(item) {
@@ -1799,15 +1866,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._switchCompanionTab(tab)
   }
   _switchAbilityTab(tab) {
-    /*let characterSheet;
-    if (this.token){
-      if(!this.token.actorLink){ //If no actor data linked but token sheet is used
-          characterSheet =  `FFXIVActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
-      }
-    }
-    if(!characterSheet){
-      characterSheet = `FFXIVActorSheet-Actor-${this.actor._id}`;
-    }*/
     $(`#${this.characterSheet} .abilities-sub-tabs .sub-tab`).removeClass("active");
     $(`#${this.characterSheet} .sub-tab-content`).removeClass('active').hide();
     $(`#${this.characterSheet} .abilities-sub-tabs .sub-tab[data-tab=${tab}]`).addClass("active");
@@ -2084,9 +2142,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _removePet(event) {
     const petId = event.currentTarget.dataset.itemId;
     let pets = foundry.utils.duplicate(this.actor.system.pets || []);
-    //console.log(pets)
     const index = pets.indexOf(petId)
-    //console.log(index)
     if (index == -1) {
       debugError(`No pet "${petId}" in pets array from:`, this.actor.system.pets);
       return;

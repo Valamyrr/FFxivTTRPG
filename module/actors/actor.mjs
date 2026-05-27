@@ -250,8 +250,6 @@ export class FFXIVActor extends Actor {
    * is queried and has a roll executed directly from it).
    */
   prepareDerivedData() {
-    // Make separate methods for each Actor type (character, npc, etc.) to keep
-    // things organized.
     this._prepareSharedData(this)
     this._prepareCharacterData(this);
     this._prepareNpcData(this);
@@ -300,7 +298,6 @@ export class FFXIVActor extends Actor {
    * Override getRollData() that's supplied to rolls.
    */
   getRollData() {
-    // Starts off by populating the roll data with a shallow copy of `this.system`
     const data = { ...this.system };
 
     data.str = 0;
@@ -312,7 +309,6 @@ export class FFXIVActor extends Actor {
     data.mdef = 0;
     data.vigilance = 0;
 
-    //Get attributes from actor
     const primaryAttributes = data.primary_attributes && typeof data.primary_attributes === "object"
       ? data.primary_attributes
       : {};
@@ -337,7 +333,6 @@ export class FFXIVActor extends Actor {
       data.mdef = Number(secondaryAttributes?.magic_defense?.value) || 0;
       data.vigilance = Number(secondaryAttributes?.vigilance?.value) || 0;
     }
-    // Add modifiers from items
     for (let item of this.items) {
       if (!Array.isArray(item.system.modifiers)) continue; // Skip if item has no modifiers
       if (item.system.activable) {
@@ -379,7 +374,6 @@ export class FFXIVActor extends Actor {
     }
     if (data.dmg == "") data.dmg = "0"
     if (data.cdmg == "") data.cdmg = "0"
-    //Add adventuring ranks
     if (data.adventuring_rank) {
       data.arank_min = data.adventuring_rank.miner
       data.arank_bot = data.adventuring_rank.botanist

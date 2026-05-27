@@ -39,7 +39,6 @@ export function onManageActiveEffect(event, owner) {
  * @return {object}                   Data for rendering
  */
 export function prepareActiveEffectCategories(effects) {
-  // Define effect header categories
   const categories = {
     temporary: {
       type: "temporary",
@@ -58,7 +57,6 @@ export function prepareActiveEffectCategories(effects) {
     },
   };
 
-  // Iterate over active effects, classifying them into categories
   for (let e of effects) {
     if (e.disabled) categories.inactive.effects.push(e);
     else if (e.isTemporary) categories.temporary.effects.push(e);

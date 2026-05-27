@@ -40,6 +40,10 @@
            disabled
            {{/unless}}>
   </div>
+  {{#if settings.showGear }}
+    <h2>{{ localize "FFXIV.CharacterSheet.Gear"}}</h2>
+    {{> "systems/ffxiv/templates/actor/parts/actor-gear.hbs"}}
+  {{/if}}
   {{#if (hasItemType items "augment") }}
     <h2>{{ localize "FFXIV.CharacterSheet.Augments"}}</h2>
     <div class="augments modern-panel">

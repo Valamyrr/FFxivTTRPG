@@ -1,4 +1,4 @@
-<div class="{{cssClass}}">
+<div class="{{cssClass}} item-modern-sheet">
   <header class="sheet-header">
     <img class="profile-img"
          src="{{item.img}}"
@@ -9,19 +9,12 @@
         <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
       </h1>
     </div>
+    <button type="button" class="item-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}">
+      <i class="fa-solid fa-trash-can"></i>
+    </button>
   </header>
-  {{! Sheet Tab Navigation }}
-  <nav class="sheet-tabs tabs" data-group="primary">
-    <a class="item" data-tab="description">{{ localize "FFXIV.Item.Description" }}</a>
-    <a class="item" data-tab="attributes">{{ localize "FFXIV.Attributes.Attributes" }}</a>
-  </nav>
-  {{! Sheet Body }}
   <section class="sheet-body">
-    {{! Description Tab }}
-    <div class="tab" data-group="primary" data-tab="description">
-      <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
-    </div>
-    <div class="tab" data-group="primary" data-tab="attributes">
+    <div class="attributes item-details-card">
       <div class="resources grid grid-1col">
         <div class="resource flex-group-center">
           <label for="system.source" class="resource-label">{{ localize "FFXIV.Item.Source" }}</label>
@@ -30,6 +23,7 @@
           </div>
         </div>
       </div>
+      <hr>
       <div class="tags-container">
         <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label>
         <button type="button" class="add-modifier">+</button>
@@ -62,6 +56,8 @@
           {{/each}}
         </ul>
       </div>
+      <hr>
+      <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
     </div>
   </section>
 </div>

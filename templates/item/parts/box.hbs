@@ -11,11 +11,12 @@
             <div class="block-attribute">
                 {{#if (or (eq blocktype "single") (eq blocktype "double") (eq blocktype "full")) }}
                     {{#if (eq type "Boolean") }}
-                        <input class="ranked-toggle ffxiv-text-center"
-                               type="checkbox"
-                               name="{{ name }}"
-                               data-dtype="{{ type }}"
-                               {{ checked value }} />
+                        <select class="ranked-toggle ffxiv-text-center"
+                                name="{{ name }}"
+                                data-dtype="Boolean">
+                            <option value="true" {{#if value}}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}</option>
+                            <option value="false" {{#unless value}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}</option>
+                        </select>
                     {{/if}}
                     {{#if (eq type "Dropdown") }}
                         <select class="ffxiv-text-center" name="{{ name }}">
@@ -35,10 +36,13 @@
                 <div class="grid grid-2col firing-arcs">
                     {{#each fields as |t| }}
                         <div>
-                            <input type="checkbox"
-                                   id="{{ t.name }}"
-                                   name="{{ t.name }}"
-                                   {{ checked t.value }} />
+                            <select class="ffxiv-text-center"
+                                    id="{{ t.name }}"
+                                    name="{{ t.name }}"
+                                    data-dtype="Boolean">
+                                <option value="true" {{#if t.value}}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}</option>
+                                <option value="false" {{#unless t.value}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}</option>
+                            </select>
                             <span>{{ localize t.label }}</span>
                         </div>
                     {{/each}}
