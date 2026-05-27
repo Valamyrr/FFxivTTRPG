@@ -1,49 +1,58 @@
 <div class="ability-card" data-item-id="{{_id}}">
   <div class="ability-card-info">
     <div class="ability-icon-wrapper">
-      <img src="{{img}}" alt="{{name}}" class="ability-icon" data-item-id="{{_id}}">
-      <button type="button" class="ability-delete" data-item-id="{{_id}}" aria-label="{{localize 'FFXIV.Item.Delete'}}">
+      <img src="{{img}}"
+           alt="{{name}}"
+           class="ability-icon"
+           data-item-id="{{_id}}" width="32" height="32">
+      <button type="button"
+              class="ability-delete"
+              data-item-id="{{_id}}"
+              aria-label="{{localize 'FFXIV.Item.Delete'}}">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
     <div class="ability-header">
-      <div class="ability-name">
-        {{name}}
-      </div>
+      <div class="ability-name">{{name}}</div>
       <div class="ability-right">
         <div class="ability-tags">
-          {{#each (customActionTags system.tags) as |tag|}}
+          {{#each (customActionTags system.tags) as |tag| }}
             <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
           {{/each}}
-          {{#if (and (hasCustomActionTags system.tags) system.job_resources_max)}}, {{/if}}
-          {{#if system.job_resources_max}}<span class="tag">{{localize "FFXIV.Abilities.JobResource"}}</span>{{/if}}
-        </div>
-        <div class="ability-limitations">
-          {{#repeat system.job_resources_max}}
-            <div class="limitation-wrapper">
-              <input type="checkbox" class="job_resource"
-                data-index={{index}} data-item-id={{../_id}}
-                {{#if (lookup ../system.job_resource_status index)}}checked {{/if}}>
-              <span class="checkmark"></span>
+          {{#if (and (hasCustomActionTags system.tags) system.job_resources_max) }}
+            , {{/if}}
+            {{#if system.job_resources_max }}
+              <span class="tag">{{localize "FFXIV.Abilities.JobResource"}}</span>{{/if}}
             </div>
-          {{/repeat}}
-          {{#if system.activable}}
-            <div class="limitation-wrapper">
-              <input type="checkbox" class="limitation active"
-                data-item-id={{_id}}
-                {{#if system.active}}checked {{/if}}>
-              <span class="checkmark" style="border-color:orangered;"></span>
-            </div>
-          {{/if}}
+            <div class="ability-limitations">
+              {{#repeat system.job_resources_max}}
+              <div class="limitation-wrapper">
+                <input type="checkbox"
+                       class="job_resource"
+                       data-index="{{index}}"
+                       data-item-id="{{../_id}}"
+                       {{#if (lookup ../system.job_resource_status index) }}
+                       checked
+                       {{/if}}>
+                <span class="checkmark"></span>
+              </div>
+            {{/repeat}}
+            {{#if system.activable }}
+              <div class="limitation-wrapper">
+                <input type="checkbox"
+                       class="limitation active"
+                       data-item-id="{{_id}}"
+                       {{#if system.active }}
+                       checked
+                       {{/if}}>
+                <span class="checkmark ffxiv-border-orangered"></span>
+              </div>
+            {{/if}}
+          </div>
         </div>
       </div>
     </div>
+    <div class="ability-description">{{{enriched.description}}}</div>
+    <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{ localize "FFXIV.CharacterSheet.Show" }}
+    </button>
   </div>
-
-  <div class="ability-description">
-    {{{enriched.description}}}
-  </div>
-
-  <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{ localize "FFXIV.CharacterSheet.Show" }}</button>
-
-</div>

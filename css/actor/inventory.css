@@ -1,15 +1,17 @@
-.inventory-grid,.currencies{
+.inventory-grid,
+.currencies {
   margin: 10px 0 10px 0
 }
 
-.inventory h2{
+.inventory h2 {
   text-decoration: none;
   border: none;
   margin: 0 0 10px;
   width: auto;
   text-align: left;
 }
-.ffxiv-fortune-row{
+
+.ffxiv-fortune-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -21,18 +23,20 @@
   background: linear-gradient(180deg, rgba(44, 38, 24, 0.9) 0%, rgba(24, 21, 13, 0.95) 100%);
   box-shadow: inset 0 0 0 1px rgba(255, 231, 156, 0.12), 0 0 3px rgba(0, 0, 0, 0.55);
 }
-.ffxiv-fortune-row input{
+
+.ffxiv-fortune-row input {
   max-width: 120px;
 }
 
-.inventory-grid.modern-panel{
+.inventory-grid.modern-panel {
   padding: 10px;
 }
 
-.augments.modern-panel{
+.augments.modern-panel {
   margin-top: 10px;
 }
-.ffxiv-fortune-row input#ffxiv-fortune{
+
+.ffxiv-fortune-row input#ffxiv-fortune {
   min-width: 88px;
   width: 110px;
   height: 24px;
@@ -49,26 +53,30 @@
   appearance: textfield;
   -moz-appearance: textfield;
 }
-.ffxiv-fortune-row input#ffxiv-fortune:focus{
+
+.ffxiv-fortune-row input#ffxiv-fortune:focus {
   border-color: rgba(255, 224, 132, 0.95);
   box-shadow: 0 0 0 1px rgba(255, 230, 150, 0.35), 0 0 6px rgba(255, 199, 91, 0.35);
   outline: none;
 }
-.ffxiv-fortune-row input#ffxiv-fortune:disabled{
+
+.ffxiv-fortune-row input#ffxiv-fortune:disabled {
   opacity: 0.75;
   cursor: default;
 }
+
 .ffxiv-fortune-row input#ffxiv-fortune::-webkit-inner-spin-button,
-.ffxiv-fortune-row input#ffxiv-fortune::-webkit-outer-spin-button{
+.ffxiv-fortune-row input#ffxiv-fortune::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-.ffxiv-fortune-icon{
+
+.ffxiv-fortune-icon {
   width: 24px;
   height: 24px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Container for the inventory grid */
@@ -82,30 +90,30 @@
 
 /* Individual inventory items */
 .inventory-item {
-  position: relative; /* Important for positioning the tooltip */
+  position: relative;
   width: 50px;
   height: 50px;
   border-radius: 8px;
   cursor: pointer;
   transition: border-color 0.2s ease;
-  overflow: visible; /* Ensure tooltips can go outside of the box */
+  overflow: visible;
   background: linear-gradient(180deg, rgb(83, 83, 83) 60%, rgb(72, 73, 73) 100%);
 }
 
-.inventory-item:not(:has(img)){
+.inventory-item:not(:has(img)) {
   border-bottom: 2px solid #878787;
 }
 
-.inventory-item img{
+.inventory-item img {
   border-radius: 8px;
   border-width: 0px;
 }
 
-.inventory-item:hover{
+.inventory-item:hover {
   border: none;
 }
 
-.inventory-item .item-shadow{
+.inventory-item .item-shadow {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -114,11 +122,11 @@
   border-radius: 8px;
 }
 
-.inventory-item .item-shadow:hover{
+.inventory-item .item-shadow:hover {
   box-shadow: inset 0px 0px 5px 3px rgb(255, 255, 255), 0px 0px 5px 3px rgb(255, 255, 255);
 }
 
-.inventory-item::after:hover{
+.inventory-item::after:hover {
   content: "";
   position: absolute;
   inset: 0;
@@ -130,17 +138,17 @@
 .item-icon {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Ensure the icon fits within the container */
+  object-fit: cover;
   border-radius: 4px;
 }
 
 /* Tooltip for item names (hidden by default) */
 .item-tooltip {
-  display: none; /* Hidden by default */
+  display: none;
   position: absolute;
-  bottom: 105%; /* Position the tooltip above the icon */
+  bottom: 105%;
   left: 50%;
-  transform: translateX(-50%); /* Center the tooltip horizontally */
+  transform: translateX(-50%);
   background-color: var(--tooltip);
   color: var(--text-color);
   padding: 3px 8px;
@@ -149,7 +157,7 @@
   z-index: 10;
   font-size: 12px;
   pointer-events: none;
-  overflow: visible; /* Ensure the tooltip content is visible */
+  overflow: visible;
 }
 
 
@@ -158,27 +166,33 @@
 .inventory-item:hover .item-tooltip {
   display: block;
 }
+
 .item-tooltip.rarity-basic {
   color: var(--rarity-basic);
 }
+
 .item-tooltip.rarity-green {
   color: var(--rarity-green);
 }
+
 .item-tooltip.rarity-aetherial {
   color: var(--rarity-aetherial);
 }
+
 .item-tooltip.rarity-blue {
   color: var(--rarity-blue);
 }
+
 .item-tooltip.rarity-relic {
   color: var(--rarity-relic);
 }
+
 .item-tooltip.rarity-unique {
   color: var(--rarity-unique);
 }
 
 /*Item quantity on every inventory item*/
-.item-quantity{
+.item-quantity {
   position: absolute;
   bottom: 0px;
   right: 0px;
@@ -187,7 +201,7 @@
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
 }
 
-/*Gears*/
+/*Gear*/
 .ffxiv.actor td:not(:first-child) {
   text-align: center;
 }
@@ -268,13 +282,13 @@
   white-space: nowrap;
 }
 
-.ffxiv.actor.blue_theme .ffxiv-fortune-row{
+.ffxiv.actor.blue_theme .ffxiv-fortune-row {
   border-color: rgba(156, 198, 255, 0.78);
   background: linear-gradient(180deg, rgba(24, 58, 122, 0.9) 0%, rgba(14, 37, 84, 0.95) 100%);
   box-shadow: inset 0 0 0 1px rgba(184, 217, 255, 0.18), 0 0 3px rgba(0, 0, 0, 0.55);
 }
 
-.ffxiv.actor.blue_theme .ffxiv-fortune-row input#ffxiv-fortune{
+.ffxiv.actor.blue_theme .ffxiv-fortune-row input#ffxiv-fortune {
   border-color: rgba(170, 214, 255, 0.66);
   background: linear-gradient(180deg, rgba(11, 32, 76, 0.95) 0%, rgba(8, 24, 57, 0.98) 100%);
   color: #dceeff;

@@ -1,8 +1,9 @@
-.ffxiv.item .window-content:has(.limited-display){
+.ffxiv.item .window-content:has(.limited-display) {
   overflow: hidden;
   padding: 0
 }
-.ffxiv.item:has(.limited-display) .window-resizable-handle{
+
+.ffxiv.item:has(.limited-display) .window-resizable-handle {
   display: none;
 }
 
@@ -13,26 +14,31 @@
   color: var(--rarity-basic);
   text-shadow: var(--shadow-improve-readability-white);
 }
+
 .text-rarity-green,
 .limited-display .text-rarity-green {
   color: var(--rarity-green);
   text-shadow: var(--shadow-improve-readability-light);
 }
+
 .text-rarity-aetherial,
 .limited-display .text-rarity-aetherial {
   color: var(--rarity-aetherial);
   text-shadow: var(--shadow-improve-readability-light);
 }
+
 .text-rarity-blue,
 .limited-display .text-rarity-blue {
   color: var(--rarity-blue);
   text-shadow: var(--shadow-improve-readability-light);
 }
+
 .text-rarity-relic,
 .limited-display .text-rarity-relic {
   color: var(--rarity-relic);
   text-shadow: var(--shadow-improve-readability-dark);
 }
+
 .text-rarity-unique,
 .limited-display .text-rarity-unique {
   color: var(--rarity-unique);
@@ -49,7 +55,7 @@
   overflow: hidden;
 }
 
-.item-card strong{
+.item-card strong {
   color: var(--text-color-strong);
 }
 
@@ -59,7 +65,7 @@
   min-height: 66px;
 }
 
-.item-card .item-dialog-header{
+.item-card .item-dialog-header {
   border-bottom: solid 2px var(--border-color-2);
   box-shadow: 0px 7px 3px -2px var(--border-shadow-1);
   display: inline-block;
@@ -88,7 +94,7 @@
   display: inline;
 }
 
-.item-card .item-dialog-tags{
+.item-card .item-dialog-tags {
   display: inline-block;
   vertical-align: super;
 }
@@ -118,11 +124,14 @@
 .item-card .item-dialog-effects {
   padding: 5px;
 }
-.item-dialog-effects td{ /*modifiers table*/
+
+.item-dialog-effects td {
+  /*modifiers table*/
   width: 33.33%;
   padding: 1px;
 }
-.item-card .item-dialog-effects table{
+
+.item-card .item-dialog-effects table {
   width: 100%;
   border-collapse: collapse;
   background: rgba(0, 0, 0, 0.05);
@@ -130,6 +139,7 @@
   border-bottom: 1px solid var(--border-color-1);
   margin: 0.5em 0;
 }
+
 .item-card .effect {
   display: inline-block;
 }
@@ -160,18 +170,20 @@
   transition: color 0.2s ease;
 }
 
-.item-card .item-dialog-button:hover{
+.item-card .item-dialog-button:hover {
   box-shadow: none;
   color: var(--text-color);
 }
-.item-card .item-dialog-button:focus{
-  box-shadow: none;
-}
-.item-card .item-dialog-button:active{
+
+.item-card .item-dialog-button:focus {
   box-shadow: none;
 }
 
-.ability-description{
+.item-card .item-dialog-button:active {
+  box-shadow: none;
+}
+
+.ability-description {
   padding: 10px;
 }
 
@@ -183,7 +195,7 @@
 
 /* Quantity buttons */
 
-.quantity-form{
+.quantity-form {
   align-items: center;
   display: flex;
   gap: 5px;
@@ -192,15 +204,18 @@
   white-space: nowrap;
   width: 100%;
 }
-.quantity-form .detail{
+
+.quantity-form .detail {
   display: inline-flex;
   margin-right: 0;
 }
-.item-qty-btn{
+
+.item-qty-btn {
   width: 1.5em;
   line-height: 1em;
 }
-.ffxiv.item .item-card .quantity-form .delete{
+
+.ffxiv.item .item-card .quantity-form .delete {
   align-items: center;
   color: red;
   border-color: red;
@@ -210,7 +225,8 @@
   padding: 0 6px;
   width: auto;
 }
-.gear-equip{
+
+.gear-equip {
   padding: 1px;
 }
 
@@ -230,7 +246,8 @@
   overflow: hidden;
   width: calc(100% + 10px)
 }
-.item-roll-button:hover{
+
+.item-roll-button:hover {
   box-shadow: none;
   color: var(--invert-text-color) !important;
 }
@@ -242,20 +259,24 @@
   left: 0;
   width: 0;
   height: 100%;
-  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0, 0, 0, 0) 100%);
   z-index: -1;
-  transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
+  transition: width 0.4s cubic-bezier(.8, .8, 1, .8);
+  /*cubic-bezier(.64,.14,.62,1.05)*/
 }
+
 .item-roll-button:hover::before {
   width: 150%;
 }
 
-.item-button:hover{
+.item-button:hover {
   box-shadow: none;
 }
-.item-roll-button:focus{
+
+.item-roll-button:focus {
   box-shadow: none;
 }
-.item-roll-button:active{
+
+.item-roll-button:active {
   box-shadow: none;
 }

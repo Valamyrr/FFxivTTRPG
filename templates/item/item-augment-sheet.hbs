@@ -1,56 +1,60 @@
-<div class='{{cssClass}} item-modern-sheet'>
-  <header class='sheet-header'>
-    <img
-      class='profile-img'
-      src='{{item.img}}'
-      data-edit='img'
-      title='{{item.name}}'
-    />
-    <div class='header-fields'>
-      <h1 class='charname'><input
-          name='name'
-          type='text'
-          value='{{item.name}}'
-          placeholder='Name'
-        /></h1>
+<div class="{{cssClass}} item-modern-sheet">
+  <header class="sheet-header">
+    <img class="profile-img"
+         src="{{item.img}}"
+         data-edit="img"
+         title="{{item.name}}"  alt="" width="32" height="32" />
+    <div class="header-fields">
+      <h1 class="charname">
+        <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
+      </h1>
     </div>
-    <button type="button" class="item-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}"><i class="fa-solid fa-trash-can"></i></button>
+    <button type="button"
+            class="item-delete"
+            aria-label="{{localize 'FFXIV.Item.Delete'}}">
+      <i class="fa-solid fa-trash-can"></i>
+    </button>
   </header>
-
   <hr>
-
   {{! Sheet Body }}
-  <section class='sheet-body'>
-
-    <div class='attributes item-details-card'>
-
+  <section class="sheet-body">
+    <div class="attributes item-details-card">
       <div class="resources grid grid-2col">
-
         <div class="resource flex-group-center consumable-price-resource">
           <label for="system.price.buy" class="resource-label">{{ localize "FFXIV.Item.Prices" }}</label>
           <div class="resource-content consumable-price-inline">
             <span class="consumable-price-key">{{ localize "FFXIV.Item.BuyShort" }}</span>
-            <input class="consumable-price-input" name="system.price.buy" type="number" value="{{item.system.price.buy}}"/>
+            <input class="consumable-price-input"
+                   name="system.price.buy"
+                   type="number"
+                   value="{{item.system.price.buy}}" />
             <span class="consumable-price-divider">|</span>
             <span class="consumable-price-key">{{ localize "FFXIV.Item.SellShort" }}</span>
-            <input class="consumable-price-input" name="system.price.sell" type="number" value="{{item.system.price.sell}}"/>
+            <input class="consumable-price-input"
+                   name="system.price.sell"
+                   type="number"
+                   value="{{item.system.price.sell}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.price.denomination" class="resource-label">{{ localize "FFXIV.Item.Denomination" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.price.denomination" type="text" value="{{localize item.system.price.denomination}}"/>
+            <input name="system.price.denomination"
+                   type="text"
+                   value="{{localize item.system.price.denomination}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.shop_tier" class="resource-label">{{ localize "FFXIV.Item.ShopTier" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <select style="text-align: center;" name="system.shop_tier">
+            <select class="ffxiv-text-center" name="system.shop_tier">
               <option value="">{{ localize "FFXIV.None" }}</option>
-              {{#each this.config.shop_tiers as |tier|}}
-              <option value="{{tier.value}}" {{#if (eq tier.value ../system.shop_tier)}}selected {{/if}}>{{ localize tier.label }}</option>
+              {{#each this.config.shop_tiers as |tier| }}
+                <option value="{{tier.value}}"
+                        {{#if (eq tier.value ../system.shop_tier) }}
+                        selected
+                        {{/if}}>{{ localize tier.label }}
+                </option>
               {{/each}}
             </select>
           </div>
@@ -58,73 +62,73 @@
         <div class="resource flex-group-center">
           <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <select style="text-align: center;" name="system.rarity">
+            <select class="ffxiv-text-center" name="system.rarity">
               <option value="">{{ localize "FFXIV.None" }}</option>
-              {{#each this.config.rarities as |rarity|}}
-              <option value="{{rarity.value}}" {{#if (eq rarity.value ../system.rarity)}}selected {{/if}}>{{ localize rarity.label }}</option>
+              {{#each this.config.rarities as |rarity| }}
+                <option value="{{rarity.value}}"
+                        {{#if (eq rarity.value ../system.rarity) }}
+                        selected
+                        {{/if}}>{{ localize rarity.label }}
+                </option>
               {{/each}}
             </select>
           </div>
         </div>
-        {{#if (eq system.shop_tier "custom")}}
-        <div class="resource flex-group-center">
-          <label for="system.shop_tier_custom" class="resource-label">{{ localize "FFXIV.ShopTier.CustomLabel" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.shop_tier_custom" type="text" value="{{system.shop_tier_custom}}"/>
+        {{#if (eq system.shop_tier "custom") }}
+          <div class="resource flex-group-center">
+            <label for="system.shop_tier_custom" class="resource-label">{{ localize "FFXIV.ShopTier.CustomLabel" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="system.shop_tier_custom"
+                     type="text"
+                     value="{{system.shop_tier_custom}}" />
+            </div>
           </div>
-        </div>
         {{/if}}
-
       </div>
-
-
       <hr>
-
       <div class="resources grid grid-1col">
         <div class="resource flex-group-center">
           <label for="system.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.BaseEffect" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.base_effect" type="text" value="{{item.system.base_effect}}"/>
+            <input name="system.base_effect"
+                   type="text"
+                   value="{{item.system.base_effect}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.starting_mp_override" class="resource-label">{{ localize "FFXIV.Item.OverrideStartingMP" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input
-              name="system.starting_mp_override"
-              type="number"
-              min="0"
-              step="1"
-              value="{{#if (or (eq item.system.starting_mp_override 0) item.system.starting_mp_override)}}{{item.system.starting_mp_override}}{{/if}}"
-              placeholder="{{ localize 'FFXIV.None' }}"
-              title="{{ localize 'FFXIV.Item.OverrideStartingMPHint' }}"
-            />
+            <input name="system.starting_mp_override"
+                   type="number"
+                   min="0"
+                   step="1"
+                   value="{{#if (or (eq item.system.starting_mp_override 0) item.system.starting_mp_override) }}{{item.system.starting_mp_override}}{{/if}}"
+                   placeholder="{{ localize 'FFXIV.None' }}"
+                   title="{{ localize 'FFXIV.Item.OverrideStartingMPHint' }}" />
           </div>
         </div>
       </div>
-
       <hr>
-
       <div class="augment-grants-dropzone job-progression-tab">
         <label class="resource-label">{{ localize "FFXIV.Item.GrantedAbilities" }}</label>
         <ol class="job-ability-list">
           {{#unless system.ability_grants.length}}
-            <li class="job-ability-empty">{{ localize "FFXIV.Augment.DropAbilities" }}</li>
-          {{/unless}}
-          {{#each system.ability_grants as |grant index|}}
-            <li class="job-ability-row augment-ability-edit" data-index="{{index}}">
-              <span class="job-ability-name">{{grant.name}}</span>
-              <span class="job-ability-type">{{grant.typeLabel}}</span>
-              <button type="button" class="remove-augment-ability" data-index="{{index}}" aria-label="{{localize 'FFXIV.Item.Delete'}}">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </li>
-          {{/each}}
-        </ol>
-      </div>
-
+          <li class="job-ability-empty">{{ localize "FFXIV.Augment.DropAbilities" }}</li>
+        {{/unless}}
+        {{#each system.ability_grants as |grant index| }}
+          <li class="job-ability-row augment-ability-edit" data-index="{{index}}">
+            <span class="job-ability-name">{{grant.name}}</span>
+            <span class="job-ability-type">{{grant.typeLabel}}</span>
+            <button type="button"
+                    class="remove-augment-ability"
+                    data-index="{{index}}"
+                    aria-label="{{localize 'FFXIV.Item.Delete'}}">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </li>
+        {{/each}}
+      </ol>
     </div>
-
-  </section>
+  </div>
+</section>
 </div>

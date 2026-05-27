@@ -1,4 +1,4 @@
-import {migrateDataToSystem} from "./helpers/migration.js";
+import { migrateDataToSystem } from "./helpers/migration.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -6,8 +6,10 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * A specialized form used to pop out the editor.
  * @extends {ApplicationV2}
  */
-export default class PopoutEditor extends HandlebarsApplicationMixin(ApplicationV2) {
-  constructor(object, options={}) {
+export default class PopoutEditor extends HandlebarsApplicationMixin(
+  ApplicationV2,
+) {
+  constructor(object, options = {}) {
     options.position ??= {};
     for (const key of ["width", "height", "left", "top"]) {
       if (key in options) {
@@ -73,10 +75,6 @@ export default class PopoutEditor extends HandlebarsApplicationMixin(Application
     updateData[`${this.attribute}`] = formData.object.value;
 
     // Update the object
-    await this.object.update(
-        migrateDataToSystem(updateData)
-    );
+    await this.object.update(migrateDataToSystem(updateData));
   }
-
-
 }

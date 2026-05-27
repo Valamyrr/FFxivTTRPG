@@ -1,14 +1,11 @@
 <div class="actor-profile modern-tab-layout">
-
   <div class="actor-titles modern-panel">
     <h2>{{ localize "FFXIV.CharacterSheet.Profile"}}</h2>
-
     <div class="resources grid grid-2col">
-
       <div class="resource flex-group-center">
         <label for="system.origin" class="resource-label">{{ localize "FFXIV.CharacterSheet.Origin" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
+          {{#if actorEditMode }}
             <textarea class="profile-short-text" name="system.origin">{{system.origin}}</textarea>
           {{else}}
             <p class="profile-field-value profile-short-text">{{system.origin}}</p>
@@ -18,20 +15,19 @@
       <div class="resource flex-group-center">
         <label for="system.motive" class="resource-label">{{ localize "FFXIV.CharacterSheet.Motive" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
+          {{#if actorEditMode }}
             <textarea class="profile-short-text" name="system.motive">{{system.motive}}</textarea>
           {{else}}
             <p class="profile-field-value profile-short-text">{{system.motive}}</p>
           {{/if}}
         </div>
       </div>
-
     </div>
     <div class="resources grid grid-1col">
       <div class="resource flex-group-center">
         <label for="system.bond" class="resource-label">{{ localize "FFXIV.CharacterSheet.Bond" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
+          {{#if actorEditMode }}
             <textarea class="profile-short-text" name="system.bond">{{system.bond}}</textarea>
           {{else}}
             <p class="profile-field-value profile-short-text">{{system.bond}}</p>
@@ -39,14 +35,17 @@
         </div>
       </div>
     </div>
-
-    <h2><label>{{ localize "FFXIV.CharacterSheet.AdventuringRanks"}}</label></h2>
+    <h2>
+      <label>{{ localize "FFXIV.CharacterSheet.AdventuringRanks"}}</label>
+    </h2>
     <div class="resources grid grid-3col">
       <div class="resource flex-group-center">
         <label for="system.adventuring_rank.miner" class="resource-label">{{ localize "FFXIV.Disciples.Miner" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.miner" type="number" value="{{system.adventuring_rank.miner}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.miner"
+                   type="number"
+                   value="{{system.adventuring_rank.miner}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.miner}}</p>
           {{/if}}
@@ -55,8 +54,10 @@
       <div class="resource flex-group-center">
         <label for="system.adventuring_rank.botanist" class="resource-label">{{ localize "FFXIV.Disciples.Botanist" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.botanist" type="number" value="{{system.adventuring_rank.botanist}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.botanist"
+                   type="number"
+                   value="{{system.adventuring_rank.botanist}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.botanist}}</p>
           {{/if}}
@@ -65,8 +66,10 @@
       <div class="resource flex-group-center">
         <label for="system.adventuring_rank.fisher" class="resource-label">{{ localize "FFXIV.Disciples.Fisher" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.fisher" type="number" value="{{system.adventuring_rank.fisher}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.fisher"
+                   type="number"
+                   value="{{system.adventuring_rank.fisher}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.fisher}}</p>
           {{/if}}
@@ -75,20 +78,28 @@
     </div>
     <div class="resources grid grid-4col">
       <div class="resource flex-group-center">
-        <label for="system.adventuring_rank.carpenter" class="resource-label">{{ localize "FFXIV.Disciples.Carpenter" }}</label>
+        <label for="system.adventuring_rank.carpenter" class="resource-label">
+          {{ localize "FFXIV.Disciples.Carpenter" }}
+        </label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.carpenter" type="number" value="{{system.adventuring_rank.carpenter}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.carpenter"
+                   type="number"
+                   value="{{system.adventuring_rank.carpenter}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.carpenter}}</p>
           {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
-        <label for="system.adventuring_rank.blacksmith" class="resource-label">{{ localize "FFXIV.Disciples.Blacksmith" }}</label>
+        <label for="system.adventuring_rank.blacksmith" class="resource-label">
+          {{ localize "FFXIV.Disciples.Blacksmith" }}
+        </label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.blacksmith" type="number" value="{{system.adventuring_rank.blacksmith}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.blacksmith"
+                   type="number"
+                   value="{{system.adventuring_rank.blacksmith}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.blacksmith}}</p>
           {{/if}}
@@ -97,28 +108,38 @@
       <div class="resource flex-group-center">
         <label for="system.adventuring_rank.armorer" class="resource-label">{{ localize "FFXIV.Disciples.Armorer" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.armorer" type="number" value="{{system.adventuring_rank.armorer}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.armorer"
+                   type="number"
+                   value="{{system.adventuring_rank.armorer}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.armorer}}</p>
           {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
-        <label for="system.adventuring_rank.goldsmith" class="resource-label">{{ localize "FFXIV.Disciples.Goldsmith" }}</label>
+        <label for="system.adventuring_rank.goldsmith" class="resource-label">
+          {{ localize "FFXIV.Disciples.Goldsmith" }}
+        </label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.goldsmith" type="number" value="{{system.adventuring_rank.goldsmith}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.goldsmith"
+                   type="number"
+                   value="{{system.adventuring_rank.goldsmith}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.goldsmith}}</p>
           {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
-        <label for="system.adventuring_rank.leatherworker" class="resource-label">{{ localize "FFXIV.Disciples.Leatherworker" }}</label>
+        <label for="system.adventuring_rank.leatherworker" class="resource-label">
+          {{ localize "FFXIV.Disciples.Leatherworker" }}
+        </label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.leatherworker" type="number" value="{{system.adventuring_rank.leatherworker}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.leatherworker"
+                   type="number"
+                   value="{{system.adventuring_rank.leatherworker}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.leatherworker}}</p>
           {{/if}}
@@ -127,191 +148,221 @@
       <div class="resource flex-group-center">
         <label for="system.adventuring_rank.weaver" class="resource-label">{{ localize "FFXIV.Disciples.Weaver" }}</label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.weaver" type="number" value="{{system.adventuring_rank.weaver}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.weaver"
+                   type="number"
+                   value="{{system.adventuring_rank.weaver}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.weaver}}</p>
           {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
-        <label for="system.adventuring_rank.alchemist" class="resource-label">{{ localize "FFXIV.Disciples.Alchemist" }}</label>
+        <label for="system.adventuring_rank.alchemist" class="resource-label">
+          {{ localize "FFXIV.Disciples.Alchemist" }}
+        </label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.alchemist" type="number" value="{{system.adventuring_rank.alchemist}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.alchemist"
+                   type="number"
+                   value="{{system.adventuring_rank.alchemist}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.alchemist}}</p>
           {{/if}}
         </div>
       </div>
       <div class="resource flex-group-center">
-        <label for="system.adventuring_rank.culinarian" class="resource-label">{{ localize "FFXIV.Disciples.Culinarian" }}</label>
+        <label for="system.adventuring_rank.culinarian" class="resource-label">
+          {{ localize "FFXIV.Disciples.Culinarian" }}
+        </label>
         <div class="resource-content flexrow flex-center flex-between">
-          {{#if actorEditMode}}
-            <input name="system.adventuring_rank.culinarian" type="number" value="{{system.adventuring_rank.culinarian}}"/>
+          {{#if actorEditMode }}
+            <input name="system.adventuring_rank.culinarian"
+                   type="number"
+                   value="{{system.adventuring_rank.culinarian}}" />
           {{else}}
             <p class="profile-field-value">{{system.adventuring_rank.culinarian}}</p>
           {{/if}}
         </div>
       </div>
     </div>
-
-
-
     <div class="actor-profiletrait">
       <h2>{{ localize "FFXIV.CharacterSheet.ProfileTrait"}}</h2>
       <div class="resources grid grid-1col">
         <div class="resource flex-group-center">
           <div class="resource-content flexrow flex-center flex-between">
-            {{#if actorEditMode}}
-              <input name="system.profile_trait.name" type="text" value="{{system.profile_trait.name}}"/>
+            {{#if actorEditMode }}
+              <input name="system.profile_trait.name"
+                     type="text"
+                     value="{{system.profile_trait.name}}" />
             {{else}}
               <p class="profile-field-value">{{system.profile_trait.name}}</p>
             {{/if}}
           </div>
         </div>
       </div>
-
       <div class="actor-profiletrait-content">
-        {{#if actorEditMode}}
+        {{#if actorEditMode }}
           <prose-mirror name="system.profile_trait.effect" value="{{source.profile_trait.effect}}" document-uuid="{{actor.uuid}}" class="sized"></prose-mirror>
         {{else}}
           <div class="profile-paragraph-block">{{{enriched.profile_trait.effect}}}</div>
         {{/if}}
       </div>
     </div>
-
-
     <h2>{{ localize "FFXIV.CharacterSheet.Titles"}}</h2>
-
     <div class="actor-titles-box">
       <div class="title-selector resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <select style="text-align: center;" name="system.activeTitle">
-            <option value="">
-              {{localize "FFXIV.None"}}
-            </option>
-            {{#each items}}
-              {{#if (eq type "title")}}
-                <option value="{{name}}" {{#if (eq name ../system.activeTitle)}}selected {{/if}}>
-                  {{#if (eq name ../system.activeTitle)}}{{localize "FFXIV.CharacterSheet.ActiveTitle"}} : {{/if}}{{ name }}
-                </option>
-              {{/if}}
-            {{/each}}
-          </select>
-        {{else}}
-          <p class="profile-field-value">{{#if system.activeTitle}}{{system.activeTitle}}{{else}}{{localize "FFXIV.None"}}{{/if}}</p>
-        {{/if}}
-      </div>
-
-      {{#each items}}
-        {{#if (and (eq type "title") (eq name ../system.activeTitle))}}
-          <div class="actor-title-data">
-            <div class="detail"><strong>{{localize "FFXIV.Item.Name"}}:</strong> {{localize name}}</div>
-            {{#if system.source}}<div class="detail"><strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}</div>{{/if}}
-            <button type="button" data-item-id="{{_id}}" class="title-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}">&times;</button>
+        {{#if actorEditMode }}
+          <select class="ffxiv-text-center" name="system.activeTitle">
+            <option value="">{{localize "FFXIV.None"}}</option>
+            {{#each items }}
+              {{#if (eq type "title") }}
+                <option value="{{name}}"
+                        {{#if (eq name ../system.activeTitle) }}
+                        selected
+                        {{/if}}>
+                  {{#if (eq name ../system.activeTitle) }}
+                    {{localize "FFXIV.CharacterSheet.ActiveTitle"}} : {{/if}}{{ name }}
+                  </option>
+                {{/if}}
+              {{/each}}
+            </select>
+          {{else}}
+            <p class="profile-field-value">
+              {{#if system.activeTitle }}
+              {{system.activeTitle}}{{else}}{{localize "FFXIV.None"}}{{/if}}
+              </p>
+            {{/if}}
           </div>
-          <div class="actor-title-description">{{{ enriched.description }}}</div>
-        {{/if}}
-      {{/each}}
-    </div>
-  </div>
-
-
-  <h2>{{ localize "FFXIV.CharacterSheet.Appearance"}}</h2>
-
-  <div class="resources grid grid-3col modern-panel">
-    <div class="resource flex-group-center">
-      <label for="system.appearance.race" class="resource-label">{{ localize "FFXIV.CharacterSheet.Race" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <input name="system.appearance.race" type="text" value="{{system.appearance.race}}"/>
-        {{else}}
-          <p class="profile-field-value">{{system.appearance.race}}</p>
-        {{/if}}
+          {{#each items }}
+            {{#if (and (eq type "title") (eq name ../system.activeTitle)) }}
+              <div class="actor-title-data">
+                <div class="detail">
+                  <strong>{{localize "FFXIV.Item.Name"}}:</strong> {{localize name}}
+                </div>
+                {{#if system.source }}
+                  <div class="detail">
+                    <strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}
+                  </div>
+                {{/if}}
+                <button type="button"
+                        data-item-id="{{_id}}"
+                        class="title-delete"
+                        aria-label="{{localize 'FFXIV.Item.Delete'}}">×</button>
+              </div>
+              <div class="actor-title-description">{{{ enriched.description }}}</div>
+            {{/if}}
+          {{/each}}
+        </div>
+      </div>
+      <h2>{{ localize "FFXIV.CharacterSheet.Appearance"}}</h2>
+      <div class="resources grid grid-3col modern-panel">
+        <div class="resource flex-group-center">
+          <label for="system.appearance.race" class="resource-label">{{ localize "FFXIV.CharacterSheet.Race" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            {{#if actorEditMode }}
+              <input name="system.appearance.race"
+                     type="text"
+                     value="{{system.appearance.race}}" />
+            {{else}}
+              <p class="profile-field-value">{{system.appearance.race}}</p>
+            {{/if}}
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.appearance.size" class="resource-label">{{ localize "FFXIV.CharacterSheet.Size" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            {{#if actorEditMode }}
+              <input name="system.appearance.size"
+                     type="text"
+                     value="{{system.appearance.size}}" />
+            {{else}}
+              <p class="profile-field-value">{{system.appearance.size}}</p>
+            {{/if}}
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.appearance.age" class="resource-label">{{ localize "FFXIV.CharacterSheet.Age" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            {{#if actorEditMode }}
+              <input name="system.appearance.age"
+                     type="text"
+                     value="{{system.appearance.age}}" />
+            {{else}}
+              <p class="profile-field-value">{{system.appearance.age}}</p>
+            {{/if}}
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.appearance.gender" class="resource-label">{{ localize "FFXIV.CharacterSheet.Gender" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            {{#if actorEditMode }}
+              <input name="system.appearance.gender"
+                     type="text"
+                     value="{{system.appearance.gender}}" />
+            {{else}}
+              <p class="profile-field-value">{{system.appearance.gender}}</p>
+            {{/if}}
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.appearance.weight" class="resource-label">{{ localize "FFXIV.CharacterSheet.Weight" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            {{#if actorEditMode }}
+              <input name="system.appearance.weight"
+                     type="text"
+                     value="{{system.appearance.weight}}" />
+            {{else}}
+              <p class="profile-field-value">{{system.appearance.weight}}</p>
+            {{/if}}
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.appearance.hair" class="resource-label">{{ localize "FFXIV.CharacterSheet.Hair" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            {{#if actorEditMode }}
+              <input name="system.appearance.hair"
+                     type="text"
+                     value="{{system.appearance.hair}}" />
+            {{else}}
+              <p class="profile-field-value">{{system.appearance.hair}}</p>
+            {{/if}}
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.appearance.eyes" class="resource-label">{{ localize "FFXIV.CharacterSheet.Eyes" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            {{#if actorEditMode }}
+              <input name="system.appearance.eyes"
+                     type="text"
+                     value="{{system.appearance.eyes}}" />
+            {{else}}
+              <p class="profile-field-value">{{system.appearance.eyes}}</p>
+            {{/if}}
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.appearance.skin" class="resource-label">{{ localize "FFXIV.CharacterSheet.Skin" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            {{#if actorEditMode }}
+              <input name="system.appearance.skin"
+                     type="text"
+                     value="{{system.appearance.skin}}" />
+            {{else}}
+              <p class="profile-field-value">{{system.appearance.skin}}</p>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+      <div class="actor-biography modern-panel">
+        <h2>{{ localize "FFXIV.CharacterSheet.Biography"}}</h2>
+        {{!-- Editors must receive enriched text data from getData to properly handle rolls --}}
+        <div class="actor-biography-content">
+          {{#if actorEditMode }}
+            <prose-mirror name="system.biography" value="{{source.biography}}" document-uuid="{{actor.uuid}}" class="sized"></prose-mirror>
+          {{else}}
+            <div class="profile-paragraph-block">{{{enriched.biography}}}</div>
+          {{/if}}
+        </div>
       </div>
     </div>
-    <div class="resource flex-group-center">
-      <label for="system.appearance.size" class="resource-label">{{ localize "FFXIV.CharacterSheet.Size" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <input name="system.appearance.size" type="text" value="{{system.appearance.size}}"/>
-        {{else}}
-          <p class="profile-field-value">{{system.appearance.size}}</p>
-        {{/if}}
-      </div>
-    </div>
-    <div class="resource flex-group-center">
-      <label for="system.appearance.age" class="resource-label">{{ localize "FFXIV.CharacterSheet.Age" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <input name="system.appearance.age" type="text" value="{{system.appearance.age}}"/>
-        {{else}}
-          <p class="profile-field-value">{{system.appearance.age}}</p>
-        {{/if}}
-      </div>
-    </div>
-    <div class="resource flex-group-center">
-      <label for="system.appearance.gender" class="resource-label">{{ localize "FFXIV.CharacterSheet.Gender" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <input name="system.appearance.gender" type="text" value="{{system.appearance.gender}}"/>
-        {{else}}
-          <p class="profile-field-value">{{system.appearance.gender}}</p>
-        {{/if}}
-      </div>
-    </div>
-    <div class="resource flex-group-center">
-      <label for="system.appearance.weight" class="resource-label">{{ localize "FFXIV.CharacterSheet.Weight" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <input name="system.appearance.weight" type="text" value="{{system.appearance.weight}}"/>
-        {{else}}
-          <p class="profile-field-value">{{system.appearance.weight}}</p>
-        {{/if}}
-      </div>
-    </div>
-    <div class="resource flex-group-center">
-      <label for="system.appearance.hair" class="resource-label">{{ localize "FFXIV.CharacterSheet.Hair" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <input name="system.appearance.hair" type="text" value="{{system.appearance.hair}}"/>
-        {{else}}
-          <p class="profile-field-value">{{system.appearance.hair}}</p>
-        {{/if}}
-      </div>
-    </div>
-    <div class="resource flex-group-center">
-      <label for="system.appearance.eyes" class="resource-label">{{ localize "FFXIV.CharacterSheet.Eyes" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <input name="system.appearance.eyes" type="text" value="{{system.appearance.eyes}}"/>
-        {{else}}
-          <p class="profile-field-value">{{system.appearance.eyes}}</p>
-        {{/if}}
-      </div>
-    </div>
-    <div class="resource flex-group-center">
-      <label for="system.appearance.skin" class="resource-label">{{ localize "FFXIV.CharacterSheet.Skin" }}</label>
-      <div class="resource-content flexrow flex-center flex-between">
-        {{#if actorEditMode}}
-          <input name="system.appearance.skin" type="text" value="{{system.appearance.skin}}"/>
-        {{else}}
-          <p class="profile-field-value">{{system.appearance.skin}}</p>
-        {{/if}}
-      </div>
-    </div>
-  </div>
-
-  <div class="actor-biography modern-panel">
-    <h2>{{ localize "FFXIV.CharacterSheet.Biography"}}</h2>
-    {{!-- Editors must receive enriched text data from getData to properly handle rolls --}}
-    <div class="actor-biography-content">
-      {{#if actorEditMode}}
-        <prose-mirror name="system.biography" value="{{source.biography}}" document-uuid="{{actor.uuid}}" class="sized"></prose-mirror>
-      {{else}}
-        <div class="profile-paragraph-block">{{{enriched.biography}}}</div>
-      {{/if}}
-    </div>
-  </div>
-</div>

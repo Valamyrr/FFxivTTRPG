@@ -366,8 +366,8 @@
       "Confirm": "Are you sure you want to complete this action?",
       "Cancel": "Cancel",
       "ItemDelete": "Are you sure you want to delete this item : {itemName}?",
-      "Yes":"Yes",
-      "No":"No"
+      "Yes": "Yes",
+      "No": "No"
     },
     "Controls": {
       "FFXIVTools": "FF XIV Tools",

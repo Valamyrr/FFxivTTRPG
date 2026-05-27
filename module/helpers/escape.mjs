@@ -28,7 +28,9 @@ function onEscape(event) {
   closingApp = app;
 
   Promise.resolve(app.close())
-    .catch(err => console.error("FFXIV | Failed to close active window with Escape", err))
+    .catch((err) =>
+      console.error("FFXIV | Failed to close active window with Escape", err),
+    )
     .finally(() => {
       if (closingApp === app) closingApp = null;
     });
@@ -50,20 +52,28 @@ function getActiveApp(event) {
 }
 
 function getTopmostApp(apps) {
-  return apps
-    .map(app => ({ app, element: getAppElement(app) }))
-    .filter(({ element }) => element)
-    .sort((a, b) => getZIndex(b.element) - getZIndex(a.element))[0]?.app ?? null;
+  return (
+    apps
+      .map((app) => ({ app, element: getAppElement(app) }))
+      .filter(({ element }) => element)
+      .sort((a, b) => getZIndex(b.element) - getZIndex(a.element))[0]?.app ??
+    null
+  );
 }
 
 function getEventApp(event, apps = getOpenApps()) {
-  const target = event.composedPath?.().find(node => node instanceof HTMLElement) ?? event.target;
+  const target =
+    event.composedPath?.().find((node) => node instanceof HTMLElement) ??
+    event.target;
   if (!(target instanceof Node)) return null;
 
-  return apps
-    .map(app => ({ app, element: getAppElement(app) }))
-    .filter(({ element }) => element?.contains(target))
-    .sort((a, b) => getZIndex(b.element) - getZIndex(a.element))[0]?.app ?? null;
+  return (
+    apps
+      .map((app) => ({ app, element: getAppElement(app) }))
+      .filter(({ element }) => element?.contains(target))
+      .sort((a, b) => getZIndex(b.element) - getZIndex(a.element))[0]?.app ??
+    null
+  );
 }
 
 function getOpenApps() {
@@ -72,7 +82,7 @@ function getOpenApps() {
     ...Array.from(foundry.applications.instances?.values?.() ?? []),
   ];
 
-  return [...new Set(apps)].filter(app => {
+  return [...new Set(apps)].filter((app) => {
     if (typeof app?.close !== "function") return false;
     const element = getAppElement(app);
     if (!element || !document.body.contains(element)) return false;
@@ -84,7 +94,11 @@ function getOpenApps() {
 function isFFXIVApp(app, element) {
   if (element?.classList?.contains("ffxiv")) return true;
   if (typeof app?.id === "string" && app.id.startsWith("FFXIV")) return true;
-  if (typeof app?.constructor?.name === "string" && app.constructor.name.startsWith("FFXIV")) return true;
+  if (
+    typeof app?.constructor?.name === "string" &&
+    app.constructor.name.startsWith("FFXIV")
+  )
+    return true;
   return false;
 }
 

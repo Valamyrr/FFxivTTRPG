@@ -1,39 +1,42 @@
-<div class='{{cssClass}} item-modern-sheet'>
-  <header class='sheet-header'>
-    <img
-      class='profile-img'
-      src='{{item.img}}'
-      data-edit='img'
-      title='{{item.name}}'
-    />
-    <div class='header-fields'>
-      <h1 class='charname'><input
-          name='name'
-          type='text'
-          value='{{item.name}}'
-          placeholder='Name'
-        /></h1>
+<div class="{{cssClass}} item-modern-sheet">
+  <header class="sheet-header">
+    <img class="profile-img"
+         src="{{item.img}}"
+         data-edit="img"
+         title="{{item.name}}"  alt="" width="32" height="32" />
+    <div class="header-fields">
+      <h1 class="charname">
+        <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
+      </h1>
     </div>
-    <button type="button" class="item-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}"><i class="fa-solid fa-trash-can"></i></button>
+    <button type="button"
+            class="item-delete"
+            aria-label="{{localize 'FFXIV.Item.Delete'}}">
+      <i class="fa-solid fa-trash-can"></i>
+    </button>
   </header>
-
   {{! Sheet Body }}
-  <section class='sheet-body'>
-
+  <section class="sheet-body">
     {{! Attributes Tab }}
-    <div class='attributes item-details-card'>
+    <div class="attributes item-details-card">
       {{! Tags}}
       <div class="tags-container">
-        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
+        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label>
+        <button type="button" class="add-tag">+</button>
         <ul class="tag-list">
-          {{#each customTags as |entry|}}
+          {{#each customTags as |entry| }}
             <li>
-              <select style="text-align: center;" class="select-tags" data-index="{{entry.index}}">
-                {{#each ../config.tags_traits as |t|}}
-                <option value="{{t.label}}" {{#if (eq t.label entry.tag)}}selected {{/if}}>{{ localize t.label }}</option>
+              <select class="ffxiv-text-center select-tags"
+                      data-index="{{entry.index}}">
+                {{#each ../config.tags_traits as |t| }}
+                  <option value="{{t.label}}" {{#if (eq t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
+                  </option>
                 {{/each}}
               </select>
-              <button type="button" class="remove-tag" data-index="{{entry.index}}" aria-label="{{localize 'FFXIV.Item.Delete'}}">
+              <button type="button"
+                      class="remove-tag"
+                      data-index="{{entry.index}}"
+                      aria-label="{{localize 'FFXIV.Item.Delete'}}">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </li>
@@ -44,42 +47,60 @@
         <div class="resource flex-group-center">
           <label for="system.job_resources_max" class="resource-label">{{ localize "FFXIV.Abilities.JobResourceMax" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.job_resources_max" type="number" min=0 value="{{item.system.job_resources_max}}"/>
+            <input name="system.job_resources_max"
+                   type="number"
+                   min="0"
+                   value="{{item.system.job_resources_max}}" />
           </div>
         </div>
       </div>
       <div class="resources grid grid-2col">
-        <div class="resource" style="margin:auto">
+        <div class="resource ffxiv-m-auto">
           <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
         </div>
         <div class="resource-content">
-          <input name="system.activable" type="checkbox" {{#if item.system.activable}}checked {{/if}}/>
+          <input name="system.activable"
+                 type="checkbox"
+                 {{#if item.system.activable }}
+                 checked
+                 {{/if}} />
         </div>
       </div>
       <hr>
       {{! Modifiers}}
       <div class="tags-container">
-        <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label> <button type="button" class="add-modifier">+</button>
+        <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label>
+        <button type="button" class="add-modifier">+</button>
         <ul class="tag-list">
-          {{#each system.modifiers as |modifier index|}}
+          {{#each system.modifiers as |modifier index| }}
             <li>
-              <select style="text-align: center;" class="modifier-name" data-index="{{index}}">
-                {{#each ../config.attributes as |m|}}
-                <option value="{{m.label}}" {{#if (eq m.label modifier.[0])}}selected {{/if}}>{{ localize m.label }}</option>
+              <select class="ffxiv-text-center modifier-name"
+                      data-index="{{index}}">
+                {{#each ../config.attributes as |m| }}
+                  <option value="{{m.label}}"
+                          {{#if (eq m.label modifier.[0]) }}
+                          selected
+                          {{/if}}>{{ localize m.label }}
+                  </option>
                 {{/each}}
-                {{#each ../config.characteristics as |m|}}
-                <option value="{{m.label}}" {{#if (eq m.label modifier.[0])}}selected {{/if}}>{{ localize m.label }}</option>
+                {{#each ../config.characteristics as |m| }}
+                  <option value="{{m.label}}"
+                          {{#if (eq m.label modifier.[0]) }}
+                          selected
+                          {{/if}}>{{ localize m.label }}
+                  </option>
                 {{/each}}
               </select>
-              <input type="text" class="modifier-value" value="{{modifier.[1]}}" data-index="{{index}}">
+              <input type="text"
+                     class="modifier-value"
+                     value="{{modifier.[1]}}"
+                     data-index="{{index}}">
               <button type="button" class="remove-modifier" data-index="{{index}}">x</button>
             </li>
           {{/each}}
         </ul>
       </div>
-
       <hr>
-
       {{! Editors must receive enriched text data from getData to properly handle rolls }}
       <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
     </div>

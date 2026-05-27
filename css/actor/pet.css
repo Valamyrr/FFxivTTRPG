@@ -1,4 +1,4 @@
-.ffxiv.actor.pet .profile-img{
+.ffxiv.actor.pet .profile-img {
   width: 142.5px;
   height: auto;
   border: none;
@@ -73,7 +73,7 @@
   max-width: 5ch;
   border: none;
   text-align: left;
-  background:transparent;
+  background: transparent;
   border: none;
 }
 
@@ -96,24 +96,24 @@
   font-weight: 400;
 }
 
-.ffxiv .pet .tags-container{
+.ffxiv .pet .tags-container {
   margin-bottom: 15px;
 }
 
-.ffxiv .pet .tags-container li{
+.ffxiv .pet .tags-container li {
   list-style-type: none
 }
 
-.ffxiv .pet .tags-container button{
+.ffxiv .pet .tags-container button {
   width: 34px;
   height: 34px;
 }
 
-.ffxiv .pet .tags-container .add-tag{
+.ffxiv .pet .tags-container .add-tag {
   display: inline;
 }
 
-.ffxiv .pet hr{
+.ffxiv .pet hr {
   border-top: solid 2px #393939;
   margin: 15px 0 15px 0;
 }
@@ -131,7 +131,8 @@
   position: relative;
   z-index: 1;
 }
-.pet-card .pet-roll-button:hover{
+
+.pet-card .pet-roll-button:hover {
   color: var(--invert-text-color) !important;
 }
 
@@ -142,21 +143,25 @@
   left: 0;
   width: 0;
   height: 100%;
-  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0, 0, 0, 0) 100%);
   z-index: -1;
-  transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
+  transition: width 0.4s cubic-bezier(.8, .8, 1, .8);
+  /*cubic-bezier(.64,.14,.62,1.05)*/
 }
+
 .pet-card .pet-roll-button:hover::before {
   width: 150%;
 }
 
-.pet-card .pet-roll-button:hover{
+.pet-card .pet-roll-button:hover {
   box-shadow: none;
 }
-.pet-card .pet-roll-button:focus{
+
+.pet-card .pet-roll-button:focus {
   box-shadow: none;
 }
-.pet-card .pet-roll-button:active{
+
+.pet-card .pet-roll-button:active {
   box-shadow: none;
 }
 
@@ -167,6 +172,7 @@
   margin: 0;
   padding: 0;
 }
+
 .ability-effects .effect,
 .ability-description,
 .pet-traits .effect {
@@ -181,7 +187,7 @@
   justify-content: center;
   gap: 0;
   padding-top: 10px;
-  border:none;
+  border: none;
   border-top: solid 1px var(--border-color-1);
   margin-bottom: 10px;
   width: 100%;

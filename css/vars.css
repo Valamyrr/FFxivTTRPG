@@ -1,14 +1,14 @@
-body{
+body {
   --rarity-basic: #FFFFFF;
-  --rarity-green: #20bc70; /*#00FF00*/
-  --rarity-aetherial: #ff65ad; /*#FF007F*/
-  --rarity-blue: #87CEFA; /*#0000FF*/
-  --rarity-relic: #7641af; /*#800080*/
-  --rarity-unique: #FF0000; /*#FF0000*/
+  --rarity-green: #20bc70;
+  --rarity-aetherial: #ff65ad;
+  --rarity-blue: #87CEFA;
+  --rarity-relic: #7641af;
+  --rarity-unique: #FF0000;
 
-  --tank: rgba(35,85,234,1);
-  --healer: rgba(0,124,44,1);
-  --dps: rgba(147,24,35,1);
+  --tank: rgba(35, 85, 234, 1);
+  --healer: rgba(0, 124, 44, 1);
+  --dps: rgba(147, 24, 35, 1);
 }
 
 
@@ -29,26 +29,27 @@ body{
   --border-color-2: #999;
   --border-shadow-1: #444;
 
-  --gradient-color-1: rgb(50,50,50);
-  --gradient-color-2: rgb(58,58,58);
-  --gradient-color-3: rgb(87,87,87);
-  --gradient-color-4: rgb(66,66,66);
-  --gradient-stats-sidebar: linear-gradient(180deg, rgba(117,140,159,1) 0%, rgba(42,70,92,1) 30%, rgba(25,50,70,1) 100%);
+  --gradient-color-1: rgb(50, 50, 50);
+  --gradient-color-2: rgb(58, 58, 58);
+  --gradient-color-3: rgb(87, 87, 87);
+  --gradient-color-4: rgb(66, 66, 66);
+  --gradient-stats-sidebar: linear-gradient(180deg, rgba(117, 140, 159, 1) 0%, rgba(42, 70, 92, 1) 30%, rgba(25, 50, 70, 1) 100%);
 
-  --shadow-color-top: rgb(150,150,150);
-  --shadow-color-bottom: rgb(0,0,0);
-  --shadow-improve-readability-white: 0px 0px 5px rgba(0,0,0,0.4);
-  --shadow-improve-readability-light: 0px 0px 5px rgba(0,0,0,0.4);
-  --shadow-improve-readability-dark: 1px 0px 2px rgba(0,0,0,0.2), -1px 0px 2px rgba(0,0,0,0.2);
+  --shadow-color-top: rgb(150, 150, 150);
+  --shadow-color-bottom: rgb(0, 0, 0);
+  --shadow-improve-readability-white: 0px 0px 5px rgba(0, 0, 0, 0.4);
+  --shadow-improve-readability-light: 0px 0px 5px rgba(0, 0, 0, 0.4);
+  --shadow-improve-readability-dark: 1px 0px 2px rgba(0, 0, 0, 0.2), -1px 0px 2px rgba(0, 0, 0, 0.2);
 
   --tooltip: rgba(0, 0, 0, 0.6);
 
   --chip-color: grey;
-  --chip-color-active: rgb(237,210,99);
+  --chip-color-active: rgb(237, 210, 99);
 
   --placeholder-color: #9a9a9a;
-  --subtabactive-background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);;
-  --subtabactive-filter:contrast(125%);
+  --subtabactive-background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+  ;
+  --subtabactive-filter: contrast(125%);
 }
 
 .light_theme {
@@ -68,40 +69,35 @@ body{
   --border-color-2: #D4C7B0;
   --border-shadow-1: #C4B899;
 
-  --gradient-color-1: rgb(245,240,232);
-  --gradient-color-2: rgb(232,224,212);
-  --gradient-color-3: rgb(210,198,179);
-  --gradient-color-4: rgb(188,176,157);
-  --gradient-stats-sidebar: linear-gradient(180deg, rgba(227,190,159,1) 0%, rgba(222,184,145,1) 30%, rgba(210,180,140,1) 100%);
+  --gradient-color-1: rgb(245, 240, 232);
+  --gradient-color-2: rgb(232, 224, 212);
+  --gradient-color-3: rgb(210, 198, 179);
+  --gradient-color-4: rgb(188, 176, 157);
+  --gradient-stats-sidebar: linear-gradient(180deg, rgba(227, 190, 159, 1) 0%, rgba(222, 184, 145, 1) 30%, rgba(210, 180, 140, 1) 100%);
 
-  --shadow-color-top: rgb(255,255,255);
-  --shadow-color-bottom: rgb(100,100,100);
-  --shadow-improve-readability-white: -1px -1px 5px rgba(0,0,0,0.4), 1px -1px 5px rgba(0,0,0,0.4), -1px 1px 5px rgba(0,0,0,0.4), 1px 1px 5px rgba(0,0,0,0.4);
-  --shadow-improve-readability-light: -1px 1px 3px rgba(255,255,255,0.4), 1px 1px 3px rgba(255,255,255,0.4);
-  --shadow-improve-readability-dark: none ;
+  --shadow-color-top: rgb(255, 255, 255);
+  --shadow-color-bottom: rgb(100, 100, 100);
+  --shadow-improve-readability-white: -1px -1px 5px rgba(0, 0, 0, 0.4), 1px -1px 5px rgba(0, 0, 0, 0.4), -1px 1px 5px rgba(0, 0, 0, 0.4), 1px 1px 5px rgba(0, 0, 0, 0.4);
+  --shadow-improve-readability-light: -1px 1px 3px rgba(255, 255, 255, 0.4), 1px 1px 3px rgba(255, 255, 255, 0.4);
+  --shadow-improve-readability-dark: none;
 
   --tooltip: rgba(0, 0, 0, 0.4);
 
-  --chip-color: rgb(220,202,179);
+  --chip-color: rgb(220, 202, 179);
   --chip-color-active: darkorange;
 
   --placeholder-color: #777777;
-  --subtabactive-background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);;
-  --subtabactive-filter:contrast(125%);
+  --subtabactive-background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+  ;
+  --subtabactive-filter: contrast(125%);
 }
 
 .blue_theme {
-  /*--background-color: linear-gradient(42deg,rgba(90, 188, 196, 1) 0%, rgba(87, 139, 199, 1) 80%, rgba(87, 100, 199, 1) 100%);*/
   --option-background-color: #425894;
-  --background-color: linear-gradient(45deg,rgba(67, 113, 205, 1) 0%, rgba(32, 54, 109, 1) 80%, rgba(26, 39, 72, 1) 100%);
+  --background-color: linear-gradient(45deg, rgba(67, 113, 205, 1) 0%, rgba(32, 54, 109, 1) 80%, rgba(26, 39, 72, 1) 100%);
   --text-color: white;
   --text-color-input: white;
   --invert-text-color: white;
-  /*
-  --text-color-strong: #999;
-
-  --primary-color: #182335;
-  --secondary-color: #2478E8;*/
   --text-color-strong: #dce9ff;
 
   --primary-color: #3488f8;
@@ -113,29 +109,25 @@ body{
   --border-color-2: #d2e6ff;
   --border-shadow-1: #0f2a62;
 
-  /*--gradient-color-1: #283653;
-  --gradient-color-2: rgb(58,58,58);
-  --gradient-color-3: #3C4E70;
-  --gradient-color-4: #596EA1;*/
   --gradient-color-1: #2471DB;
   --gradient-color-2: #2a6fcb;
   --gradient-color-3: #2471DB;
   --gradient-color-4: #425994;
-  --gradient-stats-sidebar: linear-gradient(180deg, rgba(117,140,159,1) 0%, rgba(42,70,92,1) 30%, rgba(25,50,70,1) 100%);
+  --gradient-stats-sidebar: linear-gradient(180deg, rgba(117, 140, 159, 1) 0%, rgba(42, 70, 92, 1) 30%, rgba(25, 50, 70, 1) 100%);
 
-  --shadow-color-top: rgb(150,150,150);
-  --shadow-color-bottom: rgb(0,0,0);
-  --shadow-improve-readability-white: 0px 0px 5px rgba(0,0,0,0.4);
-  --shadow-improve-readability-light: 0px 0px 5px rgba(0,0,0,0.4);
-  --shadow-improve-readability-dark: 1px 0px 2px rgba(0,0,0,0.2), -1px 0px 2px rgba(0,0,0,0.2);
+  --shadow-color-top: rgb(150, 150, 150);
+  --shadow-color-bottom: rgb(0, 0, 0);
+  --shadow-improve-readability-white: 0px 0px 5px rgba(0, 0, 0, 0.4);
+  --shadow-improve-readability-light: 0px 0px 5px rgba(0, 0, 0, 0.4);
+  --shadow-improve-readability-dark: 1px 0px 2px rgba(0, 0, 0, 0.2), -1px 0px 2px rgba(0, 0, 0, 0.2);
 
   --tooltip: rgba(0, 0, 0, 0.6);
 
-  --chip-color: linear-gradient(355deg,rgba(79, 96, 136, 1) 0%, rgba(53, 62, 100, 1) 80%, rgba(40, 43, 73, 1) 100%);;
-  --chip-color-active: rgb(237,210,99);
+  --chip-color: linear-gradient(355deg, rgba(79, 96, 136, 1) 0%, rgba(53, 62, 100, 1) 80%, rgba(40, 43, 73, 1) 100%);
+  --chip-color-active: rgb(237, 210, 99);
 
-  --placeholder-color:#A6A8C4;
-  --subtabactive-background:#10285A;
+  --placeholder-color: #A6A8C4;
+  --subtabactive-background: #10285A;
   --subtabactive-filter: none;
 
 }

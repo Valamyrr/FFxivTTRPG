@@ -1,44 +1,112 @@
 <div class="item-card">
   <div class="item-card-info">
-    <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon">
+    <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon" width="48" height="48">
     <div class="item-dialog-header">
-      <div class="item-dialog-name {{rarityTextClass item.system.rarity}}">
-        {{item.name}}
-      </div>
+      <div class="item-dialog-name {{rarityTextClass item.system.rarity}}">{{item.name}}</div>
       <div class="item-dialog-right">
         <div class="item-dialog-tags">
-          {{#each item.system.tags as |tag|}}
+          {{#each item.system.tags as |tag| }}
             <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
           {{/each}}
         </div>
       </div>
     </div>
-
     <div class="item-dialog-details item-dialog-summary">
-      {{#if (hasItemQuality item.system)}}<div class="detail"><strong>{{localize (itemQualityLabelKey item.system)}}:</strong> {{itemQualityDisplay item.system}}</div>{{/if}}
-      {{#if (not (eq item.system.price.buy 0))}}<div class="detail"><strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{item.system.price.buy}}{{#if item.system.price.denomination}} {{localize item.system.price.denomination}}{{/if}}</div>{{/if}}
-      {{#if item.system.target}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Target" }}:</strong> {{#if (hasContent enriched.target)}}{{{enriched.target}}}{{else}}{{item.system.target}}{{/if}}</div>{{/if}}
-      {{#if item.system.range}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.Range" }}:</strong> {{#if (hasContent enriched.range)}}{{{enriched.range}}}{{else}}{{item.system.range}}{{/if}}</div>{{/if}}
-      {{#if item.system.marker_area}}<div class="detail"><strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong> {{#if (hasContent enriched.marker_area)}}{{{enriched.marker_area}}}{{else}}{{item.system.marker_area}}{{/if}}</div>{{/if}}
-    </div>
-
-
-    <div class="item-dialog-effects item-dialog-effects-stacked">
-      {{#if item.system.condition}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{#if (hasContent enriched.condition)}}{{{enriched.condition}}}{{else}}{{item.system.condition}}{{/if}}</div>{{/if}}
-      {{#if item.system.base_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{#if (hasContent enriched.base_effect)}}{{{enriched.base_effect}}}{{else}}{{item.system.base_effect}}{{/if}}</div>{{/if}}
-      {{#if item.system.marker_trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong> {{#if (hasContent enriched.marker_trigger)}}{{{enriched.marker_trigger}}}{{else}}{{item.system.marker_trigger}}{{/if}}</div>{{/if}}
-      {{#if item.system.marker_effect}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong> {{#if (hasContent enriched.marker_effect)}}{{{enriched.marker_effect}}}{{else}}{{item.system.marker_effect}}{{/if}}</div>{{/if}}
-      {{#if (and (not (eq item.system.check "None")) (not (eq item.system.check ""))) }}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Check" }}:</strong> {{localize item.system.check}}</div>{{/if}}
-      {{#if item.system.challenge}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong> {{#if (hasContent enriched.challenge)}}{{{enriched.challenge}}}{{else}}{{item.system.challenge}}{{/if}}</div>{{/if}}
-      {{#if item.system.trigger}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{#if (hasContent enriched.trigger)}}{{{enriched.trigger}}}{{else}}{{item.system.trigger}}{{/if}}</div>{{/if}}
-      {{#if item.system.direct_hit}}<div class="effect"><strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{#if (hasContent enriched.direct_hit)}}{{{enriched.direct_hit}}}{{else}}{{item.system.direct_hit}}{{/if}}</div>{{/if}}
-    </div>
-
-    {{#if item.system.description}}
-      <div class="item-dialog-description item-dialog-flavor">
-        {{#if (hasContent enriched.description)}}{{{enriched.description}}}{{else}}{{{item.system.description}}}{{/if}}
-      </div>
-    {{/if}}
-
-  </div>
-</div>
+      {{#if (hasItemQuality item.system) }}
+        <div class="detail">
+          <strong>{{localize (itemQualityLabelKey item.system)}}:</strong> {{itemQualityDisplay item.system}}
+        </div>
+      {{/if}}
+      {{#if (not (eq item.system.price.buy 0)) }}
+        <div class="detail">
+          <strong>{{ localize "FFXIV.Item.Buy" }}:</strong> {{item.system.price.buy}}
+          {{#if item.system.price.denomination }}
+            {{localize item.system.price.denomination}}{{/if}}
+          </div>
+        {{/if}}
+        {{#if item.system.target }}
+          <div class="detail">
+            <strong>{{ localize "FFXIV.Abilities.Target" }}:</strong>
+            {{#if (hasContent enriched.target) }}
+            {{{enriched.target}}}{{else}}{{item.system.target}}{{/if}}
+            </div>
+          {{/if}}
+          {{#if item.system.range }}
+            <div class="detail">
+              <strong>{{ localize "FFXIV.Abilities.Range" }}:</strong>
+              {{#if (hasContent enriched.range) }}
+              {{{enriched.range}}}{{else}}{{item.system.range}}{{/if}}
+              </div>
+            {{/if}}
+            {{#if item.system.marker_area }}
+              <div class="detail">
+                <strong>{{ localize "FFXIV.Abilities.MarkerArea" }}:</strong>
+                {{#if (hasContent enriched.marker_area) }}
+                {{{enriched.marker_area}}}{{else}}{{item.system.marker_area}}{{/if}}
+                </div>
+              {{/if}}
+            </div>
+            <div class="item-dialog-effects item-dialog-effects-stacked">
+              {{#if item.system.condition }}
+                <div class="effect">
+                  <strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong>
+                  {{#if (hasContent enriched.condition) }}
+                  {{{enriched.condition}}}{{else}}{{item.system.condition}}{{/if}}
+                  </div>
+                {{/if}}
+                {{#if item.system.base_effect }}
+                  <div class="effect">
+                    <strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong>
+                    {{#if (hasContent enriched.base_effect) }}
+                    {{{enriched.base_effect}}}{{else}}{{item.system.base_effect}}{{/if}}
+                    </div>
+                  {{/if}}
+                  {{#if item.system.marker_trigger }}
+                    <div class="effect">
+                      <strong>{{ localize "FFXIV.Abilities.MarkerTrigger" }}:</strong>
+                      {{#if (hasContent enriched.marker_trigger) }}
+                      {{{enriched.marker_trigger}}}{{else}}{{item.system.marker_trigger}}{{/if}}
+                      </div>
+                    {{/if}}
+                    {{#if item.system.marker_effect }}
+                      <div class="effect">
+                        <strong>{{ localize "FFXIV.Abilities.MarkerEffect" }}:</strong>
+                        {{#if (hasContent enriched.marker_effect) }}
+                        {{{enriched.marker_effect}}}{{else}}{{item.system.marker_effect}}{{/if}}
+                        </div>
+                      {{/if}}
+                      {{#if (and (not (eq item.system.check "None")) (not (eq item.system.check ""))) }}
+                        <div class="effect">
+                          <strong>{{ localize "FFXIV.Abilities.Check" }}:</strong> {{localize item.system.check}}
+                        </div>
+                      {{/if}}
+                      {{#if item.system.challenge }}
+                        <div class="effect">
+                          <strong>{{ localize "FFXIV.Abilities.Challenge" }}:</strong>
+                          {{#if (hasContent enriched.challenge) }}
+                          {{{enriched.challenge}}}{{else}}{{item.system.challenge}}{{/if}}
+                          </div>
+                        {{/if}}
+                        {{#if item.system.trigger }}
+                          <div class="effect">
+                            <strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong>
+                            {{#if (hasContent enriched.trigger) }}
+                            {{{enriched.trigger}}}{{else}}{{item.system.trigger}}{{/if}}
+                            </div>
+                          {{/if}}
+                          {{#if item.system.direct_hit }}
+                            <div class="effect">
+                              <strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong>
+                              {{#if (hasContent enriched.direct_hit) }}
+                              {{{enriched.direct_hit}}}{{else}}{{item.system.direct_hit}}{{/if}}
+                              </div>
+                            {{/if}}
+                          </div>
+                          {{#if item.system.description }}
+                            <div class="item-dialog-description item-dialog-flavor">
+                              {{#if (hasContent enriched.description) }}
+                              {{{enriched.description}}}{{else}}{{{item.system.description}}}{{/if}}
+                              </div>
+                            {{/if}}
+                          </div>
+                        </div>

@@ -1,4 +1,4 @@
-.actor-profile h2{
+.actor-profile h2 {
   text-decoration: none;
   border: none;
   margin: 0 0 10px;
@@ -9,32 +9,37 @@
 
 .actor-profile .actor-titles,
 .actor-profile .actor-profiletrait,
-.actor-profile .actor-biography{
+.actor-profile .actor-biography {
   margin-bottom: 12px;
 }
 
-.actor-titles .actor-titles-box{
-  border:solid 1px var(--color-border-light-tertiary);
+.actor-titles .actor-titles-box {
+  border: solid 1px var(--color-border-light-tertiary);
   border-radius: 8px;
   margin-top: 5px;
   background: rgba(0, 0, 0, 0.12);
 }
-.actor-titles .actor-title-description{
+
+.actor-titles .actor-title-description {
   padding: 10px;
 }
-.actor-titles .actor-title-data{
+
+.actor-titles .actor-title-data {
   padding: 10px;
   border-bottom: solid 1px var(--color-border-light-tertiary);
   line-height: 22px;
 }
+
 .actor-titles .detail {
   display: inline-block;
   margin-right: 3px;
 }
-.actor-titles .detail strong{
+
+.actor-titles .detail strong {
   color: var(--text-color-strong);
 }
-.actor-titles .title-delete{
+
+.actor-titles .title-delete {
   height: 22px;
   width: 22px;
   background: #b00000;
@@ -48,20 +53,21 @@
   padding: 0;
 }
 
-.actor-titles .title-delete:hover{
+.actor-titles .title-delete:hover {
   background: red;
   box-shadow: 0 0 5px red;
 }
 
-.sheet-body .actor-profiletrait .editor{
+.sheet-body .actor-profiletrait .editor {
   height: auto !important;
   min-height: 150px !important;
 }
-.actor-profiletrait .editor-content{
+
+.actor-profiletrait .editor-content {
   margin: 10px;
 }
 
-.actor-biography .editor-content{
+.actor-biography .editor-content {
   margin: 10px;
 }
 

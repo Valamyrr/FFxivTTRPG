@@ -3,21 +3,21 @@ export const SHOP_TIER_VALUES = Object.freeze({
   AVERAGE: "2",
   HIGH: "3",
   SPECIAL: "99",
-  CUSTOM: "custom"
+  CUSTOM: "custom",
 });
 
 const CANONICAL_TIERS = Object.freeze({
   [SHOP_TIER_VALUES.LOW]: "FFXIV.ShopTier.Low",
   [SHOP_TIER_VALUES.AVERAGE]: "FFXIV.ShopTier.Average",
   [SHOP_TIER_VALUES.HIGH]: "FFXIV.ShopTier.High",
-  [SHOP_TIER_VALUES.SPECIAL]: "FFXIV.ShopTier.Special"
+  [SHOP_TIER_VALUES.SPECIAL]: "FFXIV.ShopTier.Special",
 });
 
 const NORMALIZED_TEXT_MAP = Object.freeze({
   low: SHOP_TIER_VALUES.LOW,
   average: SHOP_TIER_VALUES.AVERAGE,
   high: SHOP_TIER_VALUES.HIGH,
-  special: SHOP_TIER_VALUES.SPECIAL
+  special: SHOP_TIER_VALUES.SPECIAL,
 });
 
 function normalizeLooseText(value) {
@@ -44,12 +44,13 @@ export function normalizeShopTier(shopTierRaw, customRaw = "") {
   const sourceCustom = String(customRaw ?? "").trim();
   const trimmedTier = String(sourceTier).trim();
 
-  if (!trimmedTier && !sourceCustom) return { shop_tier: "", shop_tier_custom: "" };
+  if (!trimmedTier && !sourceCustom)
+    return { shop_tier: "", shop_tier_custom: "" };
 
   if (trimmedTier === SHOP_TIER_VALUES.CUSTOM) {
     return {
       shop_tier: SHOP_TIER_VALUES.CUSTOM,
-      shop_tier_custom: sourceCustom
+      shop_tier_custom: sourceCustom,
     };
   }
 
@@ -61,30 +62,43 @@ export function normalizeShopTier(shopTierRaw, customRaw = "") {
   if (numericTier) return { shop_tier: numericTier, shop_tier_custom: "" };
 
   const normalizedText = normalizeLooseText(trimmedTier);
-  if (normalizedText.includes("special")) return { shop_tier: SHOP_TIER_VALUES.SPECIAL, shop_tier_custom: "" };
-  if (normalizedText.includes("average")) return { shop_tier: SHOP_TIER_VALUES.AVERAGE, shop_tier_custom: "" };
-  if (normalizedText.includes("high")) return { shop_tier: SHOP_TIER_VALUES.HIGH, shop_tier_custom: "" };
-  if (normalizedText.includes("low")) return { shop_tier: SHOP_TIER_VALUES.LOW, shop_tier_custom: "" };
+  if (normalizedText.includes("special"))
+    return { shop_tier: SHOP_TIER_VALUES.SPECIAL, shop_tier_custom: "" };
+  if (normalizedText.includes("average"))
+    return { shop_tier: SHOP_TIER_VALUES.AVERAGE, shop_tier_custom: "" };
+  if (normalizedText.includes("high"))
+    return { shop_tier: SHOP_TIER_VALUES.HIGH, shop_tier_custom: "" };
+  if (normalizedText.includes("low"))
+    return { shop_tier: SHOP_TIER_VALUES.LOW, shop_tier_custom: "" };
 
   const embeddedNumber = normalizedText.match(/\d+/)?.[0];
-  const embeddedNumericTier = embeddedNumber ? parseNumericTier(embeddedNumber) : "";
-  if (embeddedNumericTier) return { shop_tier: embeddedNumericTier, shop_tier_custom: "" };
+  const embeddedNumericTier = embeddedNumber
+    ? parseNumericTier(embeddedNumber)
+    : "";
+  if (embeddedNumericTier)
+    return { shop_tier: embeddedNumericTier, shop_tier_custom: "" };
 
   const mappedTextTier = NORMALIZED_TEXT_MAP[normalizedText];
-  if (mappedTextTier) return { shop_tier: mappedTextTier, shop_tier_custom: "" };
+  if (mappedTextTier)
+    return { shop_tier: mappedTextTier, shop_tier_custom: "" };
 
   const fallbackCustom = sourceCustom || trimmedTier;
   return {
     shop_tier: SHOP_TIER_VALUES.CUSTOM,
-    shop_tier_custom: fallbackCustom
+    shop_tier_custom: fallbackCustom,
   };
 }
 
-export function formatShopTierDisplay(shopTierRaw, customRaw = "", i18n = null) {
+export function formatShopTierDisplay(
+  shopTierRaw,
+  customRaw = "",
+  i18n = null,
+) {
   const normalized = normalizeShopTier(shopTierRaw, customRaw);
   if (!normalized.shop_tier) return "";
 
-  if (normalized.shop_tier === SHOP_TIER_VALUES.CUSTOM) return normalized.shop_tier_custom || "";
+  if (normalized.shop_tier === SHOP_TIER_VALUES.CUSTOM)
+    return normalized.shop_tier_custom || "";
 
   const labelKey = CANONICAL_TIERS[normalized.shop_tier];
   if (!labelKey) return "";
@@ -93,10 +107,25 @@ export function formatShopTierDisplay(shopTierRaw, customRaw = "", i18n = null) 
 
 export function getShopTierChoices() {
   return {
-    [SHOP_TIER_VALUES.LOW]: { value: SHOP_TIER_VALUES.LOW, label: "FFXIV.ShopTier.Low" },
-    [SHOP_TIER_VALUES.AVERAGE]: { value: SHOP_TIER_VALUES.AVERAGE, label: "FFXIV.ShopTier.Average" },
-    [SHOP_TIER_VALUES.HIGH]: { value: SHOP_TIER_VALUES.HIGH, label: "FFXIV.ShopTier.High" },
-    [SHOP_TIER_VALUES.SPECIAL]: { value: SHOP_TIER_VALUES.SPECIAL, label: "FFXIV.ShopTier.Special" },
-    [SHOP_TIER_VALUES.CUSTOM]: { value: SHOP_TIER_VALUES.CUSTOM, label: "FFXIV.ShopTier.Custom" }
+    [SHOP_TIER_VALUES.LOW]: {
+      value: SHOP_TIER_VALUES.LOW,
+      label: "FFXIV.ShopTier.Low",
+    },
+    [SHOP_TIER_VALUES.AVERAGE]: {
+      value: SHOP_TIER_VALUES.AVERAGE,
+      label: "FFXIV.ShopTier.Average",
+    },
+    [SHOP_TIER_VALUES.HIGH]: {
+      value: SHOP_TIER_VALUES.HIGH,
+      label: "FFXIV.ShopTier.High",
+    },
+    [SHOP_TIER_VALUES.SPECIAL]: {
+      value: SHOP_TIER_VALUES.SPECIAL,
+      label: "FFXIV.ShopTier.Special",
+    },
+    [SHOP_TIER_VALUES.CUSTOM]: {
+      value: SHOP_TIER_VALUES.CUSTOM,
+      label: "FFXIV.ShopTier.Custom",
+    },
   };
 }

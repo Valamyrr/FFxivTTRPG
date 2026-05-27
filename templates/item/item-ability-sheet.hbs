@@ -1,293 +1,354 @@
-<div class='{{cssClass}} item-modern-sheet'>
-  <header class='sheet-header'>
-    <img
-      class='profile-img'
-      src='{{item.img}}'
-      data-edit='img'
-      title='{{item.name}}'
-    />
-    <div class='header-fields'>
-      <h1 class='charname'><input
-          name='name'
-          type='text'
-          value='{{item.name}}'
-          placeholder='Name'
-        /></h1>
+<div class="{{cssClass}} item-modern-sheet">
+  <header class="sheet-header">
+    <img class="profile-img"
+         src="{{item.img}}"
+         data-edit="img"
+         title="{{item.name}}"  alt="" width="32" height="32" />
+    <div class="header-fields">
+      <h1 class="charname">
+        <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
+      </h1>
     </div>
-    <button type="button" class="item-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}"><i class="fa-solid fa-trash-can"></i></button>
+    <button type="button"
+            class="item-delete"
+            aria-label="{{localize 'FFXIV.Item.Delete'}}">
+      <i class="fa-solid fa-trash-can"></i>
+    </button>
   </header>
-
   <hr>
-
   {{! Sheet Body }}
-  <section class='sheet-body'>
-
-    <div class='attributes item-details-card'>
+  <section class="sheet-body">
+    <div class="attributes item-details-card">
       <div class="tags-container">
-        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label> <button type="button" class="add-tag">+</button>
+        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label>
+        <button type="button" class="add-tag">+</button>
         <ul class="tag-list">
           <li>
-            <select style="text-align: center;" class="select-subtype-tag" data-index="0">
-              <option value="Primary" {{#if (isAbilitySubtype item "primary_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Primary"}}</option>
-              <option value="Secondary" {{#if (isAbilitySubtype item "secondary_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Secondary"}}</option>
-              <option value="Instant" {{#if (isAbilitySubtype item "instant_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Instant"}}</option>
-              <option value="Limit Break" {{#if (isAbilitySubtype item "limit_break")}}selected{{/if}}>{{localize "FFXIV.ItemType.limit_break"}}</option>
+            <select class="ffxiv-text-center select-subtype-tag" data-index="0">
+              <option value="Primary"
+                      {{#if (isAbilitySubtype item "primary_ability") }}
+                      selected
+                      {{/if}}>{{localize "FFXIV.Tags.Primary"}}
+              </option>
+              <option value="Secondary"
+                      {{#if (isAbilitySubtype item "secondary_ability") }}
+                      selected
+                      {{/if}}>{{localize "FFXIV.Tags.Secondary"}}
+              </option>
+              <option value="Instant"
+                      {{#if (isAbilitySubtype item "instant_ability") }}
+                      selected
+                      {{/if}}>{{localize "FFXIV.Tags.Instant"}}
+              </option>
+              <option value="Limit Break"
+                      {{#if (isAbilitySubtype item "limit_break") }}
+                      selected
+                      {{/if}}>{{localize "FFXIV.ItemType.limit_break"}}
+              </option>
             </select>
           </li>
-          {{#each customTags as |entry|}}
+          {{#each customTags as |entry| }}
             <li>
-              <select style="text-align: center;" class="select-tags" data-index="{{entry.index}}">
-                {{#each ../config.tags_abilities as |t|}}
-                <option value="{{t.label}}" {{#if (eq t.label entry.tag)}}selected {{/if}}>{{ localize t.label }}</option>
+              <select class="ffxiv-text-center select-tags"
+                      data-index="{{entry.index}}">
+                {{#each ../config.tags_abilities as |t| }}
+                  <option value="{{t.label}}" {{#if (eq t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
+                  </option>
                 {{/each}}
               </select>
-              <button type="button" class="remove-tag" data-index="{{entry.index}}" aria-label="{{localize 'FFXIV.Item.Delete'}}">
+              <button type="button"
+                      class="remove-tag"
+                      data-index="{{entry.index}}"
+                      aria-label="{{localize 'FFXIV.Item.Delete'}}">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </li>
           {{/each}}
         </ul>
       </div>
-
       <hr>
-
       <div class="resources grid grid-3col">
-
         <div class="resource flex-group-center">
           <label for="system.cost" class="resource-label">{{ localize "FFXIV.Abilities.Cost" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.cost" type="text" value="{{item.system.cost}}"/>
+            <input name="system.cost" type="text" value="{{item.system.cost}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.target" class="resource-label">{{ localize "FFXIV.Abilities.Target" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.target" type="text" value="{{item.system.target}}"/>
+            <input name="system.target" type="text" value="{{item.system.target}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.range" class="resource-label">{{ localize "FFXIV.Abilities.Range" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.range" type="text" value="{{item.system.range}}"/>
+            <input name="system.range" type="text" value="{{item.system.range}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.check" class="resource-label">{{ localize "FFXIV.Abilities.Check" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <select style="text-align: center;" name="system.check">
+            <select class="ffxiv-text-center" name="system.check">
               <option value="{{localize "FFXIV.None"}}">{{localize "FFXIV.None"}}</option>
-              {{#each this.config.attributes as |a|}}
-              <option value="{{a.label}}" {{#if (eq a.label ../item.system.check)}}selected {{/if}}>{{ localize a.label }}</option>
+              {{#each this.config.attributes as |a| }}
+                <option value="{{a.label}}"
+                        {{#if (eq a.label ../item.system.check) }}
+                        selected
+                        {{/if}}>{{ localize a.label }}
+                </option>
               {{/each}}
-              <option value="FFXIV.Special" {{#if (eq "FFXIV.Special" item.system.check)}}selected {{/if}}>{{localize "FFXIV.Special"}}</option>
+              <option value="FFXIV.Special"
+                      {{#if (eq "FFXIV.Special" item.system.check) }}
+                      selected
+                      {{/if}}>{{localize "FFXIV.Special"}}
+              </option>
             </select>
           </div>
         </div>
-
-        {{#if hasCheck}}
+        {{#if hasCheck }}
           <div class="resource flex-group-center">
             <label for="system.challenge" class="resource-label">{{ localize "FFXIV.Abilities.Challenge" }}</label>
             <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.challenge" type="text" value="{{item.system.challenge}}"/>
+              <input name="system.challenge" type="text" value="{{item.system.challenge}}" />
             </div>
           </div>
         {{/if}}
-
         <div class="resource flex-group-center">
           <label for="system.trigger" class="resource-label">{{ localize "FFXIV.Abilities.Trigger" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.trigger" type="text" value="{{item.system.trigger}}"/>
+            <input name="system.trigger" type="text" value="{{item.system.trigger}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.condition" class="resource-label">{{ localize "FFXIV.Abilities.Condition" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.condition" type="text" value="{{item.system.condition}}"/>
+            <input name="system.condition" type="text" value="{{item.system.condition}}" />
           </div>
         </div>
-
       </div>
       <hr>
-
       <div class="resources grid grid-1col">
         <div class="resource flex-group-center">
           <label for="system.hit_formula" class="resource-label">{{ localize "FFXIV.Abilities.HitFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.hit_formula" type="text" value="{{item.system.hit_formula}}" placeholder="1d20 + @str" data-formula-source="hit"/>
-            <select style="text-align: center; {{#unless (hasContent item.system.hit_formula)}}display:none;{{/unless}}" name="system.hit_formula_attribute" data-formula-target="hit">
+            <input name="system.hit_formula"
+                   type="text"
+                   value="{{item.system.hit_formula}}"
+                   placeholder="1d20 + @str"
+                   data-formula-source="hit" />
+            <select class="ffxiv-text-center {{#unless (hasContent item.system.hit_formula)}}ffxiv-hidden{{/unless}}"
+                    name="system.hit_formula_attribute"
+                    data-formula-target="hit">
               <option value="">{{ localize "FFXIV.None" }}</option>
-              {{#each this.config.formula_attributes as |attr|}}
-              <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.hit_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+              {{#each this.config.formula_attributes as |attr| }}
+                <option value="{{attr.value}}"
+                        {{#if (eq attr.value ../item.system.hit_formula_attribute) }}
+                        selected
+                        {{/if}}>+ {{ localize attr.label }}
+                </option>
               {{/each}}
             </select>
           </div>
         </div>
       </div>
-
       <div class="resources grid grid-2col">
-
         <div class="resource flex-group-center">
           <label for="system.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.BaseEffect" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.base_effect" type="text" value="{{item.system.base_effect}}"/>
+            <input name="system.base_effect"
+                   type="text"
+                   value="{{item.system.base_effect}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.base_formula" class="resource-label">{{ localize "FFXIV.Abilities.BaseFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.base_formula" type="text" value="{{item.system.base_formula}}" placeholder="3 + @dmg"/>
+            <input name="system.base_formula"
+                   type="text"
+                   value="{{item.system.base_formula}}"
+                   placeholder="3 + @dmg" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.direct_hit" class="resource-label">{{ localize "FFXIV.Abilities.DirectHit" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.direct_hit" type="text" value="{{item.system.direct_hit}}"/>
+            <input name="system.direct_hit"
+                   type="text"
+                   value="{{item.system.direct_hit}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.direct_formula" class="resource-label">{{ localize "FFXIV.Abilities.DirectFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.direct_formula" type="text" value="{{item.system.direct_formula}}" placeholder="3 + 1d6 + @dmg" data-formula-source="direct"/>
-            <select style="text-align: center; {{#unless (hasContent item.system.direct_formula)}}display:none;{{/unless}}" name="system.direct_formula_attribute" data-formula-target="direct">
+            <input name="system.direct_formula"
+                   type="text"
+                   value="{{item.system.direct_formula}}"
+                   placeholder="3 + 1d6 + @dmg"
+                   data-formula-source="direct" />
+            <select class="ffxiv-text-center {{#unless (hasContent item.system.direct_formula)}}ffxiv-hidden{{/unless}}"
+                    name="system.direct_formula_attribute"
+                    data-formula-target="direct">
               <option value="">{{ localize "FFXIV.None" }}</option>
-              {{#each this.config.formula_attributes as |attr|}}
-              <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.direct_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+              {{#each this.config.formula_attributes as |attr| }}
+                <option value="{{attr.value}}"
+                        {{#if (eq attr.value ../item.system.direct_formula_attribute) }}
+                        selected
+                        {{/if}}>+ {{ localize attr.label }}
+                </option>
               {{/each}}
             </select>
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.combo" class="resource-label">{{ localize "FFXIV.Abilities.Combo" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.combo" type="text" value="{{item.system.combo}}"/>
+            <input name="system.combo" type="text" value="{{item.system.combo}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.hpcost" class="resource-label">{{ localize "FFXIV.Abilities.HPCost" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.hpcost" type="number" min="0" data-dtype="Number" value="{{item.system.hpcost}}"/>
+            <input name="system.hpcost"
+                   type="number"
+                   min="0"
+                   data-dtype="Number"
+                   value="{{item.system.hpcost}}" />
           </div>
         </div>
-
         <div data-direct-hit-gate>
           <div class="resource flex-group-center">
             <label for="system.alternate_formula" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormula" }}</label>
             <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.alternate_formula" type="text" value="{{item.system.alternate_formula}}" data-formula-source="alternate"/>
-              <select style="text-align: center; {{#unless (hasContent item.system.alternate_formula)}}display:none;{{/unless}}" name="system.alternate_formula_attribute" data-formula-target="alternate">
+              <input name="system.alternate_formula"
+                     type="text"
+                     value="{{item.system.alternate_formula}}"
+                     data-formula-source="alternate" />
+              <select class="ffxiv-text-center {{#unless (hasContent item.system.alternate_formula)}}ffxiv-hidden{{/unless}}"
+                      name="system.alternate_formula_attribute"
+                      data-formula-target="alternate">
                 <option value="">{{ localize "FFXIV.None" }}</option>
-                {{#each this.config.formula_attributes as |attr|}}
-                <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.alternate_formula_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+                {{#each this.config.formula_attributes as |attr| }}
+                  <option value="{{attr.value}}"
+                          {{#if (eq attr.value ../item.system.alternate_formula_attribute) }}
+                          selected
+                          {{/if}}>+ {{ localize attr.label }}
+                  </option>
                 {{/each}}
               </select>
             </div>
           </div>
-
           <div class="resource flex-group-center">
-            <label for="system.alternate_formula_critical" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormulaCritical" }}</label>
+            <label for="system.alternate_formula_critical" class="resource-label">
+              {{ localize "FFXIV.Abilities.AlternateFormulaCritical" }}
+            </label>
             <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.alternate_formula_critical" type="text" value="{{item.system.alternate_formula_critical}}" data-formula-source="alternate-critical"/>
-              <select style="text-align: center; {{#unless (hasContent item.system.alternate_formula_critical)}}display:none;{{/unless}}" name="system.alternate_formula_critical_attribute" data-formula-target="alternate-critical">
+              <input name="system.alternate_formula_critical"
+                     type="text"
+                     value="{{item.system.alternate_formula_critical}}"
+                     data-formula-source="alternate-critical" />
+              <select class="ffxiv-text-center {{#unless (hasContent item.system.alternate_formula_critical)}}ffxiv-hidden{{/unless}}"
+                      name="system.alternate_formula_critical_attribute"
+                      data-formula-target="alternate-critical">
                 <option value="">{{ localize "FFXIV.None" }}</option>
-                {{#each this.config.formula_attributes as |attr|}}
-                <option value="{{attr.value}}" {{#if (eq attr.value ../item.system.alternate_formula_critical_attribute)}}selected {{/if}}>+ {{ localize attr.label }}</option>
+                {{#each this.config.formula_attributes as |attr| }}
+                  <option value="{{attr.value}}"
+                          {{#if (eq attr.value ../item.system.alternate_formula_critical_attribute) }}
+                          selected
+                          {{/if}}>+ {{ localize attr.label }}
+                  </option>
                 {{/each}}
               </select>
             </div>
           </div>
         </div>
-
       </div>
       <hr>
       <div class="status-effects-editor">
         <label class="resource-label">{{ localize "FFXIV.Abilities.StatusEffect" }}</label>
         <button type="button" class="add-status-effect">+</button>
         <ul class="status-effect-list">
-          {{#each itemStatusEffects as |entry index|}}
+          {{#each itemStatusEffects as |entry index| }}
             <li>
-              <select style="text-align: center;" class="status-effect-id" data-index="{{index}}">
-                <option value="" {{#unless entry.id}}selected{{/unless}}>{{ localize "FFXIV.None" }}</option>
-                {{#each ../statusEffects as |effect|}}
-                  <option value="{{effect.id}}" {{#if (eq effect.id entry.id)}}selected{{/if}}>
+              <select class="ffxiv-text-center status-effect-id"
+                      data-index="{{index}}">
+                <option value="" {{#unless entry.id}}selected{{/unless}}>{{ localize "FFXIV.None" }}
+                </option>
+                {{#each ../statusEffects as |effect| }}
+                  <option value="{{effect.id}}" {{#if (eq effect.id entry.id) }}selected{{/if}}>
                     {{localize effect.label}}
                   </option>
                 {{/each}}
               </select>
-              <select style="text-align: center;" class="status-effect-action" data-index="{{index}}">
-                <option value="true" {{#if entry.action}}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusAdd" }}</option>
-                <option value="false" {{#unless entry.action}}selected{{/unless}}>{{ localize "FFXIV.Abilities.StatusRemove" }}</option>
+              <select class="ffxiv-text-center status-effect-action"
+                      data-index="{{index}}">
+                <option value="true" {{#if entry.action }}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusAdd" }}
+                </option>
+                <option value="false" {{#unless entry.action}}selected{{/unless}}>{{ localize "FFXIV.Abilities.StatusRemove" }}
+                </option>
               </select>
               <button type="button" class="remove-status-effect" data-index="{{index}}">x</button>
             </li>
           {{/each}}
         </ul>
       </div>
-      {{#if hasMarkerTag}}
+      {{#if hasMarkerTag }}
         <hr>
         <div class="resources grid grid-2col">
-
           <div class="resource flex-group-center">
             <label for="system.origin" class="resource-label">{{ localize "FFXIV.Abilities.MarkerOrigin" }}</label>
             <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.origin" type="text" value="{{item.system.origin}}"/>
+              <input name="system.origin" type="text" value="{{item.system.origin}}" />
             </div>
           </div>
-
-          {{#if (hasContent item.system.origin)}}
-          <div class="resource flex-group-center">
-            <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.marker_trigger" type="text" value="{{item.system.marker_trigger}}"/>
+          {{#if (hasContent item.system.origin) }}
+            <div class="resource flex-group-center">
+              <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
+              <div class="resource-content flexrow flex-center flex-between">
+                <input name="system.marker_trigger"
+                       type="text"
+                       value="{{item.system.marker_trigger}}" />
+              </div>
             </div>
-          </div>
-
-          <div class="resource flex-group-center">
-            <label for="system.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.marker_area" type="text" value="{{item.system.marker_area}}"/>
+            <div class="resource flex-group-center">
+              <label for="system.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
+              <div class="resource-content flexrow flex-center flex-between">
+                <input name="system.marker_area"
+                       type="text"
+                       value="{{item.system.marker_area}}" />
+              </div>
             </div>
-          </div>
-
-          <div class="resource flex-group-center">
-            <label for="system.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.marker_effect" type="text" value="{{item.system.marker_effect}}"/>
+            <div class="resource flex-group-center">
+              <label for="system.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
+              <div class="resource-content flexrow flex-center flex-between">
+                <input name="system.marker_effect"
+                       type="text"
+                       value="{{item.system.marker_effect}}" />
+              </div>
             </div>
-          </div>
           {{/if}}
-
         </div>
       {{/if}}
-
       <hr>
       <div class="resources grid grid-2col">
-
         <div class="resource flex-group-center">
           <label for="system.limitations" class="resource-label">{{ localize "FFXIV.Abilities.LimitationsDescription" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.limitations" type="text" value="{{item.system.limitations}}"/>
+            <input name="system.limitations"
+                   type="text"
+                   value="{{item.system.limitations}}" />
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.limitations_max" class="resource-label">{{ localize "FFXIV.Abilities.Limitations_max" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.limitations_max" type="number" min=0 value="{{item.system.limitations_max}}"/>
+            <input name="system.limitations_max"
+                   type="number"
+                   min="0"
+                   value="{{item.system.limitations_max}}" />
           </div>
         </div>
-
       </div>
-
     </div>
-
   </section>
 </div>

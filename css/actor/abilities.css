@@ -1,5 +1,4 @@
-
-.ffxiv.item .attributes{
+.ffxiv.item .attributes {
   margin-top: 10px;
 }
 
@@ -26,7 +25,7 @@
   background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
 }
 
-.sub-tab .chip{
+.sub-tab .chip {
   position: absolute;
   width: 10px;
   height: 5px;
@@ -36,10 +35,11 @@
   transform: rotate(35deg);
 }
 
-.sub-tab.active .chip{
+.sub-tab.active .chip {
   background: var(--chip-color-active);
   /*background: radial-gradient(circle, rgba(237,210,99,1) 65%, rgba(255,255,255,0) 100%);*/
 }
+
 .sub-tab.active {
   filter: var(--subtabactive-filter);
   background: var(--subtabactive-background);
@@ -62,10 +62,10 @@
   color: var(--text-color);
   overflow: hidden;
   margin-bottom: 15px;
-  flex:1;
+  flex: 1;
 }
 
-.actor-abilities .ability-card strong{
+.actor-abilities .ability-card strong {
   color: var(--text-color-strong);
 }
 
@@ -75,7 +75,7 @@
   min-height: 66px;
 }
 
-.actor-abilities .ability-header{
+.actor-abilities .ability-header {
   border-bottom: solid 2px var(--border-color-2);
   box-shadow: 0px 7px 3px -2px var(--border-shadow-1);
   display: inline-block;
@@ -139,7 +139,7 @@
   display: inline;
 }
 
-.actor-abilities .ability-tags{
+.actor-abilities .ability-tags {
   display: inline-block;
   vertical-align: super;
 }
@@ -176,7 +176,8 @@
 }
 
 
-.actor-abilities .ability-roll-button,.pet-ability-roll-button {
+.actor-abilities .ability-roll-button,
+.pet-ability-roll-button {
   background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
   border: none;
   border-radius: 0;
@@ -195,32 +196,43 @@
   overflow: hidden;
   line-height: 1;
 }
-.actor-abilities .ability-roll-button:hover,.pet-ability-roll-button:hover{
+
+.actor-abilities .ability-roll-button:hover,
+.pet-ability-roll-button:hover {
   color: var(--invert-text-color) !important;
 }
 
-.actor-abilities .ability-roll-button::before,.pet-ability-roll-button::before {
+.actor-abilities .ability-roll-button::before,
+.pet-ability-roll-button::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 0;
   height: 100%;
-  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0, 0, 0, 0) 100%);
   z-index: -1;
-  transition: width 0.4s cubic-bezier(.8,.8,1,.8);/*cubic-bezier(.64,.14,.62,1.05)*/
+  transition: width 0.4s cubic-bezier(.8, .8, 1, .8);
+  /*cubic-bezier(.64,.14,.62,1.05)*/
 }
-.actor-abilities .ability-roll-button:hover::before,.pet-ability-roll-button:hover::before {
+
+.actor-abilities .ability-roll-button:hover::before,
+.pet-ability-roll-button:hover::before {
   width: 150%;
 }
 
-.actor-abilities .ability-roll-button:hover,.pet-ability-roll-button:hover{
+.actor-abilities .ability-roll-button:hover,
+.pet-ability-roll-button:hover {
   box-shadow: none;
 }
-.actor-abilities .ability-roll-button:focus,.pet-ability-roll-button:focus{
+
+.actor-abilities .ability-roll-button:focus,
+.pet-ability-roll-button:focus {
   box-shadow: none;
 }
-.actor-abilities .ability-roll-button:active,.pet-ability-roll-button:active{
+
+.actor-abilities .ability-roll-button:active,
+.pet-ability-roll-button:active {
   box-shadow: none;
 }
 
@@ -230,6 +242,7 @@
   gap: 8px;
   align-items: center;
 }
+
 .ability-limitations .limitation-wrapper {
   position: relative;
   display: inline-flex;
@@ -276,6 +289,7 @@
   height: 20px;
   vertical-align: super;
 }
+
 .ability-limitations input[type="checkbox"] {
   position: absolute !important;
   top: 0 !important;
@@ -290,37 +304,44 @@
   appearance: none !important;
 }
 
-.ability-limitations input[type="checkbox"]:checked + .checkmark {
+.ability-limitations input[type="checkbox"]:checked+.checkmark {
   background: #FF8C00 !important;
   border: 1px solid var(--border-color-1) !important;
 }
-.ability-limitations .limitation:nth-of-type(1), .ability-limitations .checkmark:nth-of-type(1){
-  margin-left: 2px;
-}
-.ability-limitations .job_resource:nth-of-type(1), .ability-limitations .checkmark:nth-of-type(1){
+
+.ability-limitations .limitation:nth-of-type(1),
+.ability-limitations .checkmark:nth-of-type(1) {
   margin-left: 2px;
 }
 
-.ability-description{
+.ability-limitations .job_resource:nth-of-type(1),
+.ability-limitations .checkmark:nth-of-type(1) {
+  margin-left: 2px;
+}
+
+.ability-description {
   padding: 10px;
 }
 
-.ability-limitations input[type="checkbox"]:checked + .checkmark {
+.ability-limitations input[type="checkbox"]:checked+.checkmark {
   background: #FF8C00 !important;
   border: 1px solid var(--border-color-1) !important;
 }
-.ability-limitations input[type="checkbox"].active + .checkmark,
-.ability-limitations input[type="checkbox"].active:checked + .checkmark {
+
+.ability-limitations input[type="checkbox"].active+.checkmark,
+.ability-limitations input[type="checkbox"].active:checked+.checkmark {
   border: 1px solid orangered !important;
 }
-.ability-container{
+
+.ability-container {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 36px;
   gap: 5px;
   width: 100%;
   align-items: center;
 }
-.ffxiv.actor .move-buttons{
+
+.ffxiv.actor .move-buttons {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -329,7 +350,8 @@
   margin-left: 0;
   min-height: 100%;
 }
-.ffxiv.actor .move-buttons button{
+
+.ffxiv.actor .move-buttons button {
   width: 28px;
   height: 28px;
   min-height: 28px;

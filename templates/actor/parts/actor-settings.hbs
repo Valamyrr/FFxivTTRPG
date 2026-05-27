@@ -1,14 +1,20 @@
 <section class="actor-job-config modern-panel">
   <h2>{{ localize "FFXIV.ItemType.job" }}</h2>
   <div class="actor-job-slot {{#unless job}}empty{{/unless}}">
-    {{#if job}}
+    {{#if job }}
       <div class="actor-job-card item" data-item-id="{{job._id}}">
-        <img class="job-icon ability-icon" src="{{job.img}}" alt="{{job.name}}" data-item-id="{{job._id}}">
+        <img class="job-icon ability-icon"
+             src="{{job.img}}"
+             alt="{{job.name}}"
+             data-item-id="{{job._id}}" width="32" height="32">
         <div class="job-info">
           <strong>{{job.name}}</strong>
           <span>{{ localize (labelize "roles" job.system.role) }} - {{ localize "FFXIV.Level" }} {{job.system.level}}</span>
         </div>
-        <button type="button" class="job-delete" data-item-id="{{job._id}}" aria-label="{{localize 'FFXIV.Item.Delete'}}">
+        <button type="button"
+                class="job-delete"
+                data-item-id="{{job._id}}"
+                aria-label="{{localize 'FFXIV.Item.Delete'}}">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -17,47 +23,61 @@
     {{/if}}
   </div>
 </section>
-
 <div class="resources grid grid-2col modern-panel settings-grid">
   <div class="resource flex-group-center">
     <label for="system.showPets" class="resource-label">{{ localize "FFXIV.CharacterSheet.ShowPets" }}</label>
     <div class="resource-content flexrow flex-center flex-between">
-      <select style="text-align: center;" name="system.showPets">
-          <option value="true" {{#if (eq "true" system.showPets)}}selected {{/if}} >{{ localize "FFXIV.True" }}</option>
-          <option value="false" {{#if (eq "false" system.showPets)}}selected {{/if}} >{{ localize "FFXIV.False" }}</option>
+      <select class="ffxiv-text-center" name="system.showPets">
+        <option value="true" {{#if (eq "true" system.showPets) }}selected {{/if}}>{{ localize "FFXIV.True" }}
+        </option>
+        <option value="false" {{#if (eq "false" system.showPets) }}selected {{/if}}>{{ localize "FFXIV.False" }}
+        </option>
       </select>
-
     </div>
   </div>
-
   <div class="resource flex-group-center">
     <label for="system.showModifiers" class="resource-label">{{ localize "FFXIV.CharacterSheet.ShowModifiers" }}</label>
     <div class="resource-content flexrow flex-center flex-between">
-      <select style="text-align: center;" name="system.showModifiers">
-          <option value="true" {{#if (eq "true" system.showModifiers)}}selected {{/if}} >{{ localize "FFXIV.True" }}</option>
-          <option value="false" {{#if (eq "false" system.showModifiers)}}selected {{/if}} >{{ localize "FFXIV.False" }}</option>
+      <select class="ffxiv-text-center" name="system.showModifiers">
+        <option value="true"
+                {{#if (eq "true" system.showModifiers) }}
+                selected
+                {{/if}}>{{ localize "FFXIV.True" }}
+        </option>
+        <option value="false"
+                {{#if (eq "false" system.showModifiers) }}
+                selected
+                {{/if}}>{{ localize "FFXIV.False" }}
+        </option>
       </select>
-
     </div>
   </div>
-
   <div class="resource flex-group-center">
     <label for="system.banner" class="resource-label">{{ localize "FFXIV.CharacterSheet.Banner" }}</label>
     <div class="resource-content flexrow flex-center flex-between">
-      <div class="form-fields" style="display:flex">
-        <input class="image" type="text" name="system.banner" value="{{system.banner}}" placeholder="path/to/file.ext" data-dtype="String"/>
-        <button type="button" class="file-picker" data-type="imagevideo" data-target="system.banner">
+      <div class="form-fields ffxiv-d-flex">
+        <input class="image"
+               type="text"
+               name="system.banner"
+               value="{{system.banner}}"
+               placeholder="path/to/file.ext"
+               data-dtype="String" />
+        <button type="button"
+                class="file-picker"
+                data-type="imagevideo"
+                data-target="system.banner">
           <i class="fa-solid fa-file-import fa-fw"></i>
         </button>
       </div>
     </div>
   </div>
-
   <div class="resource flex-group-center">
     <label for="system.criticalRange" class="resource-label">{{ localize "FFXIV.CharacterSheet.CriticalRange" }}</label>
     <div class="resource-content flexrow flex-center flex-between">
-      <input name="system.criticalRange" type="number" value="{{actor.system.criticalRange}}" placeholder="20"/>
+      <input name="system.criticalRange"
+             type="number"
+             value="{{actor.system.criticalRange}}"
+             placeholder="20" />
     </div>
   </div>
-
 </div>

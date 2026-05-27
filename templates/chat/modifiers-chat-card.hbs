@@ -1,22 +1,22 @@
-{{#each items}}
-  {{#if (eq type "trait")}}
-    {{#if system.active}}
+{{#each items }}
+  {{#if (eq type "trait") }}
+    {{#if system.active }}
       <div class="item-card">
         <div class="item-card-info">
           <div class="item-dialog-header modifier">
-            <div class="item-dialog-name {{rarityTextClass system.rarity}}">
-              {{name}}
-            </div>
+            <div class="item-dialog-name {{rarityTextClass system.rarity}}">{{name}}</div>
             <div class="item-dialog-right">
               <div class="item-dialog-tags">
-                {{#each system.tags as |tag|}}
+                {{#each system.tags as |tag| }}
                   <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
                 {{/each}}
               </div>
             </div>
           </div>
           <div class="item-dialog-effects">
-            {{#if system.description}}<div class="effect">{{{system.description}}}</div>{{/if}}
+            {{#if system.description }}
+              <div class="effect">{{{system.description}}}</div>
+            {{/if}}
           </div>
         </div>
       </div>

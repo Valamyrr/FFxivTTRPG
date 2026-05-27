@@ -14,7 +14,7 @@ export class FFXIVActor extends Actor {
     };
   }
 
-  _ensureAttributeValue(attribute, defaultLabel="") {
+  _ensureAttributeValue(attribute, defaultLabel = "") {
     const normalized = attribute && typeof attribute === "object" ? attribute : {};
     return {
       value: Number.isFinite(normalized.value) ? normalized.value : 0,
@@ -110,7 +110,7 @@ export class FFXIVActor extends Actor {
     }
   }
 
-  //The ensure and reset methods exist to fix issues spawned in V14 with active effects.
+  // The ensure and reset methods exist to fix issues spawned in V14 with active effects.
   _ensureActiveEffectState() {
     this.overrides ??= {};
     this.statuses ??= new Set();
@@ -187,7 +187,7 @@ export class FFXIVActor extends Actor {
   }
 
   /** @override */
-  async modifyTokenAttribute(attribute, value, isDelta=false, isBar=true) {
+  async modifyTokenAttribute(attribute, value, isDelta = false, isBar = true) {
     if (isBar && ["health", "barrier"].includes(attribute)) {
       const attr = foundry.utils.getProperty(this.system, attribute);
       if (!attr || typeof attr !== "object" || !("value" in attr)) return super.modifyTokenAttribute(attribute, value, isDelta, isBar);
@@ -241,9 +241,6 @@ export class FFXIVActor extends Actor {
    * is queried and has a roll executed directly from it).
    */
   prepareDerivedData() {
-    const systemData = this.system;
-    const flags = this.flags.ffxivttrpg || {};
-
     // Make separate methods for each Actor type (character, npc, etc.) to keep
     // things organized.
     this._prepareSharedData(this)
@@ -255,7 +252,7 @@ export class FFXIVActor extends Actor {
   /**
    * Prepare shared data
    */
-  _prepareSharedData(actorData) {
+  _prepareSharedData() {
     return;
   }
 
@@ -325,47 +322,47 @@ export class FFXIVActor extends Actor {
       data.vigilance = Number(secondaryAttributes?.vigilance?.value) || 0;
     }
     // Add modifiers from items
-     for (let item of this.items) {
-       if (!Array.isArray(item.system.modifiers)) continue; // Skip if item has no modifiers
-       if (item.system.activable){
-         if (!item.system.active) continue; // Skip if activable but not active
-       }
-       if (item.system.hasOwnProperty("equipped")){
-         if (!item.system.equipped) continue; // Skip if equipped exists but is false
-       }
-       if (item.type === "title"){
-         if (item.name != data.activeTitle) continue; //Skip titles if not active one
-       }
+    for (let item of this.items) {
+      if (!Array.isArray(item.system.modifiers)) continue; // Skip if item has no modifiers
+      if (item.system.activable) {
+        if (!item.system.active) continue; // Skip if activable but not active
+      }
+      if (Object.prototype.hasOwnProperty.call(item.system, "equipped")) {
+        if (!item.system.equipped) continue; // Skip if equipped exists but is false
+      }
+      if (item.type === "title") {
+        if (item.name != data.activeTitle) continue; //Skip titles if not active one
+      }
 
-       for (const modifier of item.system.modifiers) {
-         const [modName, modValue] = modifier;
-         const numericModifier = Number(modValue);
-         const modifierValue = Number.isFinite(numericModifier) ? numericModifier : 0;
-         if (Object.keys(primaryAttributes).length) {
-           if (modName == CONFIG.FF_XIV.attributes.Strength.label) data.str += modifierValue;
-           if (modName == CONFIG.FF_XIV.attributes.Dexterity.label) data.dex += modifierValue;
-           if (modName == CONFIG.FF_XIV.attributes.Vitality.label) data.vit += modifierValue;
-           if (modName == CONFIG.FF_XIV.attributes.Intelligence.label) data.int += modifierValue;
-           if (modName == CONFIG.FF_XIV.attributes.Mind.label) data.mnd += modifierValue;
-         }
-         if (Object.keys(secondaryAttributes).length) {
-           if (modName == CONFIG.FF_XIV.attributes.Defense.label) data.def += modifierValue;
-           if (modName == CONFIG.FF_XIV.attributes.MagicDefense.label) data.mdef += modifierValue;
-           if (modName == CONFIG.FF_XIV.attributes.Vigilance.label) data.vigilance += modifierValue;
-         }
-         data.dmg = data.dmg || "";
-         if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += "+"+modifierValue;
+      for (const modifier of item.system.modifiers) {
+        const [modName, modValue] = modifier;
+        const numericModifier = Number(modValue);
+        const modifierValue = Number.isFinite(numericModifier) ? numericModifier : 0;
+        if (Object.keys(primaryAttributes).length) {
+          if (modName == CONFIG.FF_XIV.attributes.Strength.label) data.str += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Dexterity.label) data.dex += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Vitality.label) data.vit += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Intelligence.label) data.int += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Mind.label) data.mnd += modifierValue;
+        }
+        if (Object.keys(secondaryAttributes).length) {
+          if (modName == CONFIG.FF_XIV.attributes.Defense.label) data.def += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.MagicDefense.label) data.mdef += modifierValue;
+          if (modName == CONFIG.FF_XIV.attributes.Vigilance.label) data.vigilance += modifierValue;
+        }
+        data.dmg = data.dmg || "";
+        if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += "+" + modifierValue;
 
-         data.cdmg = data.cdmg || "";
-         if (modName == CONFIG.FF_XIV.characteristics.CriticalDamage.label) data.cdmg += "+"+modifierValue;
+        data.cdmg = data.cdmg || "";
+        if (modName == CONFIG.FF_XIV.characteristics.CriticalDamage.label) data.cdmg += "+" + modifierValue;
 
-         data.hit = data.hit || "";
-         if (modName == CONFIG.FF_XIV.characteristics.BonusToHit.label) data.hit += "+"+modifierValue;
+        data.hit = data.hit || "";
+        if (modName == CONFIG.FF_XIV.characteristics.BonusToHit.label) data.hit += "+" + modifierValue;
 
-       }
-     }
-     if (data.dmg=="") data.dmg="0"
-     if (data.cdmg=="") data.cdmg="0"
+      }
+    }
+    if (data.dmg == "") data.dmg = "0"
+    if (data.cdmg == "") data.cdmg = "0"
     //Add adventuring ranks
     if (data.adventuring_rank) {
       data.arank_min = data.adventuring_rank.miner
@@ -383,16 +380,16 @@ export class FFXIVActor extends Actor {
     return data;
   }
 
-  async _showModifiers(){
+  async _showModifiers() {
     debugLog("showModifiers");
-    if (this.items.some(item => item.system.active == true)){
+    if (this.items.some(item => item.system.active == true)) {
       ChatMessage.create({
         content: await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/chat/modifiers-chat-card.hbs", { items: this.items }),
         flags: { core: { canParseHTML: true } },
         flavor: game.i18n.localize("FFXIV.Traits.Modifiers") + " | " + game.i18n.localize("FFXIV.Traits.TraitsOnly")
       });
-    }else{
-      debugError("No modifier to display",this.items);
+    } else {
+      debugError("No modifier to display", this.items);
       ui.notifications.warn(game.i18n.localize("FFXIV.Chat.NoModifiers"));
     }
   }
@@ -407,8 +404,6 @@ export class FFXIVActor extends Actor {
     }
 
     const attrKey = abbreviationEntry.value;
-    const attributeValue = foundry.utils.getProperty(this.system, `primary_attributes.${attribute}.value`) || 0;
-
     const rollData = this.getRollData();
     const modifiers = rollData[attrKey] ?? 0;
     const roll = new Roll(`1d20 + ${modifiers}`, rollData);
@@ -424,6 +419,4 @@ export class FFXIVActor extends Actor {
 
     return roll;
   }
-
-
 }

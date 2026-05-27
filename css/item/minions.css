@@ -65,7 +65,7 @@
   padding: 4px 9px;
 }
 
-.ffxiv.item.minion-mount-sheet .minion-details-section + .minion-details-section {
+.ffxiv.item.minion-mount-sheet .minion-details-section+.minion-details-section {
   margin-top: 10px;
 }
 

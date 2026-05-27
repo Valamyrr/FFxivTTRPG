@@ -1,59 +1,79 @@
 <div class="actor-abilities actor-companions modern-tab-layout">
   <div class="abilities-tab-content modern-panel">
     <!-- Sub-tab navigation for abilities -->
-    {{#if (eq actor.system.showPets "true")}}
+    {{#if (eq actor.system.showPets "true") }}
       <nav class="companions-sub-tabs" data-group="companions-sub-tabs">
-        <a class="companions-sub-tab active" data-tab="minions" title="{{localize 'FFXIV.CharacterSheet.Minions'}}">
+        <a class="companions-sub-tab active"
+           data-tab="minions"
+           title="{{localize 'FFXIV.CharacterSheet.Minions'}}">
           {{localize 'FFXIV.CharacterSheet.Minions'}}
           <div class="chip"></div>
         </a>
-        <a class="companions-sub-tab" data-tab="pets" title="{{localize 'FFXIV.CharacterSheet.Pets'}}">
+        <a class="companions-sub-tab"
+           data-tab="pets"
+           title="{{localize 'FFXIV.CharacterSheet.Pets'}}">
           {{localize 'FFXIV.CharacterSheet.Pets'}}
           <div class="chip"></div>
         </a>
       </nav>
     {{/if}}
-
     <!-- Sub-tab content -->
     <section class="companions-sub-tab-content active" data-tab="minions">
       {{!-- Mounts content here --}}
-      {{#each (sortAbilities items system.ability_order "minion")}}
-          <div class="ability-container">
-            {{> "systems/ffxiv/templates/actor/parts/actor-card-minion.hbs" this}}
-            <div class="move-buttons">
-              {{#unless @first}}<button type="button" class="move-up" data-item-id="{{_id}}" data-type="minion">▲</button>{{/unless}}
-              {{#unless @last}}<button type="button" class="move-down" data-item-id="{{_id}}" data-type="minion">▼</button>{{/unless}}
-            </div>
-          </div>
-      {{else}}
-        <div class="companions-empty-hint">{{ localize "FFXIV.CharacterSheet.MinionsEmptyHint" }}</div>
-      {{/each}}
-
-    </section>
-
-    {{#if (eq actor.system.showPets "true")}}
-      <section class="companions-sub-tab-content" data-tab="pets" style="display:none;">
-        {{!-- Pets summons content here --}}
-        {{#each (sortPets system.pets system.pet_order)}}
-            <div class="ability-container">
-              {{> "systems/ffxiv/templates/actor/parts/actor-card-pet.hbs" (getPetData ../pets this)}}
-              <div class="move-buttons">
-                {{#unless @first}}<button type="button" class="pet-move-up" data-item-id="{{this}}" data-type="pet">▲</button>{{/unless}}
-                <button type="button" class="pet-remove" data-item-id="{{this}}" data-type="pet" aria-label="{{localize 'FFXIV.Item.Delete'}}">&times;</button>
-                {{#unless @last}}<button type="button" class="pet-move-down" data-item-id="{{this}}" data-type="pet">▼</button>{{/unless}}
-              </div>
-            </div>
-        {{else}}
-          <div class="companions-empty-hint">{{ localize "FFXIV.CharacterSheet.PetsEmptyHint" }}</div>
-        {{/each}}
-
-      </section>
-    {{/if}}
-
+      {{#each (sortAbilities items system.ability_order "minion") }}
+        <div class="ability-container">
+          {{> "systems/ffxiv/templates/actor/parts/actor-card-minion.hbs" this}}
+          <div class="move-buttons">
+            {{#unless @first}}
+            <button type="button"
+                    class="move-up"
+                    data-item-id="{{_id}}"
+                    data-type="minion">▲</button>
+          {{/unless}}
+          {{#unless @last}}
+          <button type="button"
+                  class="move-down"
+                  data-item-id="{{_id}}"
+                  data-type="minion">▼</button>
+        {{/unless}}
+      </div>
+    </div>
+  {{else}}
+    <div class="companions-empty-hint">{{ localize "FFXIV.CharacterSheet.MinionsEmptyHint" }}</div>
+  {{/each}}
+</section>
+{{#if (eq actor.system.showPets "true") }}
+  <section class="companions-sub-tab-content"
+           data-tab="pets"
+           hidden>
+    {{!-- Pets summons content here --}}
+    {{#each (sortPets system.pets system.pet_order) }}
+      <div class="ability-container">
+        {{> "systems/ffxiv/templates/actor/parts/actor-card-pet.hbs" (getPetData ../pets this)}}
+        <div class="move-buttons">
+          {{#unless @first}}
+          <button type="button"
+                  class="pet-move-up"
+                  data-item-id="{{this}}"
+                  data-type="pet">▲</button>
+        {{/unless}}
+        <button type="button"
+                class="pet-remove"
+                data-item-id="{{this}}"
+                data-type="pet"
+                aria-label="{{localize 'FFXIV.Item.Delete'}}">×</button>
+        {{#unless @last}}
+        <button type="button"
+                class="pet-move-down"
+                data-item-id="{{this}}"
+                data-type="pet">▼</button>
+      {{/unless}}
+    </div>
   </div>
-
-
-
-
-
+{{else}}
+  <div class="companions-empty-hint">{{ localize "FFXIV.CharacterSheet.PetsEmptyHint" }}</div>
+{{/each}}
+</section>
+{{/if}}
+</div>
 </div>

@@ -21,7 +21,7 @@
   pointer-events: auto;
 }
 
-.ffxiv.actor nav.tabs .item:hover img{
+.ffxiv.actor nav.tabs .item:hover img {
   cursor: pointer;
 }
 
@@ -31,30 +31,38 @@
 
 
 /*Redder active button*/
-.ffxiv.actor nav.nav-tank.hue .item img{
+.ffxiv.actor nav.nav-tank.hue .item img {
   filter: hue-rotate(215deg) brightness(120%);
 }
-.ffxiv.actor nav.nav-tank.hue .item.active img{
+
+.ffxiv.actor nav.nav-tank.hue .item.active img {
   filter: hue-rotate(215deg) saturate(20%);
 }
-.ffxiv.actor nav.nav-healer.hue .item img{
+
+.ffxiv.actor nav.nav-healer.hue .item img {
   filter: hue-rotate(105deg) brightness(120%);
 }
-.ffxiv.actor nav.nav-healer.hue .item.active img{
+
+.ffxiv.actor nav.nav-healer.hue .item.active img {
   filter: hue-rotate(105deg) saturate(20%);
 }
-.ffxiv.actor nav.nav-dps.hue .item img{
+
+.ffxiv.actor nav.nav-dps.hue .item img {
   filter: hue-rotate(0deg);
 }
-.ffxiv.actor nav.nav-dps.hue .item.active img{
+
+.ffxiv.actor nav.nav-dps.hue .item.active img {
   filter: hue-rotate(0deg) saturate(20%);
 }
-.ffxiv.actor nav.nav-dps.hue .item img{
+
+.ffxiv.actor nav.nav-dps.hue .item img {
   filter: hue-rotate(0deg);
 }
-.ffxiv.actor nav.no-hue .item img{
+
+.ffxiv.actor nav.no-hue .item img {
   filter: hue-rotate(0deg);
 }
-.ffxiv.actor nav.no-hue .item.active img{
+
+.ffxiv.actor nav.no-hue .item.active img {
   filter: hue-rotate(0deg) saturate(20%);
 }

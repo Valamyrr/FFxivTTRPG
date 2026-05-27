@@ -1,10 +1,15 @@
-export const ABILITY_SUBTYPE_TYPES = ["primary_ability", "secondary_ability", "instant_ability", "limit_break"];
+export const ABILITY_SUBTYPE_TYPES = [
+  "primary_ability",
+  "secondary_ability",
+  "instant_ability",
+  "limit_break",
+];
 
 const ABILITY_SUBTYPE_TAGS = {
   primary_ability: "Primary",
   secondary_ability: "Secondary",
   instant_ability: "Instant",
-  limit_break: "Limit Break"
+  limit_break: "Limit Break",
 };
 
 function normalize(value) {
@@ -34,7 +39,9 @@ export function getAbilitySubtype(itemLike) {
   if (directType) return directType;
   if (itemLike?.type !== "ability") return "";
 
-  const tags = Array.isArray(itemLike?.system?.tags) ? itemLike.system.tags : [];
+  const tags = Array.isArray(itemLike?.system?.tags)
+    ? itemLike.system.tags
+    : [];
   for (const tag of tags) {
     const subtype = tagToSubtype(tag);
     if (subtype) return subtype;
@@ -46,7 +53,10 @@ export function getSubtypeTagLabel(subtype) {
   return ABILITY_SUBTYPE_TAGS[subtype] ?? ABILITY_SUBTYPE_TAGS.primary_ability;
 }
 
-export function ensureAbilitySubtypeTags(tags, fallbackSubtype = "primary_ability") {
+export function ensureAbilitySubtypeTags(
+  tags,
+  fallbackSubtype = "primary_ability",
+) {
   const source = Array.isArray(tags) ? tags : [];
   const next = [];
   let chosenSubtype = fallbackSubtype;

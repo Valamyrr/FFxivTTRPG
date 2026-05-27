@@ -22,8 +22,8 @@
   "media": [
     {
       "type": "setup",
-      "url": "systems/ffxiv/assets/header_logo.png",
-      "thumbnail": "systems/ffxiv/assets/header_logo.png"
+      "url": "systems/ffxiv/assets/header-logo.webp",
+      "thumbnail": "systems/ffxiv/assets/header-logo.webp"
     }
   ],
   "esmodules": ["module/ffxiv.mjs"],

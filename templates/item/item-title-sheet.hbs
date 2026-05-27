@@ -1,39 +1,27 @@
-{{! This template is a fallback for when items don't have more specific templates. }}
-{{! Generally, you'll want to make more specific templates when possible. }}
-<div class='{{cssClass}}'>
-  <header class='sheet-header'>
-    <img
-      class='profile-img'
-      src='{{item.img}}'
-      data-edit='img'
-      title='{{item.name}}'
-    />
-    <div class='header-fields'>
-      <h1 class='charname'><input
-          name='name'
-          type='text'
-          value='{{item.name}}'
-          placeholder='Name'
-        /></h1>
+<div class="{{cssClass}}">
+  <header class="sheet-header">
+    <img class="profile-img"
+         src="{{item.img}}"
+         data-edit="img"
+         title="{{item.name}}"  alt="" width="32" height="32" />
+    <div class="header-fields">
+      <h1 class="charname">
+        <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
+      </h1>
     </div>
   </header>
-
   {{! Sheet Tab Navigation }}
-  <nav class='sheet-tabs tabs' data-group='primary'>
-    <a class='item' data-tab='description'>{{ localize "FFXIV.Item.Description" }}</a>
-    <a class='item' data-tab='attributes'>{{ localize "FFXIV.Attributes.Attributes" }}</a>
+  <nav class="sheet-tabs tabs" data-group="primary">
+    <a class="item" data-tab="description">{{ localize "FFXIV.Item.Description" }}</a>
+    <a class="item" data-tab="attributes">{{ localize "FFXIV.Attributes.Attributes" }}</a>
   </nav>
-
   {{! Sheet Body }}
-  <section class='sheet-body'>
-
+  <section class="sheet-body">
     {{! Description Tab }}
-    <div class='tab' data-group='primary' data-tab='description'>
-
+    <div class="tab" data-group="primary" data-tab="description">
       <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
     </div>
-    <div class='tab' data-group='primary' data-tab='attributes'>
-
+    <div class="tab" data-group="primary" data-tab="attributes">
       <div class="resources grid grid-1col">
         <div class="resource flex-group-center">
           <label for="system.source" class="resource-label">{{ localize "FFXIV.Item.Source" }}</label>
@@ -41,30 +29,39 @@
             <input type="text" name="system.source" value="{{ system.source }}">
           </div>
         </div>
-
       </div>
-
       <div class="tags-container">
-        <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label> <button type="button" class="add-modifier">+</button>
+        <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label>
+        <button type="button" class="add-modifier">+</button>
         <ul class="tag-list">
-          {{#each system.modifiers as |modifier index|}}
+          {{#each system.modifiers as |modifier index| }}
             <li>
-              <select style="text-align: center;" class="modifier-name" data-index="{{index}}">
-                {{#each ../config.attributes as |m|}}
-                <option value="{{m.label}}" {{#if (eq m.label modifier.[0])}}selected {{/if}}>{{ localize m.label }}</option>
+              <select class="ffxiv-text-center modifier-name"
+                      data-index="{{index}}">
+                {{#each ../config.attributes as |m| }}
+                  <option value="{{m.label}}"
+                          {{#if (eq m.label modifier.[0]) }}
+                          selected
+                          {{/if }}>{{ localize m.label }}
+                  </option>
                 {{/each}}
-                {{#each ../config.characteristics as |m|}}
-                <option value="{{m.label}}" {{#if (eq m.label modifier.[0])}}selected {{/if}}>{{ localize m.label }}</option>
+                {{#each ../config.characteristics as |m| }}
+                  <option value="{{m.label}}"
+                          {{#if (eq m.label modifier.[0]) }}
+                          selected
+                          {{/if }}>{{ localize m.label }}
+                  </option>
                 {{/each}}
               </select>
-              <input type="text" class="modifier-value" value="{{modifier.[1]}}" data-index="{{index}}">
+              <input type="text"
+                     class="modifier-value"
+                     value="{{modifier.[1]}}"
+                     data-index="{{index}}">
               <button type="button" class="remove-modifier" data-index="{{index}}">x</button>
             </li>
           {{/each}}
         </ul>
       </div>
-
     </div>
-
   </section>
 </div>

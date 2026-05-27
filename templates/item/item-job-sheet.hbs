@@ -1,116 +1,180 @@
-<div class='{{cssClass}}'>
-  <header class='sheet-header'>
-    <img class='profile-img' src='{{item.img}}' data-edit='img' title='{{item.name}}' />
-    <div class='header-fields'>
-      <h1 class='charname'><input name='system.job_name' type='text' value='{{system.job_name}}' placeholder='{{localize "FFXIV.CharacterSheet.CustomClassName"}}' /></h1>
+<div class="{{cssClass}}">
+  <header class="sheet-header">
+    <img class="profile-img"
+         src="{{item.img}}"
+         data-edit="img"
+         title="{{item.name}}"  alt="" width="32" height="32" />
+    <div class="header-fields">
+      <h1 class="charname">
+        <input name="system.job_name"
+               type="text"
+               value="{{system.job_name}}"
+               placeholder="{{localize "FFXIV.CharacterSheet.CustomClassName"}}" />
+      </h1>
     </div>
   </header>
-
-  <nav class='sheet-tabs tabs job-tabs' data-group='primary'>
-    <a class='item sub-tab' data-tab='description'>{{ localize "FFXIV.Job.Overview" }}<div class="chip"></div></a>
-    <a class='item sub-tab' data-tab='progression'>{{ localize "FFXIV.Job.Abilities" }}<div class="chip"></div></a>
+  <nav class="sheet-tabs tabs job-tabs" data-group="primary">
+    <a class="item sub-tab" data-tab="description">{{ localize "FFXIV.Job.Overview" }}
+      <div class="chip"></div>
+    </a>
+    <a class="item sub-tab" data-tab="progression">{{ localize "FFXIV.Job.Abilities" }}
+      <div class="chip"></div>
+    </a>
   </nav>
-
-  <section class='sheet-body'>
-    <div class='tab' data-group='primary' data-tab='description'>
+  <section class="sheet-body">
+    <div class="tab" data-group="primary" data-tab="description">
       <div class="resources grid grid-2col job-overview-basics">
         <div class="resource flex-group-center">
           <label for="system.level" class="resource-label">{{ localize "FFXIV.Level" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input type="number" name="system.level" value="{{ system.level }}" min="30" max="110" step="1">
+            <input type="number"
+                   name="system.level"
+                   value="{{ system.level }}"
+                   min="30"
+                   max="110"
+                   step="1">
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.role" class="resource-label">{{ localize "FFXIV.Job.Role" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <select name="system.role">
-              {{#each config.roles as |role|}}
-                <option value="{{role.value}}" {{#if (eq role.value ../system.role)}}selected{{/if}}>{{ localize role.label }}</option>
+              {{#each config.roles as |role| }}
+                <option value="{{role.value}}"
+                        {{#if (eq role.value ../system.role) }}
+                        selected
+                        {{/if}}>{{ localize role.label }}
+                </option>
               {{/each}}
             </select>
           </div>
         </div>
-
         <div class="resource flex-group-center">
           <label for="system.has_pets" class="resource-label">{{ localize "FFXIV.Job.HasPets" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <select name="system.has_pets" data-dtype="Boolean">
-              <option value="true" {{#if system.has_pets}}selected{{/if}}>{{ localize "FFXIV.True" }}</option>
-              <option value="false" {{#unless system.has_pets}}selected{{/unless}}>{{ localize "FFXIV.False" }}</option>
+              <option value="true" {{#if system.has_pets }}selected{{/if}}>{{ localize "FFXIV.True" }}
+              </option>
+              <option value="false" {{#unless system.has_pets}}selected{{/unless}}>{{ localize "FFXIV.False" }}
+              </option>
             </select>
           </div>
         </div>
       </div>
-
       <section class="job-attribute-section">
         <h2>{{ localize "FFXIV.Attributes.Primary" }}</h2>
         <div class="job-primary-attributes">
           <div class="resource flex-group-center">
-            <label for="system.primary_attributes.strength.value" class="resource-label">{{ localize "FFXIV.Attributes.Strength.abbrv" }}</label>
-            <input type="number" name="system.primary_attributes.strength.value" value="{{ system.primary_attributes.strength.value }}" step="1">
+            <label for="system.primary_attributes.strength.value" class="resource-label">
+              {{ localize "FFXIV.Attributes.Strength.abbrv" }}
+            </label>
+            <input type="number"
+                   name="system.primary_attributes.strength.value"
+                   value="{{ system.primary_attributes.strength.value }}"
+                   step="1">
           </div>
           <div class="resource flex-group-center">
-            <label for="system.primary_attributes.dexterity.value" class="resource-label">{{ localize "FFXIV.Attributes.Dexterity.abbrv" }}</label>
-            <input type="number" name="system.primary_attributes.dexterity.value" value="{{ system.primary_attributes.dexterity.value }}" step="1">
+            <label for="system.primary_attributes.dexterity.value"
+                   class="resource-label">{{ localize "FFXIV.Attributes.Dexterity.abbrv" }}</label>
+            <input type="number"
+                   name="system.primary_attributes.dexterity.value"
+                   value="{{ system.primary_attributes.dexterity.value }}"
+                   step="1">
           </div>
           <div class="resource flex-group-center">
-            <label for="system.primary_attributes.vitality.value" class="resource-label">{{ localize "FFXIV.Attributes.Vitality.abbrv" }}</label>
-            <input type="number" name="system.primary_attributes.vitality.value" value="{{ system.primary_attributes.vitality.value }}" step="1">
+            <label for="system.primary_attributes.vitality.value" class="resource-label">
+              {{ localize "FFXIV.Attributes.Vitality.abbrv" }}
+            </label>
+            <input type="number"
+                   name="system.primary_attributes.vitality.value"
+                   value="{{ system.primary_attributes.vitality.value }}"
+                   step="1">
           </div>
           <div class="resource flex-group-center">
-            <label for="system.primary_attributes.intelligence.value" class="resource-label">{{ localize "FFXIV.Attributes.Intelligence.abbrv" }}</label>
-            <input type="number" name="system.primary_attributes.intelligence.value" value="{{ system.primary_attributes.intelligence.value }}" step="1">
+            <label for="system.primary_attributes.intelligence.value"
+                   class="resource-label">{{ localize "FFXIV.Attributes.Intelligence.abbrv" }}</label>
+            <input type="number"
+                   name="system.primary_attributes.intelligence.value"
+                   value="{{ system.primary_attributes.intelligence.value }}"
+                   step="1">
           </div>
           <div class="resource flex-group-center">
-            <label for="system.primary_attributes.mind.value" class="resource-label">{{ localize "FFXIV.Attributes.Mind.abbrv" }}</label>
-            <input type="number" name="system.primary_attributes.mind.value" value="{{ system.primary_attributes.mind.value }}" step="1">
+            <label for="system.primary_attributes.mind.value" class="resource-label">
+              {{ localize "FFXIV.Attributes.Mind.abbrv" }}
+            </label>
+            <input type="number"
+                   name="system.primary_attributes.mind.value"
+                   value="{{ system.primary_attributes.mind.value }}"
+                   step="1">
           </div>
         </div>
       </section>
-
       <section class="job-attribute-section">
         <h2>{{ localize "FFXIV.Attributes.Secondary" }}</h2>
         <div class="job-secondary-attributes">
           <div class="resource flex-group-center">
-            <label for="system.secondary_attributes.defense.value" class="resource-label">{{ localize "FFXIV.Attributes.Defense" }}</label>
-            <input type="number" name="system.secondary_attributes.defense.value" value="{{ system.secondary_attributes.defense.value }}" step="1">
+            <label for="system.secondary_attributes.defense.value"
+                   class="resource-label">{{ localize "FFXIV.Attributes.Defense" }}</label>
+            <input type="number"
+                   name="system.secondary_attributes.defense.value"
+                   value="{{ system.secondary_attributes.defense.value }}"
+                   step="1">
           </div>
           <div class="resource flex-group-center">
-            <label for="system.secondary_attributes.magic_defense.value" class="resource-label">{{ localize "FFXIV.Attributes.MagicDefense" }}</label>
-            <input type="number" name="system.secondary_attributes.magic_defense.value" value="{{ system.secondary_attributes.magic_defense.value }}" step="1">
+            <label for="system.secondary_attributes.magic_defense.value"
+                   class="resource-label">{{ localize "FFXIV.Attributes.MagicDefense" }}</label>
+            <input type="number"
+                   name="system.secondary_attributes.magic_defense.value"
+                   value="{{ system.secondary_attributes.magic_defense.value }}"
+                   step="1">
           </div>
           <div class="resource flex-group-center">
-            <label for="system.secondary_attributes.vigilance.value" class="resource-label">{{ localize "FFXIV.Attributes.Vigilance" }}</label>
-            <input type="number" name="system.secondary_attributes.vigilance.value" value="{{ system.secondary_attributes.vigilance.value }}" step="1">
+            <label for="system.secondary_attributes.vigilance.value"
+                   class="resource-label">{{ localize "FFXIV.Attributes.Vigilance" }}</label>
+            <input type="number"
+                   name="system.secondary_attributes.vigilance.value"
+                   value="{{ system.secondary_attributes.vigilance.value }}"
+                   step="1">
           </div>
           <div class="resource flex-group-center">
-            <label for="system.secondary_attributes.speed.value" class="resource-label">{{ localize "FFXIV.Attributes.Speed" }}</label>
-            <input type="number" name="system.secondary_attributes.speed.value" value="{{ system.secondary_attributes.speed.value }}" step="1">
+            <label for="system.secondary_attributes.speed.value" class="resource-label">
+              {{ localize "FFXIV.Attributes.Speed" }}
+            </label>
+            <input type="number"
+                   name="system.secondary_attributes.speed.value"
+                   value="{{ system.secondary_attributes.speed.value }}"
+                   step="1">
           </div>
           <div class="resource flex-group-center">
             <label for="system.health.max" class="resource-label">{{ localize "FFXIV.Health.max" }}</label>
-            <input type="number" name="system.health.max" value="{{ system.health.max }}" step="1">
+            <input type="number"
+                   name="system.health.max"
+                   value="{{ system.health.max }}"
+                   step="1">
           </div>
         </div>
       </section>
     </div>
-
-    <div class='tab job-progression-tab' data-group='primary' data-tab='progression'>
+    <div class="tab job-progression-tab"
+         data-group="primary"
+         data-tab="progression">
       <ol class="job-ability-list">
         {{#unless system.ability_grants.length}}
-          <li class="job-ability-empty">{{ localize "FFXIV.Job.DropAbilities" }}</li>
-        {{/unless}}
-        {{#each system.ability_grants as |grant index|}}
-          <li class="job-ability-row job-ability-edit" data-index="{{index}}">
-            <span class="job-ability-name">{{grant.name}}</span>
-            <span class="job-ability-type">{{grant.typeLabel}}</span>
-            <button type="button" class="remove-job-ability" data-index="{{index}}" aria-label="{{localize 'FFXIV.Item.Delete'}}">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </li>
-        {{/each}}
-      </ol>
-    </div>
-  </section>
+        <li class="job-ability-empty">{{ localize "FFXIV.Job.DropAbilities" }}</li>
+      {{/unless}}
+      {{#each system.ability_grants as |grant index| }}
+        <li class="job-ability-row job-ability-edit" data-index="{{index}}">
+          <span class="job-ability-name">{{grant.name}}</span>
+          <span class="job-ability-type">{{grant.typeLabel}}</span>
+          <button type="button"
+                  class="remove-job-ability"
+                  data-index="{{index}}"
+                  aria-label="{{localize 'FFXIV.Item.Delete'}}">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </li>
+      {{/each}}
+    </ol>
+  </div>
+</section>
 </div>

@@ -26,19 +26,22 @@ export class FFXIVCombat extends Combat {
     if (hasOrderA && hasOrderB && orderA !== orderB) return orderA - orderB;
     if (hasOrderA !== hasOrderB) return hasOrderA ? -1 : 1;
 
-    return String(a.name ?? "").localeCompare(String(b.name ?? ""), game.i18n.lang);
+    return String(a.name ?? "").localeCompare(
+      String(b.name ?? ""),
+      game.i18n.lang,
+    );
   }
 
   /** @override */
   async rollInitiative(ids, options = {}) {
     const requested = new Set(Array.isArray(ids) ? ids : [ids]);
     const combatants = this.combatants
-      .filter(combatant => requested.has(combatant.id))
+      .filter((combatant) => requested.has(combatant.id))
       .sort(this._sortCombatants.bind(this));
     if (!combatants.length) return this;
 
     const nextOrder = new Map();
-    const updates = combatants.map(combatant => {
+    const updates = combatants.map((combatant) => {
       const step = getTurnStep(combatant);
       if (!nextOrder.has(step)) {
         nextOrder.set(step, this._getNextTurnOrder(step, requested));
@@ -73,8 +76,11 @@ export class FFXIVCombat extends Combat {
 
   _getNextTurnOrder(step, excludedIds) {
     const used = this.combatants
-      .filter(combatant => getTurnStep(combatant) === step && !excludedIds.has(combatant.id))
-      .map(combatant => Number(combatant.initiative))
+      .filter(
+        (combatant) =>
+          getTurnStep(combatant) === step && !excludedIds.has(combatant.id),
+      )
+      .map((combatant) => Number(combatant.initiative))
       .filter(Number.isFinite);
     return used.length ? Math.max(...used) + 1 : 1;
   }
@@ -83,7 +89,8 @@ export class FFXIVCombat extends Combat {
     const characterActors = new Map();
     for (const combatant of this.combatants) {
       const actor = combatant?.actor;
-      if (!actor || actor.type !== "character" || characterActors.has(actor.id)) continue;
+      if (!actor || actor.type !== "character" || characterActors.has(actor.id))
+        continue;
       characterActors.set(actor.id, actor);
     }
 
@@ -101,14 +108,20 @@ export class FFXIVCombat extends Combat {
       if (item.system.equipped !== true) continue;
 
       const overrideValue = item.system.starting_mp_override;
-      if (overrideValue === null || overrideValue === undefined || overrideValue === "") continue;
-
+      if (
+        overrideValue === null ||
+        overrideValue === undefined ||
+        overrideValue === ""
+      )
+        continue;
+        
       const numericOverride = Number(overrideValue);
       if (!Number.isFinite(numericOverride)) continue;
 
-      highestOverride = highestOverride === null
-        ? numericOverride
-        : Math.max(highestOverride, numericOverride);
+      highestOverride =
+        highestOverride === null
+          ? numericOverride
+          : Math.max(highestOverride, numericOverride);
     }
     return highestOverride;
   }

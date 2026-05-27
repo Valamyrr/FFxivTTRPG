@@ -39,7 +39,7 @@ const DEFAULT_SOUNDS = {
 
 const DEFAULT_ATTRIBUTE_ICONS = {
   attributesImgDefense: "systems/ffxiv/assets/attribute-icons/rampart.webp",
-  attributesImgMagicDefense: "systems/ffxiv/assets/attribute-icons/dark_mind.webp",
+  attributesImgMagicDefense: "systems/ffxiv/assets/attribute-icons/dark-mind.webp",
   attributesImgVigilance: "systems/ffxiv/assets/attribute-icons/duty-finder.webp",
   attributesImgSpeed: "systems/ffxiv/assets/attribute-icons/sightseeing-log.webp",
 };
@@ -99,7 +99,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /** @override */
-  setPosition(position={}) {
+  setPosition(position = {}) {
     if (this.actor?.type === "character" && Number.isFinite(position.width)) {
       position = {
         ...position,
@@ -139,9 +139,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.limited = this.actor.limited;
 
     context.settings = {
-      "showGear": game.settings.get('ffxiv','toggleGear'),
-      "attributesImg": game.settings.get('ffxiv','attributesImg'),
-      "tabHue": game.settings.get('ffxiv','hueTabsIcons'),
+      "showGear": game.settings.get('ffxiv', 'toggleGear'),
+      "tabHue": game.settings.get('ffxiv', 'hueTabsIcons'),
       "attributesImgSpeed": this._settingOrDefault("attributesImgSpeed", DEFAULT_ATTRIBUTE_ICONS),
       "attributesImgDefense": this._settingOrDefault("attributesImgDefense", DEFAULT_ATTRIBUTE_ICONS),
       "attributesImgMagicDefense": this._settingOrDefault("attributesImgMagicDefense", DEFAULT_ATTRIBUTE_ICONS),
@@ -250,8 +249,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._activateJobDropZone();
     this.activateListeners($(this.element));
     this._applyActorEditMode();
+    this._updateHeaderBanner(this.actor.system?.banner || "");
 
-    if(this.actor.type == "character"){
+    if (this.actor.type == "character") {
       this._updateManaBar();
       this._updateHealthBar();
       this._applyStoredAbilityTab();
@@ -384,7 +384,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _playConfiguredSound(setting) {
     const src = this._settingOrDefault(setting, DEFAULT_SOUNDS);
-    if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && src){
+    if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && src) {
       foundry.audio.AudioHelper.play({
         src,
         volume: 1,
@@ -507,11 +507,11 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _setCharacterSheetId() {
     let characterSheet;
-    if (this.token && !this.token.actorLink){
-      characterSheet =  `FFXIVActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
+    if (this.token && !this.token.actorLink) {
+      characterSheet = `FFXIVActorSheet-Scene-${this.token.parent.id}-Token-${this.token.id}-Actor-${this.actor.id}`;
     }
-    if(!characterSheet){
-       characterSheet = `FFXIVActorSheet-Actor-${this.actor._id}`;
+    if (!characterSheet) {
+      characterSheet = `FFXIVActorSheet-Actor-${this.actor._id}`;
     }
     this.characterSheet = characterSheet;
 
@@ -562,7 +562,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const itemsToUpdate = [];
 
     this.actor.items.contents.forEach(item => {
-      if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1){
+      if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1) {
         const position = Number(item.system.position) || 0;
         if (occupiedPositions.has(position) || position === 0) {
           itemsToUpdate.push(item);
@@ -575,7 +575,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let nextFreePosition = 1;
     const updates = [];
     itemsToUpdate.forEach(item => {
-      if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1){
+      if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1) {
         while (occupiedPositions.has(nextFreePosition)) {
           nextFreePosition++;
         }
@@ -593,7 +593,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const actor = this.actor;
     const isOwner = actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-    if(!isOwner) return;
+    if (!isOwner) return;
 
     this._inventoryDragController = new AbortController();
     const { signal } = this._inventoryDragController;
@@ -670,7 +670,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             await draggedItemData.update({ 'system.position': targetPosition });
           }
 
-          if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')){
+          if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')) {
             foundry.audio.AudioHelper.play({
               src: game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem'),
               volume: 1,
@@ -706,7 +706,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             const [copiedItem] = await targetActor.createEmbeddedDocuments("Item", [sourceData], { render: false });
             if (!copiedItem) throw new Error("Failed to copy item on target actor");
 
-            if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')){
+            if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')) {
               foundry.audio.AudioHelper.play({
                 src: game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem'),
                 volume: 1,
@@ -716,7 +716,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             }
 
             isDraggingItem = false;
-            targetActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => {});
+            targetActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => { });
             return;
           }
 
@@ -746,7 +746,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             await sourceItem.delete();
           }
 
-          if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')){
+          if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem')) {
             foundry.audio.AudioHelper.play({
               src: game.settings.get('ffxiv', 'soundNotificationFFXIV_moveItem'),
               volume: 1,
@@ -756,8 +756,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           }
 
           isDraggingItem = false;
-          targetActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => {});
-          sourceActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => {});
+          targetActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => { });
+          sourceActor?.sheet?.render?.({ force: true, ffxivSkipEnrichment: true }).catch(() => { });
         } catch (err) {
           console.error(err);
           ui.notifications.error(err.message || "Item move failed");
@@ -815,12 +815,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
-   * Non-specific context modifications
+   * Shared context modifications for all actor sheet types.
    *
    * @param {object} context The context object to mutate
    */
   _prepareSharedData(context) {
-
+    context.rollData = this.actor.getRollData();
+    context.dtypes = ["String", "Number", "Boolean"];
+    context.owner = this.document.isOwner;
+    context.isGM = game.user?.isGM ?? false;
   }
 
   /**
@@ -981,7 +984,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }
 
-    if (this.actor.type=="pet") { //Pet ability's tags
+    if (this.actor.type == "pet") { //Pet ability's tags
       html.on('change.ffxivActorSheet', '.select-tags', (event) => {
         const index = $(event.currentTarget).closest('li').index();
         const value = $(event.currentTarget).val();
@@ -1019,7 +1022,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }
 
-    if (this.actor.type=="npc") {
+    if (this.actor.type == "npc") {
       // Scale NPC tokens based on size category.
       html.find('select[name="system.size"]').off("change.ffxivActorSheet").on("change.ffxivActorSheet", async (event) => {
         const SIZE_DIMENSIONS = {
@@ -1203,36 +1206,36 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
-  async _rollItem(event){
+  async _rollItem(event) {
     event.preventDefault();
     event.stopPropagation();
     const itemId = event.currentTarget.dataset.itemId
     const item = this.actor.items.get(itemId);
-    if(item){
+    if (item) {
       await item.roll(event);
-    }else{
+    } else {
       debugError("Roll Error : No item found.");
       debugError(event.currentTarget);
     }
 
   }
 
-  async _rollPet(event){
+  async _rollPet(event) {
     event.preventDefault();
     event.stopPropagation();
     const petId = event.currentTarget.dataset.petId
     const itemId = event.currentTarget.dataset.itemId
     const pet = game.actors.get(petId);
     const item = pet.items.get(itemId);
-    if(pet && item){
+    if (pet && item) {
       item.roll(event);
-    }else{
+    } else {
       debugError("Roll Error : No pet found.");
       debugError(event.currentTarget);
     }
   }
 
-  async _rollAttribute(event){
+  async _rollAttribute(event) {
     const attribute = event.currentTarget.dataset.attribute
     if (!attribute) {
       ui.notifications.error("No attribute specified to roll for.");
@@ -1241,7 +1244,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.actor._rollAttribute(attribute);
   }
 
-  async _renderItem(event){
+  async _renderItem(event) {
     const itemId = event.currentTarget.dataset.itemId
     const item = this.actor.items.get(itemId);
 
@@ -1365,7 +1368,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           label: game.i18n.localize("FFXIV.Dialogs.No"),
           action: "cancel",
           type: "submit",
-          callback: () => {}
+          callback: () => { }
         }
       ]
     }).render({ force: true });
@@ -1402,7 +1405,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             this._captureSheetScroll();
             await item.delete();
             ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", { itemName: item.name }));
-            if(game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_deleteItem')){
+            if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_deleteItem')) {
               foundry.audio.AudioHelper.play({
                 src: game.settings.get('ffxiv', 'soundNotificationFFXIV_deleteItem'),
                 volume: 1,
@@ -1610,7 +1613,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._restoreSheetScroll();
   }
 
-  async _deleteJobsWithGrantedAbilities(jobs, options={}) {
+  async _deleteJobsWithGrantedAbilities(jobs, options = {}) {
     const jobIds = new Set(jobs.map(job => job.id));
     const grantedUuids = new Set(jobs.flatMap(job => {
       const rawGrants = job.system?.ability_grants;
@@ -1654,23 +1657,23 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
 
   _updateManaBar() {
-      const currentMana = Number(this.actor.system?.mana?.value ?? 0);
-      const maxMana = Number(this.actor.system?.mana?.max ?? 5);
-      const manaCurrentValue = Math.max(0, Number.isFinite(currentMana) ? currentMana : 0);
-      const manaMaxValue = Math.max(1, Number.isFinite(maxMana) ? maxMana : 5);
-      const manaPercent = Math.min(100, Math.max(0, (manaCurrentValue / manaMaxValue) * 100));
+    const currentMana = Number(this.actor.system?.mana?.value ?? 0);
+    const maxMana = Number(this.actor.system?.mana?.max ?? 5);
+    const manaCurrentValue = Math.max(0, Number.isFinite(currentMana) ? currentMana : 0);
+    const manaMaxValue = Math.max(1, Number.isFinite(maxMana) ? maxMana : 5);
+    const manaPercent = Math.min(100, Math.max(0, (manaCurrentValue / manaMaxValue) * 100));
 
-      let cs = document.getElementById(this.characterSheet)
-      if (cs) {
-          const manaFill = cs.querySelector('.mana-fill');
-          if (manaFill) manaFill.style.width = `${manaPercent}%`;
+    let cs = document.getElementById(this.characterSheet)
+    if (cs) {
+      const manaFill = cs.querySelector('.mana-fill');
+      if (manaFill) manaFill.style.width = `${manaPercent}%`;
 
-          const manaCurrent = cs.querySelector('.mana-value-current');
-          if (manaCurrent) manaCurrent.textContent = String(manaCurrentValue);
+      const manaCurrent = cs.querySelector('.mana-value-current');
+      if (manaCurrent) manaCurrent.textContent = String(manaCurrentValue);
 
-          const manaMax = cs.querySelector('.mana-value-max');
-          if (manaMax) manaMax.textContent = String(manaMaxValue);
-      }
+      const manaMax = cs.querySelector('.mana-value-max');
+      if (manaMax) manaMax.textContent = String(manaMaxValue);
+    }
   }
   async _onClickManaBar(event) {
     let currentMana = Number(this.actor.system?.mana?.value ?? 0);
@@ -1679,9 +1682,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const useLegacyBehavior = game.settings.get("ffxiv", "legacyManaClickBehavior");
 
     if (event.which === 1) {
-        currentMana = useLegacyBehavior
-          ? Math.max(0, currentMana - 1)
-          : Math.min(maxMana, currentMana + 1);
+      currentMana = useLegacyBehavior
+        ? Math.max(0, currentMana - 1)
+        : Math.min(maxMana, currentMana + 1);
     } else if (event.which === 3) {
       event.preventDefault()
       currentMana = useLegacyBehavior
@@ -1712,7 +1715,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let cs = document.getElementById(this.characterSheet);
     if (cs) {
       const healthBar = cs.querySelectorAll('.health-bar');
-      if(healthBar.length > 0){
+      if (healthBar.length > 0) {
         healthBar[0].style.width = `${healthPercentage}%`
         healthBar[0].classList.remove('health-good', 'health-bad', 'health-danger')
         if (healthPercentage >= 30) {
@@ -1737,7 +1740,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
-  _displayAbilityTab(event){
+  _displayAbilityTab(event) {
     event.preventDefault();
     event.stopPropagation();
     const tab = $(event.currentTarget).data('tab');
@@ -1746,7 +1749,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._switchAbilityTab(tab)
     if (changed) this._playConfiguredSound("soundNotificationFFXIV_openSheet");
   }
-  _displayCompanionTab(event){
+  _displayCompanionTab(event) {
     event.preventDefault();
     event.stopPropagation();
     const tab = $(event.currentTarget).data('tab');
@@ -1766,7 +1769,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       : (this.currentCompanionTab || "minions");
     this._switchCompanionTab(tab)
   }
-  _switchAbilityTab(tab){
+  _switchAbilityTab(tab) {
     /*let characterSheet;
     if (this.token){
       if(!this.token.actorLink){ //If no actor data linked but token sheet is used
@@ -1781,7 +1784,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     $(`#${this.characterSheet} .abilities-sub-tabs .sub-tab[data-tab=${tab}]`).addClass("active");
     $(`#${this.characterSheet} .sub-tab-content[data-tab=${tab}]`).addClass('active').show();
   }
-  _switchCompanionTab(tab){
+  _switchCompanionTab(tab) {
     const characterSheet = this.characterSheet;
     const hasPetsTab = this.actor?.system?.showPets === "true";
     const resolvedTab = (!hasPetsTab && tab === "pets") ? "minions" : (tab || "minions");
@@ -1793,7 +1796,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     $(`#${characterSheet} .companions-sub-tab-content[data-tab=${resolvedTab}]`).addClass('active').show();
   }
 
-  async _onChangeLimitations(event){
+  async _onChangeLimitations(event) {
     event.preventDefault();
     event.stopPropagation();
     const checkbox = event.currentTarget
@@ -1803,11 +1806,11 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(itemId)
     if (!item) return;
 
-
-    if (item.system.limitations_status){
-      var limitations_status = item.system.limitations_status.slice(0, item.system.limitations_max);
-    }else{
-      var limitations_status = new Array(item.system.limitations_max).fill(false)
+    var limitations_status;
+    if (item.system.limitations_status) {
+      limitations_status = item.system.limitations_status.slice(0, item.system.limitations_max);
+    } else {
+      limitations_status = new Array(item.system.limitations_max).fill(false)
     }
     limitations_status[index] = checkbox.checked;
 
@@ -1815,7 +1818,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   }
 
-  async _onChangeJobResource(event){
+  async _onChangeJobResource(event) {
     event.preventDefault();
     event.stopPropagation();
     const checkbox = event.currentTarget
@@ -1824,16 +1827,17 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(itemId)
     if (!item) return;
 
-    if (item.system.job_resource_status){
-      var job_resource_status = item.system.job_resource_status.slice(0, item.system.job_resources_max);
-    }else{
-      var job_resource_status = new Array(item.system.job_resources_max).fill(false)
+    var job_resource_status;
+    if (item.system.job_resource_status) {
+      job_resource_status = item.system.job_resource_status.slice(0, item.system.job_resources_max);
+    } else {
+      job_resource_status = new Array(item.system.job_resources_max).fill(false)
     }
     job_resource_status[index] = checkbox.checked;
     await this._updateAbilityCheckboxState(item, { 'system.job_resource_status': job_resource_status });
   }
 
-  async _onChangeActiveTrait(event){
+  async _onChangeActiveTrait(event) {
     event.preventDefault();
     event.stopPropagation();
     const checkbox = event.currentTarget
@@ -1842,7 +1846,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(itemId)
     if (!item) return;
 
-    await this._updateAbilityCheckboxState(item, { 'system.active':  checkbox.checked});
+    await this._updateAbilityCheckboxState(item, { 'system.active': checkbox.checked });
   }
 
   async _updateAbilityCheckboxState(item, updateData) {
@@ -1852,36 +1856,36 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._restoreSheetScroll();
   }
 
-  _onDeleteTitle(event){
+  _onDeleteTitle(event) {
     event.preventDefault();
     event.stopPropagation();
     new foundry.applications.api.DialogV2({
-      id:"delete-title",
-      window: {title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation")},
-      buttons:[
+      id: "delete-title",
+      window: { title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation") },
+      buttons: [
         {
-          label:game.i18n.localize("FFXIV.Dialogs.Yes"),
-          action:"delete",
+          label: game.i18n.localize("FFXIV.Dialogs.Yes"),
+          action: "delete",
           type: "submit",
-          callback: (event, buttonDelete) => {
+          callback: (event) => {
             const button = event.currentTarget
             const itemId = button.dataset.itemId
             const item = this.actor.items.get(itemId)
             item.delete();
-            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", {itemName: item.name}));
+            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", { itemName: item.name }));
           }
         },
         {
-          label:game.i18n.localize("FFXIV.Dialogs.No"),
-          action:"keep",
+          label: game.i18n.localize("FFXIV.Dialogs.No"),
+          action: "keep",
           type: "submit"
         }
       ]
 
-    }).render({force:true})
+    }).render({ force: true })
   }
 
-  async _moveAbility(direction, event){
+  async _moveAbility(direction, event) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -1896,7 +1900,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!actor || !abilityType || !itemId || !direction) return;
 
     let abilityOrder = foundry.utils.deepClone(actor.system.ability_order || {});
-    if (abilityOrder.constructor.name=="Array") abilityOrder = {} //Before 1.4, there was an issue with template.json creating arrays instead of objects
+    if (abilityOrder.constructor.name == "Array") abilityOrder = {} //Before 1.4, there was an issue with template.json creating arrays instead of objects
     if (!abilityOrder[abilityType]) abilityOrder[abilityType] = [];
 
     const allAbilities = actor.items
@@ -1909,9 +1913,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     abilityOrder[abilityType] = abilityOrder[abilityType].filter(id => allAbilities.includes(id)); //redefinition to avoid issues with deleted abilities
 
     allAbilities.forEach(id => { // add new items
-        if (!abilityOrder[abilityType].includes(id)) {
-            abilityOrder[abilityType].push(id);
-        }
+      if (!abilityOrder[abilityType].includes(id)) {
+        abilityOrder[abilityType].push(id);
+      }
     });
 
     const index = abilityOrder[abilityType].indexOf(itemId);
@@ -1921,27 +1925,27 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (newIndex < 0 || newIndex >= abilityOrder[abilityType].length) return; //fail if out of bounds
 
     [abilityOrder[abilityType][index], abilityOrder[abilityType][newIndex]] =
-    [abilityOrder[abilityType][newIndex], abilityOrder[abilityType][index]];
+      [abilityOrder[abilityType][newIndex], abilityOrder[abilityType][index]];
     await actor.update({ "system.ability_order": abilityOrder }, { render: false });
     await this._renderWithoutEnrichment();
   }
 
 
-  async _movePet(direction, event){
+  async _movePet(direction, event) {
     event.preventDefault();
     event.stopPropagation();
     const actor = this.actor;
     const petId = event.currentTarget.dataset.itemId;
     if (!actor || !petId || !direction) return;
     let petOrder = foundry.utils.deepClone(actor.system.pet_order || []);
-    if (petOrder.constructor.name=="Object") petOrder = []
+    if (petOrder.constructor.name == "Object") petOrder = []
 
     const allPets = actor.system.pets;
     petOrder = petOrder.filter(id => allPets.includes(id));
 
     allPets.forEach(id => { // add new items
       if (!petOrder.includes(id)) {
-          petOrder.push(id);
+        petOrder.push(id);
       }
     });
 
@@ -1952,7 +1956,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (newIndex < 0 || newIndex >= petOrder.length) return; //fail if out of bounds
 
     [petOrder[index], petOrder[newIndex]] =
-    [petOrder[newIndex], petOrder[index]];
+      [petOrder[newIndex], petOrder[index]];
     await actor.update({ "system.pet_order": petOrder });
   }
 
@@ -2048,31 +2052,29 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._playConfiguredSound("soundNotificationFFXIV_moveItem");
   }
 
-  async _removePet(event){
+  async _removePet(event) {
     const petId = event.currentTarget.dataset.itemId;
     let pets = foundry.utils.duplicate(this.actor.system.pets || []);
     //console.log(pets)
     const index = pets.indexOf(petId)
     //console.log(index)
-    if(index==-1){
-      debugError(`No pet "${petId}" in pets array from:`,this.actor.system.pets);
+    if (index == -1) {
+      debugError(`No pet "${petId}" in pets array from:`, this.actor.system.pets);
       return;
     }
     pets.splice(index, 1);
-    await this.actor.update({"system.pets":pets})
+    await this.actor.update({ "system.pets": pets })
 
 
   }
 
-  async _openPet(event){
+  async _openPet(event) {
     const petId = event.currentTarget.dataset.petId;
     const pet = game.actors.get(petId)
-    if(pet){
+    if (pet) {
       pet.sheet.render({ force: true });
-    }else{
+    } else {
       debugError(`No pet found for ${petId}`);
     }
   }
-
-
 }

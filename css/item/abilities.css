@@ -11,7 +11,7 @@
   margin: 0;
 }
 
-.ffxiv.item .tags-container li{
+.ffxiv.item .tags-container li {
   align-items: center;
   display: inline-flex;
   gap: 4px;
@@ -24,7 +24,7 @@
   display: inline-flex;
 }
 
-.ffxiv.item .tags-container .tag-list{
+.ffxiv.item .tags-container .tag-list {
   display: flex;
   flex: 1 0 100%;
   flex-direction: row;
@@ -37,7 +37,7 @@
   max-width: 100%;
 }
 
-.ffxiv.item .tags-container select{
+.ffxiv.item .tags-container select {
   height: 26px;
   line-height: 26px;
   margin: 0;
@@ -45,7 +45,7 @@
   width: 150px;
 }
 
-.ffxiv.item .tags-container .baked-action-tag{
+.ffxiv.item .tags-container .baked-action-tag {
   background: rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-border-light-tertiary);
   border-radius: 3px;
@@ -57,7 +57,7 @@
   width: 96px;
 }
 
-.ffxiv.item .tags-container button{
+.ffxiv.item .tags-container button {
   align-items: center;
   display: inline-flex;
   flex: 0 0 26px;
@@ -69,7 +69,7 @@
   width: 26px;
 }
 
-.ffxiv.item .tags-container .add-tag{
+.ffxiv.item .tags-container .add-tag {
   display: inline-flex;
   flex: 0 0 34px;
   order: 0;
@@ -120,7 +120,7 @@
   padding: 0;
 }
 
-.ffxiv.item .attributes hr{
+.ffxiv.item .attributes hr {
   border-top: solid 2px #393939;
   margin: 15px 0 15px 0;
 }

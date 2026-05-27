@@ -1,7 +1,7 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
-  constructor(options={}) {
+  constructor(options = {}) {
     options.id ??= `ffxiv-${new.target.menuId}`;
     options.window ??= {};
     options.window.title ??= game.i18n.localize(new.target.titleKey);
@@ -29,7 +29,7 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const placeholders = this.constructor.placeholders ?? {};
-    context.settings = this.constructor.settingKeys.map(key => {
+    context.settings = this.constructor.settingKeys.map((key) => {
       const config = game.settings.settings.get(`ffxiv.${key}`);
       const value = game.settings.get("ffxiv", key);
       const type = config?.type;
@@ -66,22 +66,34 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
     this._settingsController = new AbortController();
     const { signal } = this._settingsController;
 
-    this.element.querySelectorAll("[data-file-picker]").forEach(button => {
-      button.addEventListener("click", event => this._onFilePicker(event), { signal });
+    this.element.querySelectorAll("[data-file-picker]").forEach((button) => {
+      button.addEventListener("click", (event) => this._onFilePicker(event), {
+        signal,
+      });
     });
 
     const form = this.element.querySelector("form");
-    form?.addEventListener("submit", event => {
-      event.preventDefault();
-      event.stopPropagation();
-    }, { capture: true, signal });
+    form?.addEventListener(
+      "submit",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      },
+      { capture: true, signal },
+    );
 
-    this.element.querySelector("[data-action='save-settings']")?.addEventListener("click", async event => {
-      event.preventDefault();
-      event.stopPropagation();
-      await this._saveSettings();
-      await this.close();
-    }, { signal });
+    this.element
+      .querySelector("[data-action='save-settings']")
+      ?.addEventListener(
+        "click",
+        async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          await this._saveSettings();
+          await this.close();
+        },
+        { signal },
+      );
   }
 
   async _onClose(options) {
@@ -93,14 +105,16 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
   _onFilePicker(event) {
     event.preventDefault();
     const button = event.currentTarget;
-    const input = this.element.querySelector(`[name="${button.dataset.target}"]`);
+    const input = this.element.querySelector(
+      `[name="${button.dataset.target}"]`,
+    );
     if (!input) return;
 
     const FilePickerImpl = foundry.applications.apps.FilePicker.implementation;
     new FilePickerImpl({
       type: button.dataset.filePicker,
       current: input.value,
-      callback: path => input.value = path,
+      callback: (path) => (input.value = path),
     }).render(true);
   }
 
@@ -108,7 +122,7 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
     const form = this.element.querySelector("form");
     if (!form) return;
 
-    const updates = this.constructor.settingKeys.map(async key => {
+    const updates = this.constructor.settingKeys.map(async (key) => {
       const config = game.settings.settings.get(`ffxiv.${key}`);
       const input = form.elements[key];
       if (!config || !input) return;
@@ -145,7 +159,6 @@ class FFXIVIconSettingsMenu extends FFXIVSettingsSubmenu {
   static menuId = "icon-settings";
   static titleKey = "FFXIV.Settings.IconSettingsMenu";
   static settingKeys = [
-    "attributesImg",
     "attributesImgDefense",
     "attributesImgMagicDefense",
     "attributesImgVigilance",
@@ -183,7 +196,9 @@ class FFXIVCustomTagsSettingsMenu extends FFXIVSettingsSubmenu {
   };
 }
 
-class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(ApplicationV2) {
+class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(
+  ApplicationV2,
+) {
   static menuId = "migration-tools";
   static DEFAULT_OPTIONS = {
     id: "ffxiv-migration-tools",
@@ -206,7 +221,8 @@ class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(ApplicationV2) 
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    context.currentVersion = game.settings.get("ffxiv", "itemMigrationVersion") || "(none)";
+    context.currentVersion =
+      game.settings.get("ffxiv", "itemMigrationVersion") || "(none)";
     return context;
   }
 
@@ -216,23 +232,29 @@ class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(ApplicationV2) 
     this._controller = new AbortController();
     const { signal } = this._controller;
 
-    this.element.querySelector("[data-action='run-item-migration']")?.addEventListener("click", async event => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!game.user.isGM) {
-        ui.notifications.warn("Only a GM can run item migration.");
-        return;
-      }
+    this.element
+      .querySelector("[data-action='run-item-migration']")
+      ?.addEventListener(
+        "click",
+        async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!game.user.isGM) {
+            ui.notifications.warn("Only a GM can run item migration.");
+            return;
+          }
 
-      const runButton = event.currentTarget;
-      runButton.disabled = true;
-      try {
-        await game.ffxivttrpg?.runItemMigration?.(true);
-      } finally {
-        runButton.disabled = false;
-        this.render({ force: true });
-      }
-    }, { signal });
+          const runButton = event.currentTarget;
+          runButton.disabled = true;
+          try {
+            await game.ffxivttrpg?.runItemMigration?.(true);
+          } finally {
+            runButton.disabled = false;
+            this.render({ force: true });
+          }
+        },
+        { signal },
+      );
   }
 
   async _onClose(options) {
@@ -243,8 +265,7 @@ class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(ApplicationV2) 
 }
 
 export class SettingsHelpers {
-
-  static initSettings(){
+  static initSettings() {
     game.settings.register("ffxiv", "debugLogging", {
       name: game.i18n.localize("FFXIV.Settings.DebugLogging"),
       hint: game.i18n.localize("FFXIV.Settings.DebugLoggingHint"),
@@ -252,7 +273,7 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: false
+      requiresReload: false,
     });
 
     game.settings.registerMenu("ffxiv", "soundSettingsMenu", {
@@ -261,7 +282,7 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.SoundSettingsMenuHint"),
       icon: "fas fa-volume-high",
       type: FFXIVSoundSettingsMenu,
-      restricted: false
+      restricted: false,
     });
 
     game.settings.registerMenu("ffxiv", "iconSettingsMenu", {
@@ -270,7 +291,7 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.IconSettingsMenuHint"),
       icon: "fas fa-icons",
       type: FFXIVIconSettingsMenu,
-      restricted: true
+      restricted: true,
     });
 
     game.settings.registerMenu("ffxiv", "tabIconSettingsMenu", {
@@ -279,7 +300,7 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.TabIconSettingsMenuHint"),
       icon: "fas fa-table-cells-large",
       type: FFXIVTabIconSettingsMenu,
-      restricted: false
+      restricted: false,
     });
 
     game.settings.registerMenu("ffxiv", "customTagsSettingsMenu", {
@@ -288,7 +309,7 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.CustomTagsSettingsMenuHint"),
       icon: "fas fa-tags",
       type: FFXIVCustomTagsSettingsMenu,
-      restricted: true
+      restricted: true,
     });
 
     game.settings.registerMenu("ffxiv", "migrationToolsMenu", {
@@ -297,7 +318,7 @@ export class SettingsHelpers {
       hint: "Run system item-data migration on demand.",
       icon: "fas fa-arrows-rotate",
       type: FFXIVMigrationToolsMenu,
-      restricted: true
+      restricted: true,
     });
 
     game.settings.register("ffxiv", "overrideColorScheme", {
@@ -307,7 +328,7 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: true
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "soundNotificationFFXIV", {
@@ -317,7 +338,7 @@ export class SettingsHelpers {
       config: false,
       default: true,
       type: Boolean,
-      requiresReload: false
+      requiresReload: false,
     });
     game.settings.register("ffxiv", "limitedPhysicalItemsDialog", {
       name: game.i18n.localize("FFXIV.Settings.LimitedPhysicalItemsDialog"),
@@ -326,7 +347,7 @@ export class SettingsHelpers {
       config: true,
       default: true,
       type: Boolean,
-      requiresReload: false
+      requiresReload: false,
     });
 
     game.settings.register("ffxiv", "hueTabsIcons", {
@@ -336,7 +357,7 @@ export class SettingsHelpers {
       config: false,
       default: false,
       type: Boolean,
-      requiresReload: true
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "toggleGear", {
@@ -346,7 +367,7 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: true
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "lockArtworkRotationGlobal", {
@@ -356,12 +377,18 @@ export class SettingsHelpers {
       config: true,
       default: true,
       type: Boolean,
-      onChange: value => {
+      onChange: (value) => {
         if (!value || !game.user?.isGM) return;
-        Promise.resolve(game.ffxivttrpg?.applyGlobalArtworkRotationLock?.())
-          .catch(error => console.error("FFXIV | Failed to apply global artwork rotation lock", error));
+        Promise.resolve(
+          game.ffxivttrpg?.applyGlobalArtworkRotationLock?.(),
+        ).catch((error) =>
+          console.error(
+            "FFXIV | Failed to apply global artwork rotation lock",
+            error,
+          ),
+        );
       },
-      requiresReload: false
+      requiresReload: false,
     });
 
     game.settings.register("ffxiv", "legacyManaClickBehavior", {
@@ -371,7 +398,7 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
-      requiresReload: true
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "autoRollDirectHitDamage", {
@@ -381,7 +408,7 @@ export class SettingsHelpers {
       config: true,
       default: true,
       type: Boolean,
-      requiresReload: false
+      requiresReload: false,
     });
 
     game.settings.register("ffxiv", "customAbilityTags", {
@@ -391,7 +418,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "",
-      requiresReload: true
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "customTraitTags", {
@@ -401,7 +428,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "",
-      requiresReload: true
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "customConsumableTags", {
@@ -411,7 +438,7 @@ export class SettingsHelpers {
       config: false,
       type: String,
       default: "",
-      requiresReload: true
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "itemMigrationVersion", {
@@ -421,7 +448,7 @@ export class SettingsHelpers {
       config: false,
       default: "",
       type: String,
-      requiresReload: false
+      requiresReload: false,
     });
 
     game.settings.register("ffxiv", "jobsAbbrv", {
@@ -431,7 +458,7 @@ export class SettingsHelpers {
       config: true,
       default: "MNK,DRG,NIN,BRD,MCH,BLM,SMN,WHM,SCH,AST,DRK,WAR,PLD",
       type: String,
-      requiresReload: true
+      requiresReload: true,
     });
 
     game.settings.register("ffxiv", "soundNotificationFFXIV_critical", {
@@ -442,7 +469,7 @@ export class SettingsHelpers {
       default: "",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
     game.settings.register("ffxiv", "soundNotificationFFXIV_deleteItem", {
       name: "FFXIV.Settings.soundNotificationFFXIV_deleteItem",
@@ -452,7 +479,7 @@ export class SettingsHelpers {
       default: "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
     game.settings.register("ffxiv", "soundNotificationFFXIV_moveItem", {
       name: "FFXIV.Settings.soundNotificationFFXIV_moveItem",
@@ -462,7 +489,7 @@ export class SettingsHelpers {
       default: "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
     game.settings.register("ffxiv", "soundNotificationFFXIV_enterChat", {
       name: "FFXIV.Settings.soundNotificationFFXIV_enterChat",
@@ -472,7 +499,7 @@ export class SettingsHelpers {
       default: "systems/ffxiv/assets/sfx/ffxiv-full-party.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
     game.settings.register("ffxiv", "soundNotificationFFXIV_openSheet", {
       name: "FFXIV.Settings.soundNotificationFFXIV_openSheet",
@@ -482,7 +509,7 @@ export class SettingsHelpers {
       default: "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
+      filePicker: "media",
     });
     game.settings.register("ffxiv", "soundNotificationFFXIV_closeSheet", {
       name: "FFXIV.Settings.soundNotificationFFXIV_closeSheet",
@@ -492,18 +519,7 @@ export class SettingsHelpers {
       default: "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
       type: String,
       requiresReload: false,
-      filePicker: "media"
-    });
-
-    game.settings.register("ffxiv", "attributesImg", {
-      name: "FFXIV.Settings.AttributesImg",
-      hint: "FFXIV.Settings.AttributesImgHint",
-      scope: "world",
-      config: false,
-      default: "systems/ffxiv/assets/circle.png",
-      type: String,
-      requiresReload: true,
-      filePicker: "image"
+      filePicker: "media",
     });
 
     game.settings.register("ffxiv", "attributesImgDefense", {
@@ -514,17 +530,17 @@ export class SettingsHelpers {
       default: "systems/ffxiv/assets/attribute-icons/rampart.webp",
       type: String,
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "attributesImgMagicDefense", {
       name: "FFXIV.Settings.AttributesImgMagicDefense",
       hint: "",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/attribute-icons/dark_mind.webp",
+      default: "systems/ffxiv/assets/attribute-icons/dark-mind.webp",
       type: String,
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "attributesImgVigilance", {
       name: "FFXIV.Settings.AttributesImgVigilance",
@@ -534,7 +550,7 @@ export class SettingsHelpers {
       default: "systems/ffxiv/assets/attribute-icons/duty-finder.webp",
       type: String,
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "attributesImgSpeed", {
       name: "FFXIV.Settings.AttributesImgSpeed",
@@ -544,7 +560,7 @@ export class SettingsHelpers {
       default: "systems/ffxiv/assets/attribute-icons/sightseeing-log.webp",
       type: String,
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
 
     game.settings.register("ffxiv", "imgTabAbilities", {
@@ -555,7 +571,7 @@ export class SettingsHelpers {
       type: String,
       default: "systems/ffxiv/assets/tab-icons/actions-and-traits.webp",
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabAttributes", {
       name: "FFXIV.Settings.TabAttributesImg",
@@ -565,7 +581,7 @@ export class SettingsHelpers {
       type: String,
       default: "systems/ffxiv/assets/tab-icons/pvp-profile.webp",
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabGear", {
       name: "FFXIV.Settings.TabGearImg",
@@ -575,7 +591,7 @@ export class SettingsHelpers {
       type: String,
       default: "systems/ffxiv/assets/tab-icons/armoury-chest.webp",
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabRoleplay", {
       name: "FFXIV.Settings.TabRoleplayImg",
@@ -585,7 +601,7 @@ export class SettingsHelpers {
       type: String,
       default: "systems/ffxiv/assets/tab-icons/character.webp",
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabItems", {
       name: "FFXIV.Settings.TabItemsImg",
@@ -595,7 +611,7 @@ export class SettingsHelpers {
       type: String,
       default: "systems/ffxiv/assets/tab-icons/inventory.webp",
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabCompanions", {
       name: "FFXIV.Settings.TabCompanionsImg",
@@ -605,7 +621,7 @@ export class SettingsHelpers {
       type: String,
       default: "systems/ffxiv/assets/tab-icons/companions.webp",
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
     game.settings.register("ffxiv", "imgTabSettings", {
       name: "FFXIV.Settings.TabSettingsImg",
@@ -615,11 +631,7 @@ export class SettingsHelpers {
       type: String,
       default: "systems/ffxiv/assets/tab-icons/system-configuration.webp",
       requiresReload: true,
-      filePicker: "image"
+      filePicker: "image",
     });
-
-
-
   }
-
 }

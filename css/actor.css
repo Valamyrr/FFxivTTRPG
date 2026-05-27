@@ -54,7 +54,7 @@
   overflow: visible;
 }
 
-.ffxiv.actor .window-content > .ffxiv.actor,
+.ffxiv.actor .window-content>.ffxiv.actor,
 .ffxiv.actor form.ffxiv.actor {
   background: var(--background-color);
   color: var(--text-color);
@@ -73,7 +73,7 @@
   min-height: 0;
 }
 
-.ffxiv.actor.character > nav.sheet-tabs.tabs {
+.ffxiv.actor.character>nav.sheet-tabs.tabs {
   align-items: flex-start;
   display: flex;
   flex-direction: column;
@@ -88,7 +88,7 @@
   pointer-events: auto;
 }
 
-.ffxiv.actor.character > nav.sheet-tabs.tabs .item {
+.ffxiv.actor.character>nav.sheet-tabs.tabs .item {
   display: block;
   width: 48px;
   height: 48px;
@@ -98,25 +98,25 @@
   pointer-events: auto;
 }
 
-.ffxiv.actor.character > nav.sheet-tabs.tabs .item img {
+.ffxiv.actor.character>nav.sheet-tabs.tabs .item img {
   width: 48px;
   height: 48px;
   object-fit: contain;
 }
 
-.ffxiv.actor.character > nav.sheet-tabs.tabs.has-gear-tab {
+.ffxiv.actor.character>nav.sheet-tabs.tabs.has-gear-tab {
   gap: 6px;
   right: -42px;
   width: 46px;
 }
 
-.ffxiv.actor.character > nav.sheet-tabs.tabs.has-gear-tab .item,
-.ffxiv.actor.character > nav.sheet-tabs.tabs.has-gear-tab .item img {
+.ffxiv.actor.character>nav.sheet-tabs.tabs.has-gear-tab .item,
+.ffxiv.actor.character>nav.sheet-tabs.tabs.has-gear-tab .item img {
   width: 46px;
   height: 46px;
 }
 
-.ffxiv.actor.character > nav.sheet-tabs.tabs.has-gear-tab .item {
+.ffxiv.actor.character>nav.sheet-tabs.tabs.has-gear-tab .item {
   flex-basis: 46px;
 }
 
@@ -165,7 +165,7 @@
   overflow-x: hidden;
 }
 
-.ffxiv.actor a:hover{
+.ffxiv.actor a:hover {
   text-shadow: none;
 }
 
@@ -175,9 +175,10 @@
 }
 
 .ffxiv.actor .window-content input,
-.ffxiv.actor input{
+.ffxiv.actor input {
   color: var(--text-color-input);
 }
+
 .ffxiv.actor .window-content input:not([type="checkbox"]):not([type="radio"]),
 .ffxiv.actor input:not([type="checkbox"]):not([type="radio"]),
 .ffxiv.actor .window-content select,
@@ -185,6 +186,7 @@
 .ffxiv.actor textarea {
   text-align: center;
 }
+
 .ffxiv.actor .resource-content input:not([type="checkbox"]):not([type="radio"]),
 .ffxiv.actor .resource-content select,
 .ffxiv.actor .title-selector select,
@@ -196,24 +198,28 @@
   min-width: 0;
   width: 100%;
 }
+
 .ffxiv.actor .resource-content input:not([type="checkbox"]):not([type="radio"]),
 .ffxiv.actor .resource-content select,
 .ffxiv.actor .title-selector select {
   height: 28px;
   line-height: 28px;
 }
+
 .ffxiv.actor .actor-attributes-tab .meteor-value input.value,
 .ffxiv.actor .fixed-part input.health-input,
 .ffxiv.actor .fixed-part input.barrier-input {
   background: transparent;
   border: 0;
 }
+
 .ffxiv.actor .window-content select,
-.ffxiv.actor select{
+.ffxiv.actor select {
   color: var(--text-color-input);
 }
+
 .ffxiv.actor .window-content option,
-.ffxiv.actor option{
+.ffxiv.actor option {
   background: var(--option-background-color);
   color: var(--text-color-input);
 }
@@ -352,7 +358,7 @@
   display: none !important;
 }
 
-.ffxiv.actor .settings .class-icon{
+.ffxiv.actor .settings .class-icon {
   max-height: 64px;
   max-width: 64px;
   height: 64px;

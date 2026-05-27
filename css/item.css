@@ -2,7 +2,7 @@
 @import url("item/inventory-dialog.css");
 @import url("item/minions.css");
 
-.ffxiv.item .window-content{
+.ffxiv.item .window-content {
   background: var(--background-color);
   color: var(--text-color);
   display: block;
@@ -10,25 +10,25 @@
   padding: 0;
 }
 
-.ffxiv.item .window-content > .ffxiv.item,
-.ffxiv.item form.ffxiv.item{
+.ffxiv.item .window-content>.ffxiv.item,
+.ffxiv.item form.ffxiv.item {
   background: var(--background-color);
   color: var(--text-color);
 }
 
-.ffxiv.item form.ffxiv.item:not(.limited-display){
+.ffxiv.item form.ffxiv.item:not(.limited-display) {
   display: flex;
   flex-direction: column;
   min-height: 100%;
 }
 
-.ffxiv.item form.ffxiv.item:not(.limited-display) > hr{
+.ffxiv.item form.ffxiv.item:not(.limited-display)>hr {
   flex: 0 0 auto;
   margin: 10px;
   width: calc(100% - 20px);
 }
 
-.ffxiv.item .sheet-header{
+.ffxiv.item .sheet-header {
   align-items: center;
   flex: 0 0 auto;
   flex-wrap: nowrap;
@@ -38,19 +38,19 @@
   padding: 15px 10px;
 }
 
-.ffxiv.item .sheet-header .profile-img{
+.ffxiv.item .sheet-header .profile-img {
   flex: 0 0 100px;
   height: 100px;
   margin-right: 0;
   width: 100px;
 }
 
-.ffxiv.item .sheet-header .header-fields{
+.ffxiv.item .sheet-header .header-fields {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.ffxiv.item .sheet-header h1.charname{
+.ffxiv.item .sheet-header h1.charname {
   border: 0;
   flex: 1 1 auto;
   margin: 0;
@@ -58,7 +58,7 @@
   padding: 0;
 }
 
-.ffxiv.item .sheet-header h1.charname input{
+.ffxiv.item .sheet-header h1.charname input {
   background: rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-border-light-tertiary);
   border-radius: 3px;
@@ -76,7 +76,7 @@
   width: 100%;
 }
 
-.ffxiv.item .item-delete{
+.ffxiv.item .item-delete {
   align-items: center;
   margin-left: 15px;
   border-radius: 4px;
@@ -97,33 +97,37 @@
   font-weight: 700;
 }
 
-.ffxiv.item .window-content select{
+.ffxiv.item .window-content select {
   color: var(--text-color-input);
 }
-.ffxiv.item .window-content input{
+
+.ffxiv.item .window-content input {
   color: var(--text-color-input);
 }
-.ffxiv.item .window-content button{
+
+.ffxiv.item .window-content button {
   color: var(--text-color-input);
 }
+
 .ffxiv.item .window-content button.item-delete,
-.ffxiv.item .window-content button.remove-job-ability{
+.ffxiv.item .window-content button.remove-job-ability {
   color: white;
 }
-.ffxiv.item .window-content option{
+
+.ffxiv.item .window-content option {
   background: var(--option-background-color);
   color: var(--text-color-input);
 }
 
-.ffxiv.item .profile-img{
-  border:none;
+.ffxiv.item .profile-img {
+  border: none;
 }
 
-.ffxiv.item .profile-img[data-edit="img"]{
+.ffxiv.item .profile-img[data-edit="img"] {
   cursor: pointer;
 }
 
-.ffxiv.item .sheet-body{
+.ffxiv.item .sheet-body {
   flex: 1 1 auto;
   height: auto;
   min-height: 0;
@@ -131,18 +135,18 @@
   padding: 10px;
 }
 
-.ffxiv.item .sheet-body > .attributes:first-child {
+.ffxiv.item .sheet-body>.attributes:first-child {
   margin-top: -6px;
 }
 
 .ffxiv.item .resource,
-.ffxiv.item .resource-content{
+.ffxiv.item .resource-content {
   min-width: 0;
 }
 
 .ffxiv.item input:not([type='checkbox']):not([type='radio']),
 .ffxiv.item select,
-.ffxiv.item textarea{
+.ffxiv.item textarea {
   background: rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-border-light-tertiary);
   border-radius: 3px;
@@ -154,7 +158,7 @@
 }
 
 .ffxiv.item input:not([type='checkbox']):not([type='radio']),
-.ffxiv.item select{
+.ffxiv.item select {
   height: 28px;
   line-height: 28px;
 }
@@ -179,11 +183,11 @@
   background-color: #c9302c;
 }
 
-.ffxiv.item .attributes input[type='checkbox']{
+.ffxiv.item .attributes input[type='checkbox'] {
   margin: 3px auto auto auto;
 }
 
-.ffxiv.item .modifier-value{
+.ffxiv.item .modifier-value {
   flex: 0 0 5em;
   width: 5em;
 }
@@ -370,6 +374,7 @@
   min-height: 70px;
   opacity: 0.75;
 }
+
 .ffxiv.item .consumable-rarity-row,
 .ffxiv.item .consumable-price-resource {
   grid-column: 1 / -1;
@@ -491,10 +496,10 @@
   padding: 0 10px 12px;
 }
 
-.ffxiv.item.item-modern-sheet .sheet-body > .attributes,
-.ffxiv.item.item-modern-sheet .sheet-body > .resources,
-.ffxiv.item.item-modern-sheet .sheet-body > .tags-container,
-.ffxiv.item.item-modern-sheet .sheet-body > prose-mirror {
+.ffxiv.item.item-modern-sheet .sheet-body>.attributes,
+.ffxiv.item.item-modern-sheet .sheet-body>.resources,
+.ffxiv.item.item-modern-sheet .sheet-body>.tags-container,
+.ffxiv.item.item-modern-sheet .sheet-body>prose-mirror {
   background: rgba(10, 12, 20, 0.35);
   border: 1px solid var(--color-border-light-tertiary);
   border-radius: 10px;
@@ -502,8 +507,8 @@
   padding: 12px;
 }
 
-.ffxiv.item.item-modern-sheet .item-details-card > hr,
-.ffxiv.item.item-modern-sheet .sheet-body > hr {
+.ffxiv.item.item-modern-sheet .item-details-card>hr,
+.ffxiv.item.item-modern-sheet .sheet-body>hr {
   border: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   margin: 12px 0;

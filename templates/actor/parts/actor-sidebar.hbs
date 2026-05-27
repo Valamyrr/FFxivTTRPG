@@ -1,12 +1,22 @@
 <div class="fixed-part">
-  <img class="profile-img character-img actor-avatar" src="{{ actor.img }}" {{#if actorEditMode}}data-edit="img"{{/if}} title="{{ actor.name }}" alt="avatar"/>
+  <img class="profile-img character-img actor-avatar"
+       src="{{ actor.img }}"
+       {{#if actorEditMode }}
+       data-edit="img"
+       {{/if}}
+       title="{{ actor.name }}"
+       alt="avatar"  width="32" height="32" />
   <div class="stat-bars">
-
     <div class="resource flex-group-center compact-health-resource">
-      <label for="system.health.value" class="resource-label health-resource-label">
+      <label for="system.health.value"
+             class="resource-label health-resource-label">
         <span class="barrier-chip">
           <span class="barrier-chip-label">{{ localize "FFXIV.Health.barrier" }}</span>
-          <input type="text" inputmode="numeric" class="barrier-input" value="{{ system.barrier.value }}" name="system.barrier.value" />
+          <input type="text"
+                 inputmode="numeric"
+                 class="barrier-input"
+                 value="{{ system.barrier.value }}"
+                 name="system.barrier.value" />
         </span>
       </label>
       <div class="resource-content flexrow flex-center flex-between">
@@ -17,15 +27,22 @@
             <div class="barrier-overlay"></div>
             <div class="barrier-overflow"></div>
             <div class="gauge-values">
-              <input type="text" inputmode="numeric" class="health-input" value="{{ system.health.value }}" name="system.health.value" />
+              <input type="text"
+                     inputmode="numeric"
+                     class="health-input"
+                     value="{{ system.health.value }}"
+                     name="system.health.value" />
               <span class="gauge-divider">/</span>
-              <input type="number" class="health-input" min="0" value="{{ system.health.max }}" name="system.health.max" />
+              <input type="number"
+                     class="health-input"
+                     min="0"
+                     value="{{ system.health.max }}"
+                     name="system.health.max" />
             </div>
           </div>
         </div>
       </div>
     </div>
-
     <div class="resource flex-group-center">
       <div class="resource-content flexrow flex-center flex-between">
         <div class="ffxiv-gauge mana-gauge">
@@ -41,42 +58,74 @@
         </div>
       </div>
     </div>
-
     <div class="sidebar-stat-summary">
-      <div class="sidebar-stat-primary" aria-label="{{ localize 'FFXIV.Attributes.Primary' }}">
-        <div class="sidebar-stat-cell roll-attribute" data-attribute="strength" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Strength.long' }}">
+      <div class="sidebar-stat-primary"
+           aria-label="{{ localize 'FFXIV.Attributes.Primary' }}">
+        <div class="sidebar-stat-cell roll-attribute"
+             data-attribute="strength"
+             role="button"
+             tabindex="0"
+             title="{{ localize 'FFXIV.Attributes.Strength.long' }}">
           <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Strength.abbrv" }}</span>
           <span class="sidebar-stat-value">{{ add rollData.str 0 }}</span>
         </div>
-        <div class="sidebar-stat-cell roll-attribute" data-attribute="dexterity" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Dexterity.long' }}">
+        <div class="sidebar-stat-cell roll-attribute"
+             data-attribute="dexterity"
+             role="button"
+             tabindex="0"
+             title="{{ localize 'FFXIV.Attributes.Dexterity.long' }}">
           <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Dexterity.abbrv" }}</span>
           <span class="sidebar-stat-value">{{ add rollData.dex 0 }}</span>
         </div>
-        <div class="sidebar-stat-cell roll-attribute" data-attribute="vitality" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Vitality.long' }}">
+        <div class="sidebar-stat-cell roll-attribute"
+             data-attribute="vitality"
+             role="button"
+             tabindex="0"
+             title="{{ localize 'FFXIV.Attributes.Vitality.long' }}">
           <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Vitality.abbrv" }}</span>
           <span class="sidebar-stat-value">{{ add rollData.vit 0 }}</span>
         </div>
-        <div class="sidebar-stat-cell roll-attribute" data-attribute="intelligence" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Intelligence.long' }}">
+        <div class="sidebar-stat-cell roll-attribute"
+             data-attribute="intelligence"
+             role="button"
+             tabindex="0"
+             title="{{ localize 'FFXIV.Attributes.Intelligence.long' }}">
           <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Intelligence.abbrv" }}</span>
           <span class="sidebar-stat-value">{{ add rollData.int 0 }}</span>
         </div>
-        <div class="sidebar-stat-cell roll-attribute" data-attribute="mind" role="button" tabindex="0" title="{{ localize 'FFXIV.Attributes.Mind.long' }}">
+        <div class="sidebar-stat-cell roll-attribute"
+             data-attribute="mind"
+             role="button"
+             tabindex="0"
+             title="{{ localize 'FFXIV.Attributes.Mind.long' }}">
           <span class="sidebar-stat-label">{{ localize "FFXIV.Attributes.Mind.abbrv" }}</span>
           <span class="sidebar-stat-value">{{ add rollData.mnd 0 }}</span>
         </div>
       </div>
-
-      <div class="sidebar-stat-secondary" aria-label="{{ localize 'FFXIV.Attributes.Secondary' }}">
-        <div class="sidebar-secondary-cell" title="{{ localize 'FFXIV.Attributes.Defense' }}">
-          {{#if settings.attributesImgDefense}}<img src="{{ settings.attributesImgDefense }}" alt="{{ localize 'FFXIV.Attributes.Defense' }}">{{/if}}
+      <div class="sidebar-stat-secondary"
+           aria-label="{{ localize 'FFXIV.Attributes.Secondary' }}">
+        <div class="sidebar-secondary-cell"
+             title="{{ localize 'FFXIV.Attributes.Defense' }}">
+          {{#if settings.attributesImgDefense }}
+            <img src="{{ settings.attributesImgDefense }}"
+                 alt="{{ localize 'FFXIV.Attributes.Defense' }}" width="32" height="32">
+          {{/if}}
           <span class="sidebar-secondary-value">{{ add rollData.def 0 }}</span>
         </div>
-        <div class="sidebar-secondary-cell" title="{{ localize 'FFXIV.Attributes.MagicDefense' }}">
-          {{#if settings.attributesImgMagicDefense}}<img src="{{ settings.attributesImgMagicDefense }}" alt="{{ localize 'FFXIV.Attributes.MagicDefense' }}">{{/if}}
+        <div class="sidebar-secondary-cell"
+             title="{{ localize 'FFXIV.Attributes.MagicDefense' }}">
+          {{#if settings.attributesImgMagicDefense }}
+            <img src="{{ settings.attributesImgMagicDefense }}"
+                 alt="{{ localize 'FFXIV.Attributes.MagicDefense' }}" width="32" height="32">
+          {{/if}}
           <span class="sidebar-secondary-value">{{ add rollData.mdef 0 }}</span>
         </div>
-        <div class="sidebar-secondary-cell" title="{{ localize 'FFXIV.Attributes.Vigilance' }}">
-          {{#if settings.attributesImgVigilance}}<img src="{{ settings.attributesImgVigilance }}" alt="{{ localize 'FFXIV.Attributes.Vigilance' }}">{{/if}}
+        <div class="sidebar-secondary-cell"
+             title="{{ localize 'FFXIV.Attributes.Vigilance' }}">
+          {{#if settings.attributesImgVigilance }}
+            <img src="{{ settings.attributesImgVigilance }}"
+                 alt="{{ localize 'FFXIV.Attributes.Vigilance' }}" width="32" height="32">
+          {{/if}}
           <span class="sidebar-secondary-value">{{ add rollData.vigilance 0 }}</span>
         </div>
       </div>
