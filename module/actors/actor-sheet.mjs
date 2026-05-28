@@ -1867,9 +1867,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
   _switchAbilityTab(tab) {
     $(`#${this.characterSheet} .abilities-sub-tabs .sub-tab`).removeClass("active");
-    $(`#${this.characterSheet} .sub-tab-content`).removeClass('active').hide();
+    $(`#${this.characterSheet} .sub-tab-content`).removeClass('active').prop("hidden", true).hide();
     $(`#${this.characterSheet} .abilities-sub-tabs .sub-tab[data-tab=${tab}]`).addClass("active");
-    $(`#${this.characterSheet} .sub-tab-content[data-tab=${tab}]`).addClass('active').show();
+    $(`#${this.characterSheet} .sub-tab-content[data-tab=${tab}]`).prop("hidden", false).addClass('active').show();
   }
   _switchCompanionTab(tab) {
     const characterSheet = this.characterSheet;
@@ -1878,9 +1878,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.currentCompanionTab = resolvedTab;
 
     $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab`).removeClass("active");
-    $(`#${characterSheet} .companions-sub-tab-content`).removeClass('active').hide();
+    $(`#${characterSheet} .companions-sub-tab-content`).removeClass('active').prop("hidden", true).hide();
     $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab[data-tab=${resolvedTab}]`).addClass("active");
-    $(`#${characterSheet} .companions-sub-tab-content[data-tab=${resolvedTab}]`).addClass('active').show();
+    $(`#${characterSheet} .companions-sub-tab-content[data-tab=${resolvedTab}]`).prop("hidden", false).addClass('active').show();
   }
 
   async _onChangeLimitations(event) {
