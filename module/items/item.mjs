@@ -26,6 +26,16 @@ export class FFXIVItem extends Item {
       .replace(/[^a-z0-9]/g, "");
   }
 
+  static _tagMatches(tag, aliases) {
+    const normalize = FFXIVItem._normalizeTag;
+    const values = [tag, game.i18n.localize(String(tag ?? ""))].map(normalize);
+    return aliases.some((alias) => {
+      const expected = normalize(alias);
+      const localized = normalize(game.i18n.localize(String(alias)));
+      return values.includes(expected) || values.includes(localized);
+    });
+  }
+
   _hasConsumableTag() {
     const tags = Array.isArray(this.system?.tags) ? this.system.tags : [];
     if (!tags.length) return false;
@@ -1042,7 +1052,7 @@ export class FFXIVItem extends Item {
 
   async _applyInvokingStatus() {
     const isInvoked = (this.system.tags || []).some(
-      (tag) => String(tag).trim().toLowerCase() === "invoked",
+      (tag) => FFXIVItem._tagMatches(tag, ["Invoked", "FFXIV.Tags.Invoked"]),
     );
     if (!isInvoked || !this.parent?.toggleStatusEffect) return;
 
@@ -1179,11 +1189,19 @@ export class FFXIVItem extends Item {
   }
 
   _getDirectHitDefenseType() {
-    const tags = (this.system.tags || []).map((tag) =>
-      String(tag).trim().toLowerCase(),
-    );
-    if (tags.includes("magic")) return "magic";
-    if (tags.includes("physical")) return "physical";
+    const tags = this.system.tags || [];
+    if (
+      tags.some((tag) =>
+        FFXIVItem._tagMatches(tag, ["Magic", "FFXIV.Tags.Magic"]),
+      )
+    )
+      return "magic";
+    if (
+      tags.some((tag) =>
+        FFXIVItem._tagMatches(tag, ["Physical", "FFXIV.Tags.Physical"]),
+      )
+    )
+      return "physical";
     return null;
   }
 

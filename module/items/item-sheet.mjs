@@ -428,23 +428,39 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _getCustomActionTags(tags) {
-    const bakedTagNames = new Set([
-      "primary",
-      "secondary",
-      "instant",
-      "limit break",
-      "limit-break",
-    ]);
+    const bakedTagNames = [
+      "Primary",
+      "Secondary",
+      "Instant",
+      "Limit Break",
+      "Limit-Break",
+      "FFXIV.Tags.Primary",
+      "FFXIV.Tags.Secondary",
+      "FFXIV.Tags.Instant",
+      "FFXIV.ItemType.limit_break",
+    ];
+    const normalize = (value) =>
+      String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+    const isBakedTag = (tag) => {
+      const normalized = normalize(tag);
+      const localized = normalize(game.i18n.localize(String(tag ?? "")));
+      return bakedTagNames.some((name) => {
+        const expected = normalize(name);
+        const expectedLocalized = normalize(game.i18n.localize(name));
+        return (
+          normalized === expected ||
+          normalized === expectedLocalized ||
+          localized === expected ||
+          localized === expectedLocalized
+        );
+      });
+    };
     return (Array.isArray(tags) ? tags : [])
       .map((tag, index) => ({ tag, index }))
-      .filter(
-        ({ tag }) =>
-          !bakedTagNames.has(
-            String(tag ?? "")
-              .trim()
-              .toLowerCase(),
-          ),
-      );
+      .filter(({ tag }) => !isBakedTag(tag));
   }
 
   async _enforceAbilitySubtypeTag() {
@@ -465,9 +481,19 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _hasMarkerTag(tags) {
     return (Array.isArray(tags) ? tags : []).some((tag) =>
-      String(tag ?? "")
-        .toLowerCase()
-        .includes("marker"),
+      [
+        tag,
+        game.i18n.localize(String(tag ?? "")),
+        "FFXIV.Tags.StationaryMarker",
+        "FFXIV.Tags.MobileMarker",
+      ]
+        .flatMap((value) => [
+          String(value ?? "").toLowerCase(),
+          game.i18n.localize(String(value ?? "")).toLowerCase(),
+        ])
+        .some(
+          (value) => value.includes("marker") || value.includes("marqueur"),
+        ),
     );
   }
 

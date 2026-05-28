@@ -450,6 +450,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   /** @override */
   async _onClose(options) {
+    this._exitActorEditMode();
     this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
     this._closeInventoryContextMenu();
     this._closeInventoryItemTooltip();
@@ -467,6 +468,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _isSheetEditLocked() {
     return EDIT_MODE_ACTOR_TYPES.has(this.actor?.type) && !this._isActorEditMode();
+  }
+
+  _exitActorEditMode() {
+    if (!EDIT_MODE_ACTOR_TYPES.has(this.actor?.type) || !this.actorEditMode)
+      return;
+    this.actorEditMode = false;
+    this._applyActorEditMode();
   }
 
   _isActorLockAllowedField(name) {

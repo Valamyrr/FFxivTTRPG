@@ -26,7 +26,7 @@
             <li>
               <select class="ffxiv-text-center select-tags">
                 {{#each ../config.tags_consumables as |t| }}
-                  <option value="{{t.label}}" {{#if (eq t.label tag) }}selected {{/if}}>{{ localize t.label }}
+                  <option value="{{t.label}}" {{#if (eqTag t.label tag) }}selected {{/if}}>{{ localize t.label }}
                   </option>
                 {{/each}}
               </select>

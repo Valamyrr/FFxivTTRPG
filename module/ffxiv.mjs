@@ -29,6 +29,7 @@ import {
   ABILITY_SUBTYPE_TYPES,
   getAbilitySubtype,
   ensureAbilitySubtypeTags,
+  canonicalizeBakedTags,
 } from "./helpers/ability-subtype.mjs";
 
 /* -------------------------------------------- */
@@ -259,13 +260,26 @@ const BAKED_ACTION_TAGS = new Set([
   "instant",
   "limit break",
   "limit-break",
+  "ffxiv.tags.primary",
+  "ffxiv.tags.secondary",
+  "ffxiv.tags.instant",
+  "ffxiv.itemtype.limit_break",
 ]);
 
+function localizeTag(tag) {
+  const text = String(tag ?? "");
+  return globalThis.game?.i18n?.localize(text) ?? text;
+}
+
+function normalizeActionTag(tag) {
+  return String(tag ?? "")
+    .trim()
+    .toLowerCase();
+}
+
 function isBakedActionTag(tag) {
-  return BAKED_ACTION_TAGS.has(
-    String(tag ?? "")
-      .trim()
-      .toLowerCase(),
+  return [tag, localizeTag(tag)].some((value) =>
+    BAKED_ACTION_TAGS.has(normalizeActionTag(value)),
   );
 }
 
@@ -292,6 +306,11 @@ Handlebars.registerHelper("hasCustomActionTags", function (tags) {
 Handlebars.registerHelper("bakedActionTag", function (type) {
   return BAKED_ACTION_TAG_LABELS[type] ?? "";
 });
+
+Handlebars.registerHelper("eqTag", function (left, right) {
+  return normalizeTagValue(left) === normalizeTagValue(right);
+});
+
 Handlebars.registerHelper("isAbilitySubtype", function (item, subtype) {
   return getAbilitySubtype(item) === subtype;
 });
@@ -808,44 +827,121 @@ function hasStringContent(value) {
   return text.length > 0;
 }
 
-async function migrateLegacyPetTraits() {
-  for (const pet of game.actors.filter((actor) => actor.type === "pet")) {
-    const sourceTraits =
-      pet._source?.system?.traits ??
-      pet.toObject(false).system?.traits ??
-      pet.system?.traits;
-    const traits = typeof sourceTraits === "string" ? sourceTraits : "";
-    if (!hasStringContent(traits)) continue;
-    const hasMigrated = pet.items.some(
-      (item) => item.type === "trait" && item.flags?.ffxiv?.migratedTrait,
+function getMigratableActorCompendiumPacks() {
+  return game.packs.filter(
+    (pack) => pack.documentName === "Actor" && !pack.locked,
+  );
+}
+
+function getLegacyPetTraitsSource(pet) {
+  return (
+    pet._source?.system?.traits ??
+    pet.toObject?.(false)?.system?.traits ??
+    pet.system?.traits
+  );
+}
+
+function buildMigratedPetTraitItemData(traits) {
+  return {
+    _id: foundry.utils.randomID(),
+    name: "Migrated Trait",
+    type: "trait",
+    img: "icons/svg/aura.svg",
+    system: {
+      description: traits,
+      tags: [],
+      activable: false,
+      modifiers: [],
+      source: "",
+      level: 0,
+    },
+    flags: {
+      ffxiv: {
+        migratedTrait: true,
+      },
+    },
+  };
+}
+
+function hasMigratedPetTraitItem(items) {
+  return Array.from(items ?? []).some(
+    (item) =>
+      item.type === "trait" &&
+      (item.flags?.ffxiv?.migratedTrait || item.name === "Migrated Trait"),
+  );
+}
+
+function hasAnyPetTraitItem(items) {
+  return Array.from(items ?? []).some((item) => item.type === "trait");
+}
+
+async function migrateLegacyPetTraits({
+  includeWorld = true,
+  includeCompendiums = false,
+} = {}) {
+  if (includeWorld) {
+    for (const pet of game.actors.filter((actor) => actor.type === "pet")) {
+      const sourceTraits = getLegacyPetTraitsSource(pet);
+      const traits = typeof sourceTraits === "string" ? sourceTraits : "";
+      if (!hasStringContent(traits)) continue;
+      const hasMigrated = hasMigratedPetTraitItem(pet.items);
+      if (hasMigrated) continue;
+
+      try {
+        await pet.createEmbeddedDocuments("Item", [
+          buildMigratedPetTraitItemData(traits),
+        ]);
+        await pet.update({ "system.traits": "" });
+        debugLog(`FFXIV | Migrated traits for pet ${pet.name}`);
+      } catch (error) {
+        console.error(
+          "FFXIV | Pet trait migration failed for",
+          pet.name,
+          error,
+        );
+      }
+    }
+  }
+
+  if (!includeCompendiums) return;
+
+  for (const pack of getMigratableActorCompendiumPacks()) {
+    const updates = [];
+    const pets = (await pack.getDocuments()).filter(
+      (actor) => actor.type === "pet",
     );
-    if (hasMigrated) continue;
+    for (const pet of pets) {
+      const sourceTraits = getLegacyPetTraitsSource(pet);
+      const traits = typeof sourceTraits === "string" ? sourceTraits : "";
+      if (!hasStringContent(traits)) continue;
 
-    const traitItemData = {
-      name: "Migrated Trait",
-      type: "trait",
-      img: "icons/svg/aura.svg",
-      system: {
-        description: traits,
-        tags: [],
-        activable: false,
-        modifiers: [],
-        source: "",
-        level: 0,
-      },
-      flags: {
-        ffxiv: {
-          migratedTrait: true,
-        },
-      },
-    };
+      const itemData = Array.from(pet.items ?? []);
+      if (hasMigratedPetTraitItem(itemData) || hasAnyPetTraitItem(itemData))
+        continue;
 
+      const source = pet.toObject(false);
+      const items = Array.isArray(source.items) ? source.items : [];
+      updates.push({
+        _id: pet.id,
+        "system.traits": "",
+        items: [...items, buildMigratedPetTraitItemData(traits)],
+      });
+    }
+
+    if (!updates.length) continue;
     try {
-      await pet.createEmbeddedDocuments("Item", [traitItemData]);
-      await pet.update({ "system.traits": "" });
-      debugLog(`FFXIV | Migrated traits for pet ${pet.name}`);
+      await pack.documentClass.updateDocuments(updates, {
+        pack: pack.collection,
+        render: false,
+      });
+      debugLog(
+        `FFXIV | Migrated traits for ${updates.length} compendium pet(s) in ${pack.collection}`,
+      );
     } catch (error) {
-      console.error("FFXIV | Pet trait migration failed for", pet.name, error);
+      console.error(
+        `FFXIV | Pet trait migration failed for compendium ${pack.collection}`,
+        error,
+      );
     }
   }
 }
@@ -905,7 +1001,7 @@ const HP_COST_MIGRATION_TYPES = new Set([
   "augment",
   "minion",
 ]);
-const ITEM_DATA_MIGRATION_VERSION = "11";
+const ITEM_DATA_MIGRATION_VERSION = "15";
 function getMigratableItemCompendiumPacks() {
   return game.packs.filter(
     (pack) => pack.documentName === "Item" && !pack.locked,
@@ -1023,6 +1119,10 @@ async function _migrateItemDataStructureInternal({ force = false } = {}) {
       2,
       "FFXIV.Notifications.ItemMigrationProgressStarting",
     );
+    await migrateLegacyPetTraits({
+      includeWorld: false,
+      includeCompendiums: true,
+    });
     reportPhase("FFXIV.Notifications.ItemMigrationPhaseShopTierStart");
     showMigrationProgress(
       10,
@@ -1076,13 +1176,31 @@ async function _migrateItemDataStructureInternal({ force = false } = {}) {
       80,
       "FFXIV.Notifications.ItemMigrationPhaseAbilityTypeStart",
     );
-    const abilityTypeStats = await migrateAbilityItemTypes();
+    const abilityTypeStats = await migrateAbilityItemTypes({
+      onProgress: ({ current, total, itemName }) => {
+        const phaseStart = 0;
+        const phaseEnd = 99;
+        const phaseRange = phaseEnd - phaseStart;
+        const stepPct = total > 0 ? current / total : 1;
+        const pct = Math.floor(phaseStart + phaseRange * stepPct);
+
+        showMigrationProgress(
+          pct,
+          "FFXIV.Notifications.ItemMigrationPhaseAbilityTypeProgress",
+          {
+            current,
+            total,
+            itemName,
+          },
+        );
+      },
+    });
     reportPhase(
       "FFXIV.Notifications.ItemMigrationPhaseAbilityTypeDone",
       abilityTypeStats,
     );
     showMigrationProgress(
-      98,
+      99,
       "FFXIV.Notifications.ItemMigrationPhaseAbilityTypeDone",
       abilityTypeStats,
     );
@@ -1183,49 +1301,92 @@ async function migrateAbilityHpCosts() {
   return { updatedWorldItems, updatedActorItems, updatedCompendiumItems };
 }
 
-function _remapUUIDLinksInValue(value, UUIDMap) {
+function _getMigratedUUIDTextLinkReplacements(system, UUIDMap) {
+  const serialized = JSON.stringify(system);
+  if (!serialized?.includes("@UUID[")) return null;
+
+  const replacements = new Map();
+  serialized.replace(/@UUID\[([^\]]+)\]/g, (match, uuid) => {
+    const nextUUID = UUIDMap.get(uuid);
+    if (nextUUID && nextUUID !== uuid) replacements.set(uuid, nextUUID);
+    return match;
+  });
+
+  return replacements.size ? replacements : null;
+}
+
+function _replaceMigratedUUIDTextLinks(value, replacements) {
   if (typeof value === "string") {
-    let replacements = 0;
+    let replacementCount = 0;
     const nextValue = value.replace(/@UUID\[([^\]]+)\]/g, (match, uuid) => {
-      const nextUUID = UUIDMap.get(uuid);
+      const nextUUID = replacements.get(uuid);
       if (!nextUUID || nextUUID === uuid) return match;
-      replacements += 1;
+      replacementCount += 1;
       return `@UUID[${nextUUID}]`;
     });
-    return { value: nextValue, replacements };
+
+    return {
+      value: nextValue,
+      changed: replacementCount > 0,
+      replacementCount,
+    };
   }
 
   if (Array.isArray(value)) {
-    let replacements = 0;
+    let changed = false;
+    let replacementCount = 0;
+
     const nextValue = value.map((entry) => {
-      const rewritten = _remapUUIDLinksInValue(entry, UUIDMap);
-      replacements += rewritten.replacements;
+      const rewritten = _replaceMigratedUUIDTextLinks(entry, replacements);
+      changed ||= rewritten.changed;
+      replacementCount += rewritten.replacementCount;
       return rewritten.value;
     });
-    return { value: nextValue, replacements };
+
+    return {
+      value: changed ? nextValue : value,
+      changed,
+      replacementCount,
+    };
   }
 
   if (value && typeof value === "object") {
-    let replacements = 0;
+    let changed = false;
+    let replacementCount = 0;
     const nextValue = {};
+
     for (const [key, entry] of Object.entries(value)) {
-      const rewritten = _remapUUIDLinksInValue(entry, UUIDMap);
-      replacements += rewritten.replacements;
+      const rewritten = _replaceMigratedUUIDTextLinks(entry, replacements);
+      changed ||= rewritten.changed;
+      replacementCount += rewritten.replacementCount;
       nextValue[key] = rewritten.value;
     }
-    return { value: nextValue, replacements };
+
+    return {
+      value: changed ? nextValue : value,
+      changed,
+      replacementCount,
+    };
   }
 
-  return { value, replacements: 0 };
+  return {
+    value,
+    changed: false,
+    replacementCount: 0,
+  };
 }
 
 function _buildUUIDTextLinkUpdate(item, UUIDMap) {
   const system = item.toObject(false).system ?? {};
-  const rewritten = _remapUUIDLinksInValue(system, UUIDMap);
-  if (!rewritten.replacements) return null;
+  const replacements = _getMigratedUUIDTextLinkReplacements(system, UUIDMap);
+  if (!replacements) return null;
+
+  const rewritten = _replaceMigratedUUIDTextLinks(system, replacements);
+  if (!rewritten.changed) return null;
+
   return {
     update: { _id: item.id, system: rewritten.value },
-    replacements: rewritten.replacements,
+    replacements: rewritten.replacementCount,
   };
 }
 
@@ -1284,7 +1445,7 @@ async function remapMigratedItemUUIDTextLinks(UUIDMap) {
   return stats;
 }
 
-async function migrateAbilityItemTypes() {
+async function migrateAbilityItemTypes({ onProgress = null } = {}) {
   const legacyAbilityTypes = new Set(ABILITY_SUBTYPE_TYPES);
   const grantOwnerTypes = new Set(["job", "augment"]);
   let createdWorldItems = 0;
@@ -1301,6 +1462,13 @@ async function migrateAbilityItemTypes() {
   const migratedUUIDMap = new Map();
   const worldUUIDMap = new Map();
   const worldLegacyIdToUuidMap = new Map();
+  const ensureMigratedAbilitySubtypeTags = (
+    tags,
+    fallbackSubtype = "primary_ability",
+  ) =>
+    ensureAbilitySubtypeTags(tags, fallbackSubtype, {
+      canonicalizeSubtypeTag: true,
+    });
   const remapAndNormalizeGrantEntries = (
     rawGrants,
     UUIDMap,
@@ -1359,15 +1527,29 @@ async function migrateAbilityItemTypes() {
           const fallbackSubtype = legacyAbilityTypes.has(itemType)
             ? itemType
             : normalizedSubtype || "primary_ability";
-          const nextItem = foundry.utils.deepClone(nextGrant.item);
-          nextItem.type = "ability";
-          nextItem.system = nextItem.system || {};
-          nextItem.system.tags = ensureAbilitySubtypeTags(
-            nextItem.system.tags,
+
+          const currentTags = Array.isArray(nextGrant.item.system?.tags)
+            ? nextGrant.item.system.tags
+            : [];
+
+          const normalizedTags = ensureMigratedAbilitySubtypeTags(
+            currentTags,
             fallbackSubtype,
           );
-          nextGrant = { ...nextGrant, item: nextItem };
-          changed = true;
+
+          const typeChanged = itemType !== "ability";
+          const tagsChanged =
+            JSON.stringify(normalizedTags) !== JSON.stringify(currentTags);
+
+          if (typeChanged || tagsChanged) {
+            const nextItem = foundry.utils.deepClone(nextGrant.item);
+            nextItem.type = "ability";
+            nextItem.system = nextItem.system || {};
+            nextItem.system.tags = normalizedTags;
+
+            nextGrant = { ...nextGrant, item: nextItem };
+            changed = true;
+          }
         }
 
         const grantItemType = String(nextGrant.item.type ?? "");
@@ -1439,18 +1621,38 @@ async function migrateAbilityItemTypes() {
       : "primary_ability";
     source.type = "ability";
     source.system = source.system || {};
-    source.system.tags = ensureAbilitySubtypeTags(
+    source.system.tags = ensureMigratedAbilitySubtypeTags(
       source.system.tags,
       fallbackSubtype,
+      { canonicalizeSubtypeTag: true },
     );
     delete source._id;
     return source;
   };
-
+  
+  
+  const worldItems = Array.from(game.items);
   const worldLegacyItems = [];
-  for (const item of game.items) {
+  const worldAbilityItems = worldItems.filter(
+    (item) => item.type === "ability" || legacyAbilityTypes.has(item.type),
+  );
+  const worldAbilityTotal = worldAbilityItems.length;
+  let worldAbilityCurrent = 0;
+
+  const reportWorldAbilityProgress = (item) => {
+    worldAbilityCurrent += 1;
+    if (typeof onProgress !== "function") return;
+
+    onProgress({
+      current: worldAbilityCurrent,
+      total: worldAbilityTotal,
+      itemName: item?.name ?? "",
+    });
+  };
+
+  for (const item of worldItems) {
     if (item.type === "ability") {
-      const normalizedTags = ensureAbilitySubtypeTags(
+      const normalizedTags = ensureMigratedAbilitySubtypeTags(
         item.system?.tags,
         "primary_ability",
       );
@@ -1461,10 +1663,15 @@ async function migrateAbilityItemTypes() {
         await item.update({ "system.tags": normalizedTags }, { render: false });
         updatedWorldTags += 1;
       }
+
+      reportWorldAbilityProgress(item);
       continue;
     }
+
     if (!legacyAbilityTypes.has(item.type)) continue;
+
     worldLegacyItems.push(item);
+    reportWorldAbilityProgress(item);
   }
 
   if (worldLegacyItems.length) {
@@ -1493,7 +1700,7 @@ async function migrateAbilityItemTypes() {
     const tagUpdates = [];
     for (const item of docs) {
       if (item.type === "ability") {
-        const normalizedTags = ensureAbilitySubtypeTags(
+        const normalizedTags = ensureMigratedAbilitySubtypeTags(
           item.system?.tags,
           "primary_ability",
         );
@@ -1577,7 +1784,8 @@ async function migrateAbilityItemTypes() {
       updatedJobGrantUUIDs += jobUpdates.length;
     }
   }
-
+  
+  const worldGrantUpdates = [];
   for (const item of game.items) {
     if (!grantOwnerTypes.has(item.type)) continue;
     const nextGrants = remapAndNormalizeGrantEntries(
@@ -1589,15 +1797,29 @@ async function migrateAbilityItemTypes() {
       },
     );
     if (!nextGrants) continue;
-    const update = { "system.ability_grants": nextGrants };
+
+    const update = { _id: item.id, "system.ability_grants": nextGrants };
     if (
       item.type === "augment" &&
       String(item.system?.granted_ability ?? "").trim()
     ) {
       update["system.granted_ability"] = "";
     }
-    await item.update(update, { render: false });
-    updatedJobGrantUUIDs += 1;
+
+    worldGrantUpdates.push(update);
+  }
+
+  if (worldGrantUpdates.length) {
+    await Item.updateDocuments(worldGrantUpdates, { render: false });
+    updatedJobGrantUUIDs += worldGrantUpdates.length;
+  }
+
+  const worldIdToUuidMap = new Map();
+  for (const worldItem of game.items) {
+    worldIdToUuidMap.set(worldItem.id, worldItem.uuid);
+  }
+  for (const [legacyId, nextUuid] of worldLegacyIdToUuidMap.entries()) {
+    worldIdToUuidMap.set(legacyId, nextUuid);
   }
 
   for (const actor of game.actors) {
@@ -1654,7 +1876,7 @@ async function migrateAbilityItemTypes() {
     const abilityItems = actor.items.filter((item) => item.type === "ability");
     const tagUpdates = [];
     for (const item of abilityItems) {
-      const normalizedTags = ensureAbilitySubtypeTags(
+      const normalizedTags = ensureMigratedAbilitySubtypeTags(
         item.system?.tags,
         "primary_ability",
       );
@@ -1671,19 +1893,16 @@ async function migrateAbilityItemTypes() {
       });
       updatedActorTags += tagUpdates.length;
     }
-
+    
     const UUIDMap = new Map([...worldUUIDMap, ...actorUUIDMap]);
     const jobUpdates = [];
-    const actorIdToUuidMap = new Map();
-    for (const worldItem of game.items)
-      actorIdToUuidMap.set(worldItem.id, worldItem.uuid);
-    for (const [legacyId, nextUuid] of worldLegacyIdToUuidMap.entries()) {
-      actorIdToUuidMap.set(legacyId, nextUuid);
-    }
+    const actorIdToUuidMap = new Map(worldIdToUuidMap);
+
     for (const [oldUuid, newUuid] of actorUUIDMap.entries()) {
       const oldId = String(oldUuid).split(".").pop();
       if (oldId && newUuid) actorIdToUuidMap.set(oldId, newUuid);
     }
+
     for (const item of actor.items) {
       if (!grantOwnerTypes.has(item.type)) continue;
       const nextGrants = remapAndNormalizeGrantEntries(
@@ -3651,7 +3870,7 @@ function applyDamageToActor(actor, damage) {
 }
 
 function normalizeTagValue(tag) {
-  return String(tag ?? "")
+  return localizeTag(tag)
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");

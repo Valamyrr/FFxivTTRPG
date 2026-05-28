@@ -202,8 +202,6 @@ export function getStatusStackCount(actor, statusId) {
   const effects = getStatusStackEffects(actor, statusId);
   if (!effects.length) return 0;
   if (!isStackableStatusEffect(statusId)) return effects.length;
-
-  // Legacy compatibility: old stacks were duplicated effects, new stacks are flag-based.
   const primary = effects[0];
   const flagCount = getStatusStackValue(primary, 1);
   return Math.max(flagCount, effects.length);

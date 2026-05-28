@@ -25,17 +25,17 @@
         <ul class="tag-list">
           <li>
             <select class="ffxiv-text-center select-subtype-tag" data-index="0">
-              <option value="Primary"
+              <option value="FFXIV.Tags.Primary"
                       {{#if (isAbilitySubtype item "primary_ability") }}
                       selected
                       {{/if}}>{{localize "FFXIV.Tags.Primary"}}
               </option>
-              <option value="Secondary"
+              <option value="FFXIV.Tags.Secondary"
                       {{#if (isAbilitySubtype item "secondary_ability") }}
                       selected
                       {{/if}}>{{localize "FFXIV.Tags.Secondary"}}
               </option>
-              <option value="Instant"
+              <option value="FFXIV.Tags.Instant"
                       {{#if (isAbilitySubtype item "instant_ability") }}
                       selected
                       {{/if}}>{{localize "FFXIV.Tags.Instant"}}
@@ -52,7 +52,7 @@
               <select class="ffxiv-text-center select-tags"
                       data-index="{{entry.index}}">
                 {{#each ../config.tags_abilities as |t| }}
-                  <option value="{{t.label}}" {{#if (eq t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
+                  <option value="{{t.label}}" {{#if (eqTag t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
                   </option>
                 {{/each}}
               </select>

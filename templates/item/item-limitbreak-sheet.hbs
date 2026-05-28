@@ -33,7 +33,7 @@
               <select class="ffxiv-text-center select-tags"
                       data-index="{{entry.index}}">
                 {{#each ../config.tags_abilities as |t| }}
-                  <option value="{{t.label}}" {{#if (eq t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
+                  <option value="{{t.label}}" {{#if (eqTag t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
                   </option>
                 {{/each}}
               </select>
