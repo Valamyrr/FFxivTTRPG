@@ -29,6 +29,7 @@ import {
   ABILITY_SUBTYPE_TYPES,
   getAbilitySubtype,
   ensureAbilitySubtypeTags,
+  canonicalizeBakedTag,
   canonicalizeBakedTags,
 } from "./helpers/ability-subtype.mjs";
 
@@ -469,7 +470,10 @@ Handlebars.registerHelper("sortAbilities", function (items, order, type) {
   const byType = (item) => {
     if (type === "trait") return item.type === "trait";
     if (type === "ability") return item.type === "ability";
-    return getAbilitySubtype(item) === type;
+    if (["primary_ability", "secondary_ability", "instant_ability", "limit_break"].includes(type)) {
+      return getAbilitySubtype(item) === type;
+    }
+    return item.type === type;
   };
   if (!order || !order[type] || !Array.isArray(order[type])) {
     return items.filter(byType); // no saved order, return as is
@@ -981,6 +985,44 @@ async function migrateActorCurrencyToFortune() {
   }
 }
 
+async function refreshSceneActorStatusEffectsForLegacyIcons() {
+  const processedActors = new Set();
+
+  for (const scene of game.scenes ?? []) {
+    for (const token of scene.tokens?.contents ?? []) {
+      const actor = token.actor;
+      if (!actor) continue;
+      if (processedActors.has(actor.uuid)) continue;
+      processedActors.add(actor.uuid);
+
+      const statusIds = Array.from(actor.statuses ?? []).filter(Boolean);
+      if (!statusIds.length) continue;
+
+      for (const statusId of statusIds) {
+        try {
+          if (isStackableStatusEffect(statusId)) {
+            const count = getStatusStackCount(actor, statusId);
+            if (count <= 0) continue;
+            await applyStatusEffectStackDelta(actor, statusId, -count);
+            await applyStatusEffectStackDelta(actor, statusId, count);
+            continue;
+          }
+
+          await actor.toggleStatusEffect(statusId, { active: false });
+          await actor.toggleStatusEffect(statusId, { active: true });
+        } catch (error) {
+          console.error(
+            "FFXIV | Failed to refresh legacy status icon for",
+            actor.name,
+            statusId,
+            error,
+          );
+        }
+      }
+    }
+  }
+}
+
 const SHOP_TIER_TYPES = new Set(["consumable", "gear", "augment", "minion"]);
 const ACTION_FORMULA_TYPES = new Set([
   "ability",
@@ -1001,11 +1043,168 @@ const HP_COST_MIGRATION_TYPES = new Set([
   "augment",
   "minion",
 ]);
-const ITEM_DATA_MIGRATION_VERSION = "15";
+const ITEM_DATA_MIGRATION_VERSION = "16";
 function getMigratableItemCompendiumPacks() {
   return game.packs.filter(
     (pack) => pack.documentName === "Item" && !pack.locked,
   );
+}
+
+function getItemCompendiumPacks() {
+  return game.packs.filter((pack) => pack.documentName === "Item");
+}
+
+function getActorCompendiumPacks() {
+  return game.packs.filter((pack) => pack.documentName === "Actor");
+}
+
+async function withCompendiumUnlocked(pack, operation) {
+  const wasLocked = Boolean(pack.locked);
+  if (wasLocked) await pack.configure({ locked: false });
+  try {
+    return await operation();
+  } finally {
+    if (wasLocked) await pack.configure({ locked: true });
+  }
+}
+
+function getCanonicalizedTagUpdate(tags) {
+  if (!Array.isArray(tags)) return null;
+  const nextTags = canonicalizeBakedTags(tags);
+  return JSON.stringify(nextTags) === JSON.stringify(tags) ? null : nextTags;
+}
+
+function getCanonicalizedAbilityGrantItemTags(abilityGrants) {
+  if (!Array.isArray(abilityGrants)) return null;
+
+  let changed = false;
+  const nextGrants = abilityGrants.map((grant) => {
+    if (!grant?.item?.system || typeof grant.item.system !== "object")
+      return grant;
+
+    const nextTags = getCanonicalizedTagUpdate(grant.item.system.tags);
+    if (!nextTags) return grant;
+
+    changed = true;
+    return {
+      ...grant,
+      item: {
+        ...grant.item,
+        system: {
+          ...grant.item.system,
+          tags: nextTags,
+        },
+      },
+    };
+  });
+
+  return changed ? nextGrants : null;
+}
+
+function getItemTagMigrationPatch(itemLike) {
+  const updates = {};
+  const nextTags = getCanonicalizedTagUpdate(itemLike.system?.tags);
+  if (nextTags) updates["system.tags"] = nextTags;
+
+  const nextGrants = getCanonicalizedAbilityGrantItemTags(
+    itemLike.system?.ability_grants,
+  );
+  if (nextGrants) updates["system.ability_grants"] = nextGrants;
+
+  return Object.keys(updates).length ? updates : null;
+}
+
+function migrateItemSourceTags(itemSource) {
+  const patch = getItemTagMigrationPatch(itemSource);
+  if (!patch) return { item: itemSource, changed: false };
+
+  const nextItem = foundry.utils.deepClone(itemSource);
+  for (const [path, value] of Object.entries(patch)) {
+    foundry.utils.setProperty(nextItem, path, value);
+  }
+
+  return { item: nextItem, changed: true };
+}
+
+async function migrateCanonicalItemTags() {
+  const worldUpdates = [];
+  let updatedActorItems = 0;
+  let updatedCompendiumItems = 0;
+  let updatedActorCompendiumItems = 0;
+
+  for (const item of game.items) {
+    const patch = getItemTagMigrationPatch(item);
+    if (!patch) continue;
+    worldUpdates.push({ _id: item.id, ...patch });
+  }
+
+  if (worldUpdates.length) {
+    await Item.updateDocuments(worldUpdates, { render: false });
+  }
+
+  for (const actor of game.actors) {
+    const updates = [];
+    for (const item of actor.items) {
+      const patch = getItemTagMigrationPatch(item);
+      if (!patch) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+
+    if (!updates.length) continue;
+    await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+    updatedActorItems += updates.length;
+  }
+
+  for (const pack of getItemCompendiumPacks()) {
+    const updates = [];
+    for (const item of await pack.getDocuments()) {
+      const patch = getItemTagMigrationPatch(item);
+      if (!patch) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+
+    if (!updates.length) continue;
+    await withCompendiumUnlocked(pack, () =>
+      pack.documentClass.updateDocuments(updates, {
+        pack: pack.collection,
+        render: false,
+      }),
+    );
+    updatedCompendiumItems += updates.length;
+  }
+
+  for (const pack of getActorCompendiumPacks()) {
+    const updates = [];
+    for (const actor of await pack.getDocuments()) {
+      const source = actor.toObject(false);
+      const items = Array.isArray(source.items) ? source.items : [];
+      let changedItems = 0;
+      const nextItems = items.map((itemSource) => {
+        const migrated = migrateItemSourceTags(itemSource);
+        if (migrated.changed) changedItems += 1;
+        return migrated.item;
+      });
+
+      if (!changedItems) continue;
+      updates.push({ _id: actor.id, items: nextItems });
+      updatedActorCompendiumItems += changedItems;
+    }
+
+    if (!updates.length) continue;
+    await withCompendiumUnlocked(pack, () =>
+      pack.documentClass.updateDocuments(updates, {
+        pack: pack.collection,
+        render: false,
+      }),
+    );
+  }
+
+  return {
+    updatedWorldItems: worldUpdates.length,
+    updatedActorItems,
+    updatedCompendiumItems,
+    updatedActorCompendiumItems,
+  };
 }
 
 let _itemMigrationPromise = null;
@@ -1023,6 +1222,10 @@ async function migrateItemDataStructure({ force = false } = {}) {
 async function _migrateItemDataStructureInternal({ force = false } = {}) {
   const currentVersion = game.settings.get("ffxiv", "itemMigrationVersion");
   if (!force && currentVersion === ITEM_DATA_MIGRATION_VERSION) return;
+  const parsedMigrationVersion = Number.parseInt(currentVersion, 10);
+  const migrationVersion = Number.isFinite(parsedMigrationVersion)
+    ? parsedMigrationVersion
+    : 0;
 
   let inProgressNotification = null;
   let progressActive = false;
@@ -1119,6 +1322,9 @@ async function _migrateItemDataStructureInternal({ force = false } = {}) {
       2,
       "FFXIV.Notifications.ItemMigrationProgressStarting",
     );
+    if (migrationVersion <= 15) {
+      await refreshSceneActorStatusEffectsForLegacyIcons();
+    }
     await migrateLegacyPetTraits({
       includeWorld: false,
       includeCompendiums: true,
@@ -1169,6 +1375,19 @@ async function _migrateItemDataStructureInternal({ force = false } = {}) {
       75,
       "FFXIV.Notifications.ItemMigrationPhaseHpCostDone",
       hpCostStats,
+    );
+
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseTagStart");
+    showMigrationProgress(
+      77,
+      "FFXIV.Notifications.ItemMigrationPhaseTagStart",
+    );
+    const tagStats = await migrateCanonicalItemTags();
+    reportPhase("FFXIV.Notifications.ItemMigrationPhaseTagDone", tagStats);
+    showMigrationProgress(
+      79,
+      "FFXIV.Notifications.ItemMigrationPhaseTagDone",
+      tagStats,
     );
 
     reportPhase("FFXIV.Notifications.ItemMigrationPhaseAbilityTypeStart");
@@ -1468,6 +1687,7 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
   ) =>
     ensureAbilitySubtypeTags(tags, fallbackSubtype, {
       canonicalizeSubtypeTag: true,
+      canonicalizeBakedTags: true,
     });
   const remapAndNormalizeGrantEntries = (
     rawGrants,
@@ -3870,7 +4090,7 @@ function applyDamageToActor(actor, damage) {
 }
 
 function normalizeTagValue(tag) {
-  return localizeTag(tag)
+  return localizeTag(canonicalizeBakedTag(tag))
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");

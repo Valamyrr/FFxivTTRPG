@@ -6,7 +6,7 @@
     "minimum": "14",
     "verified": "14.363"
   },
-  "version": "4.0.3",
+  "version": "4.0.4",
   "authors": [
     {
       "name": "Valamyrr",
@@ -42,6 +42,9 @@
         "htmlFields": ["description"]
       },
       "consumable": {
+        "htmlFields": ["description"]
+      },
+      "currency": {
         "htmlFields": ["description"]
       },
       "limit_break": {

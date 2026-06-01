@@ -164,7 +164,10 @@ export function getSubtypeTagLabel(subtype) {
 export function ensureAbilitySubtypeTags(
   tags,
   fallbackSubtype = "primary_ability",
-  { canonicalizeSubtypeTag = false, canonicalizeBakedTags = false } = {},
+  {
+    canonicalizeSubtypeTag = false,
+    canonicalizeBakedTags: shouldCanonicalizeBakedTags = false,
+  } = {},
 ) {
   const source = Array.isArray(tags) ? tags : [];
   const next = [];
@@ -176,7 +179,7 @@ export function ensureAbilitySubtypeTags(
     const subtype = tagToSubtype(tag);
 
     if (!subtype) {
-      next.push(canonicalizeBakedTags ? canonicalizeBakedTag(tag) : tag);
+      next.push(shouldCanonicalizeBakedTags ? canonicalizeBakedTag(tag) : tag);
       continue;
     }
 
@@ -193,5 +196,5 @@ export function ensureAbilitySubtypeTags(
       : chosenTag,
   );
 
-  return canonicalizeBakedTags ? canonicalizeBakedTags(next) : next;
+  return shouldCanonicalizeBakedTags ? canonicalizeBakedTags(next) : next;
 }

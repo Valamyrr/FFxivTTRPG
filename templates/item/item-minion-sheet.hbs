@@ -17,7 +17,7 @@
   </header>
   {{! Sheet Tab Navigation }}
   <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
-    <a class="sub-tab" data-tab="details">{{ localize "FFXIV.Item.Description" }} & {{ localize "FFXIV.Abilities.TraitsShort" }}
+    <a class="sub-tab" data-tab="details">{{ localize "FFXIV.Item.MinionDetailsTab" }}
       <div class="chip"></div>
     </a>
     <a class="sub-tab" data-tab="attributes">{{ localize "FFXIV.Attributes.Attributes" }}
@@ -46,7 +46,7 @@
               {{/if}}
             </div>
             <div class="minion-details-section">
-              <h3>{{ localize "FFXIV.Abilities.TraitsShort" }}</h3>
+              <h3>{{ localize "FFXIV.Item.MinionTraitsHeader" }}</h3>
               <prose-mirror name="system.traits" value="{{source.traits}}" document-uuid="{{item.uuid}}" class="sized minion-details-editor"></prose-mirror>
             </div>
             <div class="minion-details-section">

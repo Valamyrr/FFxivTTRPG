@@ -89,6 +89,13 @@
   grid-row: 1;
 }
 
+.companions-sub-tab-content .ability-card.minion-card .ability-icon-wrapper {
+  float: none;
+  grid-column: 1;
+  grid-row: 1;
+  margin: 5px 0 0;
+}
+
 .companions-sub-tab-content .ability-card.minion-card .ability-header,
 .companions-sub-tab-content .ability-card.minion-card .ability-details {
   grid-column: 2;

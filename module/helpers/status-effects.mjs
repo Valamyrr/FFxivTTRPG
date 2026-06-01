@@ -1,4 +1,4 @@
-export const STACKABLE_STATUS_EFFECT_IDS = new Set(["dot", "revivify"]);
+export const STACKABLE_STATUS_EFFECT_IDS = new Set(["dot", "drain", "revivify"]);
 const STACK_COUNT_FLAG_SCOPE = "ffxiv";
 const STACK_COUNT_FLAG_KEY = "stackCount";
 

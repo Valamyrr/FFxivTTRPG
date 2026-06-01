@@ -2080,6 +2080,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         && !this._isActorEditMode()
         && item?.documentName === "Item"
         && item.type === "augment";
+      if (item?.documentName === "Item" && item.parent?.id === this.actor.id && this._isCompanionItemDrop(item)) {
+        debugLog('Ignored intra-actor companion drop for item', item.id);
+        return;
+      }
       if (item?.documentName === "Item" && item.parent?.id === this.actor.id && this._isManualAbilityDrop(item)) {
         debugLog('Ignored intra-actor ability drop for item', item.id);
         return;
@@ -2111,6 +2115,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         return;
       }
 
+      if (this._isCompanionItemDrop(item)) {
+        if (sheetLocked && !characterLocked) {
+          this._notifyActorSheetLocked();
+          return;
+        }
+        await this._equipDroppedCompanion(item);
+        return;
+      }
+
       if (sheetLocked && !allowLockedAugmentDrop) {
         this._notifyActorSheetLocked();
         return;
@@ -2127,6 +2140,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return item?.documentName === "Item" && (isAbility || item.type === "trait");
   }
 
+  _isCompanionItemDrop(item) {
+    return item?.documentName === "Item" && item?.type === "minion";
+  }
+
   async _equipDroppedAbility(sourceItem) {
     this._captureSheetScroll();
     const itemData = sourceItem.toObject();
@@ -2141,6 +2158,16 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       );
     }
 
+    await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
+    await this.render({ force: true });
+    this._restoreSheetScroll();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+  }
+
+  async _equipDroppedCompanion(sourceItem) {
+    this._captureSheetScroll();
+    const itemData = sourceItem.toObject();
+    delete itemData._id;
     await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
     await this.render({ force: true });
     this._restoreSheetScroll();
