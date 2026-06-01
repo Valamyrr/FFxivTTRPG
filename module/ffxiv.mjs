@@ -347,6 +347,7 @@ const LEGACY_ABILITY_TYPES = new Set([
   "instant_ability",
   "limit_break",
 ]);
+const HIDDEN_ITEM_CREATE_TYPES = new Set(["currency"]);
 
 function getCharacterTabIcon(settingKey) {
   const configured = game.settings.get("ffxiv", settingKey);
@@ -728,9 +729,13 @@ function installItemCreateTypeFilter() {
 
     for (const option of Array.from(typeSelect.options)) {
       if (LEGACY_ABILITY_TYPES.has(option.value)) option.remove();
+      if (HIDDEN_ITEM_CREATE_TYPES.has(option.value)) option.remove();
     }
 
     if (LEGACY_ABILITY_TYPES.has(typeSelect.value)) {
+      typeSelect.value = "ability";
+      typeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    } else if (HIDDEN_ITEM_CREATE_TYPES.has(typeSelect.value)) {
       typeSelect.value = "ability";
       typeSelect.dispatchEvent(new Event("change", { bubbles: true }));
     }
