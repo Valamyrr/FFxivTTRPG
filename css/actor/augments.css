@@ -43,6 +43,50 @@
   grid-row: 1 / span 2;
 }
 
+.augments .augment-icon-wrapper {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  height: 50px;
+  margin: 5px 0;
+  position: relative;
+  width: 50px;
+}
+
+.augments .augment-icon-wrapper .augment-icon {
+  grid-column: auto;
+  grid-row: auto;
+  margin: 0;
+}
+
+.augments .ability-delete {
+  align-items: center;
+  background: #b00000;
+  border: 1px solid white;
+  border-radius: 50%;
+  color: white;
+  display: none;
+  font-size: 12px;
+  height: 18px;
+  justify-content: center;
+  line-height: 1;
+  min-height: 18px;
+  padding: 0;
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 18px;
+  z-index: 4;
+}
+
+.augments .augment-icon-wrapper:hover .ability-delete {
+  display: inline-flex;
+}
+
+.augments .ability-delete:hover {
+  background: red;
+  box-shadow: 0 0 5px red;
+}
+
 .augments .augment-name {
   font-size: 1.4em;
   display: inline-block;

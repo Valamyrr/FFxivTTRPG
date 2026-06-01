@@ -1,0 +1,69 @@
+<div class="actor-effects modern-tab-layout">
+  <section class="effects-panel modern-panel">
+    <header class="effects-section-header">
+      <h3>{{localize "FFXIV.CharacterSheet.Effects"}}</h3>
+      <a class="effect-control effects-create"
+         data-action="create"
+         data-effect-type="passive"
+         data-tooltip="{{localize 'DOCUMENT.Create' type=(localize 'DOCUMENT.ActiveEffect')}}">
+        <i class="fas fa-plus"></i>
+        <span>{{localize "DOCUMENT.New" type=(localize "DOCUMENT.ActiveEffect")}}</span>
+      </a>
+    </header>
+    <ol class="effects-list effects-list-flat">
+      {{#each effects.all as |effect|}}
+        <li class="effect-row"
+            data-effect-id="{{effect.id}}"
+            data-parent-id="{{effect.parentId}}"
+            data-parent-type="{{effect.parentType}}">
+          <div class="effect-main">
+            <img class="effect-icon"
+                 src="{{#if effect.img}}{{effect.img}}{{else}}{{effect.icon}}{{/if}}"
+                 alt="{{effect.name}}"
+                 width="24"
+                 height="24" />
+            <div class="effect-meta">
+              <h4>{{effect.name}}</h4>
+              <p>{{localize "FFXIV.Item.Source"}}: {{effect.sourceName}}</p>
+            </div>
+          </div>
+          <div class="effect-right">
+            <span class="effect-type">{{localize effect.typeLabel}}</span>
+            {{#if effect.duration.label}}
+              {{#unless (eq effect.duration.label "None")}}
+                <span class="effect-duration">{{effect.duration.label}}</span>
+              {{/unless}}
+            {{/if}}
+            {{#if effect.ffxivStackable}}
+              <div class="effect-stack">
+                <a class="effect-control effect-stack-control"
+                   data-action="stack-decrease"
+                   title="{{localize 'FFXIV.CharacterSheet.StackDecrease'}}">-</a>
+                <span class="effect-stack-count">{{effect.ffxivStackCount}}</span>
+                <a class="effect-control effect-stack-control"
+                   data-action="stack-increase"
+                   title="{{localize 'FFXIV.CharacterSheet.StackIncrease'}}">+</a>
+              </div>
+            {{/if}}
+            <div class="effect-controls">
+              <a class="effect-control" data-action="toggle" title="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}">
+                <i class="fas {{#if effect.disabled}}fa-toggle-off{{else}}fa-toggle-on{{/if}}"></i>
+              </a>
+              <a class="effect-control" data-action="edit" title="{{localize 'DOCUMENT.Update' type=(localize 'DOCUMENT.ActiveEffect')}}">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a class="effect-control" data-action="delete" title="{{localize 'DOCUMENT.Delete' type=(localize 'DOCUMENT.ActiveEffect')}}">
+                <span class="delete-icon">×</span>
+              </a>
+            </div>
+          </div>
+        </li>
+      {{/each}}
+      {{#unless effects.all.length}}
+        <li class="effects-empty">
+          {{localize "FFXIV.CharacterSheet.NoEffects"}}
+        </li>
+      {{/unless}}
+    </ol>
+  </section>
+</div>

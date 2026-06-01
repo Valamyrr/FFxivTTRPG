@@ -132,7 +132,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.system = actorData.system;
     context.source = this.actor._source.system;
     context.flags = actorData.flags;
-    context.config = CONFIG.FF_XIV;
+    context.config = CONFIG.FFXIV;
     context.cssClass = this._getSheetClasses().join(" ");
     context.editable = this.document.isOwner;
     context.actorEditMode = this._isActorEditMode();
@@ -201,7 +201,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this._applyCachedEnrichment(context);
     }
 
-    context.effects = prepareActiveEffectCategories(this.actor.allApplicableEffects());
+    context.effects = prepareActiveEffectCategories(this.actor.effects.contents);
     return context;
   }
 
@@ -257,6 +257,50 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         item.enriched = foundry.utils.deepClone(petCache?.items?.get(item._id) || {});
       }
     }
+  }
+
+  async _refreshEffectsPanel() {
+    const root = this.element;
+    if (!root) return;
+    const current = root.querySelector(".actor-effects");
+    if (!current) return;
+    const effects = prepareActiveEffectCategories(this.actor.effects.contents);
+    const html = await renderTemplate("systems/ffxiv/templates/actor/parts/actor-effects.hbs", { effects });
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html.trim();
+    const replacement = wrapper.firstElementChild;
+    if (!replacement) return;
+    current.replaceWith(replacement);
+  }
+
+  async _refreshCompanionsPanel() {
+    const root = this.element;
+    if (!root) return;
+    const tab = root.querySelector('.tab[data-tab="companions"]');
+    const current = tab?.querySelector(".actor-companions");
+    if (!current) return;
+
+    const actorData = this.document.toObject(false);
+    const petIds = actorData.system?.pets || [];
+    const pets = [];
+    for (const id of petIds) {
+      const pet = game.actors.get(id);
+      if (!pet) continue;
+      pets.push(pet.toObject(false));
+    }
+
+    const html = await renderTemplate("systems/ffxiv/templates/actor/parts/actor-companions.hbs", {
+      actor: this.actor,
+      items: actorData.items ?? [],
+      system: actorData.system,
+      pets
+    });
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html.trim();
+    const replacement = wrapper.firstElementChild;
+    if (!replacement) return;
+    current.replaceWith(replacement);
+    this._applyStoredCompanionTab();
   }
 
   /** @override */
@@ -621,7 +665,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const itemsToUpdate = [];
 
     this.actor.items.contents.forEach(item => {
-      if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1) {
+      if (CONFIG.FFXIV.inventory_items.indexOf(item.type) > -1) {
         const position = Number(item.system.position) || 0;
         if (occupiedPositions.has(position) || position === 0) {
           itemsToUpdate.push(item);
@@ -634,7 +678,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let nextFreePosition = 1;
     const updates = [];
     itemsToUpdate.forEach(item => {
-      if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1) {
+      if (CONFIG.FFXIV.inventory_items.indexOf(item.type) > -1) {
         while (occupiedPositions.has(nextFreePosition)) {
           nextFreePosition++;
         }
@@ -815,7 +859,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _findNextFreeInventoryPosition(actor, { reserved = [] } = {}) {
     const occupied = new Set(reserved.map(value => Number(value) || 0));
     for (const item of actor.items) {
-      if (!CONFIG.FF_XIV.inventory_items.includes(item.type)) continue;
+      if (!CONFIG.FFXIV.inventory_items.includes(item.type)) continue;
       const position = Number(item.system.position) || 0;
       if (position > 0) occupied.add(position);
     }
@@ -984,13 +1028,20 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
 
     // Active Effect management
-    html.on('click.ffxivActorSheet', '.effect-control', (ev) => {
+    html.on('click.ffxivActorSheet', '.effect-control', async (ev) => {
+      const action = String(ev.currentTarget?.dataset?.action ?? "");
       const row = ev.currentTarget.closest('li');
-      const document =
-        row.dataset.parentId === this.actor.id
+      const parentId = String(row?.dataset?.parentId ?? "");
+      const document = !parentId
+        ? this.actor
+        : parentId === this.actor.id
           ? this.actor
-          : this.actor.items.get(row.dataset.parentId);
-      onManageActiveEffect(ev, document);
+          : this.actor.items.get(parentId);
+      if (!document) return;
+      await onManageActiveEffect(ev, document, { render: false });
+      if (["create", "delete", "toggle", "stack-increase", "stack-decrease"].includes(action)) {
+        await this._refreshEffectsPanel();
+      }
     });
 
     // Rollable abilities.
@@ -1049,7 +1100,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         };
 
         const configKey = configMap[this.item.type];
-        const tagPool = CONFIG.FF_XIV[configKey] || {};
+        const tagPool = CONFIG.FFXIV[configKey] || {};
         const defaultTag = Object.values(tagPool)[0]?.label || "";
 
         if (defaultTag) {
@@ -1403,18 +1454,18 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _toggleInventoryGear(item) {
     const equippedGear = {
       ...Object.fromEntries(
-        Object.keys(CONFIG.FF_XIV.gear_subcategories).map((key) => [key, ""]),
+        Object.keys(CONFIG.FFXIV.gear_subcategories).map((key) => [key, ""]),
       ),
       ...foundry.utils.deepClone(this.actor.system.equippedGear || {}),
     };
 
     const defaultCategory =
-      CONFIG.FF_XIV.gear_subcategories.Arms?.label ??
-      Object.values(CONFIG.FF_XIV.gear_subcategories)[0]?.label ??
+      CONFIG.FFXIV.gear_subcategories.Arms?.label ??
+      Object.values(CONFIG.FFXIV.gear_subcategories)[0]?.label ??
       "";
     const selectedCategory = item.system.category || defaultCategory;
-    const categoryKey = Object.keys(CONFIG.FF_XIV.gear_subcategories).find(
-      (key) => CONFIG.FF_XIV.gear_subcategories[key].label === selectedCategory,
+    const categoryKey = Object.keys(CONFIG.FFXIV.gear_subcategories).find(
+      (key) => CONFIG.FFXIV.gear_subcategories[key].label === selectedCategory,
     );
 
     if (!categoryKey) {
@@ -2005,6 +2056,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const allAbilities = actor.items
       .filter(i => {
+        if (abilityType === "minion") return i.type === "minion";
         if (abilityType === "trait") return i.type === "trait";
         return getAbilitySubtype(i) === abilityType;
       })
@@ -2073,8 +2125,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
       const pets = foundry.utils.duplicate(this.actor.system.pets || []);
       if (!pets.includes(droppedActor.id)) {
+        this._captureSheetScroll();
         pets.push(droppedActor.id);
-        await this.actor.update({ "system.pets": pets });
+        await this.actor.update({ "system.pets": pets }, { render: false });
+        await this._refreshCompanionsPanel();
+        this._restoreSheetScroll();
+        this._playConfiguredSound("soundNotificationFFXIV_moveItem");
       }
       return;
     }
@@ -2095,7 +2151,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
 
       if (item && this.actor.type === "character" && !this._isActorEditMode()) {
-        const inventoryTypes = CONFIG.FF_XIV?.inventory_items || [];
+        const inventoryTypes = CONFIG.FFXIV?.inventory_items || [];
         if (inventoryTypes.includes(item.type) && !allowLockedAugmentDrop) return;
       }
 
@@ -2164,7 +2220,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
-    await this.render({ force: true });
+    await this._refreshCompanionsPanel();
     this._restoreSheetScroll();
     this._playConfiguredSound("soundNotificationFFXIV_moveItem");
   }
@@ -2174,7 +2230,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const itemData = sourceItem.toObject();
     delete itemData._id;
     await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
-    await this.render({ force: true });
+    await this._refreshCompanionsPanel();
     this._restoreSheetScroll();
     this._playConfiguredSound("soundNotificationFFXIV_moveItem");
   }

@@ -1,4 +1,4 @@
-import { FF_XIV } from "./config.mjs";
+import { FFXIV } from "./config.mjs";
 
 export const ABILITY_SUBTYPE_TYPES = [
   "primary_ability",
@@ -70,14 +70,14 @@ function getSubtypeAliasLookup() {
 function getBakedTagKeys() {
   return new Set([
     ...Object.values(ABILITY_SUBTYPE_TAGS),
-    ...(Array.isArray(FF_XIV.base_tags_abilities)
-      ? FF_XIV.base_tags_abilities
+    ...(Array.isArray(FFXIV.base_tags_abilities)
+      ? FFXIV.base_tags_abilities
       : []),
-    ...(Array.isArray(FF_XIV.base_tags_traits)
-      ? FF_XIV.base_tags_traits
+    ...(Array.isArray(FFXIV.base_tags_traits)
+      ? FFXIV.base_tags_traits
       : []),
-    ...(Array.isArray(FF_XIV.base_tags_consumables)
-      ? FF_XIV.base_tags_consumables
+    ...(Array.isArray(FFXIV.base_tags_consumables)
+      ? FFXIV.base_tags_consumables
       : []),
   ]);
 }

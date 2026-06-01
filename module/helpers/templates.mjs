@@ -17,6 +17,7 @@ export const preloadHandlebarsTemplates = async function () {
     "systems/ffxiv/templates/actor/parts/actor-card-pet.hbs",
     "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs",
     "systems/ffxiv/templates/actor/parts/actor-companions.hbs",
+    "systems/ffxiv/templates/actor/parts/actor-effects.hbs",
     "systems/ffxiv/templates/actor/parts/actor-gear.hbs",
     "systems/ffxiv/templates/actor/parts/actor-items.hbs",
     "systems/ffxiv/templates/actor/parts/actor-npc-statblock.hbs",
@@ -25,6 +26,7 @@ export const preloadHandlebarsTemplates = async function () {
     "systems/ffxiv/templates/actor/parts/tabs.hbs",
     // Item partials
     "systems/ffxiv/templates/item/parts/box.hbs",
+    "systems/ffxiv/templates/item/parts/item-effects.hbs",
     // Item user-side
     "systems/ffxiv/templates/item/item-sheet-dialog.hbs",
     "systems/ffxiv/templates/item/item-sheet-dialog-gear.hbs",

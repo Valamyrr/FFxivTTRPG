@@ -270,7 +270,7 @@ export class FFXIVActor extends Actor {
   _prepareCharacterData(actorData) {
     if (actorData.type !== 'character') return;
     const className = actorData.system?.class?.name;
-    const classConfig = CONFIG.FF_XIV?.classes?.[className];
+    const classConfig = CONFIG.FFXIV?.classes?.[className];
 
     if (className && className !== "custom" && classConfig?.role) {
       actorData.system.class.role = classConfig.role;
@@ -350,25 +350,25 @@ export class FFXIVActor extends Actor {
         const numericModifier = Number(modValue);
         const modifierValue = Number.isFinite(numericModifier) ? numericModifier : 0;
         if (Object.keys(primaryAttributes).length) {
-          if (modName == CONFIG.FF_XIV.attributes.Strength.label) data.str += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Dexterity.label) data.dex += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Vitality.label) data.vit += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Intelligence.label) data.int += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Mind.label) data.mnd += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Strength.label) data.str += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Dexterity.label) data.dex += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Vitality.label) data.vit += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Intelligence.label) data.int += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Mind.label) data.mnd += modifierValue;
         }
         if (Object.keys(secondaryAttributes).length) {
-          if (modName == CONFIG.FF_XIV.attributes.Defense.label) data.def += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.MagicDefense.label) data.mdef += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Vigilance.label) data.vigilance += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Defense.label) data.def += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.MagicDefense.label) data.mdef += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Vigilance.label) data.vigilance += modifierValue;
         }
         data.dmg = data.dmg || "";
-        if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += "+" + modifierValue;
+        if (modName == CONFIG.FFXIV.characteristics.Damages.label) data.dmg += "+" + modifierValue;
 
         data.cdmg = data.cdmg || "";
-        if (modName == CONFIG.FF_XIV.characteristics.CriticalDamage.label) data.cdmg += "+" + modifierValue;
+        if (modName == CONFIG.FFXIV.characteristics.CriticalDamage.label) data.cdmg += "+" + modifierValue;
 
         data.hit = data.hit || "";
-        if (modName == CONFIG.FF_XIV.characteristics.BonusToHit.label) data.hit += "+" + modifierValue;
+        if (modName == CONFIG.FFXIV.characteristics.BonusToHit.label) data.hit += "+" + modifierValue;
 
       }
     }
@@ -406,7 +406,7 @@ export class FFXIVActor extends Actor {
 
   async _rollAttribute(attribute) {
     const attributeCapitalized = attribute.charAt(0).toUpperCase() + attribute.slice(1);
-    const abbreviationEntry = CONFIG.FF_XIV.attributesAbbreviations[attributeCapitalized];
+    const abbreviationEntry = CONFIG.FFXIV.attributesAbbreviations[attributeCapitalized];
 
     if (!abbreviationEntry) {
       ui.notifications.warn(`Unknown attribute: ${attribute}`);

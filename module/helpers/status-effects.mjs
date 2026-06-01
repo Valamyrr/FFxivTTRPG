@@ -4,7 +4,7 @@ const STACK_COUNT_FLAG_KEY = "stackCount";
 
 const STATUS_DEFINITIONS = [
   {
-    id: "ascendent",
+    id: "transcendent",
     labelKey: "FFXIV.Effects.Ascendent",
     icon: "systems/ffxiv/assets/effects/ascendent.webp",
   },
@@ -126,7 +126,7 @@ const BENEFICIAL_STATUS_IDS = [
   "invoking",
   "ready",
   "revivify",
-  "ascendent",
+  "transcendent",
 ];
 
 const NEGATIVE_STATUS_IDS = [
@@ -190,8 +190,15 @@ export function getStatusStackEffects(actor, statusId) {
   });
 }
 
-export function getStatusStackValue(effect, fallback = 1) {
+export function getStatusStackValue(effect, fallback = 1, statusId = null) {
   if (!effect) return normalizeStackCount(fallback, 1);
+  if (statusId) {
+    const scoped = Number.parseInt(
+      effect.getFlag(STACK_COUNT_FLAG_SCOPE, `statusStacks.${statusId}`),
+      10,
+    );
+    if (Number.isFinite(scoped) && scoped > 0) return scoped;
+  }
   return normalizeStackCount(
     effect.getFlag(STACK_COUNT_FLAG_SCOPE, STACK_COUNT_FLAG_KEY),
     fallback,
@@ -203,7 +210,7 @@ export function getStatusStackCount(actor, statusId) {
   if (!effects.length) return 0;
   if (!isStackableStatusEffect(statusId)) return effects.length;
   const primary = effects[0];
-  const flagCount = getStatusStackValue(primary, 1);
+  const flagCount = getStatusStackValue(primary, 1, statusId);
   return Math.max(flagCount, effects.length);
 }
 
@@ -211,7 +218,7 @@ async function createStatusStack(
   actor,
   statusId,
   count = 1,
-  { overlay = false } = {},
+  { overlay = false, origin = null } = {},
 ) {
   const ActiveEffectClass = getDocumentClass("ActiveEffect");
   const effect = await ActiveEffectClass.fromStatusEffect(statusId, {
@@ -221,11 +228,17 @@ async function createStatusStack(
     [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]:
       normalizeStackCount(count, 1),
   });
+  if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
   return ActiveEffectClass.create(effect.toObject(), { parent: actor });
 }
 
-async function collapseLegacyStatusStacks(actor, statusId, overrideCount) {
+async function collapseLegacyStatusStacks(
+  actor,
+  statusId,
+  overrideCount,
+  { origin = null } = {},
+) {
   const existing = getStatusStackEffects(actor, statusId);
   if (!existing.length) return null;
 
@@ -237,6 +250,7 @@ async function collapseLegacyStatusStacks(actor, statusId, overrideCount) {
   const updateData = {
     [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]: targetCount,
   };
+  if (origin) updateData.origin = origin;
   await primary.update(updateData);
 
   if (existing.length > 1) {
@@ -250,7 +264,12 @@ async function collapseLegacyStatusStacks(actor, statusId, overrideCount) {
   return primary;
 }
 
-async function setStatusStackCount(actor, statusId, count) {
+async function setStatusStackCount(
+  actor,
+  statusId,
+  count,
+  { origin = null } = {},
+) {
   const normalizedCount = Number.parseInt(count, 10) || 0;
   const existing = getStatusStackEffects(actor, statusId);
 
@@ -262,28 +281,47 @@ async function setStatusStackCount(actor, statusId, count) {
   }
 
   if (!existing.length) {
-    await createStatusStack(actor, statusId, normalizedCount);
+    await createStatusStack(actor, statusId, normalizedCount, { origin });
     return true;
   }
 
-  await collapseLegacyStatusStacks(actor, statusId, normalizedCount);
+  await collapseLegacyStatusStacks(actor, statusId, normalizedCount, {
+    origin,
+  });
   return true;
 }
 
-export async function applyStatusEffectStackDelta(actor, statusId, delta) {
+export async function applyStatusEffectStackDelta(
+  actor,
+  statusId,
+  delta,
+  { origin = null } = {},
+) {
   const amount = Number(delta) || 0;
   if (!actor || !statusId || !amount) return;
 
   const currentCount = getStatusStackCount(actor, statusId);
   const nextCount = Math.max(currentCount + amount, 0);
-  return setStatusStackCount(actor, statusId, nextCount);
+  return setStatusStackCount(actor, statusId, nextCount, { origin });
+}
+
+async function setNonStackableStatusOrigin(actor, statusId, origin) {
+  if (!actor?.effects || !origin) return;
+  const effects = actor.effects.filter((effect) => {
+    const statuses = effect?.statuses;
+    return statuses instanceof Set && statuses.has(statusId);
+  });
+  for (const effect of effects) {
+    if (effect.origin === origin) continue;
+    await effect.update({ origin });
+  }
 }
 
 export async function applyStatusEffectChange(
   actor,
   statusId,
   active,
-  { overlay = false } = {},
+  { overlay = false, origin = null } = {},
 ) {
   if (!actor || !statusId) return;
   if (isStackableStatusEffect(statusId)) {
@@ -291,9 +329,14 @@ export async function applyStatusEffectChange(
       actor,
       statusId,
       active === false ? -1 : 1,
+      { origin },
     );
   }
-  return actor.toggleStatusEffect(statusId, { active, overlay });
+  const result = await actor.toggleStatusEffect(statusId, { active, overlay });
+  if (active !== false && origin) {
+    await setNonStackableStatusOrigin(actor, statusId, origin);
+  }
+  return result;
 }
 
 export async function migrateLegacyStatusStackEffects() {
@@ -323,8 +366,16 @@ export async function migrateLegacyStatusStackEffects() {
 }
 
 export const updateStatusEffects = () => {
-  CONFIG.statusEffects = STATUS_DEFINITIONS.map(
-    ({ id, labelKey, icon }, index) =>
-      createStatusEffect(id, labelKey, icon, getStatusOrder(id, index)),
+  const effects = STATUS_DEFINITIONS.map(({ id, labelKey, icon }, index) =>
+    createStatusEffect(id, labelKey, icon, getStatusOrder(id, index)),
   );
+  effects.sort((a, b) => {
+    const orderA = Number(a.order) || 0;
+    const orderB = Number(b.order) || 0;
+    if (orderA !== orderB) return orderA - orderB;
+    return String(a.name ?? a.label ?? a.id).localeCompare(
+      String(b.name ?? b.label ?? b.id),
+    );
+  });
+  CONFIG.statusEffects = effects;
 };

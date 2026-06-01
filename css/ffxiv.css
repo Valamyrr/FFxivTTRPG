@@ -68,6 +68,32 @@ input:disabled {
   font-size: var(--font-size-20);
 }
 
+form.active-effect-config .form-group.statuses .ffxiv-status-stack-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+form.active-effect-config .form-group.statuses .ffxiv-status-stack-btn {
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
+  line-height: 14px;
+  border: 1px solid var(--color-dark-3);
+  border-radius: 3px;
+  background: var(--input-background-color);
+  color: var(--color-light-1);
+  font-size: 11px;
+}
+
+form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 700;
+}
+
 .ffxiv-settings-submenu {
   display: flex;
   flex-direction: column;
@@ -634,4 +660,3 @@ input:disabled {
 .ffxiv-w-1_5em { width: 1.5em; }
 .ffxiv-m-auto { margin: auto; }
 .ffxiv-border-orangered { border-color: orangered; }
-

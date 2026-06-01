@@ -1,4 +1,5 @@
 import {
+  onManageActiveEffect,
   prepareActiveEffectCategories,
 } from "../helpers/effects.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
@@ -8,6 +9,7 @@ import {
   ensureAbilitySubtypeTags,
   getSubtypeTagLabel,
 } from "../helpers/ability-subtype.mjs";
+import { isStackableStatusEffect } from "../helpers/status-effects.mjs";
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem:
@@ -150,7 +152,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.system = itemData.system;
     context.source = this.item._source.system;
     context.flags = itemData.flags;
-    context.config = CONFIG.FF_XIV;
+    context.config = CONFIG.FFXIV;
     context.statusEffects = CONFIG.statusEffects;
     context.itemStatusEffects = this._getStatusEffectEntries(itemData.system);
     context.cssClass = this._getSheetClasses().join(" ");
@@ -225,6 +227,16 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     // Prepare active effects for easier access
     context.effects = prepareActiveEffectCategories(this.item.effects);
+    context.abilityLinkedEffects = Array.from(this.item.effects ?? []).map((effect) => ({
+      id: effect.id,
+      name: effect.name,
+      icon: effect.img || effect.icon || "icons/svg/aura.svg",
+      sourceName: effect.sourceName,
+      duration: effect.duration,
+      disabled: effect.disabled,
+      applyTo: this._getAbilityEffectApplyTo(effect),
+      applyAction: String(effect.getFlag("ffxiv", "applyAction") || "add"),
+    }));
     return context;
   }
 
@@ -288,6 +300,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.activateListeners($(this.element));
     this._activateJobDropZone();
     this._activateFormulaFieldVisibility();
+    this._restoreSheetScroll();
   }
 
   /** @override */
@@ -346,6 +359,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "system.check",
         "system.origin",
       ].includes(event.target.name);
+    if (render) this._captureSheetScroll();
     this.document
       .update(updateData, { render })
       .then(async () => {
@@ -515,7 +529,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return entries.map((entry) => ({
       id: entry?.id ?? "",
       action: entry?.action !== false,
+      stacks: this._normalizeStatusStacks(entry?.stacks),
+      stackable: isStackableStatusEffect(entry?.id ?? ""),
     }));
+  }
+
+  _normalizeStatusStacks(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
   }
 
   _getCurrentStatusEffectEntries() {
@@ -527,12 +548,17 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!Number.isInteger(index)) return;
 
     const entries = this._getCurrentStatusEffectEntries();
-    entries[index] ??= { id: "", action: true };
+    entries[index] ??= { id: "", action: true, stacks: 1, stackable: false };
     if (event.currentTarget.classList.contains("status-effect-id")) {
       entries[index].id = event.currentTarget.value;
+      entries[index].stackable = isStackableStatusEffect(entries[index].id);
+      entries[index].stacks = this._normalizeStatusStacks(entries[index].stacks);
+    } else if (event.currentTarget.classList.contains("status-effect-stacks")) {
+      entries[index].stacks = this._normalizeStatusStacks(event.currentTarget.value);
     } else {
       entries[index].action = event.currentTarget.value === "true";
     }
+    this._captureSheetScroll();
     this.item
       .update(
         {
@@ -549,10 +575,17 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onAddStatusEffect(event) {
     event.preventDefault();
     event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    this._captureSheetScroll();
 
     const entries = this._getCurrentStatusEffectEntries();
     const defaultEffect = CONFIG.statusEffects?.[0]?.id ?? "";
-    entries.push({ id: defaultEffect, action: true });
+    entries.push({
+      id: defaultEffect,
+      action: true,
+      stacks: 1,
+      stackable: isStackableStatusEffect(defaultEffect),
+    });
     this.item
       .update(
         {
@@ -569,6 +602,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onRemoveStatusEffect(event) {
     event.preventDefault();
     event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+    this._captureSheetScroll();
 
     const index = Number(event.currentTarget.dataset.index);
     const entries = this._getCurrentStatusEffectEntries();
@@ -584,6 +619,46 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       )
       .then(() => this.render({ force: true }))
       .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onChangeAbilityEffectScope(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const effectId = String(event.currentTarget.dataset.effectId ?? "");
+    const applyTo = String(event.currentTarget.value ?? "target");
+    const effect = this.item.effects.get(effectId);
+    if (!effect) return;
+    this._captureSheetScroll();
+    effect
+      .update(
+        {
+          "flags.ffxiv.applyTo": applyTo,
+          transfer: applyTo === "self",
+        },
+        { render: false, ffxivSyncApplyTo: true },
+      )
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onChangeAbilityEffectAction(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const effectId = String(event.currentTarget.dataset.effectId ?? "");
+    const applyAction = String(event.currentTarget.value ?? "add");
+    const effect = this.item.effects.get(effectId);
+    if (!effect) return;
+    this._captureSheetScroll();
+    effect
+      .setFlag("ffxiv", "applyAction", applyAction)
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _getAbilityEffectApplyTo(effect) {
+    const flagged = String(effect?.getFlag("ffxiv", "applyTo") || "").trim().toLowerCase();
+    if (flagged === "self" || flagged === "target") return flagged;
+    return "target";
   }
 
   /** @override */
@@ -662,7 +737,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       };
 
       const configKey = configMap[this.item.type];
-      const tagPool = CONFIG.FF_XIV[configKey] || {};
+      const tagPool = CONFIG.FFXIV[configKey] || {};
       const defaultTag = Object.values(tagPool)[0]?.label || "";
       debugLog(defaultTag + " : " + tags);
       if (defaultTag) {
@@ -674,9 +749,39 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     html.on(
       "change.ffxivItemSheet",
-      ".status-effect-id, .status-effect-action",
+      ".status-effect-id, .status-effect-action, .status-effect-stacks",
       this._onChangeStatusEffect.bind(this),
     );
+    html.on(
+      "change.ffxivItemSheet",
+      ".ability-effect-scope",
+      this._onChangeAbilityEffectScope.bind(this),
+    );
+    html.on(
+      "change.ffxivItemSheet",
+      ".ability-effect-action",
+      this._onChangeAbilityEffectAction.bind(this),
+    );
+    html.on("click.ffxivItemSheet", ".sheet-tabs.tabs .item", (ev) => {
+      const nextTab = String(ev.currentTarget.dataset.tab ?? "");
+      const currentTab = String(this.tabGroups?.primary ?? "");
+      if (nextTab && nextTab !== currentTab) {
+        this._playConfiguredSound("soundNotificationFFXIV_openSheet");
+      }
+    });
+    html.on("click.ffxivItemSheet", ".effect-control", (ev) => {
+      const action = ev.currentTarget.dataset.action;
+      if (action === "create") {
+        this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+      } else if (action === "delete") {
+        this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+      }
+      onManageActiveEffect(ev, this.item);
+      if (action !== "edit") {
+        this._captureSheetScroll();
+        this.render({ force: true });
+      }
+    });
     html.on(
       "click.ffxivItemSheet",
       ".add-status-effect",
@@ -981,7 +1086,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     const equippedGear = {
       ...Object.fromEntries(
-        Object.keys(CONFIG.FF_XIV.gear_subcategories).map((k) => [k, ""]),
+        Object.keys(CONFIG.FFXIV.gear_subcategories).map((k) => [k, ""]),
       ),
       ...foundry.utils.deepClone(actor.system.equippedGear || {}),
     };
@@ -990,13 +1095,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     // Blank stored categories represent the default Arms option.
     const defaultCategory =
-      CONFIG.FF_XIV.gear_subcategories.Arms?.label ??
-      Object.values(CONFIG.FF_XIV.gear_subcategories)[0]?.label ??
+      CONFIG.FFXIV.gear_subcategories.Arms?.label ??
+      Object.values(CONFIG.FFXIV.gear_subcategories)[0]?.label ??
       "";
     const selectedCategory = this.item.system.category || defaultCategory;
-    const categoryKey = Object.keys(CONFIG.FF_XIV.gear_subcategories).find(
+    const categoryKey = Object.keys(CONFIG.FFXIV.gear_subcategories).find(
       (key) =>
-        CONFIG.FF_XIV.gear_subcategories[key].label ===
+        CONFIG.FFXIV.gear_subcategories[key].label ===
         selectedCategory,
     );
 
@@ -1076,6 +1181,57 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.element
       .querySelectorAll(".editor-content[data-edit]")
       .forEach((div) => this._activateEditor?.(div));
+  }
+
+  _captureSheetScroll() {
+    const root = this.element;
+    if (!root) return;
+
+    const selectors = [
+      ".window-content",
+      ".sheet-body",
+      ".sheet-body .tab.active",
+    ];
+
+    this._pendingSheetScrollPositions = selectors.flatMap((selector) => {
+      const element = root.matches?.(selector)
+        ? root
+        : root.querySelector(selector);
+      if (!element) return [];
+      return [
+        {
+          selector,
+          scrollTop: element.scrollTop,
+          scrollLeft: element.scrollLeft,
+        },
+      ];
+    });
+  }
+
+  _restoreSheetScroll() {
+    const positions = this._pendingSheetScrollPositions;
+    if (!positions?.length) return;
+    const restore = () => {
+      for (const position of positions) {
+        const root = this.element;
+        const element = root?.matches?.(position.selector)
+          ? root
+          : root?.querySelector(position.selector);
+        if (!element) continue;
+        element.scrollTop = position.scrollTop;
+        element.scrollLeft = position.scrollLeft;
+      }
+      if (this._pendingSheetScrollPositions === positions) {
+        this._pendingSheetScrollPositions = null;
+      }
+    };
+
+    requestAnimationFrame(() => {
+      restore();
+      setTimeout(() => {
+        if (this._pendingSheetScrollPositions === positions) restore();
+      }, 50);
+    });
   }
 
   _activateFormulaFieldVisibility() {

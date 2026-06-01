@@ -242,6 +242,10 @@
 
 /*Nav*/
 .pet nav.nav-sub-tabs {
+  --pet-tab-count: 2;
+  --pet-add-width: 34px;
+  --pet-add-gap: 6px;
+  --pet-tab-width: calc((100% - var(--pet-add-width) - (2 * var(--pet-add-gap))) / var(--pet-tab-count));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -256,12 +260,20 @@
 }
 
 .pet nav.nav-sub-tabs .sub-tab {
-  width: calc((100% - 34px - 12px) / 2) !important;
-  flex: 0 0 calc((100% - 34px - 12px) / 2) !important;
+  width: var(--pet-tab-width) !important;
+  flex: 0 0 var(--pet-tab-width) !important;
   min-height: 28px;
   padding: 3px 8px !important;
   font-size: 12px;
   line-height: 1.1;
+}
+
+.pet nav.nav-sub-tabs:has(.sub-tab[data-tab="effects"]) {
+  --pet-tab-count: 3;
+}
+
+.pet nav.nav-sub-tabs:has(.sub-tab[data-tab="effects"]) .sub-tab {
+  padding: 2px 5px !important;
 }
 
 .pet nav.nav-sub-tabs .npc-add-ability {

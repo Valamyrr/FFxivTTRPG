@@ -9,6 +9,7 @@
 @import url("actor/augments.css");
 @import url("actor/profile.css");
 @import url("actor/pet.css");
+@import url("actor/effects.css");
 
 .application.ffxiv.actor {
   overflow: visible;

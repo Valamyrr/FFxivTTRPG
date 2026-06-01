@@ -743,9 +743,10 @@
 
 /*Nav*/
 .npc nav.nav-sub-tabs {
-  --npc-tab-width: 38%;
+  --npc-tab-count: 2;
   --npc-add-width: 34px;
   --npc-add-gap: 6px;
+  --npc-tab-width: calc((100% - var(--npc-add-width) - (2 * var(--npc-add-gap))) / var(--npc-tab-count));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -769,9 +770,17 @@
   line-height: 1.1;
 }
 
+.npc nav.nav-sub-tabs:has(.sub-tab[data-tab="effects"]) {
+  --npc-tab-count: 3;
+}
+
+.npc nav.nav-sub-tabs:has(.sub-tab[data-tab="effects"]) .sub-tab {
+  padding: 2px 5px !important;
+}
+
 .npc nav.nav-sub-tabs .npc-add-ability {
   position: absolute;
-  left: calc((100% - (2 * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
+  left: calc((100% - (var(--npc-tab-count) * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
   top: calc(50% + 1px);
   transform: translateY(-50%);
   transition: none;
@@ -799,7 +808,7 @@
 
 .npc nav.nav-sub-tabs:has(.sub-tab[data-tab="traits"].active) .npc-add-ability {
   left: auto;
-  right: calc((100% - (2 * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
+  right: calc((100% - (var(--npc-tab-count) * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
   clip-path: polygon(15% 0, 100% 0, 100% 100%, 15% 100%, 0 50%);
 }
 

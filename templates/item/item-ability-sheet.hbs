@@ -18,7 +18,12 @@
   <hr>
   {{! Sheet Body }}
   <section class="sheet-body">
-    <div class="attributes item-details-card">
+    <nav class="sheet-tabs tabs" data-group="primary">
+      <a class="item" data-tab="description">{{localize "FFXIV.CharacterSheet.Info"}}</a>
+      <a class="item" data-tab="effects">{{localize "FFXIV.CharacterSheet.Effects"}}</a>
+    </nav>
+    <div class="tab description" data-group="primary" data-tab="description">
+      <div class="attributes item-details-card">
       <div class="tags-container">
         <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label>
         <button type="button" class="add-tag">+</button>
@@ -74,16 +79,16 @@
             <input name="system.cost" type="text" value="{{item.system.cost}}" />
           </div>
         </div>
-        <div class="resource flex-group-center">
+        <div class="resource flex-group-center ability-target-field">
           <label for="system.target" class="resource-label">{{ localize "FFXIV.Abilities.Target" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.target" type="text" value="{{item.system.target}}" />
+            <textarea name="system.target" rows="3">{{item.system.target}}</textarea>
           </div>
         </div>
-        <div class="resource flex-group-center">
+        <div class="resource flex-group-center ability-range-field">
           <label for="system.range" class="resource-label">{{ localize "FFXIV.Abilities.Range" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.range" type="text" value="{{item.system.range}}" />
+            <textarea name="system.range" rows="3">{{item.system.range}}</textarea>
           </div>
         </div>
         <div class="resource flex-group-center">
@@ -263,35 +268,6 @@
           </div>
         </div>
       </div>
-      <hr>
-      <div class="status-effects-editor">
-        <label class="resource-label">{{ localize "FFXIV.Abilities.StatusEffect" }}</label>
-        <button type="button" class="add-status-effect">+</button>
-        <ul class="status-effect-list">
-          {{#each itemStatusEffects as |entry index| }}
-            <li>
-              <select class="ffxiv-text-center status-effect-id"
-                      data-index="{{index}}">
-                <option value="" {{#unless entry.id}}selected{{/unless}}>{{ localize "FFXIV.None" }}
-                </option>
-                {{#each ../statusEffects as |effect| }}
-                  <option value="{{effect.id}}" {{#if (eq effect.id entry.id) }}selected{{/if}}>
-                    {{localize effect.label}}
-                  </option>
-                {{/each}}
-              </select>
-              <select class="ffxiv-text-center status-effect-action"
-                      data-index="{{index}}">
-                <option value="true" {{#if entry.action }}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusAdd" }}
-                </option>
-                <option value="false" {{#unless entry.action}}selected{{/unless}}>{{ localize "FFXIV.Abilities.StatusRemove" }}
-                </option>
-              </select>
-              <button type="button" class="remove-status-effect" data-index="{{index}}">x</button>
-            </li>
-          {{/each}}
-        </ul>
-      </div>
       {{#if hasMarkerTag }}
         <hr>
         <div class="resources grid grid-2col">
@@ -347,6 +323,96 @@
                    min="0"
                    value="{{item.system.limitations_max}}" />
           </div>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="tab effects" data-group="primary" data-tab="effects">
+      <div class="attributes item-details-card">
+        <div class="status-effects-editor">
+          <div class="status-effects-header">
+            <label class="resource-label">{{ localize "FFXIV.Abilities.LinkedActiveEffects" }}</label>
+            <button type="button" class="effect-control linked-effect-create" data-action="create">+</button>
+          </div>
+          <ul class="status-effect-list ability-linked-effect-list">
+            {{#each abilityLinkedEffects as |effect| }}
+              <li data-effect-id="{{effect.id}}">
+                <div class="ability-effect-name">
+                  <img src="{{effect.icon}}" alt="{{effect.name}}" width="24" height="24" />
+                  <span>{{effect.name}}</span>
+                </div>
+                <select class="ffxiv-text-center ability-effect-scope"
+                        data-effect-id="{{effect.id}}">
+                  <option value="target" {{#if (eq effect.applyTo "target")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToTarget"}}</option>
+                  <option value="self" {{#if (eq effect.applyTo "self")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToSelf"}}</option>
+                </select>
+                <select class="ffxiv-text-center ability-effect-action"
+                        data-effect-id="{{effect.id}}">
+                  <option value="add" {{#if (eq effect.applyAction "add")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusAdd"}}</option>
+                  <option value="remove" {{#if (eq effect.applyAction "remove")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusRemove"}}</option>
+                </select>
+                <div class="effect-controls">
+                  <a class="effect-control"
+                     data-action="toggle"
+                     title="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}">
+                    <i class="fas {{#if effect.disabled}}fa-toggle-off{{else}}fa-toggle-on{{/if}}"></i>
+                  </a>
+                  <a class="effect-control"
+                     data-action="edit"
+                     title="{{localize 'DOCUMENT.Update' type=(localize 'DOCUMENT.ActiveEffect')}}">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a class="effect-control"
+                     data-action="delete"
+                     title="{{localize 'DOCUMENT.Delete' type=(localize 'DOCUMENT.ActiveEffect')}}">
+                    <span class="delete-icon">×</span>
+                  </a>
+                </div>
+              </li>
+            {{/each}}
+            {{#unless abilityLinkedEffects.length}}
+              <li>{{localize "FFXIV.CharacterSheet.NoEffects"}}</li>
+            {{/unless}}
+          </ul>
+        </div>
+        <hr>
+        <div class="status-effects-editor">
+          <label class="resource-label">{{ localize "FFXIV.Abilities.StatusEffect" }}</label>
+          <button type="button" class="add-status-effect">+</button>
+          <ul class="status-effect-list">
+            {{#each itemStatusEffects as |entry index| }}
+              <li>
+                <select class="ffxiv-text-center status-effect-id"
+                        data-index="{{index}}">
+                  <option value="" {{#unless entry.id}}selected{{/unless}}>{{ localize "FFXIV.None" }}
+                  </option>
+                  {{#each ../statusEffects as |effect| }}
+                    <option value="{{effect.id}}" {{#if (eq effect.id entry.id) }}selected{{/if}}>
+                      {{localize effect.label}}
+                    </option>
+                  {{/each}}
+                </select>
+                <select class="ffxiv-text-center status-effect-action"
+                        data-index="{{index}}">
+                  <option value="true" {{#if entry.action }}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusAdd" }}
+                  </option>
+                  <option value="false" {{#unless entry.action}}selected{{/unless}}>{{ localize "FFXIV.Abilities.StatusRemove" }}
+                  </option>
+                </select>
+                {{#if entry.stackable}}
+                  <input class="ffxiv-text-center status-effect-stacks"
+                         data-index="{{index}}"
+                         type="number"
+                         min="1"
+                         value="{{entry.stacks}}"
+                         title="{{localize 'FFXIV.Abilities.StatusStacks'}}" />
+                {{else}}
+                  <span></span>
+                {{/if}}
+                <button type="button" class="remove-status-effect" data-index="{{index}}">x</button>
+              </li>
+            {{/each}}
+          </ul>
         </div>
       </div>
     </div>

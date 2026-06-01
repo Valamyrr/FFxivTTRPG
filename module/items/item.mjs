@@ -1002,8 +1002,16 @@ export class FFXIVItem extends Item {
     let buttons = "<div style='display:flex;flex-wrap: wrap;'>";
     if (this._hasFormula(this.system.alternate_formula))
       buttons += `<button class="ffxiv-roll-alternate" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Chat.RollAlternateFormula")}</button>`;
-    if (this._getStatusEffectEntries().length)
-      buttons += `<button class="ffxiv-apply-status" data-item-id="${this._id}" data-actor-id="${this.parent._id}">${game.i18n.localize("FFXIV.Abilities.StatusEffect")}</button>`;
+    const statusEntries = this._getStatusEffectEntries();
+    if (statusEntries.length) {
+      const encodedStatusEntries = encodeURIComponent(
+        JSON.stringify(statusEntries),
+      );
+      buttons += `<button class="ffxiv-apply-status" data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent._id}" data-actor-uuid="${this.parent?.uuid ?? ""}" data-source-uuid="${this.uuid}" data-status-entries="${encodedStatusEntries}">${game.i18n.localize("FFXIV.Abilities.StatusEffect")}</button>`;
+    }
+    if ((this.effects?.size || 0) > 0) {
+      buttons += `<button class="ffxiv-apply-active-effects" data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent._id}" data-actor-uuid="${this.parent?.uuid ?? ""}">${game.i18n.localize("FFXIV.Abilities.ApplyActiveEffects")}</button>`;
+    }
     if (this._hasHitRoll() && !this._shouldAutoCheckBeforeBase()) {
       const hitLabel =
         !this._hasDirectRoll() && this._hasCheck()
@@ -1038,6 +1046,7 @@ export class FFXIVItem extends Item {
         .map((entry) => ({
           id: entry?.id ?? "",
           action: entry?.action !== false,
+          stacks: Math.max(1, Number.parseInt(entry?.stacks, 10) || 1),
         }))
         .filter((entry) => entry.id);
     }
@@ -1046,6 +1055,7 @@ export class FFXIVItem extends Item {
       {
         id: this.system.status_effect,
         action: this.system.status_action !== false,
+        stacks: 1,
       },
     ];
   }
@@ -1115,11 +1125,11 @@ export class FFXIVItem extends Item {
     };
 
     for (const [key, attribute] of Object.entries(
-      CONFIG.FF_XIV.attributes || {},
+      CONFIG.FFXIV.attributes || {},
     )) {
       if (attribute.label !== check) continue;
       const abbreviation =
-        CONFIG.FF_XIV.attributesAbbreviations?.[key]?.value ||
+        CONFIG.FFXIV.attributesAbbreviations?.[key]?.value ||
         aliases[attribute.label];
       if (abbreviation) return `1d20 + @${abbreviation}`;
     }
