@@ -32,7 +32,8 @@
       <div class="augment-effects">
         {{#if system.base_effect }}
           <div class="effect">
-            <strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{system.base_effect}}
+            <strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong>
+            {{#if enriched.base_effect}}{{{enriched.base_effect}}}{{else}}{{system.base_effect}}{{/if}}
           </div>
         {{/if}}
       </div>

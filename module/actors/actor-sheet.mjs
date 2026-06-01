@@ -697,12 +697,18 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         event.stopPropagation();
         debugLog(event);
 
-        const targetPosition = event.currentTarget.dataset.itemPosition;
+        const dropTarget = event.currentTarget;
+        if (!dropTarget) {
+          isDraggingItem = false;
+          return this._renderWithoutEnrichment();
+        }
+
+        const targetPosition = dropTarget.dataset.itemPosition;
         debugLog('Dropped on:', targetPosition || 'empty slot');
+        const targetItemId = dropTarget.dataset.itemId;
 
         const dragData = await foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
         const sourceItem = dragData?.uuid ? await fromUuid(dragData.uuid) : null;
-        const targetItemId = event.currentTarget.dataset.itemId;
 
         if (!sourceItem || sourceItem.documentName !== "Item") {
           isDraggingItem = false;
@@ -897,25 +903,24 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     for (let i of context.items) {
       i.img = i.img || Item.DEFAULT_ICON;
 
-      if (i.type === 'consumables') {
+      if (i.type === "consumable") {
         consumables.push(i);
       }
-      if (i.type === 'primary_ability') {
+      if (getAbilitySubtype(i) === "primary_ability") {
         primary_abilities.push(i);
       }
-      if (i.type === 'secondary_ability') {
+      if (getAbilitySubtype(i) === "secondary_ability") {
         secondary_abilities.push(i);
       }
-      if (i.type === 'instant_ability') {
+      if (getAbilitySubtype(i) === "instant_ability") {
         instant_abilities.push(i);
       }
-      if (i.type === 'limit_break') {
+      if (getAbilitySubtype(i) === "limit_break") {
         limit_break.push(i);
       }
-      if (i.type === 'traits') {
+      if (i.type === "trait") {
         traits.push(i);
       }
-
     }
 
     context.consumables = consumables;
