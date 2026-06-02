@@ -579,6 +579,7 @@ export class FFXIVItem extends Item {
    */
   async roll() {
     if (!(await this._spendHPCostIfNeeded())) return;
+    if (!(await this._consumeLimitationIfNeeded())) return;
 
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
@@ -649,6 +650,34 @@ export class FFXIVItem extends Item {
     }
 
     await this._consumeFromInventoryIfNeeded();
+  }
+
+  async _consumeLimitationIfNeeded() {
+    if (this.type !== "ability") return true;
+    if (this.parent?.documentName !== "Actor") return true;
+
+    const max = Number.parseInt(this.system?.limitations_max, 10);
+    if (!Number.isFinite(max) || max <= 0) return true;
+
+    const limitationsStatus = Array.isArray(this.system?.limitations_status)
+      ? this.system.limitations_status.slice(0, max)
+      : [];
+    while (limitationsStatus.length < max) limitationsStatus.push(false);
+
+    const index = limitationsStatus.findIndex((status) => !status);
+    if (index === -1) {
+      ui.notifications.warn(
+        game.i18n.localize("FFXIV.Notifications.LimitationsConsumed"),
+      );
+      return false;
+    }
+
+    limitationsStatus[index] = true;
+    await this.update(
+      { "system.limitations_status": limitationsStatus },
+      { render: false },
+    );
+    return true;
   }
 
   async _spendHPCostIfNeeded() {
@@ -1009,7 +1038,11 @@ export class FFXIVItem extends Item {
       );
       buttons += `<button class="ffxiv-apply-status" data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent._id}" data-actor-uuid="${this.parent?.uuid ?? ""}" data-source-uuid="${this.uuid}" data-status-entries="${encodedStatusEntries}">${game.i18n.localize("FFXIV.Abilities.StatusEffect")}</button>`;
     }
-    if ((this.effects?.size || 0) > 0) {
+    const manuallyAppliedEffects = Array.from(this.effects ?? []).filter((effect) => {
+      const applyTo = String(effect.getFlag("ffxiv", "applyTo") || "target").trim().toLowerCase();
+      return applyTo !== "self_auto";
+    });
+    if (manuallyAppliedEffects.length) {
       buttons += `<button class="ffxiv-apply-active-effects" data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent._id}" data-actor-uuid="${this.parent?.uuid ?? ""}">${game.i18n.localize("FFXIV.Abilities.ApplyActiveEffects")}</button>`;
     }
     if (this._hasHitRoll() && !this._shouldAutoCheckBeforeBase()) {

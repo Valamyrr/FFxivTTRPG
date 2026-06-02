@@ -1,6 +1,8 @@
 <div class="item-card"
      data-item-id="{{item._id}}"
-     data-actor-id="{{item.parent._id}}">
+     data-item-uuid="{{item.uuid}}"
+     data-actor-id="{{item.parent._id}}"
+     data-actor-uuid="{{item.parent.uuid}}">
   <div class="item-card-info">
     <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon" width="48" height="48">
     <div class="item-dialog-header">

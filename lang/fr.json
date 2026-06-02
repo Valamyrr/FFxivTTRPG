@@ -244,6 +244,7 @@
       "UndoActiveEffects": "Annuler les effets actifs",
       "ApplyToTarget": "Cible",
       "ApplyToSelf": "Soi",
+      "ApplyToSelfAuto": "Soi (auto)",
       "MarkerArea": "Taille de la zone d'effet",
       "MarkerTrigger": "Temps avant activation",
       "MarkerEffect": "Effets de la zone",
@@ -410,6 +411,8 @@
       "Confirm": "Êtes-vous sûr de vouloir effectuer cette action ?",
       "Cancel": "Annuler",
       "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?",
+      "ResetLimitationsTitle": "Réinitialiser les restrictions",
+      "ResetLimitations": "Réinitialiser les restrictions de tous les acteurs ?",
       "Yes": "Oui",
       "No": "Non"
     },
@@ -450,6 +453,7 @@
       "ItemMigrationComplete": "La migration des données d'objets est terminée avec succès.",
       "ItemMigrationFailed": "La migration des données d'objets a échoué. Consultez la console du navigateur pour plus de détails.",
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)",
+      "LimitationsConsumed": "Toutes les restrictions de cette compétence sont consommées.",
       "CharacterSheetLocked": "Cette fiche de personnage est verrouillée. Activez le mode modification pour la changer.",
       "ActorEffectFromItemLocked": "Cet effet provient d'un objet. Modifiez-le ou supprimez-le depuis la compétence/l'objet source."
     },

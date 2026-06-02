@@ -613,6 +613,32 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   font-weight: 700;
 }
 
+.ffxiv .effect-row {
+  min-height: 64px;
+}
+
+.ffxiv .effect-main,
+.ffxiv .ability-effect-name {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ffxiv .effect-icon,
+.ffxiv .ability-effect-name img {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 64px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.ffxiv .effect-meta,
+.ffxiv .ability-effect-name span {
+  min-width: 0;
+}
+
 .ffxiv .popout-editor-window,
 .ffxiv .popout-editor-window .sheet-body,
 .ffxiv .popout-editor-window textarea {

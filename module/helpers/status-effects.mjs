@@ -230,7 +230,7 @@ async function createStatusStack(
   });
   if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
-  return ActiveEffectClass.create(effect.toObject(), { parent: actor });
+  return ActiveEffectClass.create(effect.toObject(), { parent: actor, render: false });
 }
 
 async function collapseLegacyStatusStacks(
@@ -251,7 +251,7 @@ async function collapseLegacyStatusStacks(
     [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]: targetCount,
   };
   if (origin) updateData.origin = origin;
-  await primary.update(updateData);
+  await primary.update(updateData, { render: false });
 
   if (existing.length > 1) {
     const duplicateIds = existing
@@ -259,7 +259,7 @@ async function collapseLegacyStatusStacks(
       .map((effect) => effect.id)
       .filter(Boolean);
     if (duplicateIds.length)
-      await actor.deleteEmbeddedDocuments("ActiveEffect", duplicateIds);
+      await actor.deleteEmbeddedDocuments("ActiveEffect", duplicateIds, { render: false });
   }
   return primary;
 }
@@ -276,7 +276,7 @@ async function setStatusStackCount(
   if (normalizedCount <= 0) {
     if (!existing.length) return false;
     const ids = existing.map((effect) => effect.id).filter(Boolean);
-    if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+    if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
     return true;
   }
 
@@ -313,7 +313,7 @@ async function setNonStackableStatusOrigin(actor, statusId, origin) {
   });
   for (const effect of effects) {
     if (effect.origin === origin) continue;
-    await effect.update({ origin });
+    await effect.update({ origin }, { render: false });
   }
 }
 
@@ -332,7 +332,7 @@ export async function applyStatusEffectChange(
       { origin },
     );
   }
-  const result = await actor.toggleStatusEffect(statusId, { active, overlay });
+  const result = await actor.toggleStatusEffect(statusId, { active, overlay, render: false });
   if (active !== false && origin) {
     await setNonStackableStatusOrigin(actor, statusId, origin);
   }

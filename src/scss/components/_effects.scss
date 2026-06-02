@@ -17,3 +17,29 @@
   font-family: "Segoe UI Symbol", "Noto Sans Symbols", sans-serif;
   font-weight: normal;
 }
+
+.effect-row {
+  min-height: 64px;
+}
+
+.effect-main,
+.ability-effect-name {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.effect-icon,
+.ability-effect-name img {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 64px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.effect-meta,
+.ability-effect-name span {
+  min-width: 0;
+}

@@ -53,31 +53,45 @@
     <section class="sheet-body">
       {{!-- Fight Tab --}}
       <div class="tab abilities" data-group="primary" data-tab="abilities">
-        {{> "systems/ffxiv/templates/actor/parts/actor-abilities.hbs" }}
+        {{#if renderedActorTabs.abilities}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-abilities.hbs" }}
+        {{/if}}
       </div>
       {{!-- Biography Tab --}}
       <div class="tab attributes" data-group="primary" data-tab="attributes">
-        {{> "systems/ffxiv/templates/actor/parts/actor-attributes.hbs" }}
+        {{#if renderedActorTabs.attributes}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-attributes.hbs" }}
+        {{/if}}
       </div>
       {{!-- Biography Tab --}}
       <div class="tab profile" data-group="primary" data-tab="roleplay">
-        {{> "systems/ffxiv/templates/actor/parts/actor-profile.hbs" }}
+        {{#if renderedActorTabs.roleplay}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-profile.hbs" }}
+        {{/if}}
       </div>
       {{!-- Owned Items Tab --}}
       <div class="tab items" data-group="primary" data-tab="items">
-        {{> "systems/ffxiv/templates/actor/parts/actor-items.hbs"}}
+        {{#if renderedActorTabs.items}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-items.hbs"}}
+        {{/if}}
       </div>
       {{!-- Companions Tab --}}
       <div class="tab items" data-group="primary" data-tab="companions">
-        {{> "systems/ffxiv/templates/actor/parts/actor-companions.hbs"}}
+        {{#if renderedActorTabs.companions}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-companions.hbs"}}
+        {{/if}}
       </div>
       {{!-- Effects Tab --}}
       <div class="tab effects" data-group="primary" data-tab="effects">
-        {{> "systems/ffxiv/templates/actor/parts/actor-effects.hbs"}}
+        {{#if renderedActorTabs.effects}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-effects.hbs"}}
+        {{/if}}
       </div>
       {{!-- Configuration Tab --}}
       <div class="tab settings" data-group="primary" data-tab="settings">
-        {{> "systems/ffxiv/templates/actor/parts/actor-settings.hbs"}}
+        {{#if renderedActorTabs.settings}}
+          {{> "systems/ffxiv/templates/actor/parts/actor-settings.hbs"}}
+        {{/if}}
       </div>
     </section>
   </div>

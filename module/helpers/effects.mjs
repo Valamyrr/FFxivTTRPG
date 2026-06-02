@@ -33,6 +33,9 @@ export function onManageActiveEffect(event, owner, options = {}) {
         disabled: effectType === "inactive",
       };
       if (owner?.documentName === "Item" && owner?.type === "ability") {
+        effectData.name = owner.name;
+        effectData.img = owner.img;
+        effectData.icon = owner.img;
         effectData.transfer = false;
         effectData["flags.ffxiv.applyTo"] = "target";
         effectData["flags.ffxiv.applyAction"] = "add";

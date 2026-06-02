@@ -338,13 +338,14 @@
             {{#each abilityLinkedEffects as |effect| }}
               <li data-effect-id="{{effect.id}}">
                 <div class="ability-effect-name">
-                  <img src="{{effect.icon}}" alt="{{effect.name}}" width="24" height="24" />
+                  <img src="{{effect.icon}}" alt="{{effect.name}}" />
                   <span>{{effect.name}}</span>
                 </div>
                 <select class="ffxiv-text-center ability-effect-scope"
                         data-effect-id="{{effect.id}}">
                   <option value="target" {{#if (eq effect.applyTo "target")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToTarget"}}</option>
                   <option value="self" {{#if (eq effect.applyTo "self")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToSelf"}}</option>
+                  <option value="self_auto" {{#if (eq effect.applyTo "self_auto")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToSelfAuto"}}</option>
                 </select>
                 <select class="ffxiv-text-center ability-effect-action"
                         data-effect-id="{{effect.id}}">

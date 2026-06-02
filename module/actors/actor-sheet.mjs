@@ -44,6 +44,32 @@ const DEFAULT_ATTRIBUTE_ICONS = {
   attributesImgSpeed: "systems/ffxiv/assets/attribute-icons/sightseeing-log.webp",
 };
 
+const CHARACTER_TAB_PARTIALS = {
+  abilities: "systems/ffxiv/templates/actor/parts/actor-abilities.hbs",
+  attributes: "systems/ffxiv/templates/actor/parts/actor-attributes.hbs",
+  roleplay: "systems/ffxiv/templates/actor/parts/actor-profile.hbs",
+  items: "systems/ffxiv/templates/actor/parts/actor-items.hbs",
+  companions: "systems/ffxiv/templates/actor/parts/actor-companions.hbs",
+  effects: "systems/ffxiv/templates/actor/parts/actor-effects.hbs",
+  settings: "systems/ffxiv/templates/actor/parts/actor-settings.hbs",
+};
+
+const CHARACTER_TABS = Object.keys(CHARACTER_TAB_PARTIALS);
+
+const ACTOR_ENRICHED_FIELDS = {
+  roleplay: ["profile_trait.effect", "biography"],
+  companions: ["traits"],
+};
+
+const ITEM_ENRICHED_FIELDS = {
+  ability: ["base_effect", "direct_hit", "limitations", "marker_area", "origin", "marker_trigger", "marker_effect", "description"],
+  trait: ["description"],
+  limit_break: ["description"],
+  augment: ["base_effect"],
+  minion: ["traits", "description"],
+  title: ["description"],
+};
+
 /**
  * ApplicationV2 implementation of the FFXIV actor sheet.
  * @extends {ActorSheetV2}
@@ -125,6 +151,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const skipEnrichment = options?.ffxivSkipEnrichment === true;
+    const renderedTabs = this._getRenderedActorTabs(options);
 
     const actorData = this.document.toObject(false);
     context.actor = this.actor;
@@ -137,6 +164,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.editable = this.document.isOwner;
     context.actorEditMode = this._isActorEditMode();
     context.limited = this.actor.limited;
+    context.renderedActorTabs = Object.fromEntries(CHARACTER_TABS.map(tab => [tab, renderedTabs.has(tab)]));
 
     context.settings = {
       "showGear": game.settings.get('ffxiv', 'toggleGear'),
@@ -161,13 +189,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         if (!pet) continue;
 
         const petData = pet.toObject();
-        if (!skipEnrichment) {
-          petData.enriched = await this.constructor.enrichAllStrings(petData.system, this.actor.getRollData(), pet);
-          for (const item of petData.items || []) {
-            item.enriched = await this.constructor.enrichAllStrings(item.system, this.actor.getRollData(), item);
-          }
-        }
-
         context.pets.push(petData);
       }
     }
@@ -190,19 +211,89 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     if (!skipEnrichment) {
-      context.enriched = await this.constructor.enrichAllStrings(this.actor.system, this.actor.getRollData(), this.actor);
-      if (["character", "npc", "pet"].includes(actorData.type)) {
-        for (const item of context.items) {
-          item.enriched = await this.constructor.enrichAllStrings(item.system, this.actor.getRollData(), item);
-        }
-      }
+      await this._prepareEnrichedContext(context, renderedTabs);
       this._cacheEnrichedContext(context);
     } else {
       this._applyCachedEnrichment(context);
     }
 
     context.effects = prepareActiveEffectCategories(this.actor.effects.contents);
+    this._effectsPanelSignature = this._getEffectsPanelSignature(context.effects);
     return context;
+  }
+
+  _getRenderedActorTabs(options = {}) {
+    if (this.actor?.type !== "character") return new Set(CHARACTER_TABS);
+    if (options?.ffxivRenderAllTabs === true) return new Set(CHARACTER_TABS);
+    const requested = Array.isArray(options?.ffxivRenderTabs) ? options.ffxivRenderTabs : null;
+    if (requested?.length) return new Set(requested.filter(tab => CHARACTER_TABS.includes(tab)));
+    const tab = this.tabGroups?.primary || "abilities";
+    return new Set([CHARACTER_TABS.includes(tab) ? tab : "abilities"]);
+  }
+
+  async _prepareEnrichedContext(context, renderedTabs) {
+    context.enriched = {};
+
+    const rollData = this.actor.getRollData();
+    const actorTabs = this.actor.type === "character" ? renderedTabs : new Set(CHARACTER_TABS);
+
+    if (actorTabs.has("roleplay")) {
+      context.enriched = {
+        ...context.enriched,
+        ...await this.constructor.enrichStringFields(this.actor.system, ACTOR_ENRICHED_FIELDS.roleplay, rollData, this.actor),
+      };
+    }
+
+    const itemTabs = this.actor.type === "character" ? actorTabs : new Set(["abilities", "items", "companions", "roleplay"]);
+    for (const item of context.items || []) {
+      item.enriched = await this._enrichItemForTabs(item, itemTabs);
+    }
+
+    if (this.actor.type !== "character" && ACTOR_ENRICHED_FIELDS.companions?.length) {
+      context.enriched = {
+        ...context.enriched,
+        ...await this.constructor.enrichStringFields(this.actor.system, ACTOR_ENRICHED_FIELDS.companions, rollData, this.actor),
+      };
+    }
+
+    if (!actorTabs.has("companions")) return;
+
+    for (const pet of context.pets || []) {
+      const petDocument = game.actors.get(pet._id);
+      pet.enriched = await this.constructor.enrichStringFields(
+        pet.system,
+        ACTOR_ENRICHED_FIELDS.companions,
+        petDocument?.getRollData?.() ?? rollData,
+        petDocument ?? this.actor,
+      );
+      for (const item of pet.items || []) {
+        item.enriched = await this._enrichItemForTabs(item, new Set(["abilities"]), petDocument ?? this.actor);
+      }
+    }
+  }
+
+  async _enrichItemForTabs(item, renderedTabs, relativeTo = null) {
+    const fields = new Set();
+    const subtype = getAbilitySubtype(item);
+
+    if (renderedTabs.has("abilities")) {
+      if (item.type === "ability") ITEM_ENRICHED_FIELDS.ability.forEach(field => fields.add(field));
+      if (item.type === "trait") ITEM_ENRICHED_FIELDS.trait.forEach(field => fields.add(field));
+      if (subtype === "limit_break") ITEM_ENRICHED_FIELDS.limit_break.forEach(field => fields.add(field));
+    }
+    if (renderedTabs.has("items") && item.type === "augment") {
+      ITEM_ENRICHED_FIELDS.augment.forEach(field => fields.add(field));
+    }
+    if (renderedTabs.has("companions") && item.type === "minion") {
+      ITEM_ENRICHED_FIELDS.minion.forEach(field => fields.add(field));
+    }
+    if (renderedTabs.has("roleplay") && item.type === "title") {
+      ITEM_ENRICHED_FIELDS.title.forEach(field => fields.add(field));
+    }
+
+    if (!fields.size) return {};
+    const document = relativeTo?.items?.get?.(item._id) ?? this.actor.items.get(item._id) ?? relativeTo ?? this.actor;
+    return this.constructor.enrichStringFields(item.system, Array.from(fields), this.actor.getRollData(), document);
   }
 
   _getNpcHeaderDisposition() {
@@ -216,25 +307,39 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   _cacheEnrichedContext(context) {
-    const itemMap = new Map();
+    const existing = this._enrichedCache;
+    const itemMap = new Map(existing?.items ?? []);
     for (const item of context.items || []) {
-      itemMap.set(item._id, foundry.utils.deepClone(item.enriched || {}));
+      if (item.enriched) itemMap.set(item._id, foundry.utils.deepClone({
+        ...(itemMap.get(item._id) || {}),
+        ...item.enriched,
+      }));
     }
 
-    const petMap = new Map();
+    const petMap = new Map(existing?.pets ?? []);
     for (const pet of context.pets || []) {
-      const petItems = new Map();
+      const existingPet = petMap.get(pet._id) || {};
+      const petItems = new Map(existingPet.items ?? []);
       for (const item of pet.items || []) {
-        petItems.set(item._id, foundry.utils.deepClone(item.enriched || {}));
+        if (item.enriched) petItems.set(item._id, foundry.utils.deepClone({
+          ...(petItems.get(item._id) || {}),
+          ...item.enriched,
+        }));
       }
       petMap.set(pet._id, {
-        enriched: foundry.utils.deepClone(pet.enriched || {}),
+        enriched: foundry.utils.deepClone({
+          ...(existingPet.enriched || {}),
+          ...(pet.enriched || {}),
+        }),
         items: petItems
       });
     }
 
     this._enrichedCache = {
-      actor: foundry.utils.deepClone(context.enriched || {}),
+      actor: foundry.utils.deepClone({
+        ...(existing?.actor || {}),
+        ...(context.enriched || {}),
+      }),
       items: itemMap,
       pets: petMap
     };
@@ -259,18 +364,39 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
-  async _refreshEffectsPanel() {
+  _getEffectsPanelSignature(effects = null) {
+    const categories = effects ?? prepareActiveEffectCategories(this.actor.effects.contents);
+    return JSON.stringify(categories.all.map((effect) => [
+      effect.id,
+      effect.type,
+      effect.disabled,
+      effect.ffxivStackCount,
+      effect.img || effect.icon || "",
+      effect.name,
+    ]));
+  }
+
+  async _refreshEffectsPanel(effects = null, signature = null) {
     const root = this.element;
     if (!root) return;
     const current = root.querySelector(".actor-effects");
     if (!current) return;
-    const effects = prepareActiveEffectCategories(this.actor.effects.contents);
+    effects ??= prepareActiveEffectCategories(this.actor.effects.contents);
+    signature ??= this._getEffectsPanelSignature(effects);
     const html = await renderTemplate("systems/ffxiv/templates/actor/parts/actor-effects.hbs", { effects });
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html.trim();
     const replacement = wrapper.firstElementChild;
     if (!replacement) return;
     current.replaceWith(replacement);
+    this._effectsPanelSignature = signature;
+  }
+
+  async _refreshEffectsPanelIfChanged() {
+    const effects = prepareActiveEffectCategories(this.actor.effects.contents);
+    const signature = this._getEffectsPanelSignature(effects);
+    if (signature === this._effectsPanelSignature) return;
+    await this._refreshEffectsPanel(effects, signature);
   }
 
   async _refreshCompanionsPanel() {
@@ -280,21 +406,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const current = tab?.querySelector(".actor-companions");
     if (!current) return;
 
-    const actorData = this.document.toObject(false);
-    const petIds = actorData.system?.pets || [];
-    const pets = [];
-    for (const id of petIds) {
-      const pet = game.actors.get(id);
-      if (!pet) continue;
-      pets.push(pet.toObject(false));
-    }
-
-    const html = await renderTemplate("systems/ffxiv/templates/actor/parts/actor-companions.hbs", {
-      actor: this.actor,
-      items: actorData.items ?? [],
-      system: actorData.system,
-      pets
+    const context = await this._prepareContext({
+      ffxivRenderTabs: ["companions"],
     });
+    const html = await renderTemplate("systems/ffxiv/templates/actor/parts/actor-companions.hbs", context);
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html.trim();
     const replacement = wrapper.firstElementChild;
@@ -632,9 +747,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       || links[0]?.dataset.tab || tabs[0]?.dataset.tab;
     if (!tabs.some(panel => panel.dataset.tab === initial)) initial = links[0]?.dataset.tab || tabs[0]?.dataset.tab;
 
-    const activate = (tab, { playSound = false } = {}) => {
+    const activate = async (tab, { playSound = false } = {}) => {
       const changed = this.tabGroups.primary !== tab;
       this.tabGroups.primary = tab;
+      const panel = tabs.find(panel => panel.dataset.tab === tab);
+      if (panel && !panel.childElementCount) await this._renderLazyActorTab(tab, panel);
+      if (this.tabGroups.primary !== tab) return;
       links.forEach(link => link.classList.toggle("active", link.dataset.tab === tab));
       tabs.forEach(panel => {
         const active = panel.dataset.tab === tab;
@@ -655,6 +773,35 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
 
     activate(initial);
+  }
+
+  async _renderLazyActorTab(tab, panel) {
+    const template = CHARACTER_TAB_PARTIALS[tab];
+    if (!template) return;
+
+    this._lazyTabRender ??= new Map();
+    if (this._lazyTabRender.has(tab)) {
+      await this._lazyTabRender.get(tab);
+      return;
+    }
+
+    const render = (async () => {
+      const context = await this._prepareContext({
+        ffxivRenderTabs: [tab],
+      });
+      panel.innerHTML = await foundry.applications.handlebars.renderTemplate(template, context);
+      this._activateProseMirrorEditors();
+      this.activateListeners($(this.element));
+      this._applyActorEditMode();
+      if (tab === "abilities") this._applyStoredAbilityTab();
+      if (tab === "companions") this._applyStoredCompanionTab();
+      if (tab === "attributes") this._updateSecondaryAttributeModifierFields();
+      if (this.actor.type === "character") this._updateManaBar();
+      if (this.actor.type === "character" || this.actor.type === "npc") this._updateHealthBar();
+    })().finally(() => this._lazyTabRender.delete(tab));
+
+    this._lazyTabRender.set(tab, render);
+    await render;
   }
 
   async _relocateInventoryItems() {
@@ -871,17 +1018,11 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return null;
   }
 
-  /**
-   * Recursively enrich all string fields in an object.
-   * @param {object} target The object to enrich
-   * @param {object} rollData The roll data for inline rolls
-   * @param {ClientDocument} relativeTo The document context
-   * @returns {Promise<object>} A new object with enriched HTML strings
-   */
-  static async enrichAllStrings(target, rollData, relativeTo) {
+  static async enrichStringFields(target, fields, rollData, relativeTo) {
     const enriched = {};
 
-    for (const [key, value] of Object.entries(target)) {
+    for (const key of fields) {
+      const value = foundry.utils.getProperty(target, key);
       if (typeof value === "string") {
         const html = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
           value,
@@ -893,9 +1034,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           }
         );
 
-        enriched[key] = html?.trim() ? html : value;
-      } else if (typeof value === "object" && value !== null) {
-        enriched[key] = await this.enrichAllStrings(value, rollData, relativeTo);
+        foundry.utils.setProperty(enriched, key, html?.trim() ? html : value);
       }
     }
     return enriched;

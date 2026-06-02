@@ -9,9 +9,12 @@ function getTurnStep(combatant) {
 export class FFXIVCombat extends Combat {
   /** @override */
   async startCombat() {
-    const startedCombat = await super.startCombat();
-    await this._applyStartingMpOverrides();
-    return startedCombat;
+    return this._withActorSheetScroll(async () => {
+      await this._confirmResetLimitations();
+      const startedCombat = await super.startCombat();
+      await this._applyStartingMpOverrides();
+      return startedCombat;
+    });
   }
 
   /** @override */
@@ -56,17 +59,41 @@ export class FFXIVCombat extends Combat {
   }
 
   /** @override */
+  async nextTurn() {
+    return this._withActorSheetScroll(() => super.nextTurn());
+  }
+
+  /** @override */
+  async previousTurn() {
+    return this._withActorSheetScroll(() => super.previousTurn());
+  }
+
+  /** @override */
+  async nextRound() {
+    return this._withActorSheetScroll(() => super.nextRound());
+  }
+
+  /** @override */
+  async previousRound() {
+    return this._withActorSheetScroll(() => super.previousRound());
+  }
+
+  /** @override */
   async _onEndTurn(combatant, context) {
-    await super._onEndTurn(combatant, context);
-    if (combatant?.actor?.type !== "character") return;
-    await this._removeInvokingStatus(combatant.actor);
+    return this._withActorSheetScroll(async () => {
+      await super._onEndTurn(combatant, context);
+      if (combatant?.actor?.type !== "character") return;
+      await this._removeInvokingStatus(combatant.actor);
+    });
   }
 
   /** @override */
   async _onStartTurn(combatant, context) {
-    await super._onStartTurn(combatant, context);
-    if (combatant?.actor?.type !== "npc") return;
-    await this._removeInvokingStatus(combatant.actor);
+    return this._withActorSheetScroll(async () => {
+      await super._onStartTurn(combatant, context);
+      if (combatant?.actor?.type !== "npc") return;
+      await this._removeInvokingStatus(combatant.actor);
+    });
   }
 
   async _removeInvokingStatus(actor) {
@@ -124,5 +151,153 @@ export class FFXIVCombat extends Combat {
           : Math.max(highestOverride, numericOverride);
     }
     return highestOverride;
+  }
+
+  async _confirmResetLimitations() {
+    if (!game.user.isGM) return;
+    if (!this._hasLimitedAbilities()) return;
+
+    const confirmed = await foundry.applications.api.DialogV2.wait({
+      id: `ffxiv-reset-limitations-${this.id}`,
+      window: { title: game.i18n.localize("FFXIV.Dialogs.ResetLimitationsTitle") },
+      content: `<p>${game.i18n.localize("FFXIV.Dialogs.ResetLimitations")}</p>`,
+      buttons: [
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.Yes"),
+          action: "yes",
+          type: "submit",
+          default: true,
+          callback: () => true,
+        },
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.No"),
+          action: "no",
+          type: "cancel",
+          callback: () => false,
+        },
+      ],
+    });
+
+    if (confirmed) await this._resetActorLimitations();
+  }
+
+  _hasLimitedAbilities() {
+    return game.actors.filter((actor) =>
+      actor.items.filter((item) => this._hasLimitations(item)).length > 0,
+    ).length > 0;
+  }
+
+  async _resetActorLimitations() {
+    const sheets = this._captureActorSheetScroll();
+    const updatedActors = new Set();
+    for (const actor of game.actors) {
+      const updates = [];
+      for (const item of actor.items) {
+        if (!this._hasLimitations(item)) continue;
+
+        const max = Number.parseInt(item.system.limitations_max, 10);
+        const limitationsStatus = new Array(max).fill(false);
+        const currentStatus = Array.isArray(item.system.limitations_status)
+          ? item.system.limitations_status.slice(0, max)
+          : [];
+        while (currentStatus.length < max) currentStatus.push(false);
+        if (currentStatus.every((status) => !status)) continue;
+
+        updates.push({
+          _id: item.id,
+          "system.limitations_status": limitationsStatus,
+        });
+      }
+
+      if (updates.length) {
+        updatedActors.add(actor.id);
+        await actor.updateEmbeddedDocuments("Item", updates, {
+          render: false,
+          ffxivSkipActorSheetRefresh: true,
+        });
+      }
+    }
+
+    await this._refreshActorSheets(sheets, updatedActors);
+  }
+
+  _hasLimitations(item) {
+    if (item.type !== "ability") return false;
+    const max = Number.parseInt(item.system?.limitations_max, 10);
+    return Number.isFinite(max) && max > 0;
+  }
+
+  async _withActorSheetScroll(operation) {
+    const sheets = this._captureActorSheetScroll();
+    try {
+      return await operation();
+    } finally {
+      this._restoreActorSheetScroll(sheets);
+    }
+  }
+
+  _captureActorSheetScroll() {
+    const apps = new Set([
+      ...Object.values(ui.windows ?? {}),
+      ...Array.from(foundry.applications.instances?.values?.() ?? []),
+    ]);
+    for (const actor of game.actors) {
+      for (const app of Object.values(actor.apps ?? {})) {
+        apps.add(app);
+      }
+    }
+
+    return Array.from(apps)
+      .filter((app) => app.rendered && app.actor?.documentName === "Actor")
+      .map((app) => {
+        app._captureSheetScroll?.();
+        return {
+          sheet: app,
+          scroll: foundry.utils.deepClone(app._pendingSheetScrollPositions ?? []),
+        };
+      });
+  }
+
+  async _refreshActorSheets(sheets, actorIds) {
+    for (const { sheet, scroll } of sheets) {
+      if (!actorIds.has(sheet.actor?.id)) continue;
+      sheet._pendingSheetScrollPositions = foundry.utils.deepClone(scroll);
+      await sheet.render({ force: true, focus: false });
+      this._restoreActorSheetScroll([{ sheet, scroll }]);
+    }
+  }
+
+  _restoreActorSheetScroll(sheets) {
+    for (const { sheet, scroll } of sheets) {
+      if (!scroll?.length) continue;
+      const pending = foundry.utils.deepClone(scroll);
+      sheet._pendingSheetScrollPositions = pending;
+      const restore = () => {
+        this._applyActorSheetScroll(sheet, scroll);
+      };
+      requestAnimationFrame(() => {
+        restore();
+        setTimeout(restore, 50);
+        setTimeout(restore, 150);
+        setTimeout(() => {
+          restore();
+          if (sheet._pendingSheetScrollPositions === pending) {
+            sheet._pendingSheetScrollPositions = null;
+          }
+        }, 300);
+      });
+    }
+  }
+
+  _applyActorSheetScroll(sheet, scroll) {
+    for (const position of scroll) {
+      const root = sheet.element;
+      const element = root?.matches?.(position.selector)
+        ? root
+        : root?.querySelector(position.selector);
+      if (!element) continue;
+      element.scrollTop = position.scrollTop;
+      element.scrollLeft = position.scrollLeft;
+    }
   }
 }

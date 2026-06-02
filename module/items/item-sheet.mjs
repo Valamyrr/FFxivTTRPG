@@ -657,7 +657,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _getAbilityEffectApplyTo(effect) {
     const flagged = String(effect?.getFlag("ffxiv", "applyTo") || "").trim().toLowerCase();
-    if (flagged === "self" || flagged === "target") return flagged;
+    if (flagged === "self" || flagged === "target" || flagged === "self_auto") return flagged;
     return "target";
   }
 
@@ -769,14 +769,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         this._playConfiguredSound("soundNotificationFFXIV_openSheet");
       }
     });
-    html.on("click.ffxivItemSheet", ".effect-control", (ev) => {
+    html.on("click.ffxivItemSheet", ".effect-control", async (ev) => {
       const action = ev.currentTarget.dataset.action;
       if (action === "create") {
         this._playConfiguredSound("soundNotificationFFXIV_moveItem");
       } else if (action === "delete") {
         this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
       }
-      onManageActiveEffect(ev, this.item);
+      await onManageActiveEffect(ev, this.item, { render: false });
       if (action !== "edit") {
         this._captureSheetScroll();
         this.render({ force: true });
