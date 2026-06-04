@@ -411,6 +411,8 @@
       "Confirm": "Êtes-vous sûr de vouloir effectuer cette action ?",
       "Cancel": "Annuler",
       "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?",
+      "RemoveExistingAbilitiesTitle": "Retirer les compétences ou traits existants ?",
+      "RemoveExistingAbilitiesForJob": "{actor} possède {count} compétence(s) ou trait(s) manuel(s). Les retirer avant d'ajouter les entrées de {job} ?",
       "ResetLimitationsTitle": "Réinitialiser les restrictions",
       "ResetLimitations": "Réinitialiser les restrictions de tous les acteurs ?",
       "Yes": "Oui",
@@ -449,7 +451,7 @@
       "ItemMigrationPhaseTagDone": "Migration des objets : tags terminés ({updatedWorldItems} objets monde, {updatedActorItems} objets d'acteur, {updatedCompendiumItems} objets de compendium, {updatedActorCompendiumItems} objets de compendium d'acteur).",
       "ItemMigrationPhaseAbilityTypeStart": "Migration des objets : conversion des anciens types de compétences...",
       "ItemMigrationPhaseAbilityTypeProgress": "Migration des objets : conversion des anciens types de compétences... ({current}/{total}) {itemName}",
-      "ItemMigrationPhaseAbilityTypeDone": "Migration des objets : conversion des anciens types terminée ({createdWorldItems}/{deletedWorldItems} monde recréés, {createdActorItems}/{deletedActorItems} acteur recréés, {updatedWorldTags} tags monde, {updatedActorTags} tags acteur, {updatedAbilityOrders} ordres de tri d'acteur, {updatedJobGrantUUIDs} liens de compétences de job/amélioration remappés, {updatedUUIDTextLinks} liens UUID textuels remappés).",
+      "ItemMigrationPhaseAbilityTypeDone": "Migration des objets : conversion des anciens types terminée ({createdWorldItems}/{deletedWorldItems} monde recréés, {createdActorItems}/{deletedActorItems} acteur recréés, {updatedWorldTags} tags monde, {updatedActorTags} tags acteur, {updatedCompendiumTags} tags de compendium, {updatedActorCompendiumAbilityItems} compétences de compendium d'acteur, {updatedAbilityOrders} ordres de tri d'acteur, {updatedJobGrantUUIDs} liens de compétences de job/amélioration remappés, {strippedActorJobGrantItems} mappings de jobs acteur allégés, {updatedUUIDTextLinks} liens UUID textuels remappés).",
       "ItemMigrationComplete": "La migration des données d'objets est terminée avec succès.",
       "ItemMigrationFailed": "La migration des données d'objets a échoué. Consultez la console du navigateur pour plus de détails.",
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)",
@@ -479,6 +481,13 @@
       "ApplyResult": "{type} {amount} appliqué à {count} cible(s).",
       "ApplyResultSingle": "{amount} {type} appliqué à {count} cible.",
       "ApplyResultPlural": "{amount} {type} appliqué à {count} cibles."
+    },
+    "Combat": {
+      "AdventurerStep": "Étape des aventuriers",
+      "EnemyStep": "Étape des ennemis",
+      "StepEndStatusEffects": "Effets de statut de fin de {step}",
+      "DOTDamage": "Dégâts sur la durée {amount}",
+      "RevivifyHealing": "Revigoré {amount} PV"
     },
     "RollDialog": {
       "AdvantageDice": "Dés d’avantage",

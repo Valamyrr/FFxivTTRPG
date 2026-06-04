@@ -2,25 +2,25 @@
   <div class="abilities-tab-content modern-panel">
     <!-- Sub-tab navigation for abilities -->
     <nav class="abilities-sub-tabs" data-group="abilities-sub-tabs">
-      <a class="sub-tab active"
+      <a class="sub-tab {{#if (eq currentAbilityTab 'primary')}}active{{/if}}"
          data-tab="primary"
          title="{{localize 'FFXIV.Abilities.Primary'}}">
         {{localize 'FFXIV.Abilities.Primary'}}
         <div class="chip"></div>
       </a>
-      <a class="sub-tab"
+      <a class="sub-tab {{#if (eq currentAbilityTab 'secondary')}}active{{/if}}"
          data-tab="secondary"
          title="{{localize 'FFXIV.Abilities.Secondary'}}">
         {{localize 'FFXIV.Abilities.Secondary'}}
         <div class="chip"></div>
       </a>
-      <a class="sub-tab"
+      <a class="sub-tab {{#if (eq currentAbilityTab 'instant')}}active{{/if}}"
          data-tab="instant"
          title="{{localize 'FFXIV.Abilities.Instant'}}">
         {{localize 'FFXIV.Abilities.Instant'}}
         <div class="chip"></div>
       </a>
-      <a class="sub-tab"
+      <a class="sub-tab {{#if (eq currentAbilityTab 'traits')}}active{{/if}}"
          data-tab="traits"
          title="{{localize 'FFXIV.Abilities.Trait'}}">
         {{localize 'FFXIV.Abilities.Traits'}}
@@ -28,9 +28,10 @@
       </a>
     </nav>
     <!-- Sub-tab content -->
+    {{#if (eq currentAbilityTab 'primary')}}
     <section class="sub-tab-content active" data-tab="primary">
       {{!-- Primary abilities content here --}}
-      {{#each (sortAbilities items system.ability_order "primary_ability") }}
+      {{#each primary_abilities }}
         <div class="ability-container">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
           <div class="move-buttons">
@@ -50,9 +51,11 @@
     </div>
   {{/each}}
 </section>
-<section class="sub-tab-content" data-tab="secondary" hidden>
+{{/if}}
+{{#if (eq currentAbilityTab 'secondary')}}
+<section class="sub-tab-content active" data-tab="secondary">
   {{!-- Secondary abilities content here --}}
-  {{#each (sortAbilities items system.ability_order "secondary_ability") }}
+  {{#each secondary_abilities }}
     <div class="ability-container">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
       <div class="move-buttons">
@@ -72,9 +75,11 @@
 </div>
 {{/each}}
 </section>
-<section class="sub-tab-content" data-tab="instant" hidden>
+{{/if}}
+{{#if (eq currentAbilityTab 'instant')}}
+<section class="sub-tab-content active" data-tab="instant">
   {{!-- Instant abilities content here --}}
-  {{#each (sortAbilities items system.ability_order "instant_ability") }}
+  {{#each instant_abilities }}
     <div class="ability-container">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
       <div class="move-buttons">
@@ -94,13 +99,13 @@
 </div>
 {{/each}}
 </section>
-<section class="sub-tab-content" data-tab="traits" hidden>
-  {{#each (reverse items) }}
-    {{#if (isAbilitySubtype this "limit_break") }}
-      {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
-    {{/if}}
+{{/if}}
+{{#if (eq currentAbilityTab 'traits')}}
+<section class="sub-tab-content active" data-tab="traits">
+  {{#each (reverse limit_break) }}
+    {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
   {{/each}}
-  {{#each (sortAbilities items system.ability_order "trait") }}
+  {{#each traits }}
     <div class="ability-container">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
       <div class="move-buttons">
@@ -120,5 +125,6 @@
 </div>
 {{/each}}
 </section>
+{{/if}}
 </div>
 </div>

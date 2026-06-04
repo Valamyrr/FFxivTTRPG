@@ -411,6 +411,8 @@
       "Confirm": "Are you sure you want to complete this action?",
       "Cancel": "Cancel",
       "ItemDelete": "Are you sure you want to delete this item : {itemName}?",
+      "RemoveExistingAbilitiesTitle": "Remove existing abilities or traits?",
+      "RemoveExistingAbilitiesForJob": "{actor} has {count} existing manual ability or trait item(s). Remove them before adding entries from {job}?",
       "ResetLimitationsTitle": "Reset limitations",
       "ResetLimitations": "Reset limitations on all actors?",
       "Yes": "Yes",
@@ -449,7 +451,7 @@
       "ItemMigrationPhaseTagDone": "Item migration: tag update complete ({updatedWorldItems} world, {updatedActorItems} actor items, {updatedCompendiumItems} compendium items, {updatedActorCompendiumItems} actor compendium items).",
       "ItemMigrationPhaseAbilityTypeStart": "Converting legacy ability types...",
       "ItemMigrationPhaseAbilityTypeProgress": "Converting legacy ability types... ({current}/{total}) {itemName}",
-      "ItemMigrationPhaseAbilityTypeDone": "Item migration: legacy ability conversion complete ({createdWorldItems}/{deletedWorldItems} world recreated, {createdActorItems}/{deletedActorItems} actor recreated, {updatedWorldTags} world tags, {updatedActorTags} actor tags, {updatedAbilityOrders} actor sort orders, {updatedJobGrantUUIDs} job/augment grant links remapped, {updatedUUIDTextLinks} text UUID links remapped).",
+      "ItemMigrationPhaseAbilityTypeDone": "Item migration: legacy ability conversion complete ({createdWorldItems}/{deletedWorldItems} world recreated, {createdActorItems}/{deletedActorItems} actor recreated, {updatedWorldTags} world tags, {updatedActorTags} actor tags, {updatedCompendiumTags} compendium tags, {updatedActorCompendiumAbilityItems} actor compendium abilities, {updatedAbilityOrders} actor sort orders, {updatedJobGrantUUIDs} job/augment grant links remapped, {strippedActorJobGrantItems} actor job mappings slimmed, {updatedUUIDTextLinks} text UUID links remapped).",
       "ItemMigrationComplete": "Item data migration completed successfully.",
       "ItemMigrationFailed": "Item data migration failed. Check the browser console for details.",
       "NotEnoughHP": "Not Enough HP to cast this ability (HP Cost)",
@@ -479,6 +481,13 @@
       "ApplyResult": "Applied {type} {amount} to {count} target(s).",
       "ApplyResultSingle": "Applied {amount} {type} to {count} target.",
       "ApplyResultPlural": "Applied {amount} {type} to {count} targets."
+    },
+    "Combat": {
+      "AdventurerStep": "Adventurer Step",
+      "EnemyStep": "Enemy Step",
+      "StepEndStatusEffects": "End of {step} status effects",
+      "DOTDamage": "DOT {amount} damage",
+      "RevivifyHealing": "Revivify {amount} HP"
     },
     "RollDialog": {
       "AdvantageDice": "Advantage Dice",

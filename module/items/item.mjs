@@ -302,13 +302,15 @@ export class FFXIVItem extends Item {
     )
       return;
 
-    const renderOptions = options.render === false ? { render: false } : {};
+    const renderOptions = () =>
+      options.render === false ? { render: false } : {};
     const otherJobs = this.parent.items.filter(
       (item) => item.type === "job" && item.id !== this.id,
     );
     if (otherJobs.length) {
-      await this._deleteJobsWithGrantedAbilities(otherJobs, renderOptions);
+      await this._deleteJobsWithGrantedAbilities(otherJobs, renderOptions());
     }
+    await this._promptDeleteManualAbilitiesForJobAssignment(renderOptions());
 
     const maxHP = Number(this.system.health?.max) || 0;
     const jobName =
@@ -343,11 +345,43 @@ export class FFXIVItem extends Item {
         "system.secondary_attributes.speed.value":
           Number(this.system.secondary_attributes?.speed?.value) || 0,
       },
-      renderOptions,
+      renderOptions(),
     );
-    await this._grantJobAbilities(renderOptions);
+    await this._grantJobAbilities(renderOptions());
+    await this._stripEmbeddedJobAbilityGrantItems(renderOptions());
     ui.notifications.info(
       `${this.name} assigned as ${this.parent.name}'s job.`,
+    );
+  }
+
+  async _stripEmbeddedJobAbilityGrantItems(options = {}) {
+    if (this.type !== "job") return;
+    if (
+      this.parent?.documentName !== "Actor" ||
+      this.parent.type !== "character"
+    )
+      return;
+
+    const grants = Array.isArray(this.system.ability_grants)
+      ? this.system.ability_grants
+      : Object.values(this.system.ability_grants || {});
+    let changed = false;
+    const lightweightGrants = grants.map((grant) => {
+      if (!grant || typeof grant !== "object" || !Object.hasOwn(grant, "item"))
+        return grant;
+      changed = true;
+      const { item, ...rest } = grant;
+      return rest;
+    });
+    if (!changed) return;
+
+    await this.update(
+      { "system.ability_grants": lightweightGrants },
+      {
+        ...options,
+        render: false,
+        ffxivSkipActorSheetRefresh: true,
+      },
     );
   }
 
@@ -421,8 +455,173 @@ export class FFXIVItem extends Item {
       itemsToCreate.push(itemData);
     }
 
-    if (itemsToCreate.length)
-      await this.parent.createEmbeddedDocuments("Item", itemsToCreate, options);
+    if (itemsToCreate.length) {
+      const created = await this.parent.createEmbeddedDocuments(
+        "Item",
+        itemsToCreate,
+        options,
+      );
+      await this._syncJobAbilityOrder(created, options);
+    }
+  }
+
+  _getAbilityOrderType(item) {
+    if (item?.type === "trait") return "trait";
+    const subtype = getAbilitySubtype(item);
+    return ["primary_ability", "secondary_ability", "instant_ability"].includes(
+      subtype,
+    )
+      ? subtype
+      : "";
+  }
+
+  async _syncJobAbilityOrder(createdItems, options = {}) {
+
+    const createdById = new Map(createdItems.map((it) => [it.id, it]));
+    const uuidToCreatedId = new Map();
+    for (const it of createdItems) {
+      const src = it.flags?.ffxiv?.jobSourceUuid;
+      if (src) uuidToCreatedId.set(src, it.id);
+    }
+
+    const createdByType = new Map();
+
+    const grants = this._getNormalizedAbilityGrants(this.system?.ability_grants);
+    for (const grant of grants) {
+      if (!grant?.uuid) continue;
+      const createdId = uuidToCreatedId.get(grant.uuid);
+      if (!createdId) continue;
+      const item = createdById.get(createdId);
+      const type = this._getAbilityOrderType(item);
+      if (!type) continue;
+      if (!createdByType.has(type)) createdByType.set(type, []);
+      createdByType.get(type).push(createdId);
+    }
+    if (!createdByType.size) return;
+
+    let abilityOrder = foundry.utils.deepClone(
+      this.parent.system?.ability_order || {},
+    );
+    if (
+      !abilityOrder ||
+      typeof abilityOrder !== "object" ||
+      Array.isArray(abilityOrder)
+    )
+      abilityOrder = {};
+
+    let changed = false;
+    for (const [type, ids] of createdByType.entries()) {
+      const allIds = this.parent.items
+        .filter((item) => this._getAbilityOrderType(item) === type)
+        .map((item) => item.id);
+      const jobIds = this.parent.items
+        .filter(
+          (item) =>
+            this._getAbilityOrderType(item) === type &&
+            item.flags?.ffxiv?.jobId === this.id,
+        )
+        .map((item) => item.id);
+      const remaining = Array.isArray(abilityOrder[type])
+        ? abilityOrder[type].filter(
+          (id) => allIds.includes(id) && !jobIds.includes(id),
+        )
+        : allIds.filter((id) => !jobIds.includes(id));
+      abilityOrder[type] = [...ids, ...remaining];
+      changed = true;
+    }
+
+    if (changed) {
+      await this.parent.update(
+        { "system.ability_order": abilityOrder },
+        { render: options.render ?? false },
+      );
+    }
+  }
+
+  _normalizeAbilityName(name) {
+    return String(name ?? "").trim().toLocaleLowerCase();
+  }
+
+  _isAbilityOrTraitItem(item) {
+    return (
+      item?.type === "ability" ||
+      item?.type === "trait" ||
+      ABILITY_SUBTYPE_TYPES.includes(item?.type)
+    );
+  }
+
+  async _getAugmentGrantedAbilityNames() {
+    const names = new Set();
+    const augments = this.parent.items.filter((item) => item.type === "augment");
+
+    for (const augment of augments) {
+      const grants = augment._getAugmentAbilityGrants?.() ?? [];
+      for (const grant of grants) {
+        const grantName = this._normalizeAbilityName(grant?.name);
+        if (grantName) names.add(grantName);
+        if (grant?.item?.name) {
+          names.add(this._normalizeAbilityName(grant.item.name));
+        } else if (grant?.uuid) {
+          const sourceItem = await fromUuid(grant.uuid);
+          const sourceName = this._normalizeAbilityName(sourceItem?.name);
+          if (sourceName) names.add(sourceName);
+        }
+      }
+    }
+
+    return names;
+  }
+
+  async _getManualAbilityItems() {
+    const augmentGrantedNames = await this._getAugmentGrantedAbilityNames();
+    return this.parent.items.filter(
+      (item) =>
+        this._isAbilityOrTraitItem(item) &&
+        !item.flags?.ffxiv?.augmentId &&
+        !item.flags?.ffxiv?.augmentSourceUuid &&
+        !item.flags?.ffxiv?.jobId &&
+        !item.flags?.ffxiv?.jobSourceUuid &&
+        !augmentGrantedNames.has(this._normalizeAbilityName(item.name)),
+    );
+  }
+
+  async _promptDeleteManualAbilitiesForJobAssignment(options = {}) {
+    const abilities = await this._getManualAbilityItems();
+    if (!abilities.length) return;
+
+    const confirmed = await foundry.applications.api.DialogV2.wait({
+      id: `ffxiv-remove-existing-abilities-${this.parent.id}`,
+      window: {
+        title: game.i18n.localize(
+          "FFXIV.Dialogs.RemoveExistingAbilitiesTitle",
+        ),
+      },
+      content: `<p>${game.i18n.format("FFXIV.Dialogs.RemoveExistingAbilitiesForJob", {
+        actor: this.parent.name,
+        count: abilities.length,
+        job: this.name,
+      })}</p>`,
+      buttons: [
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.Yes"),
+          action: "yes",
+          type: "submit",
+          default: true,
+          callback: () => true,
+        },
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.No"),
+          action: "no",
+          type: "cancel",
+          callback: () => false,
+        },
+      ],
+    });
+    if (!confirmed) return;
+
+    const idsToDelete = abilities.map((item) => item.id);
+    if (idsToDelete.length)
+      await this.parent.deleteEmbeddedDocuments("Item", idsToDelete, options);
   }
 
   async _assignAugmentGrantedAbilities(options = {}) {

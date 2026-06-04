@@ -167,6 +167,16 @@
           <span class="job-ability-name">{{grant.name}}</span>
           <span class="job-ability-type">{{grant.typeLabel}}</span>
           <button type="button"
+                  class="move-job-ability-up"
+                  data-index="{{index}}"
+                  aria-label="Move Up"
+                  {{#if @first}}disabled{{/if}}>▲</button>
+          <button type="button"
+                  class="move-job-ability-down"
+                  data-index="{{index}}"
+                  aria-label="Move Down"
+                  {{#if @last}}disabled{{/if}}>▼</button>
+          <button type="button"
                   class="remove-job-ability"
                   data-index="{{index}}"
                   aria-label="{{localize 'FFXIV.Item.Delete'}}">

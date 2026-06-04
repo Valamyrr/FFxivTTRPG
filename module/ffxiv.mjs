@@ -16,6 +16,7 @@ import {
   applyStatusEffectChange,
   applyStatusEffectStackDelta,
   getStatusStackCount,
+  getStatusStackValue,
   isStackableStatusEffect,
   migrateLegacyStatusStackEffects,
   updateStatusEffects,
@@ -1273,30 +1274,76 @@ async function migrateActorCurrencyToFortune() {
   }
 }
 
+function remapLegacyAscendentStatusIds(statuses) {
+  const source = Array.isArray(statuses)
+    ? statuses
+    : statuses instanceof Set
+      ? Array.from(statuses)
+      : [];
+  if (!source.includes("ascendent")) return null;
+  return Array.from(
+    new Set(
+      source.map((statusId) => (statusId === "ascendent" ? "transcendent" : statusId)),
+    ),
+  );
+}
+
+function getStatusEffectConfig(statusId) {
+  return CONFIG.statusEffects?.find((status) => status.id === statusId);
+}
+
+async function migrateOwnerLegacyStatusEffects(owner, { refreshIcons = false } = {}) {
+  const updates = [];
+  for (const effect of owner?.effects ?? []) {
+    const sourceStatuses = Array.isArray(effect._source?.statuses)
+      ? effect._source.statuses
+      : effect.statuses instanceof Set
+        ? Array.from(effect.statuses)
+        : [];
+    const nextStatuses = remapLegacyAscendentStatusIds(sourceStatuses);
+    const statusIds = nextStatuses ?? sourceStatuses;
+    const update = { _id: effect.id };
+
+    if (nextStatuses) update.statuses = nextStatuses;
+    if (refreshIcons && statusIds.length === 1) {
+      const status = getStatusEffectConfig(statusIds[0]);
+      const img = status?.img || status?.icon || "";
+      if (img && effect.img !== img) update.img = img;
+    }
+
+    if (Object.keys(update).length > 1) updates.push(update);
+  }
+
+  if (updates.length) {
+    await owner.updateEmbeddedDocuments("ActiveEffect", updates, {
+      render: false,
+    });
+  }
+  return updates.length;
+}
+
 async function migrateAscendentStatusIdToTranscendent() {
   if (!game.user?.isGM) return;
 
-  const LEGACY_ID = "ascendent";
-  const CANONICAL_ID = "transcendent";
   let migratedItems = 0;
   let migratedEffects = 0;
 
-  const remapStatusEntries = (entries) => {
+    const remapStatusEntries = (entries) => {
     if (!Array.isArray(entries) || !entries.length) return null;
     let changed = false;
     const next = entries.map((entry) => {
       if (!entry || typeof entry !== "object") return entry;
-      if (entry.id !== LEGACY_ID) return entry;
+      if (entry.id !== "ascendent") return entry;
       changed = true;
-      return { ...entry, id: CANONICAL_ID };
+      return { ...entry, id: "transcendent" };
     });
     return changed ? next : null;
   };
 
-  const migrateItemStatusFields = async (item) => {
+    const migrateItemStatusFields = async (item) => {
     const updates = {};
-    if (item.system?.status_effect === LEGACY_ID) {
-      updates["system.status_effect"] = CANONICAL_ID;
+    if (item.system?.status_effect === "ascendent") {
+      updates["system.status_effect"] = "transcendent";
     }
     const remappedEntries = remapStatusEntries(item.system?.status_effects);
     if (remappedEntries) updates["system.status_effects"] = remappedEntries;
@@ -1305,40 +1352,19 @@ async function migrateAscendentStatusIdToTranscendent() {
     migratedItems += 1;
   };
 
-  const migrateEffectStatuses = async (owner) => {
-    for (const effect of owner?.effects ?? []) {
-      const sourceStatuses = Array.isArray(effect._source?.statuses)
-        ? effect._source.statuses
-        : [];
-      if (!sourceStatuses.includes(LEGACY_ID)) continue;
-      const nextStatuses = Array.from(
-        new Set(
-          sourceStatuses.map((statusId) =>
-            statusId === LEGACY_ID ? CANONICAL_ID : statusId,
-          ),
-        ),
-      );
-      await effect.update({ statuses: nextStatuses });
-      migratedEffects += 1;
-    }
-  };
-
   for (const item of game.items ?? []) {
     await migrateItemStatusFields(item);
   }
 
   for (const actor of game.actors ?? []) {
-    await migrateEffectStatuses(actor);
+    migratedEffects += await migrateOwnerLegacyStatusEffects(actor);
     for (const item of actor.items ?? []) {
       await migrateItemStatusFields(item);
-      await migrateEffectStatuses(item);
+      migratedEffects += await migrateOwnerLegacyStatusEffects(item);
     }
   }
 
   if (!migratedItems && !migratedEffects) return;
-  ui.notifications.info(
-    `FFXIV migration complete: renamed ${LEGACY_ID} to ${CANONICAL_ID} on ${migratedItems} items and ${migratedEffects} effects.`,
-  );
 }
 
 async function refreshSceneActorStatusEffectsForLegacyIcons() {
@@ -1348,32 +1374,18 @@ async function refreshSceneActorStatusEffectsForLegacyIcons() {
     for (const token of scene.tokens?.contents ?? []) {
       const actor = token.actor;
       if (!actor) continue;
-      if (processedActors.has(actor.uuid)) continue;
-      processedActors.add(actor.uuid);
+      const key = actor.isToken ? token.uuid : actor.uuid;
+      if (processedActors.has(key)) continue;
+      processedActors.add(key);
 
-      const statusIds = Array.from(actor.statuses ?? []).filter(Boolean);
-      if (!statusIds.length) continue;
-
-      for (const statusId of statusIds) {
-        try {
-          if (isStackableStatusEffect(statusId)) {
-            const count = getStatusStackCount(actor, statusId);
-            if (count <= 0) continue;
-            await applyStatusEffectStackDelta(actor, statusId, -count);
-            await applyStatusEffectStackDelta(actor, statusId, count);
-            continue;
-          }
-
-          await actor.toggleStatusEffect(statusId, { active: false });
-          await actor.toggleStatusEffect(statusId, { active: true });
-        } catch (error) {
-          console.error(
-            "FFXIV | Failed to refresh legacy status icon for",
-            actor.name,
-            statusId,
-            error,
-          );
-        }
+      try {
+        await migrateOwnerLegacyStatusEffects(actor, { refreshIcons: true });
+      } catch (error) {
+        console.error(
+          "FFXIV | Failed to refresh legacy status icons for",
+          actor.name,
+          error,
+        );
       }
     }
   }
@@ -1399,7 +1411,7 @@ const HP_COST_MIGRATION_TYPES = new Set([
   "augment",
   "minion",
 ]);
-const ITEM_DATA_MIGRATION_VERSION = "16";
+const ITEM_DATA_MIGRATION_VERSION = "19";
 function getMigratableItemCompendiumPacks() {
   return game.packs.filter(
     (pack) => pack.documentName === "Item" && !pack.locked,
@@ -1452,6 +1464,27 @@ function getCanonicalizedAbilityGrantItemTags(abilityGrants) {
         },
       },
     };
+  });
+
+  return changed ? nextGrants : null;
+}
+
+function getStrippedAbilityGrantItemData(abilityGrants) {
+  const entries = Array.isArray(abilityGrants)
+    ? abilityGrants
+    : abilityGrants && typeof abilityGrants === "object"
+      ? Object.values(abilityGrants)
+      : [];
+  if (!entries.length) return null;
+
+  let changed = false;
+  const nextGrants = entries.map((grant) => {
+    if (!grant || typeof grant !== "object" || !Object.hasOwn(grant, "item"))
+      return grant;
+
+    changed = true;
+    const { item, ...rest } = grant;
+    return rest;
   });
 
   return changed ? nextGrants : null;
@@ -2031,9 +2064,11 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
   let updatedActorTags = 0;
   let updatedAbilityOrders = 0;
   let updatedJobGrantUUIDs = 0;
+  let strippedActorJobGrantItems = 0;
   let createdCompendiumItems = 0;
   let deletedCompendiumItems = 0;
   let updatedCompendiumTags = 0;
+  let updatedActorCompendiumAbilityItems = 0;
   const migratedUUIDMap = new Map();
   const worldUUIDMap = new Map();
   const worldLegacyIdToUuidMap = new Map();
@@ -2203,6 +2238,11 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
       { canonicalizeSubtypeTag: true },
     );
     delete source._id;
+    return source;
+  };
+  const buildEmbeddedAbilityData = (item) => {
+    const source = buildAbilityData(item);
+    source._id = item.id;
     return source;
   };
   
@@ -2472,6 +2512,7 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
     
     const UUIDMap = new Map([...worldUUIDMap, ...actorUUIDMap]);
     const jobUpdates = [];
+    let actorJobGrantUUIDUpdates = 0;
     const actorIdToUuidMap = new Map(worldIdToUuidMap);
 
     for (const [oldUuid, newUuid] of actorUUIDMap.entries()) {
@@ -2489,8 +2530,16 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
           legacyIdToUuidMap: actorIdToUuidMap,
         },
       );
-      if (!nextGrants) continue;
-      const update = { _id: item.id, "system.ability_grants": nextGrants };
+      const strippedGrants = item.type === "job"
+        ? getStrippedAbilityGrantItemData(
+          nextGrants ?? item.system?.ability_grants,
+        )
+        : null;
+      if (!nextGrants && !strippedGrants) continue;
+      const update = {
+        _id: item.id,
+        "system.ability_grants": strippedGrants ?? nextGrants,
+      };
       if (
         item.type === "augment" &&
         String(item.system?.granted_ability ?? "").trim()
@@ -2498,14 +2547,64 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
         update["system.granted_ability"] = "";
       }
       jobUpdates.push(update);
+      if (nextGrants) actorJobGrantUUIDUpdates += 1;
+      if (strippedGrants) strippedActorJobGrantItems += 1;
     }
     if (jobUpdates.length) {
       await actor.updateEmbeddedDocuments("Item", jobUpdates, {
         render: false,
       });
-      updatedJobGrantUUIDs += jobUpdates.length;
+      updatedJobGrantUUIDs += actorJobGrantUUIDUpdates;
     }
   }
+
+  for (const pack of getActorCompendiumPacks()) {
+    await withCompendiumUnlocked(pack, async () => {
+      for (const actor of await pack.getDocuments()) {
+        const tagUpdates = [];
+        const toMigrate = [];
+        for (const item of actor.items) {
+          if (item.type === "ability") {
+            const normalizedTags = ensureMigratedAbilitySubtypeTags(
+              item.system?.tags,
+              getAbilitySubtype(item) || "primary_ability",
+            );
+            const currentTags = Array.isArray(item.system?.tags)
+              ? item.system.tags
+              : [];
+            if (JSON.stringify(normalizedTags) !== JSON.stringify(currentTags)) {
+              tagUpdates.push({ _id: item.id, "system.tags": normalizedTags });
+            }
+            continue;
+          }
+
+          if (legacyAbilityTypes.has(item.type)) toMigrate.push(item);
+        }
+
+        if (tagUpdates.length) {
+          await actor.updateEmbeddedDocuments("Item", tagUpdates, {
+            render: false,
+          });
+          updatedActorCompendiumAbilityItems += tagUpdates.length;
+        }
+
+        if (!toMigrate.length) continue;
+        const createData = toMigrate.map((item) => buildEmbeddedAbilityData(item));
+        await actor.deleteEmbeddedDocuments(
+          "Item",
+          toMigrate.map((item) => item.id),
+          { render: false },
+        );
+        const created = await actor.createEmbeddedDocuments(
+          "Item",
+          createData,
+          { keepId: true, render: false },
+        );
+        updatedActorCompendiumAbilityItems += created.length;
+      }
+    });
+  }
+
   const uuidTextStats = await remapMigratedItemUUIDTextLinks(migratedUUIDMap);
   return {
     createdWorldItems,
@@ -2519,6 +2618,8 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
     updatedActorTags,
     updatedAbilityOrders,
     updatedJobGrantUUIDs,
+    strippedActorJobGrantItems,
+    updatedActorCompendiumAbilityItems,
     ...uuidTextStats,
   };
 }
@@ -3385,6 +3486,8 @@ function drawFFXIVStatusStackCounters(token) {
     if (statusEffect.img)
       iconPathToStatusId.set(statusEffect.img, statusEffect.id);
   }
+  const iconPathToEffects = getTokenStackableEffectsByIcon(token.actor);
+  const statusIdCounts = getTokenStackableEffectCountsByStatusId(iconPathToEffects);
 
   for (const sprite of effectsContainer.children.filter(
     (effect) => effect?.isSprite && effect !== effectsContainer.overlay,
@@ -3392,8 +3495,11 @@ function drawFFXIVStatusStackCounters(token) {
     const statusId = iconPathToStatusId.get(sprite.name);
     if (!statusId) continue;
 
-    const stackCount = getStatusStackCount(token.actor, statusId);
-    if (stackCount <= 1) continue;
+    const effect = iconPathToEffects.get(sprite.name)?.shift();
+    const stackCount = effect
+      ? getStatusStackValue(effect, 1, statusId)
+      : getStatusStackCount(token.actor, statusId);
+    if (stackCount <= 1 && (statusIdCounts.get(statusId) ?? 0) <= 1) continue;
 
     const iconSize = sprite.height || 20;
     const textStyle = CONFIG.canvasTextStyle.clone();
@@ -3414,6 +3520,36 @@ function drawFFXIVStatusStackCounters(token) {
     label.resolution = Math.max(1, (20 / iconSize) * 1.5);
     counterContainer.addChild(label);
   }
+}
+
+function getTokenStackableEffectsByIcon(actor) {
+  const effectsByIcon = new Map();
+  for (const effect of actor?.effects ?? []) {
+    if (effect.disabled) continue;
+    const statuses = effect.statuses;
+    if (!(statuses instanceof Set) || statuses.size !== 1) continue;
+    const [statusId] = statuses;
+    if (!isStackableStatusEffect(statusId)) continue;
+
+    const icon = effect.img || effect.icon;
+    if (!icon) continue;
+    if (!effectsByIcon.has(icon)) effectsByIcon.set(icon, []);
+    effectsByIcon.get(icon).push(effect);
+  }
+  return effectsByIcon;
+}
+
+function getTokenStackableEffectCountsByStatusId(effectsByIcon) {
+  const counts = new Map();
+  for (const effects of effectsByIcon.values()) {
+    for (const effect of effects) {
+      const statuses = effect.statuses;
+      if (!(statuses instanceof Set) || statuses.size !== 1) continue;
+      const [statusId] = statuses;
+      counts.set(statusId, (counts.get(statusId) ?? 0) + 1);
+    }
+  }
+  return counts;
 }
 
 function drawFFXIVBarrierOverlay(token) {

@@ -1,6 +1,7 @@
 export const STACKABLE_STATUS_EFFECT_IDS = new Set(["dot", "drain", "revivify"]);
 const STACK_COUNT_FLAG_SCOPE = "ffxiv";
 const STACK_COUNT_FLAG_KEY = "stackCount";
+const MANUAL_STACK_SOURCE = "__manual__";
 
 const STATUS_DEFINITIONS = [
   {
@@ -209,9 +210,40 @@ export function getStatusStackCount(actor, statusId) {
   const effects = getStatusStackEffects(actor, statusId);
   if (!effects.length) return 0;
   if (!isStackableStatusEffect(statusId)) return effects.length;
-  const primary = effects[0];
-  const flagCount = getStatusStackValue(primary, 1, statusId);
-  return Math.max(flagCount, effects.length);
+  return effects.reduce(
+    (highest, effect) =>
+      Math.max(highest, getStatusStackValue(effect, 1, statusId)),
+    0,
+  );
+}
+
+function getStatusStackSourceKey(effect, origin = null) {
+  const linkedSourceEffectId = String(
+    effect?.getFlag?.(STACK_COUNT_FLAG_SCOPE, "linkedSourceEffectId") ?? "",
+  ).trim();
+  const linkedSourceItemUuid = String(
+    effect?.getFlag?.(STACK_COUNT_FLAG_SCOPE, "linkedSourceItemUuid") ?? "",
+  ).trim();
+  const linkedSourceItemId = String(
+    effect?.getFlag?.(STACK_COUNT_FLAG_SCOPE, "linkedSourceItemId") ?? "",
+  ).trim();
+  const effectOrigin = String(effect?.origin ?? origin ?? "").trim();
+  if (linkedSourceEffectId || linkedSourceItemUuid || linkedSourceItemId) {
+    return [
+      linkedSourceItemUuid || linkedSourceItemId || effectOrigin,
+      linkedSourceEffectId,
+    ].join("|");
+  }
+  return effectOrigin || MANUAL_STACK_SOURCE;
+}
+
+function getStatusStackSourceEffects(actor, statusId, origin = null, sourceEffect = null) {
+  const targetKey = sourceEffect
+    ? getStatusStackSourceKey(sourceEffect, origin)
+    : getStatusStackSourceKey(null, origin);
+  return getStatusStackEffects(actor, statusId).filter(
+    (effect) => getStatusStackSourceKey(effect, origin) === targetKey,
+  );
 }
 
 async function createStatusStack(
@@ -242,7 +274,9 @@ async function collapseLegacyStatusStacks(
   const existing = getStatusStackEffects(actor, statusId);
   if (!existing.length) return null;
 
-  const primary = existing[0];
+  const primary = existing.find(
+    (effect) => getStatusStackSourceKey(effect, origin) === getStatusStackSourceKey(null, origin),
+  ) ?? existing[0];
   const targetCount = normalizeStackCount(
     overrideCount,
     getStatusStackCount(actor, statusId),
@@ -253,9 +287,12 @@ async function collapseLegacyStatusStacks(
   if (origin) updateData.origin = origin;
   await primary.update(updateData, { render: false });
 
-  if (existing.length > 1) {
-    const duplicateIds = existing
-      .slice(1)
+  const sourceKey = getStatusStackSourceKey(primary, origin);
+  const duplicates = existing.filter(
+    (effect) => effect.id !== primary.id && getStatusStackSourceKey(effect, origin) === sourceKey,
+  );
+  if (duplicates.length) {
+    const duplicateIds = duplicates
       .map((effect) => effect.id)
       .filter(Boolean);
     if (duplicateIds.length)
@@ -268,10 +305,10 @@ async function setStatusStackCount(
   actor,
   statusId,
   count,
-  { origin = null } = {},
+  { origin = null, sourceEffect = null } = {},
 ) {
   const normalizedCount = Number.parseInt(count, 10) || 0;
-  const existing = getStatusStackEffects(actor, statusId);
+  const existing = getStatusStackSourceEffects(actor, statusId, origin, sourceEffect);
 
   if (normalizedCount <= 0) {
     if (!existing.length) return false;
@@ -295,14 +332,26 @@ export async function applyStatusEffectStackDelta(
   actor,
   statusId,
   delta,
-  { origin = null } = {},
+  { origin = null, sourceEffect = null } = {},
 ) {
   const amount = Number(delta) || 0;
   if (!actor || !statusId || !amount) return;
 
-  const currentCount = getStatusStackCount(actor, statusId);
+  const sourceEffects = getStatusStackSourceEffects(
+    actor,
+    statusId,
+    origin,
+    sourceEffect,
+  );
+  const currentCount = sourceEffects.reduce(
+    (total, effect) => total + getStatusStackValue(effect, 1, statusId),
+    0,
+  );
   const nextCount = Math.max(currentCount + amount, 0);
-  return setStatusStackCount(actor, statusId, nextCount, { origin });
+  return setStatusStackCount(actor, statusId, nextCount, {
+    origin,
+    sourceEffect,
+  });
 }
 
 async function setNonStackableStatusOrigin(actor, statusId, origin) {
@@ -346,21 +395,46 @@ export async function migrateLegacyStatusStackEffects() {
       const existing = getStatusStackEffects(actor, statusId);
       if (!existing.length) continue;
 
-      const hasLegacyDuplicates = existing.length > 1;
-      const missingCounterFlag = existing.some((effect) => {
-        const value = effect.getFlag(
-          STACK_COUNT_FLAG_SCOPE,
-          STACK_COUNT_FLAG_KEY,
-        );
-        return !Number.isFinite(Number.parseInt(value, 10));
-      });
-      if (!hasLegacyDuplicates && !missingCounterFlag) continue;
+      const groups = new Map();
+      for (const effect of existing) {
+        const key = getStatusStackSourceKey(effect);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(effect);
+      }
 
-      await collapseLegacyStatusStacks(
-        actor,
-        statusId,
-        getStatusStackCount(actor, statusId),
-      );
+      for (const group of groups.values()) {
+        const missingCounterFlag = group.some((effect) => {
+          const value = effect.getFlag(
+            STACK_COUNT_FLAG_SCOPE,
+            STACK_COUNT_FLAG_KEY,
+          );
+          return !Number.isFinite(Number.parseInt(value, 10));
+        });
+        if (group.length === 1 && !missingCounterFlag) continue;
+
+        const primary = group[0];
+        const targetCount = group.reduce(
+          (total, effect) => total + getStatusStackValue(effect, 1, statusId),
+          0,
+        );
+        await primary.update(
+          {
+            [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]:
+              normalizeStackCount(targetCount, 1),
+          },
+          { render: false },
+        );
+
+        const duplicateIds = group
+          .slice(1)
+          .map((effect) => effect.id)
+          .filter(Boolean);
+        if (duplicateIds.length) {
+          await actor.deleteEmbeddedDocuments("ActiveEffect", duplicateIds, {
+            render: false,
+          });
+        }
+      }
     }
   }
 }

@@ -165,6 +165,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.actorEditMode = this._isActorEditMode();
     context.limited = this.actor.limited;
     context.renderedActorTabs = Object.fromEntries(CHARACTER_TABS.map(tab => [tab, renderedTabs.has(tab)]));
+    context.currentAbilityTab = this._getCurrentAbilityTab();
 
     context.settings = {
       "showGear": game.settings.get('ffxiv', 'toggleGear'),
@@ -245,8 +246,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     const itemTabs = this.actor.type === "character" ? actorTabs : new Set(["abilities", "items", "companions", "roleplay"]);
+    const abilityTypes = this.actor.type === "character" && itemTabs.has("abilities")
+      ? this._getRenderedAbilityTypes()
+      : null;
     for (const item of context.items || []) {
-      item.enriched = await this._enrichItemForTabs(item, itemTabs);
+      item.enriched = await this._enrichItemForTabs(item, itemTabs, null, {
+        abilityTypes,
+      });
     }
 
     if (this.actor.type !== "character" && ACTOR_ENRICHED_FIELDS.companions?.length) {
@@ -272,14 +278,16 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
-  async _enrichItemForTabs(item, renderedTabs, relativeTo = null) {
+  async _enrichItemForTabs(item, renderedTabs, relativeTo = null, options = {}) {
     const fields = new Set();
     const subtype = getAbilitySubtype(item);
 
     if (renderedTabs.has("abilities")) {
-      if (item.type === "ability") ITEM_ENRICHED_FIELDS.ability.forEach(field => fields.add(field));
-      if (item.type === "trait") ITEM_ENRICHED_FIELDS.trait.forEach(field => fields.add(field));
-      if (subtype === "limit_break") ITEM_ENRICHED_FIELDS.limit_break.forEach(field => fields.add(field));
+      const abilityTypes = options.abilityTypes;
+      const canRenderAbility = !abilityTypes || abilityTypes.has(subtype || item.type);
+      if (canRenderAbility && item.type === "ability") ITEM_ENRICHED_FIELDS.ability.forEach(field => fields.add(field));
+      if (canRenderAbility && item.type === "trait") ITEM_ENRICHED_FIELDS.trait.forEach(field => fields.add(field));
+      if (canRenderAbility && subtype === "limit_break") ITEM_ENRICHED_FIELDS.limit_break.forEach(field => fields.add(field));
     }
     if (renderedTabs.has("items") && item.type === "augment") {
       ITEM_ENRICHED_FIELDS.augment.forEach(field => fields.add(field));
@@ -383,7 +391,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!current) return;
     effects ??= prepareActiveEffectCategories(this.actor.effects.contents);
     signature ??= this._getEffectsPanelSignature(effects);
-    const html = await renderTemplate("systems/ffxiv/templates/actor/parts/actor-effects.hbs", { effects });
+    const html = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/actor/parts/actor-effects.hbs", { effects });
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html.trim();
     const replacement = wrapper.firstElementChild;
@@ -409,13 +417,33 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const context = await this._prepareContext({
       ffxivRenderTabs: ["companions"],
     });
-    const html = await renderTemplate("systems/ffxiv/templates/actor/parts/actor-companions.hbs", context);
+    const html = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/actor/parts/actor-companions.hbs", context);
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html.trim();
     const replacement = wrapper.firstElementChild;
     if (!replacement) return;
     current.replaceWith(replacement);
     this._applyStoredCompanionTab();
+  }
+
+  async _refreshAbilitiesPanel() {
+    if (this.actor?.type !== "character") return;
+    const root = this.element;
+    if (!root) return;
+    const current = root.querySelector(".actor-abilities");
+    if (!current) return;
+
+    const context = await this._prepareContext({
+      ffxivRenderTabs: ["abilities"],
+    });
+    const html = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/actor/parts/actor-abilities.hbs", context);
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html.trim();
+    const replacement = wrapper.firstElementChild;
+    if (!replacement) return;
+    current.replaceWith(replacement);
+    this._applyActorEditMode();
+    this._applyStoredAbilityTab();
   }
 
   /** @override */
@@ -1023,7 +1051,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     for (const key of fields) {
       const value = foundry.utils.getProperty(target, key);
-      if (typeof value === "string") {
+      if (typeof value === "string" && value.trim()) {
         const html = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
           value,
           {
@@ -1070,6 +1098,30 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
+  _getCurrentAbilityTab() {
+    return ["primary", "secondary", "instant", "traits"].includes(this.currentAbilityTab)
+      ? this.currentAbilityTab
+      : "primary";
+  }
+
+  _getRenderedAbilityTypes() {
+    const tab = this._getCurrentAbilityTab();
+    if (tab === "primary") return new Set(["primary_ability"]);
+    if (tab === "secondary") return new Set(["secondary_ability"]);
+    if (tab === "instant") return new Set(["instant_ability"]);
+    return new Set(["trait", "limit_break"]);
+  }
+
+  _sortItemsByAbilityOrder(items, order, type) {
+    if (!order?.[type] || !Array.isArray(order[type])) return items;
+    const positions = new Map(order[type].map((id, index) => [id, index]));
+    return items.slice().sort((a, b) => {
+      const indexA = positions.get(a._id) ?? 9999;
+      const indexB = positions.get(b._id) ?? 9999;
+      return indexA - indexB;
+    });
+  }
+
   /**
    * Organize and classify Items for Actor sheets.
    *
@@ -1085,20 +1137,21 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     for (let i of context.items) {
       i.img = i.img || Item.DEFAULT_ICON;
+      const abilitySubtype = getAbilitySubtype(i);
 
       if (i.type === "consumable") {
         consumables.push(i);
       }
-      if (getAbilitySubtype(i) === "primary_ability") {
+      if (abilitySubtype === "primary_ability") {
         primary_abilities.push(i);
       }
-      if (getAbilitySubtype(i) === "secondary_ability") {
+      if (abilitySubtype === "secondary_ability") {
         secondary_abilities.push(i);
       }
-      if (getAbilitySubtype(i) === "instant_ability") {
+      if (abilitySubtype === "instant_ability") {
         instant_abilities.push(i);
       }
-      if (getAbilitySubtype(i) === "limit_break") {
+      if (abilitySubtype === "limit_break") {
         limit_break.push(i);
       }
       if (i.type === "trait") {
@@ -1107,11 +1160,27 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     context.consumables = consumables;
-    context.primary_abilities = primary_abilities;
-    context.secondary_abilities = secondary_abilities;
-    context.instant_abilities = instant_abilities;
+    context.primary_abilities = this._sortItemsByAbilityOrder(
+      primary_abilities,
+      context.system.ability_order,
+      "primary_ability",
+    );
+    context.secondary_abilities = this._sortItemsByAbilityOrder(
+      secondary_abilities,
+      context.system.ability_order,
+      "secondary_ability",
+    );
+    context.instant_abilities = this._sortItemsByAbilityOrder(
+      instant_abilities,
+      context.system.ability_order,
+      "instant_ability",
+    );
     context.limit_break = limit_break;
-    context.traits = traits;
+    context.traits = this._sortItemsByAbilityOrder(
+      traits,
+      context.system.ability_order,
+      "trait",
+    );
   }
 
   /* -------------------------------------------- */
@@ -1908,7 +1977,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ffxivSkipAutoJobAssignment: true
     });
     await job?._assignJob?.({ render: false });
+    this._enrichedCache = null;
     await this.render({ force: true });
+    await this._refreshAbilitiesPanel();
     this._restoreSheetScroll();
   }
 
@@ -2039,13 +2110,17 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
-  _displayAbilityTab(event) {
+  async _displayAbilityTab(event) {
     event.preventDefault();
     event.stopPropagation();
     const tab = $(event.currentTarget).data('tab');
     const changed = this.currentAbilityTab !== tab;
     this.currentAbilityTab = tab
-    this._switchAbilityTab(tab)
+    if (this.actor?.type === "character") {
+      await this._refreshAbilitiesPanel();
+    } else {
+      this._switchAbilityTab(tab)
+    }
     if (changed) this._playConfiguredSound("soundNotificationFFXIV_openSheet");
   }
   _displayCompanionTab(event) {

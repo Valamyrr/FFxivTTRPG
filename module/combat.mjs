@@ -1,3 +1,8 @@
+import {
+  getStatusStackEffects,
+  getStatusStackValue,
+} from "./helpers/status-effects.mjs";
+
 function getTurnStep(combatant) {
   const actorType = combatant?.actor?.type;
   const disposition = combatant?.token?.disposition;
@@ -60,7 +65,15 @@ export class FFXIVCombat extends Combat {
 
   /** @override */
   async nextTurn() {
-    return this._withActorSheetScroll(() => super.nextTurn());
+    return this._withActorSheetScroll(async () => {
+      await this._resolveCurrentStepEnd();
+      this._ffxivAdvancingTurn = true;
+      try {
+        return await super.nextTurn();
+      } finally {
+        this._ffxivAdvancingTurn = false;
+      }
+    });
   }
 
   /** @override */
@@ -70,7 +83,10 @@ export class FFXIVCombat extends Combat {
 
   /** @override */
   async nextRound() {
-    return this._withActorSheetScroll(() => super.nextRound());
+    return this._withActorSheetScroll(async () => {
+      if (!this._ffxivAdvancingTurn) await this._resolveRemainingStepEnds();
+      return super.nextRound();
+    });
   }
 
   /** @override */
@@ -99,6 +115,139 @@ export class FFXIVCombat extends Combat {
   async _removeInvokingStatus(actor) {
     if (!actor.statuses?.has("invoking")) return;
     await actor.toggleStatusEffect("invoking", { active: false });
+  }
+
+  async _resolveCurrentStepEnd() {
+    const combatant = this.combatant;
+    if (!combatant || !this._isLastCombatantInStep(combatant)) return;
+    await this._resolveStepEnd(getTurnStep(combatant));
+  }
+
+  async _resolveRemainingStepEnds() {
+    const steps = Array.from(
+      new Set(this.combatants.map((combatant) => getTurnStep(combatant))),
+    ).sort((a, b) => a - b);
+    const currentStep = this.combatant ? getTurnStep(this.combatant) : steps[0];
+    for (const step of steps) {
+      if (step < currentStep) continue;
+      await this._resolveStepEnd(step);
+    }
+  }
+
+  _isLastCombatantInStep(combatant) {
+    const step = getTurnStep(combatant);
+    const stepCombatants = this.turns.filter(
+      (entry) => getTurnStep(entry) === step,
+    );
+    return stepCombatants[stepCombatants.length - 1]?.id === combatant.id;
+  }
+
+  async _resolveStepEnd(step) {
+    const actors = this._getStepActors(step);
+    if (!actors.length) return;
+
+    const updates = [];
+    const messages = [];
+    const updatedActorIds = new Set();
+    for (const actor of actors) {
+      const result = this._getStepEndHealthResult(actor);
+      if (!result.changed) continue;
+      updatedActorIds.add(actor.id);
+      updates.push(actor.update(
+        { "system.health.value": result.nextHealth },
+        {
+          render: false,
+          ffxivSkipActorSheetRefresh: true,
+        },
+      ));
+      messages.push({ actor, ...result });
+    }
+
+    if (!updates.length) return;
+    await Promise.all(updates);
+    await this._refreshActorSheets(
+      this._captureActorSheetScroll(),
+      updatedActorIds,
+    );
+    await this._createStepEndStatusMessage(step, messages);
+  }
+
+  _getStepActors(step) {
+    const actors = new Map();
+    for (const combatant of this.combatants) {
+      if (getTurnStep(combatant) !== step) continue;
+      const actor = combatant.actor;
+      if (!actor || actors.has(actor.id)) continue;
+      actors.set(actor.id, actor);
+    }
+    return Array.from(actors.values());
+  }
+
+  _getStepEndHealthResult(actor) {
+    const currentHealth = Number(actor.system?.health?.value ?? 0);
+    const maxHealth = Number(actor.system?.health?.max);
+    const healthCap = Number.isFinite(maxHealth) && maxHealth > 0
+      ? maxHealth
+      : Number.POSITIVE_INFINITY;
+    const dotDamage = getStatusStackEffects(actor, "dot")
+      .filter((effect) => !effect.disabled)
+      .reduce(
+        (highest, effect) => Math.max(
+          highest,
+          getStatusStackValue(effect, 1, "dot"),
+        ),
+        0,
+      );
+    const revivifyHealing = getStatusStackEffects(actor, "revivify")
+      .filter((effect) => !effect.disabled)
+      .reduce(
+        (highest, effect) => Math.max(
+          highest,
+          getStatusStackValue(effect, 1, "revivify"),
+        ),
+        0,
+      );
+    const nextHealth = Math.max(
+      0,
+      Math.min(currentHealth - dotDamage + revivifyHealing, healthCap),
+    );
+
+    return {
+      changed: nextHealth !== currentHealth,
+      currentHealth,
+      nextHealth,
+      dotDamage,
+      revivifyHealing,
+    };
+  }
+
+  async _createStepEndStatusMessage(step, results) {
+    if (!results.length) return;
+    const stepLabel = step === 0
+      ? game.i18n.localize("FFXIV.Combat.AdventurerStep")
+      : game.i18n.localize("FFXIV.Combat.EnemyStep");
+    const rows = results.map((result) => {
+      const parts = [];
+      if (result.dotDamage > 0) {
+        parts.push(game.i18n.format("FFXIV.Combat.DOTDamage", {
+          amount: result.dotDamage,
+        }));
+      }
+      if (result.revivifyHealing > 0) {
+        parts.push(game.i18n.format("FFXIV.Combat.RevivifyHealing", {
+          amount: result.revivifyHealing,
+        }));
+      }
+      return `<li><strong>${result.actor.name}</strong>: ${parts.join(", ")} (${result.currentHealth} -> ${result.nextHealth})</li>`;
+    }).join("");
+
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ scene: canvas?.scene }),
+      flavor: game.i18n.format("FFXIV.Combat.StepEndStatusEffects", {
+        step: stepLabel,
+      }),
+      content: `<ul>${rows}</ul>`,
+    });
   }
 
   _getNextTurnOrder(step, excludedIds) {

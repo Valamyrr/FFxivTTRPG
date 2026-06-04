@@ -200,14 +200,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         context.system.ability_grants,
       ).map((grant) => ({
         ...grant,
-        typeLabel: this._getJobGrantTypeLabel(grant.type),
+        typeLabel: this._getJobGrantTypeLabel(grant),
       }));
     }
     if (this.item.type === "augment") {
       context.system.ability_grants = this._getJobAbilityGrants().map(
         (grant) => ({
           ...grant,
-          typeLabel: this._getJobGrantTypeLabel(grant.type),
+          typeLabel: this._getJobGrantTypeLabel(grant),
         }),
       );
     }
@@ -822,6 +822,16 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "click.ffxivItemSheet",
         ".job-ability-edit",
         this._onEditJobAbility.bind(this),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-job-ability-up",
+        this._moveJobAbility.bind(this, -1),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-job-ability-down",
+        this._moveJobAbility.bind(this, 1),
       );
       html.on("click.ffxivItemSheet", ".remove-job-ability", (event) => {
         event.preventDefault();
@@ -1502,18 +1512,30 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     ];
   }
 
-  _getJobGrantTypeLabel(type) {
-    if (
-      [
-        "ability",
-        "primary_ability",
-        "secondary_ability",
-        "instant_ability",
-        "limit_break",
-      ].includes(type)
-    ) {
+  _getJobGrantTypeLabel(grantOrType) {
+    // Accept either a grant object or a type string. Prefer to derive the
+    // subtype from the grant's item (tags) when available so we can display
+    // "Primary", "Secondary", "Instant", "Trait", or "Limit Break".
+    let type = typeof grantOrType === "string" ? grantOrType : String(grantOrType?.type ?? "");
+    const item = typeof grantOrType === "object" ? grantOrType.item : null;
+
+    const legacyTypes = new Set([
+      "primary_ability",
+      "secondary_ability",
+      "instant_ability",
+      "limit_break",
+    ]);
+
+    if (type === "ability" || legacyTypes.has(type)) {
+      // Try to detect the specific ability subtype from the provided item.
+      const subtype = getAbilitySubtype(item) || (legacyTypes.has(type) ? type : "");
+      if (subtype) {
+        const localized = game.i18n.localize(`FFXIV.ItemType.${subtype}`);
+        return localized.replace(/\s+Ability$/i, "");
+      }
       return game.i18n.localize("FFXIV.ItemType.ability");
     }
+
     const label = game.i18n.localize(`FFXIV.ItemType.${type}`);
     return label.replace(/\s+Ability$/i, "");
   }
@@ -1618,6 +1640,23 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     tempItem.update = persistGrant;
     tempItem.sheet.render({ force: true });
+  }
+
+  async _moveJobAbility(direction, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const grants = this._getJobAbilityGrants();
+    const target = index + direction;
+    if (!grants[index] || !grants[target]) return;
+
+    [grants[index], grants[target]] = [grants[target], grants[index]];
+    await this.item.update(
+      { "system.ability_grants": grants },
+      { render: false },
+    );
+    this.render({ force: true });
   }
 
   async _onDropJobAbility(event) {

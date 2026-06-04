@@ -56,7 +56,10 @@ export function onManageActiveEffect(event, owner, options = {}) {
       const statusId = getStackableStatusId(effect);
       if (!statusId) return;
       const delta = a.dataset.action === "stack-increase" ? 1 : -1;
-      return applyStatusEffectStackDelta(owner, statusId, delta);
+      return applyStatusEffectStackDelta(owner, statusId, delta, {
+        origin: effect.origin,
+        sourceEffect: effect,
+      });
     }
   }
 }
