@@ -500,6 +500,8 @@
       "EnemyStep": "Étape des ennemis",
       "StepEnd": "Fin de {step}",
       "StepEndStatusEffects": "Effets de statut de fin de {step}",
+      "MoveUp": "Déplacer vers le haut",
+      "MoveDown": "Déplacer vers le bas",
       "DOTDamage": "Dégâts sur la durée {amount}",
       "RevivifyHealing": "Revigoré {amount} PV"
     },

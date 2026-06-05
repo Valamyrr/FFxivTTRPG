@@ -503,6 +503,8 @@
       "EnemyStep": "Enemy Step",
       "StepEnd": "End of {step}",
       "StepEndStatusEffects": "End of {step} status effects",
+      "MoveUp": "Move up",
+      "MoveDown": "Move down",
       "DOTDamage": "DOT {amount} damage",
       "RevivifyHealing": "Revivify {amount} HP"
     },

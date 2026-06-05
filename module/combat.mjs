@@ -71,6 +71,44 @@ export class FFXIVCombat extends Combat {
     return this;
   }
 
+  async reorderCombatant(combatantId, direction) {
+    const combatant = this.combatants.get(combatantId);
+    if (!combatant) return this;
+
+    const step = getTurnStep(combatant);
+    const stepCombatants = this.turns.filter(
+      (entry) => getTurnStep(entry) === step,
+    );
+    const currentIndex = stepCombatants.findIndex(
+      (entry) => entry.id === combatant.id,
+    );
+    const targetIndex = currentIndex + Math.sign(Number(direction));
+    if (
+      currentIndex === -1 ||
+      targetIndex < 0 ||
+      targetIndex >= stepCombatants.length
+    )
+      return this;
+
+    const reordered = stepCombatants.slice();
+    [reordered[currentIndex], reordered[targetIndex]] = [
+      reordered[targetIndex],
+      reordered[currentIndex],
+    ];
+
+    const usedOrders = stepCombatants
+      .map((entry) => Number(entry.initiative))
+      .filter(Number.isFinite);
+    const firstOrder = usedOrders.length ? Math.min(...usedOrders) : 1;
+    const updates = reordered.map((entry, index) => ({
+      _id: entry.id,
+      initiative: firstOrder + index,
+    }));
+
+    await this.updateEmbeddedDocuments("Combatant", updates);
+    return this;
+  }
+
   /** @override */
   async nextTurn() {
     return this._withActorSheetScroll(async () => {

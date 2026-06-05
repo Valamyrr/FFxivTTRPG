@@ -100,6 +100,116 @@ input:disabled {
   text-transform: none;
 }
 
+.combat-dock .ffxiv-carousel-combat-step-indicator {
+  flex: 0 0 auto;
+  align-self: center;
+  min-height: 0;
+  width: 4px;
+  height: calc(var(--combatant-portrait-size) * 1.15);
+  max-height: calc(var(--combatant-portrait-size) * 1.15);
+  margin: 0 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: #54ad24;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.combat-dock .ffxiv-carousel-combat-step-indicator[data-step="1"] {
+  background: #c12c2c;
+}
+
+.combat-dock .ffxiv-carousel-combat-step-indicator.ffxiv-combat-step-end {
+  opacity: 0.45;
+}
+
+.combat-dock .ffxiv-carousel-combat-step-boundary.horizontal {
+  background: linear-gradient(
+    to right,
+    var(--ffxiv-previous-step-color) 0 50%,
+    var(--ffxiv-next-step-color) 50% 100%
+  );
+}
+
+.combat-dock .ffxiv-carousel-combat-step-boundary.vertical {
+  background: linear-gradient(
+    to bottom,
+    var(--ffxiv-previous-step-color) 0 50%,
+    var(--ffxiv-next-step-color) 50% 100%
+  );
+}
+
+.combat-dock .separator.ffxiv-carousel-combat-step-indicator.horizontal {
+  height: calc(var(--combatant-portrait-size) * 1.15);
+  max-height: calc(var(--combatant-portrait-size) * 1.15);
+}
+
+.combat-dock .ffxiv-carousel-combat-step-indicator.vertical {
+  width: calc(var(--combatant-portrait-size) * 1.15);
+  max-width: calc(var(--combatant-portrait-size) * 1.15);
+  height: 4px;
+  margin: 4px 0;
+}
+
+#combat-tracker .ffxiv-combat-status,
+.combat-tracker .ffxiv-combat-status {
+  position: relative;
+  display: inline-flex;
+  overflow: visible;
+}
+
+#combat-tracker .ffxiv-combat-status-stack,
+.combat-tracker .ffxiv-combat-status-stack {
+  position: absolute;
+  right: -1px;
+  bottom: -2px;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000,
+    0 0 2px #000;
+}
+
+#combat-tracker .ffxiv-combat-order-controls,
+.combat-tracker .ffxiv-combat-order-controls {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 20px;
+}
+
+#combat-tracker .ffxiv-combat-order-button,
+.combat-tracker .ffxiv-combat-order-button {
+  width: 18px;
+  height: 13px;
+  min-height: 13px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-light-2);
+  font-size: 10px;
+  line-height: 11px;
+}
+
+#combat-tracker .ffxiv-combat-order-button:disabled,
+.combat-tracker .ffxiv-combat-order-button:disabled {
+  opacity: 0.3;
+}
+
 form.active-effect-config .form-group.statuses .ffxiv-status-stack-controls {
   display: inline-flex;
   align-items: center;

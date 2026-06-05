@@ -167,8 +167,22 @@ Hooks.on("updateActor", (actor, changes) => {
   });
 });
 
+Hooks.on("updateCombatant", (combatant, changes, options) => {
+  if (options?.ffxivSyncKnockedOut) return;
+  if (!foundry.utils.hasProperty(changes, "defeated")) return;
+  syncCombatantKnockedOutStatus(combatant).catch((error) => {
+    debugError("FFXIV | Failed to sync defeated status:", error);
+  });
+});
+
+Hooks.on("combat-tracker-dock-init", (api) => {
+  installCarouselCombatTrackerStepIndicators(api);
+});
+
 Hooks.on("renderCombatTracker", (app, html) => {
   renderCombatStepIndicators(app, html);
+  renderCombatTrackerStatusStacks(app, html);
+  renderCombatTrackerOrderControls(app, html);
 });
 
 /* -------------------------------------------- */
@@ -614,6 +628,7 @@ Hooks.once("ready", function () {
   configureCombatTrackedResource().catch((error) => {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);
   });
+  installCarouselCombatTrackerStepIndicators();
   installTokenBarrierOverlay();
   installTokenStatusStackCounterOverlay();
   refreshAllTokenStatusStackCounters().catch((error) => {
@@ -3842,7 +3857,8 @@ function renderCombatStepIndicators(app, html) {
   if (!turns.length) return;
 
   const combatantElements = new Map();
-  for (const combatantElement of element.querySelectorAll("[data-combatant-id]")) {
+  const combatantRows = element.querySelectorAll("[data-combatant-id]");
+  for (const combatantElement of combatantRows) {
     const combatantId = combatantElement.dataset.combatantId;
     if (combatantId) combatantElements.set(combatantId, combatantElement);
   }
@@ -3882,21 +3898,356 @@ function renderCombatStepIndicators(app, html) {
   }
 }
 
-function createCombatStepIndicator(step, position, combatantElement) {
-  const tagName = combatantElement?.tagName === "LI" ? "li" : "div";
-  const element = document.createElement(tagName);
+function renderCombatTrackerStatusStacks(app, html) {
+  const element = getHookHTMLElement(html, app);
+  if (!element) return;
+
+  const combat = app?.viewed ?? app?.combat ?? game.combat;
+  if (!combat?.combatants?.size) return;
+
+  const combatantElements = element.querySelectorAll("[data-combatant-id]");
+  for (const combatantElement of combatantElements) {
+    const combatant = combat.combatants.get(
+      combatantElement.dataset.combatantId,
+    );
+    if (!combatant?.actor) continue;
+    decorateCombatantStatusStacks(combatantElement, combatant.actor);
+  }
+}
+
+function decorateCombatantStatusStacks(combatantElement, actor) {
+  const effects = combatantElement.querySelector(
+    ".token-effects, .combatant-effects, .effects",
+  );
+  if (!(effects instanceof HTMLElement)) return;
+
+  effects
+    .querySelectorAll(".ffxiv-combat-status-stack")
+    .forEach((counter) => counter.remove());
+
+  const statusEffects = new Map(
+    (CONFIG.statusEffects ?? []).map((effect) => [effect.id, effect]),
+  );
+  for (const statusId of actor.statuses ?? []) {
+    if (!isStackableStatusEffect(statusId)) continue;
+    const status = statusEffects.get(statusId);
+    const icon = getCombatTrackerStatusIcon(effects, statusId, status);
+    if (!(icon instanceof HTMLImageElement)) continue;
+    const label = game.i18n.localize(status?.name ?? status?.label ?? statusId);
+    const count = getStatusStackCount(actor, statusId);
+    if (count <= 1) {
+      icon.title = label;
+      icon.setAttribute("data-tooltip", label);
+      continue;
+    }
+
+    const wrapper =
+      icon.parentElement?.classList.contains("ffxiv-combat-status")
+        ? icon.parentElement
+        : document.createElement("span");
+    if (wrapper !== icon.parentElement) {
+      wrapper.className = "ffxiv-combat-status";
+      icon.before(wrapper);
+      wrapper.appendChild(icon);
+    }
+
+    const counter = document.createElement("span");
+    counter.className = "ffxiv-combat-status-stack";
+    counter.textContent = String(count);
+    wrapper.appendChild(counter);
+
+    icon.title = `${label} (x${count})`;
+    icon.setAttribute("data-tooltip", `${label} (x${count})`);
+  }
+}
+
+function getCombatTrackerStatusIcon(effects, statusId, status) {
+  const icons = Array.from(effects.querySelectorAll("img"));
+  return icons.find((icon) => {
+    const iconStatusId = String(
+      icon.dataset.statusId ?? icon.dataset.status ?? "",
+    );
+    if (iconStatusId === statusId) return true;
+    const src = String(icon.getAttribute("src") ?? icon.src ?? "");
+    return Boolean(status?.img && src.includes(status.img)) ||
+      Boolean(status?.icon && src.includes(status.icon));
+  });
+}
+
+function renderCombatTrackerOrderControls(app, html) {
+  const element = getHookHTMLElement(html, app);
+  if (!element) return;
+
+  const combat = app?.viewed ?? app?.combat ?? game.combat;
+  const turns = combat?.turns ?? [];
+  if (!turns.length) return;
+
+  const stepIndexes = new Map();
+  for (const combatant of turns) {
+    const step = getTurnStep(combatant);
+    if (!stepIndexes.has(step)) stepIndexes.set(step, []);
+    stepIndexes.get(step).push(combatant.id);
+  }
+
+  const combatantElements = element.querySelectorAll("[data-combatant-id]");
+  for (const combatantElement of combatantElements) {
+    const combatantId = combatantElement.dataset.combatantId;
+    const combatant = combat.combatants.get(combatantId);
+    if (!combatant) continue;
+
+    const controls = getCombatTrackerInitiativeElement(combatantElement);
+    if (!(controls instanceof HTMLElement)) continue;
+
+    const stepIds = stepIndexes.get(getTurnStep(combatant)) ?? [];
+    const index = stepIds.indexOf(combatant.id);
+    controls.replaceChildren(
+      createCombatOrderButton(combat, combatant, -1, index <= 0),
+      createCombatOrderButton(
+        combat,
+        combatant,
+        1,
+        index === -1 || index >= stepIds.length - 1,
+      ),
+    );
+    controls.classList.add("ffxiv-combat-order-controls");
+  }
+}
+
+function getCombatTrackerInitiativeElement(combatantElement) {
+  const element = combatantElement.querySelector(
+    ".token-initiative, .combatant-initiative, .initiative",
+  );
+  if (element instanceof HTMLElement) return element;
+
+  const controls = document.createElement("div");
+  controls.className = "token-initiative";
+  combatantElement.appendChild(controls);
+  return controls;
+}
+
+function createCombatOrderButton(combat, combatant, direction, unavailable) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ffxiv-combat-order-button";
+  button.disabled = unavailable || !game.user.isGM;
+  button.dataset.direction = String(direction);
+  button.title = game.i18n.localize(
+    direction < 0 ? "FFXIV.Combat.MoveUp" : "FFXIV.Combat.MoveDown",
+  );
+
+  const icon = document.createElement("i");
+  icon.className = direction < 0 ? "fas fa-chevron-up" : "fas fa-chevron-down";
+  button.appendChild(icon);
+
+  button.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (button.disabled) return;
+    await combat.reorderCombatant(combatant.id, direction);
+  });
+
+  return button;
+}
+
+function installCarouselCombatTrackerStepIndicators(api = null) {
+  if (globalThis.__ffxivCarouselCombatStepIndicatorsInstalled) return;
+  if (game.modules.get("combat-tracker-dock")?.active !== true) return;
+
+  const CombatDockClass = api?.CombatDock ?? CONFIG.combatTrackerDock?.CombatDock;
+  if (!CombatDockClass?.prototype) return;
+  globalThis.__ffxivCarouselCombatStepIndicatorsInstalled = true;
+
+  const render = (dock) => renderCarouselCombatStepIndicators(dock);
+  for (const method of ["setupCombatants", "updateOrder", "updateCombatant"]) {
+    const original = CombatDockClass.prototype[method];
+    if (typeof original !== "function") continue;
+    CombatDockClass.prototype[method] = function ffxivWrappedCombatDockMethod(
+      ...args
+    ) {
+      const result = original.apply(this, args);
+      render(this);
+      return result;
+    };
+  }
+  renderCarouselCombatStepIndicators(ui.combatDock);
+}
+
+function renderCarouselCombatStepIndicators(dock) {
+  const container = dock?.element?.querySelector?.("#combatants");
+  if (!(container instanceof HTMLElement)) return;
+
+  container
+    .querySelectorAll(".ffxiv-carousel-combat-step-indicator")
+    .forEach((indicator) => indicator.remove());
+
+  const combatants = dock.sortedCombatants ?? dock.combat?.turns ?? [];
+  if (!combatants.length) return;
+
+  const portraitElements = new Map();
+  for (const portrait of dock.portraits ?? []) {
+    if (portrait?.combatant?.id && portrait.element instanceof HTMLElement) {
+      portraitElements.set(portrait.combatant.id, portrait.element);
+    }
+  }
+  for (const element of container.querySelectorAll("[data-combatant-id]")) {
+    const combatantId = element.dataset.combatantId;
+    if (combatantId && !portraitElements.has(combatantId)) {
+      portraitElements.set(combatantId, element);
+    }
+  }
+
+  const orderedEntries = combatants
+    .map((combatant) => {
+      const element = portraitElements.get(combatant.id);
+      if (!(element instanceof HTMLElement)) return null;
+      return {
+        combatant,
+        element,
+        order: getCarouselCombatantElementOrder(element),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.order - b.order);
+  if (!orderedEntries.length) return;
+
+  let currentStep = null;
+  let previousEntry = null;
+  for (const entry of orderedEntries) {
+    const step = getTurnStep(entry.combatant);
+    if (step !== currentStep) {
+      if (previousEntry) {
+        container.appendChild(createCarouselCombatStepBoundary(
+          currentStep,
+          step,
+          previousEntry.order,
+          dock,
+        ));
+      } else {
+        container.appendChild(createCarouselCombatStepIndicator(
+          step,
+          "start",
+          entry.order - 1,
+          dock,
+        ));
+      }
+      currentStep = step;
+    }
+    previousEntry = entry;
+  }
+
+  if (previousEntry) {
+    container.appendChild(createCarouselCombatStepIndicator(
+      currentStep,
+      "end",
+      previousEntry.order + 1,
+      dock,
+    ));
+    moveCarouselRoundSeparatorAfterStepEnd(container, previousEntry.order + 2);
+  }
+}
+
+function getCarouselCombatantElementOrder(element) {
+  const order = Number.parseFloat(element.style.order);
+  if (Number.isFinite(order)) return order;
+  return Array.prototype.indexOf.call(
+    element.parentElement?.children ?? [],
+    element,
+  );
+}
+
+function createCarouselCombatStepIndicator(step, position, order, dock) {
+  const element = document.createElement("div");
+  element.classList.add("separator", "ffxiv-carousel-combat-step-indicator");
+  element.classList.add(`ffxiv-combat-step-${position}`);
+  element.classList.add(dock?.isVertical ? "vertical" : "horizontal");
+  element.dataset.step = String(step);
+  element.setAttribute("role", "presentation");
+  element.title = getCombatStepIndicatorLabel(step, position);
+  element.style.order = String(order);
+  return element;
+}
+
+function createCarouselCombatStepBoundary(previousStep, nextStep, order, dock) {
+  const element = document.createElement("div");
+  element.classList.add(
+    "separator",
+    "ffxiv-carousel-combat-step-indicator",
+    "ffxiv-carousel-combat-step-boundary",
+  );
+  element.classList.add(dock?.isVertical ? "vertical" : "horizontal");
+  element.dataset.previousStep = String(previousStep);
+  element.dataset.nextStep = String(nextStep);
+  element.style.setProperty(
+    "--ffxiv-previous-step-color",
+    getCarouselCombatStepColor(previousStep),
+  );
+  element.style.setProperty(
+    "--ffxiv-next-step-color",
+    getCarouselCombatStepColor(nextStep),
+  );
+  element.setAttribute("role", "presentation");
+  element.title = `${getCombatStepIndicatorLabel(
+    previousStep,
+    "end",
+  )} / ${getCombatStepIndicatorLabel(nextStep, "start")}`;
+  element.style.order = String(order);
+  return element;
+}
+
+function getCarouselCombatStepColor(step) {
+  return step === 0 ? "#54ad24" : "#c12c2c";
+}
+
+function getCombatStepIndicatorLabel(step, position) {
   const stepLabel = step === 0
     ? game.i18n.localize("FFXIV.Combat.AdventurerStep")
     : game.i18n.localize("FFXIV.Combat.EnemyStep");
+  return position === "start"
+    ? stepLabel
+    : game.i18n.format("FFXIV.Combat.StepEnd", { step: stepLabel });
+}
+
+function moveCarouselRoundSeparatorAfterStepEnd(container, order) {
+  const separator = container.querySelector(
+    ".separator:not(.ffxiv-carousel-combat-step-indicator)",
+  );
+  if (separator instanceof HTMLElement) {
+    separator.style.order = String(order);
+  }
+}
+
+async function syncCombatantKnockedOutStatus(combatant) {
+  const actor = combatant?.actor;
+  if (!actor) return;
+
+  const flagKey = "knockedOutFromDefeated";
+  if (combatant.defeated) {
+    if (!hasStatus(actor, "knocked_out")) {
+      await applyStatusEffectChange(actor, "knocked_out", true);
+      if (hasStatus(actor, "knocked_out")) {
+        await combatant.setFlag("ffxiv", flagKey, true);
+      }
+    }
+    return;
+  }
+
+  if (combatant.getFlag("ffxiv", flagKey) !== true) return;
+  await combatant.unsetFlag("ffxiv", flagKey);
+  if (hasStatus(actor, "knocked_out")) {
+    await applyStatusEffectChange(actor, "knocked_out", false);
+  }
+}
+
+function createCombatStepIndicator(step, position, combatantElement) {
+  const tagName = combatantElement?.tagName === "LI" ? "li" : "div";
+  const element = document.createElement(tagName);
   element.classList.add(
     "ffxiv-combat-step-indicator",
     `ffxiv-combat-step-${position}`,
   );
   element.dataset.step = String(step);
   element.setAttribute("role", "presentation");
-  element.textContent = position === "start"
-    ? stepLabel
-    : game.i18n.format("FFXIV.Combat.StepEnd", { step: stepLabel });
+  element.textContent = getCombatStepIndicatorLabel(step, position);
   return element;
 }
 
