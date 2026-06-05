@@ -2,7 +2,6 @@
 @import url("item.css");
 @import url("actor.css");
 @import url("chat/chat.css");
-
 @font-face {
   font-family: "Roboto";
   src: url("../fonts/Roboto-Regular.ttf") format("truetype");
@@ -10,7 +9,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: "Roboto";
   src: url("../fonts/Roboto-Bold.ttf") format("truetype");
@@ -18,8 +16,6 @@
   font-style: normal;
   font-display: swap;
 }
-
-
 /* Global styles */
 .window-app,
 .application.ffxiv {
@@ -125,19 +121,11 @@ input:disabled {
 }
 
 .combat-dock .ffxiv-carousel-combat-step-boundary.horizontal {
-  background: linear-gradient(
-    to right,
-    var(--ffxiv-previous-step-color) 0 50%,
-    var(--ffxiv-next-step-color) 50% 100%
-  );
+  background: linear-gradient(to right, var(--ffxiv-previous-step-color) 0 50%, var(--ffxiv-next-step-color) 50% 100%);
 }
 
 .combat-dock .ffxiv-carousel-combat-step-boundary.vertical {
-  background: linear-gradient(
-    to bottom,
-    var(--ffxiv-previous-step-color) 0 50%,
-    var(--ffxiv-next-step-color) 50% 100%
-  );
+  background: linear-gradient(to bottom, var(--ffxiv-previous-step-color) 0 50%, var(--ffxiv-next-step-color) 50% 100%);
 }
 
 .combat-dock .separator.ffxiv-carousel-combat-step-indicator.horizontal {
@@ -174,12 +162,7 @@ input:disabled {
   font-weight: 700;
   line-height: 1;
   text-align: center;
-  text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000,
-    0 0 2px #000;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 2px #000;
 }
 
 #combat-tracker .ffxiv-combat-order-controls,
@@ -281,9 +264,15 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   justify-content: flex-end;
 }
 
-.ffxiv-settings-submenu .setting-control input[type="text"],
-.ffxiv-settings-submenu .setting-control input[type="number"] {
+.ffxiv-settings-submenu .setting-control input[type=text],
+.ffxiv-settings-submenu .setting-control input[type=number] {
   width: 100%;
+}
+
+.ffxiv-settings-submenu .setting-control input::-moz-placeholder {
+  color: var(--placeholder-color, #8d8d8d);
+  font-style: italic;
+  opacity: 0.68;
 }
 
 .ffxiv-settings-submenu .setting-control input::placeholder {
@@ -506,7 +495,6 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
 .ffxiv .item-form {
   font-family: "Roboto", sans-serif;
 }
-
 .ffxiv .sheet-header {
   flex: 0 auto;
   overflow: hidden;
@@ -515,40 +503,33 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   flex-wrap: wrap;
   justify-content: flex-start;
 }
-
 .ffxiv .sheet-header .profile-img {
   flex: 0 0 100px;
   height: 100px;
   margin-right: 10px;
 }
-
 .ffxiv .sheet-header .header-fields {
   flex: 1;
 }
-
 .ffxiv .sheet-header h1.charname {
   padding: 0px;
   margin: 5px 0;
   border-bottom: 0;
 }
-
 .ffxiv .sheet-header h1.charname input {
   width: 100%;
   height: 100%;
   margin: 0;
 }
-
 .ffxiv .sheet-tabs {
   flex: 0;
 }
-
 .ffxiv .sheet-body .editor {
   height: 100%;
   min-height: 280px;
   border: solid 1px var(--color-border-light-tertiary);
   border-radius: 5px;
 }
-
 .ffxiv .sheet-body prose-mirror {
   display: block;
   flex: 1 1 100%;
@@ -558,23 +539,19 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   border-radius: 5px;
   color: var(--text-color);
 }
-
 .ffxiv .sheet-body .editor.prosemirror {
   display: flex;
   flex-direction: column;
   min-height: 180px;
   color: var(--text-color);
 }
-
 .ffxiv .sheet-body .editor.prosemirror.sized {
   flex: 1;
   overflow: hidden;
 }
-
 .ffxiv .sheet-body .editor.prosemirror menu {
   flex: 0 0 auto;
 }
-
 .ffxiv .sheet-body .editor.prosemirror .editor-container {
   flex: 1 1 auto;
   min-height: 150px;
@@ -584,12 +561,10 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   border: 1px solid var(--color-border-light-tertiary);
   border-radius: 0 0 5px 5px;
 }
-
 .ffxiv .sheet-body prose-mirror .editor-content {
   min-height: 150px;
   padding: 10px;
 }
-
 .ffxiv .sheet-body .editor.prosemirror .editor-content {
   position: unset;
   min-height: 150px;
@@ -598,23 +573,18 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   background: transparent;
   outline: none;
 }
-
 .ffxiv .sheet-body .editor.prosemirror.sized .editor-content {
   min-height: 180px;
 }
-
 .ffxiv .tox .tox-editor-container {
   background: #fff;
 }
-
 .ffxiv .tox .tox-edit-area {
   padding: 0 8px;
 }
-
 .ffxiv .resource-label {
   font-weight: bold;
 }
-
 .ffxiv .items-header {
   height: 28px;
   margin: 2px 0;
@@ -624,19 +594,16 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   border: 2px groove #eeede0;
   font-weight: bold;
 }
-
-.ffxiv .items-header>* {
+.ffxiv .items-header > * {
   font-size: 14px;
   text-align: center;
 }
-
 .ffxiv .items-header .item-name {
   font-weight: bold;
   padding-left: 5px;
   text-align: left;
   display: flex;
 }
-
 .ffxiv .items-list {
   list-style: none;
   margin: 0;
@@ -645,13 +612,11 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   scrollbar-width: thin;
   color: #444;
 }
-
 .ffxiv .items-list .item-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-
 .ffxiv .items-list .item-name {
   flex: 2;
   margin: 0;
@@ -661,40 +626,33 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   align-items: center;
   display: flex;
 }
-
 .ffxiv .items-list .item-name h3,
 .ffxiv .items-list .item-name h4 {
   margin: 0;
   white-space: nowrap;
   overflow-x: hidden;
 }
-
 .ffxiv .items-list .item-controls {
   display: flex;
   flex: 0 0 100px;
   justify-content: flex-end;
 }
-
 .ffxiv .items-list .item-controls a {
   font-size: 12px;
   text-align: center;
   margin: 0 6px;
 }
-
 .ffxiv .items-list .item {
   align-items: center;
   padding: 0 2px;
   border-bottom: 1px solid #c9c7b8;
 }
-
 .ffxiv .items-list .item:last-child {
   border-bottom: none;
 }
-
 .ffxiv .items-list .item .item-name {
   color: #191813;
 }
-
 .ffxiv .items-list .item .item-name .item-image {
   flex: 0 0 30px;
   height: 30px;
@@ -702,14 +660,12 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   border: none;
   margin-right: 5px;
 }
-
 .ffxiv .items-list .item-prop {
   text-align: center;
   border-left: 1px solid #c9c7b8;
   border-right: 1px solid #c9c7b8;
   font-size: 12px;
 }
-
 .ffxiv .items-list .items-header {
   height: 28px;
   margin: 2px 0;
@@ -719,22 +675,18 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   border: 2px groove #eeede0;
   font-weight: bold;
 }
-
-.ffxiv .items-list .items-header>* {
+.ffxiv .items-list .items-header > * {
   font-size: 12px;
   text-align: center;
 }
-
 .ffxiv .items-list .items-header .item-name {
   padding-left: 5px;
   text-align: left;
 }
-
 .ffxiv .item-formula {
   flex: 0 0 200px;
   padding: 0 8px;
 }
-
 .ffxiv .effects .item .effect-source,
 .ffxiv .effects .item .effect-duration,
 .ffxiv .effects .item .effect-controls {
@@ -743,22 +695,18 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   border-right: 1px solid #c9c7b8;
   font-size: 12px;
 }
-
 .ffxiv .effects .item .effect-controls {
   border: none;
 }
-
 .ffxiv .delete-icon {
   color: #d00000;
   font-family: Arial, sans-serif;
   font-size: 18px;
   font-weight: 700;
 }
-
 .ffxiv .effect-row {
   min-height: 64px;
 }
-
 .ffxiv .effect-main,
 .ffxiv .ability-effect-name {
   align-items: center;
@@ -766,16 +714,16 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   gap: 8px;
   min-width: 0;
 }
-
 .ffxiv .effect-icon,
 .ffxiv .ability-effect-name img {
   flex: 0 0 48px;
   width: 48px;
   height: 64px;
-  object-fit: contain;
-  object-position: center;
+  -o-object-fit: contain;
+     object-fit: contain;
+  -o-object-position: center;
+     object-position: center;
 }
-
 .ffxiv .effect-meta,
 .ffxiv .ability-effect-name span {
   min-width: 0;
@@ -798,7 +746,7 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   padding: 8px;
 }
 
-.ffxiv .popout-editor-window button[type="submit"] {
+.ffxiv .popout-editor-window button[type=submit] {
   margin-top: 8px;
   width: 100%;
 }
@@ -816,15 +764,43 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   color: var(--text-color);
 }
 
+.ffxiv input::-moz-placeholder {
+  color: var(--placeholder-color);
+}
+
 .ffxiv input::placeholder {
   color: var(--placeholder-color);
 }
+
 /* djLint utility classes */
-.ffxiv-text-center { text-align: center; }
-.ffxiv-hidden { display: none; }
-.ffxiv-d-flex { display: flex; }
-.ffxiv-mt-12 { margin-top: 12px; }
-.ffxiv-w-auto { width: auto; }
-.ffxiv-w-1_5em { width: 1.5em; }
-.ffxiv-m-auto { margin: auto; }
-.ffxiv-border-orangered { border-color: orangered; }
+.ffxiv-text-center {
+  text-align: center;
+}
+
+.ffxiv-hidden {
+  display: none;
+}
+
+.ffxiv-d-flex {
+  display: flex;
+}
+
+.ffxiv-mt-12 {
+  margin-top: 12px;
+}
+
+.ffxiv-w-auto {
+  width: auto;
+}
+
+.ffxiv-w-1_5em {
+  width: 1.5em;
+}
+
+.ffxiv-m-auto {
+  margin: auto;
+}
+
+.ffxiv-border-orangered {
+  border-color: orangered;
+}

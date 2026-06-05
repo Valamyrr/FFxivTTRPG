@@ -1,3 +1,5 @@
-.resource-label {
-  font-weight: bold;
+@mixin styles {
+  .resource-label {
+    font-weight: bold;
+  }
 }

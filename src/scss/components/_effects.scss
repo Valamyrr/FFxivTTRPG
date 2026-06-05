@@ -1,45 +1,49 @@
-.effects .item {
-  .effect-source,
-  .effect-duration,
-  .effect-controls {
-    text-align: center;
-    border-left: 1px solid #c9c7b8;
-    border-right: 1px solid #c9c7b8;
-    font-size: 12px;
+@mixin styles {
+  .effects .item {
+    .effect-source,
+    .effect-duration,
+    .effect-controls {
+      text-align: center;
+      border-left: 1px solid #c9c7b8;
+      border-right: 1px solid #c9c7b8;
+      font-size: 12px;
+    }
+
+    .effect-controls {
+      border: none;
+    }
   }
 
-  .effect-controls {
-    border: none;
+  .delete-icon {
+    color: #d00000;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
   }
-}
 
-.delete-icon {
-  font-family: "Segoe UI Symbol", "Noto Sans Symbols", sans-serif;
-  font-weight: normal;
-}
+  .effect-row {
+    min-height: 64px;
+  }
 
-.effect-row {
-  min-height: 64px;
-}
+  .effect-main,
+  .ability-effect-name {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+  }
 
-.effect-main,
-.ability-effect-name {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  min-width: 0;
-}
+  .effect-icon,
+  .ability-effect-name img {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 64px;
+    object-fit: contain;
+    object-position: center;
+  }
 
-.effect-icon,
-.ability-effect-name img {
-  flex: 0 0 48px;
-  width: 48px;
-  height: 64px;
-  object-fit: contain;
-  object-position: center;
-}
-
-.effect-meta,
-.ability-effect-name span {
-  min-width: 0;
+  .effect-meta,
+  .ability-effect-name span {
+    min-width: 0;
+  }
 }
