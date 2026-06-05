@@ -3,3 +3,4 @@
 .htmlhintrc
 package-lock.json
 system.zip
+*.map
