@@ -1,9 +1,15 @@
 import {
-  getStatusStackEffects,
-  getStatusStackValue,
+  applyStatusEffectChange,
+  canActorRecover,
+  getHighestStatusStackCount,
 } from "./helpers/status-effects.mjs";
 
-function getTurnStep(combatant) {
+const STEP_END_STATUS_ICONS = {
+  dot: "systems/ffxiv/assets/effects/dot.webp",
+  revivify: "systems/ffxiv/assets/effects/revivify.webp",
+};
+
+export function getTurnStep(combatant) {
   const actorType = combatant?.actor?.type;
   const disposition = combatant?.token?.disposition;
   if (actorType === "character" || actorType === "pet") return 0;
@@ -15,7 +21,9 @@ export class FFXIVCombat extends Combat {
   /** @override */
   async startCombat() {
     return this._withActorSheetScroll(async () => {
+      this._ffxivResolvedStepEnds = new Set();
       await this._confirmResetLimitations();
+      await this._resetEncounterStatusFlags();
       const startedCombat = await super.startCombat();
       await this._applyStartingMpOverrides();
       return startedCombat;
@@ -98,6 +106,7 @@ export class FFXIVCombat extends Combat {
   async _onEndTurn(combatant, context) {
     return this._withActorSheetScroll(async () => {
       await super._onEndTurn(combatant, context);
+      if (combatant?.actor) await this._removeTurnEndStatuses(combatant.actor);
       if (combatant?.actor?.type !== "character") return;
       await this._removeInvokingStatus(combatant.actor);
     });
@@ -107,6 +116,7 @@ export class FFXIVCombat extends Combat {
   async _onStartTurn(combatant, context) {
     return this._withActorSheetScroll(async () => {
       await super._onStartTurn(combatant, context);
+      if (combatant?.actor) await this._removeTurnStartStatuses(combatant.actor);
       if (combatant?.actor?.type !== "npc") return;
       await this._removeInvokingStatus(combatant.actor);
     });
@@ -117,21 +127,40 @@ export class FFXIVCombat extends Combat {
     await actor.toggleStatusEffect("invoking", { active: false });
   }
 
+  async _removeTurnStartStatuses(actor) {
+    await applyStatusEffectChange(actor, "transcendent", false);
+  }
+
+  async _removeTurnEndStatuses(actor) {
+    await this._deleteStatuses(actor, [
+      "drain",
+      "enmity",
+      "heavy",
+      "paralysis",
+      "silence",
+    ]);
+  }
+
   async _resolveCurrentStepEnd() {
     const combatant = this.combatant;
     if (!combatant || !this._isLastCombatantInStep(combatant)) return;
-    await this._resolveStepEnd(getTurnStep(combatant));
+    await this._resolveStepEndOnce(getTurnStep(combatant));
   }
 
   async _resolveRemainingStepEnds() {
-    const steps = Array.from(
-      new Set(this.combatants.map((combatant) => getTurnStep(combatant))),
-    ).sort((a, b) => a - b);
+    const round = this.round;
+    const steps = this._getCombatSteps();
     const currentStep = this.combatant ? getTurnStep(this.combatant) : steps[0];
     for (const step of steps) {
       if (step < currentStep) continue;
-      await this._resolveStepEnd(step);
+      await this._resolveStepEndOnce(step, round);
     }
+  }
+
+  _getCombatSteps() {
+    return Array.from(
+      new Set(this.combatants.map((combatant) => getTurnStep(combatant))),
+    ).sort((a, b) => a - b);
   }
 
   _isLastCombatantInStep(combatant) {
@@ -150,26 +179,58 @@ export class FFXIVCombat extends Combat {
     const messages = [];
     const updatedActorIds = new Set();
     for (const actor of actors) {
-      const result = this._getStepEndHealthResult(actor);
-      if (!result.changed) continue;
-      updatedActorIds.add(actor.id);
-      updates.push(actor.update(
-        { "system.health.value": result.nextHealth },
-        {
+      const result = this._getStepEndHealthResult(actor, step);
+      if (!result.changed && !result.statusEffectsResolved) continue;
+      if (result.changed) {
+        updatedActorIds.add(actor.id);
+        const updateData = {
+          "system.health.value": result.nextHealth,
+        };
+        if (result.nextBarrier !== result.currentBarrier) {
+          updateData["system.barrier.value"] = result.nextBarrier;
+        }
+        updates.push(actor.update(updateData, {
           render: false,
           ffxivSkipActorSheetRefresh: true,
-        },
-      ));
-      messages.push({ actor, ...result });
+        }));
+      }
+      if (this._shouldReportStepEndResult(result)) {
+        messages.push({ actor, ...result });
+      }
     }
 
-    if (!updates.length) return;
-    await Promise.all(updates);
-    await this._refreshActorSheets(
-      this._captureActorSheetScroll(),
-      updatedActorIds,
-    );
+    await this._removeStepEndStatuses();
+    if (!updates.length && !messages.length) return;
+    if (updates.length) {
+      await Promise.all(updates);
+      await this._refreshActorSheets(
+        this._captureActorSheetScroll(),
+        updatedActorIds,
+      );
+    }
     await this._createStepEndStatusMessage(step, messages);
+  }
+
+  async _resolveStepEndOnce(step, round = this.round) {
+    this._ffxivResolvedStepEnds ??= new Set();
+    const key = this._getResolvedStepEndKey(step, round);
+    if (this._ffxivResolvedStepEnds.has(key)) return;
+    this._ffxivResolvedStepEnds.add(key);
+    try {
+      await this._resolveStepEnd(step);
+    } catch (error) {
+      this._ffxivResolvedStepEnds.delete(key);
+      throw error;
+    }
+  }
+
+  _getResolvedStepEndKey(step, round = this.round) {
+    return `${this.id ?? this.uuid ?? "combat"}:${round ?? 0}:${step}`;
+  }
+
+  _shouldReportStepEndResult(result) {
+    if (result.currentHealth <= 0 && result.nextHealth <= 0) return false;
+    return result.statusEffectsResolved;
   }
 
   _getStepActors(step) {
@@ -177,48 +238,122 @@ export class FFXIVCombat extends Combat {
     for (const combatant of this.combatants) {
       if (getTurnStep(combatant) !== step) continue;
       const actor = combatant.actor;
-      if (!actor || actors.has(actor.id)) continue;
-      actors.set(actor.id, actor);
+      const actorRef = actor?.uuid ?? actor?.id;
+      if (!actor || actors.has(actorRef)) continue;
+      actors.set(actorRef, actor);
     }
     return Array.from(actors.values());
   }
 
-  _getStepEndHealthResult(actor) {
+  _getStepEndHealthResult(actor, step) {
     const currentHealth = Number(actor.system?.health?.value ?? 0);
+    const currentBarrier = Math.max(Number(actor.system?.barrier?.value) || 0, 0);
     const maxHealth = Number(actor.system?.health?.max);
     const healthCap = Number.isFinite(maxHealth) && maxHealth > 0
       ? maxHealth
       : Number.POSITIVE_INFINITY;
-    const dotDamage = getStatusStackEffects(actor, "dot")
-      .filter((effect) => !effect.disabled)
-      .reduce(
-        (highest, effect) => Math.max(
-          highest,
-          getStatusStackValue(effect, 1, "dot"),
-        ),
-        0,
-      );
-    const revivifyHealing = getStatusStackEffects(actor, "revivify")
-      .filter((effect) => !effect.disabled)
-      .reduce(
-        (highest, effect) => Math.max(
-          highest,
-          getStatusStackValue(effect, 1, "revivify"),
-        ),
-        0,
-      );
-    const nextHealth = Math.max(
-      0,
-      Math.min(currentHealth - dotDamage + revivifyHealing, healthCap),
+    const dotDamage = getHighestStatusStackCount(actor, "dot");
+    const revivifyHealing = getHighestStatusStackCount(actor, "revivify");
+    const availableRevivifyHealing = canActorRecover(actor)
+      ? revivifyHealing
+      : 0;
+    const dotFirstResult = this._applyStepEndDOT(
+      currentHealth,
+      currentBarrier,
+      dotDamage,
     );
+    const isAdventurerStep = step === 0;
+    const dotWouldKnockOut = dotFirstResult.nextHealth <= 0 &&
+      dotFirstResult.healthDamage > 0;
+    const revivifyWouldFill = availableRevivifyHealing > 0 &&
+      currentHealth + availableRevivifyHealing >= healthCap;
+    const dotAfterRevivify = isAdventurerStep
+      ? dotWouldKnockOut
+      : revivifyWouldFill;
+
+    let nextHealth = currentHealth;
+    let nextBarrier = currentBarrier;
+    let resolvedRevivifyHealing = 0;
+
+    if (dotAfterRevivify) {
+      if (availableRevivifyHealing > 0) {
+        nextHealth = this._applyStepEndRevivify(
+          nextHealth,
+          availableRevivifyHealing,
+          healthCap,
+        );
+        resolvedRevivifyHealing = availableRevivifyHealing;
+      }
+      const dotResult = this._applyStepEndDOT(nextHealth, nextBarrier, dotDamage);
+      nextHealth = dotResult.nextHealth;
+      nextBarrier = dotResult.nextBarrier;
+    } else {
+      nextHealth = dotFirstResult.nextHealth;
+      nextBarrier = dotFirstResult.nextBarrier;
+      if (availableRevivifyHealing > 0 && !dotWouldKnockOut) {
+        nextHealth = this._applyStepEndRevivify(
+          nextHealth,
+          availableRevivifyHealing,
+          healthCap,
+        );
+        resolvedRevivifyHealing = availableRevivifyHealing;
+      }
+    }
+
+    const changed = nextHealth !== currentHealth || nextBarrier !== currentBarrier;
+    const statusEffectsResolved = changed ||
+      (dotDamage > 0 && resolvedRevivifyHealing > 0);
 
     return {
-      changed: nextHealth !== currentHealth,
+      changed,
+      statusEffectsResolved,
       currentHealth,
       nextHealth,
+      currentBarrier,
+      nextBarrier,
       dotDamage,
-      revivifyHealing,
+      revivifyHealing: resolvedRevivifyHealing,
+      dotAfterRevivify,
     };
+  }
+
+  _applyStepEndDOT(health, barrier, damage) {
+    const barrierDamage = Math.min(barrier, damage);
+    const healthDamage = Math.max(damage - barrier, 0);
+    return {
+      nextHealth: Math.max(health - healthDamage, 0),
+      nextBarrier: barrier - barrierDamage,
+      healthDamage,
+    };
+  }
+
+  _applyStepEndRevivify(health, healing, healthCap) {
+    return Math.max(0, Math.min(health + healing, healthCap));
+  }
+
+  async _removeStepEndStatuses() {
+    const actors = this._getStepActors(0).concat(this._getStepActors(1));
+    for (const actor of actors) {
+      await this._deleteStatuses(actor, ["enmity"]);
+    }
+  }
+
+  async _deleteStatuses(actor, statusIds) {
+    if (!actor?.effects?.size) return;
+    const statusSet = new Set(statusIds);
+    const ids = actor.effects
+      .filter((effect) => {
+        const statuses = effect?.statuses;
+        return (
+          statuses instanceof Set &&
+          Array.from(statuses).some((statusId) => statusSet.has(statusId))
+        );
+      })
+      .map((effect) => effect.id)
+      .filter(Boolean);
+    if (ids.length) {
+      await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+    }
   }
 
   async _createStepEndStatusMessage(step, results) {
@@ -228,17 +363,24 @@ export class FFXIVCombat extends Combat {
       : game.i18n.localize("FFXIV.Combat.EnemyStep");
     const rows = results.map((result) => {
       const parts = [];
+      if (result.revivifyHealing > 0 && result.dotAfterRevivify) {
+        parts.push(
+          this._formatStepEndStatusEffect("revivify", result.revivifyHealing),
+        );
+      }
       if (result.dotDamage > 0) {
-        parts.push(game.i18n.format("FFXIV.Combat.DOTDamage", {
-          amount: result.dotDamage,
-        }));
+        parts.push(this._formatStepEndStatusEffect("dot", result.dotDamage));
       }
-      if (result.revivifyHealing > 0) {
-        parts.push(game.i18n.format("FFXIV.Combat.RevivifyHealing", {
-          amount: result.revivifyHealing,
-        }));
+      if (result.revivifyHealing > 0 && !result.dotAfterRevivify) {
+        parts.push(
+          this._formatStepEndStatusEffect("revivify", result.revivifyHealing),
+        );
       }
-      return `<li><strong>${result.actor.name}</strong>: ${parts.join(", ")} (${result.currentHealth} -> ${result.nextHealth})</li>`;
+      const resourceChanges = [`${result.currentHealth} -> ${result.nextHealth}`];
+      if (result.nextBarrier !== result.currentBarrier) {
+        resourceChanges.push(`${game.i18n.localize("FFXIV.Health.barrier")} ${result.currentBarrier} -> ${result.nextBarrier}`);
+      }
+      return `<li><strong>${result.actor.name}</strong>: ${parts.join(", ")} (${resourceChanges.join(", ")})</li>`;
     }).join("");
 
     await ChatMessage.create({
@@ -246,8 +388,18 @@ export class FFXIVCombat extends Combat {
       flavor: game.i18n.format("FFXIV.Combat.StepEndStatusEffects", {
         step: stepLabel,
       }),
-      content: `<ul>${rows}</ul>`,
+      content: `<ul class="ffxiv-step-status-results">${rows}</ul>`,
     });
+  }
+
+  _formatStepEndStatusEffect(statusId, amount) {
+    const icon = STEP_END_STATUS_ICONS[statusId];
+    const labelKey = statusId === "revivify"
+      ? "FFXIV.Effects.Revivify"
+      : "FFXIV.Effects.DOT";
+    const label = game.i18n.localize(labelKey);
+    const classes = `ffxiv-step-status-effect ffxiv-step-status-${statusId}`;
+    return `<span class="${classes}"><img src="${icon}" alt="${label}" title="${label}" />${amount}</span>`;
   }
 
   _getNextTurnOrder(step, excludedIds) {
@@ -300,6 +452,21 @@ export class FFXIVCombat extends Combat {
           : Math.max(highestOverride, numericOverride);
     }
     return highestOverride;
+  }
+
+  async _resetEncounterStatusFlags() {
+    const actors = new Map();
+    for (const combatant of this.combatants) {
+      const actor = combatant?.actor;
+      const actorRef = actor?.uuid ?? actor?.id;
+      if (!actor || actors.has(actorRef)) continue;
+      actors.set(actorRef, actor);
+    }
+    for (const actor of actors.values()) {
+      if (actor.getFlag("ffxiv", "stunnedInEncounter") !== undefined) {
+        await actor.unsetFlag("ffxiv", "stunnedInEncounter");
+      }
+    }
   }
 
   async _confirmResetLimitations() {

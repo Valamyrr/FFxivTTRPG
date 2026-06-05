@@ -104,6 +104,8 @@
       "PetsEmptyHint": "No pets yet. Drag a Pet actor onto this sheet to add one.",
       "Banner": "Header",
       "CriticalRange": "Treshold to score Critical Hits",
+      "EliteFoe": "Elite Foe",
+      "EliteFoeHint": "Immune to enfeeblements except Enmity, DOTs, and Knocked Out.",
       "EditSheet": "Edit Sheet",
       "LockSheet": "Lock Sheet"
     },
@@ -236,6 +238,9 @@
       "MarkerOrigin": "Marker Origin",
       "StatusEffect": "Status Effect",
       "StatusAction": "Action on Status Effect",
+      "StatusApplyMode": "Status Effect Application",
+      "StatusAutoApply": "Auto Apply",
+      "StatusManualApply": "Manual Apply",
       "StatusStacks": "Stacks",
       "StatusAdd": "Add",
       "StatusRemove": "Remove",
@@ -391,8 +396,12 @@
       "AttributesImgMagicDefense": "Magic Defense Attribute Icon",
       "AttributesImgVigilance": "Vigilance Attribute Icon",
       "AttributesImgSpeed": "Speed Attribute Icon",
+      "AutoApplySocketRequests": "Auto-apply player apply requests",
+      "AutoApplySocketRequestsHint": "When enabled, the Gamemaster will automatically accept player requests to apply damage/healing/status effects. When disabled, the GM will be prompted.",
       "SoundNotificationFFXIV": "Enable FFXIV Sound Notifications",
       "SoundNotificationFFXIVHint": "Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your inventory, etc.",
+      "FloatingDamageNumbers": "Floating Damage Numbers",
+      "FloatingDamageNumbersHint": "Show floating numbers over tokens when damage or healing is applied.",
       "soundNotificationFFXIV_Hint": "Select a sound file to play when this event is triggered. Leave empty to never play this.",
       "soundNotificationFFXIV_deleteItem": "Delete Item Sound",
       "soundNotificationFFXIV_moveItem": "Move Item Sound",
@@ -415,6 +424,7 @@
       "RemoveExistingAbilitiesForJob": "{actor} has {count} existing manual ability or trait item(s). Remove them before adding entries from {job}?",
       "ResetLimitationsTitle": "Reset limitations",
       "ResetLimitations": "Reset limitations on all actors?",
+      "OK": "OK",
       "Yes": "Yes",
       "No": "No"
     },
@@ -424,7 +434,11 @@
     },
     "Notifications": {
       "NoTarget": "No target selected.",
+      "TargetWarningTitle": "Target Selection Warning",
+      "NoTargetWithKeybind": "No target selected.\nUse {singleKeybind} while hovering a token to select a target.\nUse {multipleKeybind} while hovering additional tokens to select multiple targets.",
+      "SingleTargetMultipleSelected": "This ability targets a single creature, but multiple targets are selected.\nUse {singleKeybind} while hovering a token to select only that target.",
       "EffectApplied": "Effect \"{effect}\" applied to {actor}.",
+      "EffectRemoved": "Effect \"{effect}\" removed from {actor}.",
       "EffectRequest": "{playerName} asks to apply effect \"{effect}\" to the following targets:",
       "HealRequest": "{playerName} asks to heal \"{heal}\" HP to the following targets:",
       "DamageRequest": "{playerName} asks to deal \"{damage}\" HP to the following targets:",
@@ -456,6 +470,8 @@
       "ItemMigrationFailed": "Item data migration failed. Check the browser console for details.",
       "NotEnoughHP": "Not Enough HP to cast this ability (HP Cost)",
       "LimitationsConsumed": "All limitations for this ability are consumed.",
+      "Silenced": "Silenced characters cannot use invoked abilities.",
+      "ParalysisInterrupted": "Paralysis interrupts the ability.",
       "CharacterSheetLocked": "This character sheet is locked. Enable edit mode to make changes.",
       "ActorEffectFromItemLocked": "This effect comes from an item. Edit or remove it from the source ability/item."
     },
@@ -485,6 +501,7 @@
     "Combat": {
       "AdventurerStep": "Adventurer Step",
       "EnemyStep": "Enemy Step",
+      "StepEnd": "End of {step}",
       "StepEndStatusEffects": "End of {step} status effects",
       "DOTDamage": "DOT {amount} damage",
       "RevivifyHealing": "Revivify {amount} HP"
@@ -492,6 +509,7 @@
     "RollDialog": {
       "AdvantageDice": "Advantage Dice",
       "FlatModifier": "Flat Modifier",
+      "StatusPenalty": "Status penalty",
       "Preview": "Roll Preview",
       "HitRollOptions": "Hit Roll Options",
       "ButtonRoll": "Roll",

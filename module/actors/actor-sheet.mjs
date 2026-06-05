@@ -2434,7 +2434,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
-    await this._refreshCompanionsPanel();
+    this._enrichedCache = null;
+    await this.render({ force: true });
+    await this._refreshAbilitiesPanel();
     this._restoreSheetScroll();
     this._playConfiguredSound("soundNotificationFFXIV_moveItem");
   }

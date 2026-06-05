@@ -400,6 +400,13 @@
                   <option value="false" {{#unless entry.action}}selected{{/unless}}>{{ localize "FFXIV.Abilities.StatusRemove" }}
                   </option>
                 </select>
+                <select class="ffxiv-text-center status-effect-apply-mode"
+                        data-index="{{index}}">
+                  <option value="manual" {{#if (eq entry.applyMode "manual") }}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusManualApply" }}
+                  </option>
+                  <option value="auto" {{#if (eq entry.applyMode "auto") }}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusAutoApply" }}
+                  </option>
+                </select>
                 {{#if entry.stackable}}
                   <input class="ffxiv-text-center status-effect-stacks"
                          data-index="{{index}}"

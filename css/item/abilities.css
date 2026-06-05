@@ -128,7 +128,7 @@
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(0, 1fr) 9em 5em 34px;
+  grid-template-columns: minmax(0, 1fr) 9em 9em 5em 34px;
 }
 
 .ffxiv.item .status-effect-list button {

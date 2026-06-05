@@ -1,4 +1,10 @@
-export const STACKABLE_STATUS_EFFECT_IDS = new Set(["dot", "drain", "revivify"]);
+export const STACKABLE_STATUS_EFFECT_IDS = new Set([
+  "critical_up",
+  "dot",
+  "drain",
+  "revivify",
+]);
+const ADDITIVE_STACKABLE_STATUS_EFFECT_IDS = new Set(["critical_up"]);
 const STACK_COUNT_FLAG_SCOPE = "ffxiv";
 const STACK_COUNT_FLAG_KEY = "stackCount";
 const MANUAL_STACK_SOURCE = "__manual__";
@@ -121,7 +127,7 @@ const STATUS_DEFINITIONS = [
   },
 ];
 
-const BENEFICIAL_STATUS_IDS = [
+export const BENEFICIAL_STATUS_IDS = [
   "critical_up",
   "drain",
   "invoking",
@@ -130,7 +136,7 @@ const BENEFICIAL_STATUS_IDS = [
   "transcendent",
 ];
 
-const NEGATIVE_STATUS_IDS = [
+export const NEGATIVE_STATUS_IDS = [
   "bind",
   "blind",
   "brink_death",
@@ -148,6 +154,30 @@ const NEGATIVE_STATUS_IDS = [
   "stun",
   "weakness",
 ];
+
+const CHECK_PENALTY_STATUS_MODIFIERS = {
+  blind: -2,
+  brink_death: -5,
+  petrified: -5,
+  prone: -2,
+  sleep: -3,
+  slow: -2,
+  stun: -5,
+  weakness: -2,
+};
+const TARGET_ADVANTAGE_STATUS_IDS = new Set([
+  "bind",
+  "blind",
+  "petrified",
+  "prone",
+  "stun",
+]);
+const COMATOSE_ALLOWED_STATUS_IDS = new Set(["comatose", "death"]);
+const ELITE_FOE_ALLOWED_ENFEEBLEMENT_IDS = new Set([
+  "dot",
+  "enmity",
+  "knocked_out",
+]);
 
 function getStatusOrder(statusId, fallbackIndex = 0) {
   const beneficialIndex = BENEFICIAL_STATUS_IDS.indexOf(statusId);
@@ -175,6 +205,43 @@ export function isStackableStatusEffect(statusId) {
   return STACKABLE_STATUS_EFFECT_IDS.has(String(statusId ?? ""));
 }
 
+export function isAdditiveStackableStatusEffect(statusId) {
+  return ADDITIVE_STACKABLE_STATUS_EFFECT_IDS.has(String(statusId ?? ""));
+}
+
+export function isBeneficialStatusEffect(statusId) {
+  return BENEFICIAL_STATUS_IDS.includes(String(statusId ?? ""));
+}
+
+export function isNegativeStatusEffect(statusId) {
+  return NEGATIVE_STATUS_IDS.includes(String(statusId ?? ""));
+}
+
+export function isEliteFoe(actor) {
+  return actor?.type === "npc" && actor.system?.elite_foe === true;
+}
+
+export function isEliteFoeBlockedStatus(actor, statusId) {
+  const normalizedStatusId = String(statusId ?? "").trim();
+  return (
+    isEliteFoe(actor) &&
+    isNegativeStatusEffect(normalizedStatusId) &&
+    !ELITE_FOE_ALLOWED_ENFEEBLEMENT_IDS.has(normalizedStatusId)
+  );
+}
+
+export function hasStatus(actor, statusId) {
+  const normalizedStatusId = String(statusId ?? "").trim();
+  if (!actor || !normalizedStatusId) return false;
+  if (actor.statuses instanceof Set && actor.statuses.has(normalizedStatusId))
+    return true;
+  return Array.from(actor.effects ?? []).some((effect) => {
+    if (!effect || effect.disabled) return false;
+    const statuses = effect.statuses;
+    return statuses instanceof Set && statuses.has(normalizedStatusId);
+  });
+}
+
 function normalizeStackCount(value, fallback = 1) {
   const count = Number.parseInt(value, 10);
   if (Number.isFinite(count) && count > 0) return count;
@@ -188,6 +255,14 @@ export function getStatusStackEffects(actor, statusId) {
     return (
       statuses instanceof Set && statuses.size === 1 && statuses.has(statusId)
     );
+  });
+}
+
+function getStatusValueEffects(actor, statusId) {
+  if (!actor?.effects) return [];
+  return actor.effects.filter((effect) => {
+    const statuses = effect?.statuses;
+    return statuses instanceof Set && statuses.has(statusId);
   });
 }
 
@@ -206,15 +281,107 @@ export function getStatusStackValue(effect, fallback = 1, statusId = null) {
   );
 }
 
+export function getStatusStackTotal(actor, statusId) {
+  return getStatusValueEffects(actor, statusId)
+    .filter((effect) => !effect.disabled)
+    .reduce(
+      (total, effect) => total + getStatusStackValue(effect, 1, statusId),
+      0,
+    );
+}
+
+export function getHighestStatusStackCount(actor, statusId) {
+  return getStatusValueEffects(actor, statusId)
+    .filter((effect) => !effect.disabled)
+    .reduce(
+      (highest, effect) =>
+        Math.max(highest, getStatusStackValue(effect, 1, statusId)),
+      0,
+    );
+}
+
 export function getStatusStackCount(actor, statusId) {
-  const effects = getStatusStackEffects(actor, statusId);
+  const effects = getStatusValueEffects(actor, statusId);
   if (!effects.length) return 0;
   if (!isStackableStatusEffect(statusId)) return effects.length;
-  return effects.reduce(
-    (highest, effect) =>
-      Math.max(highest, getStatusStackValue(effect, 1, statusId)),
+  if (statusId === "critical_up") return getStatusStackTotal(actor, statusId);
+  return getHighestStatusStackCount(actor, statusId);
+}
+
+export function getActorCheckPenalty(actor) {
+  let penalty = Object.entries(CHECK_PENALTY_STATUS_MODIFIERS).reduce(
+    (total, [statusId, modifier]) =>
+      hasStatus(actor, statusId) ? total + modifier : total,
     0,
   );
+  if (hasStatus(actor, "knocked_out")) {
+    if (!hasStatus(actor, "prone")) penalty += CHECK_PENALTY_STATUS_MODIFIERS.prone;
+    if (!hasStatus(actor, "stun")) penalty += CHECK_PENALTY_STATUS_MODIFIERS.stun;
+  }
+  return penalty;
+}
+
+export function getTargetStatusAdvantage(actor) {
+  let advantage = 0;
+  for (const statusId of TARGET_ADVANTAGE_STATUS_IDS) {
+    if (hasStatus(actor, statusId)) advantage += 1;
+  }
+  if (hasStatus(actor, "knocked_out")) {
+    if (!hasStatus(actor, "prone")) advantage += 1;
+    if (!hasStatus(actor, "stun")) advantage += 1;
+  }
+  return advantage;
+}
+
+export function getActorCriticalRange(actor, fallback = 20) {
+  const baseRange = Number.parseInt(fallback, 10);
+  const criticalRange = Number.isFinite(baseRange) && baseRange > 0
+    ? baseRange
+    : 20;
+  return Math.max(1, criticalRange - getStatusStackTotal(actor, "critical_up"));
+}
+
+export function getActorDrainValue(actor) {
+  return getHighestStatusStackCount(actor, "drain");
+}
+
+export function canActorRecover(actor) {
+  return !hasStatus(actor, "knocked_out");
+}
+
+export async function recoverActorHealth(actor, amount, options = {}) {
+  const healing = Math.max(Number.parseInt(amount, 10) || 0, 0);
+  const currentHealth = Number(actor?.system?.health?.value ?? 0);
+  if (!actor || healing <= 0 || !canActorRecover(actor)) {
+    return {
+      changed: false,
+      currentHealth,
+      nextHealth: currentHealth,
+      healing: 0,
+    };
+  }
+
+  const maxHealth = Number(actor.system?.health?.max);
+  const healthCap = Number.isFinite(maxHealth) && maxHealth > 0
+    ? maxHealth
+    : Number.POSITIVE_INFINITY;
+  const nextHealth = Math.min(currentHealth + healing, healthCap);
+  if (nextHealth === currentHealth) {
+    return {
+      changed: false,
+      currentHealth,
+      nextHealth,
+      healing: 0,
+    };
+  }
+
+  await actor.update({ "system.health.value": nextHealth }, options);
+  return {
+    changed: true,
+    currentHealth,
+    nextHealth,
+    healing: nextHealth - currentHealth,
+  };
 }
 
 function getStatusStackSourceKey(effect, origin = null) {
@@ -336,10 +503,25 @@ export async function applyStatusEffectStackDelta(
 ) {
   const amount = Number(delta) || 0;
   if (!actor || !statusId || !amount) return;
+  const normalizedStatusId = String(statusId ?? "").trim();
+  if (
+    amount > 0 &&
+    hasStatus(actor, "comatose") &&
+    !COMATOSE_ALLOWED_STATUS_IDS.has(normalizedStatusId)
+  )
+    return false;
+  if (
+    amount > 0 &&
+    hasStatus(actor, "transcendent") &&
+    isNegativeStatusEffect(normalizedStatusId)
+  )
+    return false;
+  if (amount > 0 && isEliteFoeBlockedStatus(actor, normalizedStatusId))
+    return false;
 
   const sourceEffects = getStatusStackSourceEffects(
     actor,
-    statusId,
+    normalizedStatusId,
     origin,
     sourceEffect,
   );
@@ -348,7 +530,37 @@ export async function applyStatusEffectStackDelta(
     0,
   );
   const nextCount = Math.max(currentCount + amount, 0);
-  return setStatusStackCount(actor, statusId, nextCount, {
+  return setStatusStackCount(actor, normalizedStatusId, nextCount, {
+    origin,
+    sourceEffect,
+  });
+}
+
+export async function applyStatusEffectStackValue(
+  actor,
+  statusId,
+  count,
+  { origin = null, sourceEffect = null } = {},
+) {
+  if (!actor || !statusId) return;
+  const normalizedStatusId = String(statusId ?? "").trim();
+  const normalizedCount = Math.max(Number.parseInt(count, 10) || 0, 0);
+  if (
+    normalizedCount > 0 &&
+    hasStatus(actor, "comatose") &&
+    !COMATOSE_ALLOWED_STATUS_IDS.has(normalizedStatusId)
+  )
+    return false;
+  if (
+    normalizedCount > 0 &&
+    hasStatus(actor, "transcendent") &&
+    isNegativeStatusEffect(normalizedStatusId)
+  )
+    return false;
+  if (normalizedCount > 0 && isEliteFoeBlockedStatus(actor, normalizedStatusId))
+    return false;
+
+  return setStatusStackCount(actor, normalizedStatusId, normalizedCount, {
     origin,
     sourceEffect,
   });
@@ -366,6 +578,125 @@ async function setNonStackableStatusOrigin(actor, statusId, origin) {
   }
 }
 
+async function replaceNonStackableStatusEffect(
+  actor,
+  statusId,
+  { overlay = false, origin = null } = {},
+) {
+  const existing = actor.effects.filter((effect) => {
+    const statuses = effect?.statuses;
+    return statuses instanceof Set && statuses.has(statusId);
+  });
+  const ids = existing.map((effect) => effect.id).filter(Boolean);
+  if (ids.length) {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+  }
+
+  const ActiveEffectClass = getDocumentClass("ActiveEffect");
+  const effect = await ActiveEffectClass.fromStatusEffect(statusId, {
+    parent: actor,
+  });
+  if (origin) effect.updateSource({ origin });
+  if (overlay) effect.updateSource({ "flags.core.overlay": true });
+  return ActiveEffectClass.create(effect.toObject(), { parent: actor, render: false });
+}
+
+async function deleteStatusEffects(actor, statusIds) {
+  if (!actor?.effects?.size) return;
+  const statusSet = new Set(statusIds);
+  const ids = actor.effects
+    .filter((effect) => {
+      if (!effect || effect.disabled) return false;
+      const statuses = effect.statuses;
+      return (
+        statuses instanceof Set &&
+        Array.from(statuses).some((statusId) => statusSet.has(statusId))
+      );
+    })
+    .map((effect) => effect.id)
+    .filter(Boolean);
+  if (ids.length) {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+  }
+}
+
+async function clearComatoseBlockedStatuses(actor) {
+  const blockedStatusIds = [...BENEFICIAL_STATUS_IDS, ...NEGATIVE_STATUS_IDS]
+    .filter((statusId) => !COMATOSE_ALLOWED_STATUS_IDS.has(statusId));
+  await deleteStatusEffects(actor, blockedStatusIds);
+}
+
+async function applyComatoseStatusEffect(
+  actor,
+  { overlay = false, origin = null } = {},
+) {
+  await clearComatoseBlockedStatuses(actor);
+  const result = await replaceNonStackableStatusEffect(actor, "comatose", {
+    overlay,
+    origin,
+  });
+  await clearComatoseBlockedStatuses(actor);
+  return result;
+}
+
+async function getEffectSourceActor(effect) {
+  const origin = String(effect?.origin ?? "").trim();
+  if (!origin || origin.toLowerCase() === "none") return null;
+
+  let source = null;
+  try {
+    source = await fromUuid(origin);
+  } catch (_error) {
+    return null;
+  }
+
+  if (source?.documentName === "Actor") return source;
+  if (source?.parent?.documentName === "Actor") return source.parent;
+  if (source?.actor?.documentName === "Actor") return source.actor;
+  return null;
+}
+
+function getActorsWithStatusEffects() {
+  const actors = new Map();
+  const addActor = (actor) => {
+    if (!actor) return;
+    const key = String(actor.uuid ?? actor.id ?? "").trim();
+    if (!key || actors.has(key)) return;
+    actors.set(key, actor);
+  };
+  for (const actor of game.actors ?? []) addActor(actor);
+  for (const token of canvas?.tokens?.placeables ?? []) addActor(token.actor);
+  return Array.from(actors.values());
+}
+
+export async function removeEnmityInflictedByActor(sourceActor) {
+  if (!sourceActor) return;
+  for (const actor of getActorsWithStatusEffects()) {
+    const ids = [];
+    for (const effect of actor.effects ?? []) {
+      if (!effect || effect.disabled) continue;
+      const statuses = effect.statuses;
+      if (!(statuses instanceof Set) || !statuses.has("enmity")) continue;
+      const effectSourceActor = await getEffectSourceActor(effect);
+      if (isSameStatusSourceActor(effectSourceActor, sourceActor)) {
+        ids.push(effect.id);
+      }
+    }
+    if (ids.length) {
+      await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+    }
+  }
+}
+
+function isSameStatusSourceActor(first, second) {
+  if (!first || !second) return false;
+  if (first === second) return true;
+  const firstUuid = String(first.uuid ?? "").trim();
+  const secondUuid = String(second.uuid ?? "").trim();
+  if (firstUuid || secondUuid) return firstUuid && firstUuid === secondUuid;
+  return first.id && first.id === second.id;
+}
+
 export async function applyStatusEffectChange(
   actor,
   statusId,
@@ -373,17 +704,78 @@ export async function applyStatusEffectChange(
   { overlay = false, origin = null } = {},
 ) {
   if (!actor || !statusId) return;
-  if (isStackableStatusEffect(statusId)) {
+  const normalizedStatusId = String(statusId ?? "").trim();
+  const isActive = active !== false;
+
+  if (
+    isActive &&
+    hasStatus(actor, "comatose") &&
+    !COMATOSE_ALLOWED_STATUS_IDS.has(normalizedStatusId)
+  )
+    return false;
+
+  if (
+    isActive &&
+    hasStatus(actor, "transcendent") &&
+    isNegativeStatusEffect(normalizedStatusId)
+  )
+    return false;
+
+  if (isActive && isEliteFoeBlockedStatus(actor, normalizedStatusId))
+    return false;
+
+  if (isActive && normalizedStatusId === "weakness") {
+    if (hasStatus(actor, "brink_death")) {
+      return applyComatoseStatusEffect(actor, { overlay, origin });
+    }
+    if (hasStatus(actor, "weakness")) {
+      await applyStatusEffectChange(actor, "weakness", false, { overlay, origin });
+      return applyStatusEffectChange(actor, "brink_death", true, {
+        overlay,
+        origin,
+      });
+    }
+  }
+
+  if (isActive && normalizedStatusId === "comatose") {
+    return applyComatoseStatusEffect(actor, { overlay, origin });
+  }
+
+  if (
+    isActive &&
+    normalizedStatusId === "stun" &&
+    actor.getFlag("ffxiv", "stunnedInEncounter") === true &&
+    !hasStatus(actor, "stun")
+  )
+    return false;
+
+  if (isStackableStatusEffect(normalizedStatusId)) {
     return applyStatusEffectStackDelta(
       actor,
-      statusId,
-      active === false ? -1 : 1,
+      normalizedStatusId,
+      isActive ? 1 : -1,
       { origin },
     );
   }
-  const result = await actor.toggleStatusEffect(statusId, { active, overlay, render: false });
-  if (active !== false && origin) {
-    await setNonStackableStatusOrigin(actor, statusId, origin);
+  if (normalizedStatusId === "enmity" && isActive && origin) {
+    return replaceNonStackableStatusEffect(actor, normalizedStatusId, {
+      overlay,
+      origin,
+    });
+  }
+  const result = await actor.toggleStatusEffect(normalizedStatusId, {
+    active,
+    overlay,
+    render: false,
+  });
+  if (isActive && origin) {
+    await setNonStackableStatusOrigin(actor, normalizedStatusId, origin);
+  }
+  if (isActive && normalizedStatusId === "stun") {
+    await actor.setFlag("ffxiv", "stunnedInEncounter", true);
+  }
+  if (isActive && normalizedStatusId === "knocked_out") {
+    await removeEnmityInflictedByActor(actor);
   }
   return result;
 }

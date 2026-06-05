@@ -104,6 +104,8 @@
       "PetsEmptyHint": "Aucun familier pour le moment. Glissez un acteur familier sur cette fiche pour en ajouter un.",
       "Banner": "Bannière",
       "CriticalRange": "Limite pour Coups Critiques",
+      "EliteFoe": "Ennemi d'élite",
+      "EliteFoeHint": "Immunisé contre les affaiblissements sauf Inimitié, dégâts sur la durée et K.O.",
       "EditSheet": "Modifier la fiche",
       "LockSheet": "Verrouiller la fiche"
     },
@@ -236,6 +238,9 @@
       "MarkerOrigin": "Origine du marqueur",
       "StatusEffect": "Effet du statut",
       "StatusAction": "Action sur l'Effet",
+      "StatusApplyMode": "Application de l'effet",
+      "StatusAutoApply": "Application auto",
+      "StatusManualApply": "Application manuelle",
       "StatusStacks": "Cumuls",
       "StatusAdd": "Ajouter",
       "StatusRemove": "Retirer",
@@ -393,6 +398,8 @@
       "AttributesImgSpeed": "Icône de l'attribut Vitesse",
       "SoundNotificationFFXIV": "Activer les bruitages de FFXIV",
       "SoundNotificationFFXIVHint": "Ajoute quelques bruitages déclenchés par des actions telles que la connexion d'un autre joueur, l'ouverture/fermeture de votre feuille de personnage, le déplacement d'objets dans votre inventaire, etc.",
+      "FloatingDamageNumbers": "Nombres flottants de dégâts",
+      "FloatingDamageNumbersHint": "Afficher des nombres flottants au-dessus des tokens lorsque des dégâts ou des soins sont appliqués.",
       "soundNotificationFFXIV_Hint": "Sélectionner un fichier son à jouer lorsque l'événement est activé. Laisser vider pour ne jamais le jouer.",
       "soundNotificationFFXIV_deleteItem": "Son de suppression d'objet",
       "soundNotificationFFXIV_moveItem": "Son de déplacement d'objet",
@@ -415,6 +422,7 @@
       "RemoveExistingAbilitiesForJob": "{actor} possède {count} compétence(s) ou trait(s) manuel(s). Les retirer avant d'ajouter les entrées de {job} ?",
       "ResetLimitationsTitle": "Réinitialiser les restrictions",
       "ResetLimitations": "Réinitialiser les restrictions de tous les acteurs ?",
+      "OK": "OK",
       "Yes": "Oui",
       "No": "Non"
     },
@@ -424,6 +432,9 @@
     },
     "Notifications": {
       "NoTarget": "Aucune cible sélectionée.",
+      "TargetWarningTitle": "Avertissement de ciblage",
+      "NoTargetWithKeybind": "Aucune cible sélectionnée.\nUtilisez {singleKeybind} en survolant un token pour sélectionner une cible.\nUtilisez {multipleKeybind} en survolant d'autres tokens pour sélectionner plusieurs cibles.",
+      "SingleTargetMultipleSelected": "Cette capacité cible une seule créature, mais plusieurs cibles sont sélectionnées.\nUtilisez {singleKeybind} en survolant un token pour ne sélectionner que cette cible.",
       "EffectApplied": "Effet \"{effect}\" appliqué à {actor}.",
       "EffectRequest": "{playerName} demande d'appliquer l'effet \"{effect}\" aux cibles suivantes :",
       "HealRequest": "{playerName} demande de soigner \"{heal}\" PV aux cibles suivantes :",
@@ -456,6 +467,8 @@
       "ItemMigrationFailed": "La migration des données d'objets a échoué. Consultez la console du navigateur pour plus de détails.",
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)",
       "LimitationsConsumed": "Toutes les restrictions de cette compétence sont consommées.",
+      "Silenced": "Les personnages réduits au silence ne peuvent pas utiliser de compétences invoquées.",
+      "ParalysisInterrupted": "La paralysie interrompt la compétence.",
       "CharacterSheetLocked": "Cette fiche de personnage est verrouillée. Activez le mode modification pour la changer.",
       "ActorEffectFromItemLocked": "Cet effet provient d'un objet. Modifiez-le ou supprimez-le depuis la compétence/l'objet source."
     },
@@ -485,6 +498,7 @@
     "Combat": {
       "AdventurerStep": "Étape des aventuriers",
       "EnemyStep": "Étape des ennemis",
+      "StepEnd": "Fin de {step}",
       "StepEndStatusEffects": "Effets de statut de fin de {step}",
       "DOTDamage": "Dégâts sur la durée {amount}",
       "RevivifyHealing": "Revigoré {amount} PV"
@@ -492,6 +506,7 @@
     "RollDialog": {
       "AdvantageDice": "Dés d’avantage",
       "FlatModifier": "Modificateur fixe",
+      "StatusPenalty": "Pénalité de statut",
       "Preview": "Aperçu du jet",
       "HitRollOptions": "Options de jet d'attaque",
       "ButtonRoll": "Jet de dés",

@@ -68,6 +68,38 @@ input:disabled {
   font-size: var(--font-size-20);
 }
 
+#combat-tracker .ffxiv-combat-step-indicator,
+.combat-tracker .ffxiv-combat-step-indicator {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  margin: 4px 0;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-left: 4px solid #54ad24;
+  background: rgba(0, 0, 0, 0.24);
+  color: var(--color-light-1);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+#combat-tracker .ffxiv-combat-step-indicator[data-step="1"],
+.combat-tracker .ffxiv-combat-step-indicator[data-step="1"] {
+  border-left-color: #c12c2c;
+}
+
+#combat-tracker .ffxiv-combat-step-end,
+.combat-tracker .ffxiv-combat-step-end {
+  min-height: 22px;
+  border-left-width: 1px;
+  opacity: 0.76;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+}
+
 form.active-effect-config .form-group.statuses .ffxiv-status-stack-controls {
   display: inline-flex;
   align-items: center;

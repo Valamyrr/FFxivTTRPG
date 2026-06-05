@@ -70,6 +70,25 @@
   text-align: center;
 }
 
+.ffxiv-step-status-results {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.ffxiv-step-status-effect {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.ffxiv-step-status-effect img {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  object-fit: contain;
+}
+
 .chat-ffxiv.blue_theme .item-card .item-dialog-header,
 .blue_theme .chat-ffxiv .item-card .item-dialog-header {
   border-bottom-color: rgba(188, 218, 255, 0.74);

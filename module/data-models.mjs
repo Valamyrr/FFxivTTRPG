@@ -54,6 +54,11 @@ function buildAbilityFields() {
       initial: "",
     }),
     status_action: new fields.BooleanField({ required: false, initial: true }),
+    status_apply_mode: new fields.StringField({
+      required: false,
+      blank: true,
+      initial: "manual",
+    }),
     status_effects: new fields.ArrayField(
       new fields.AnyField({ required: false }),
     ),
@@ -702,6 +707,7 @@ class NpcActorData extends foundry.abstract.TypeDataModel {
         blank: true,
         initial: "",
       }),
+      elite_foe: new fields.BooleanField({ required: false, initial: false }),
     };
   }
 }

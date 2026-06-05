@@ -16,7 +16,7 @@
 }
 
 .application.ffxiv.actor:not(.closing):not(.minimizing):not(.minimized):not(.maximized):not(.maximizing) {
-  min-height: 750px;
+  min-height: 605px;
   overflow: visible;
 }
 
@@ -30,7 +30,8 @@
 }
 
 .application.ffxiv.actor:has(.ffxiv.actor.character) {
-  min-height: 750px;
+  min-height: 605px;
+  max-height: 755px;
   min-width: 780px;
   max-width: 840px;
 }

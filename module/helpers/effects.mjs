@@ -1,6 +1,7 @@
 import {
   applyStatusEffectStackDelta,
   getStatusStackValue,
+  isEliteFoeBlockedStatus,
   isStackableStatusEffect,
 } from "./status-effects.mjs";
 
@@ -48,8 +49,17 @@ export function onManageActiveEffect(event, owner, options = {}) {
       return effect.sheet.render({ force: true, focus: true });
     case "delete":
       return effect.delete({ render });
-    case "toggle":
+    case "toggle": {
+      if (
+        effect?.disabled &&
+        owner?.documentName === "Actor" &&
+        Array.from(effect.statuses ?? []).some((statusId) =>
+          isEliteFoeBlockedStatus(owner, statusId),
+        )
+      )
+        return false;
       return effect.update({ disabled: !effect.disabled }, { render });
+    }
     case "stack-increase":
     case "stack-decrease": {
       if (!effect || owner?.documentName !== "Actor") return;
@@ -118,6 +128,7 @@ export function prepareActiveEffectCategories(effects) {
       ffxivStackable: stackable,
       ffxivStackCount: stackable ? getStatusStackValue(e, 1, statusId) : 1,
       ffxivStatusId: statusId,
+      ffxivLockedControls: e.getFlag("ffxiv", "eliteFoeEffect") === true,
     };
     categories.all.push(viewEffect);
     if (effectType === "inactive") categories.inactive.effects.push(viewEffect);
@@ -129,7 +140,9 @@ export function prepareActiveEffectCategories(effects) {
 
 function getStackableStatusId(effect) {
   const statuses = effect?.statuses;
-  if (!(statuses instanceof Set) || statuses.size !== 1) return null;
-  const [statusId] = statuses;
-  return isStackableStatusEffect(statusId) ? statusId : null;
+  if (!(statuses instanceof Set)) return null;
+  const stackableStatuses = Array.from(statuses).filter((statusId) =>
+    isStackableStatusEffect(statusId),
+  );
+  return stackableStatuses.length === 1 ? stackableStatuses[0] : null;
 }

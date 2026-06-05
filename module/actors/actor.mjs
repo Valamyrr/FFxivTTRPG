@@ -1,4 +1,8 @@
 import { debugError, debugLog } from "../helpers/debug.mjs";
+import {
+  getActorCheckPenalty,
+  hasStatus,
+} from "../helpers/status-effects.mjs";
 
 /**
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
@@ -227,6 +231,9 @@ export class FFXIVActor extends Actor {
     this._ensureCharacterSystemDefaults();
 
     if (this.type === "npc") {
+      if (typeof this.system.elite_foe !== "boolean") {
+        this.system.elite_foe = false;
+      }
       const currentSize = this.system.size;
       if (currentSize && typeof currentSize === "object" && !Array.isArray(currentSize)) {
         this.system.size = typeof currentSize.text === "string" ? currentSize.text : "";
@@ -332,6 +339,12 @@ export class FFXIVActor extends Actor {
       data.def = Number(secondaryAttributes?.defense?.value) || 0;
       data.mdef = Number(secondaryAttributes?.magic_defense?.value) || 0;
       data.vigilance = Number(secondaryAttributes?.vigilance?.value) || 0;
+      data.speed = this._getStatusAdjustedSpeed(
+        Number(secondaryAttributes?.speed?.value) || 0,
+      );
+    }
+    if (this.type === "pet") {
+      data.speed = this._getStatusAdjustedSpeed(Number(data.speed?.value ?? data.speed) || 0);
     }
     for (let item of this.items) {
       if (!Array.isArray(item.system.modifiers)) continue; // Skip if item has no modifiers
@@ -390,6 +403,27 @@ export class FFXIVActor extends Actor {
     return data;
   }
 
+  _getStatusAdjustedSpeed(baseSpeed) {
+    let speed = Math.max(Number(baseSpeed) || 0, 0);
+    if (hasStatus(this, "bind")) {
+      speed = this._isSmallOrMedium() ? 0 : Math.max(speed - 2, 0);
+    }
+    if (hasStatus(this, "heavy")) {
+      speed = Math.ceil(speed / 2);
+    }
+    return speed;
+  }
+
+  _isSmallOrMedium() {
+    const size = String(
+      this.type === "npc"
+        ? this.system?.size
+        : this.system?.appearance?.size,
+    ).toLowerCase();
+    if (!size) return true;
+    return size.includes("small") || size.includes("medium");
+  }
+
   async _showModifiers() {
     debugLog("showModifiers");
     if (this.items.some(item => item.system.active == true)) {
@@ -404,6 +438,57 @@ export class FFXIVActor extends Actor {
     }
   }
 
+  _getEnmityEffects() {
+    return this.effects.filter((effect) => {
+      if (effect.disabled) return false;
+      const statuses = Array.from(effect.statuses ?? []);
+      return statuses.includes("enmity");
+    });
+  }
+
+  async _getEnmitySourceActor(effect) {
+    const origin = String(effect?.origin ?? "").trim();
+    if (!origin || origin.toLowerCase() === "none") return null;
+
+    let source = null;
+    try {
+      source = await fromUuid(origin);
+    } catch (_error) {
+      return null;
+    }
+
+    if (source?.documentName === "Actor") return source;
+    if (source?.parent?.documentName === "Actor") return source.parent;
+    if (source?.actor?.documentName === "Actor") return source.actor;
+    return null;
+  }
+
+  _targetsIncludeActor(actor) {
+    if (!actor) return false;
+    return Array.from(game.user.targets ?? []).some((token) => {
+      const targetActor = token.actor;
+      return targetActor && (
+        targetActor === actor ||
+        targetActor.uuid === actor.uuid ||
+        targetActor.id === actor.id
+      );
+    });
+  }
+
+  async _getEnmityCheckPenaltyInfo() {
+    for (const effect of this._getEnmityEffects()) {
+      const sourceActor = await this._getEnmitySourceActor(effect);
+      if (sourceActor && !this._targetsIncludeActor(sourceActor)) {
+        return { penalty: -5, sourceActor };
+      }
+    }
+    return { penalty: 0, sourceActor: null };
+  }
+
+  async _getEnmityCheckPenalty() {
+    return (await this._getEnmityCheckPenaltyInfo()).penalty;
+  }
+
   async _rollAttribute(attribute) {
     const attributeCapitalized = attribute.charAt(0).toUpperCase() + attribute.slice(1);
     const abbreviationEntry = CONFIG.FFXIV.attributesAbbreviations[attributeCapitalized];
@@ -416,13 +501,25 @@ export class FFXIVActor extends Actor {
     const attrKey = abbreviationEntry.value;
     const rollData = this.getRollData();
     const modifiers = rollData[attrKey] ?? 0;
-    const roll = new Roll(`1d20 + ${modifiers}`, rollData);
+    const enmityPenaltyInfo = await this._getEnmityCheckPenaltyInfo();
+    const enmityPenalty = enmityPenaltyInfo.penalty;
+    const checkPenalty = getActorCheckPenalty(this);
+    let formula = `1d20 + ${modifiers}`;
+    if (enmityPenalty) formula += ` - ${Math.abs(enmityPenalty)}`;
+    if (checkPenalty) formula += ` - ${Math.abs(checkPenalty)}`;
+    const roll = new Roll(formula, rollData);
     await roll.evaluate();
+    const enmityNote = enmityPenalty
+      ? `<br>${game.i18n.localize("FFXIV.Effects.Enmity")}: ${enmityPenalty} (${enmityPenaltyInfo.sourceActor.name} not targeted)`
+      : "";
+    const checkPenaltyNote = checkPenalty
+      ? `<br>${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${checkPenalty}`
+      : "";
 
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor: `<i class="fa-solid fa-dice-d20"></i> ${game.i18n.localize(`FFXIV.Attributes.${attributeCapitalized}.long`) || attribute}`,
-      content: `${roll.total} (${roll.formula})`,
+      content: `${roll.total} (${roll.formula})${enmityNote}${checkPenaltyNote}`,
       rollMode: game.settings.get('core', 'rollMode'),
       flags: { core: { canParseHTML: true } }
     });

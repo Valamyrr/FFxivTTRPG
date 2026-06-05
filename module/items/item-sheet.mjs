@@ -524,11 +524,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       entries.push({
         id: system.status_effect,
         action: system.status_action !== false,
+        applyMode: system.status_apply_mode || "manual",
       });
     }
     return entries.map((entry) => ({
       id: entry?.id ?? "",
       action: entry?.action !== false,
+      applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
       stacks: this._normalizeStatusStacks(entry?.stacks),
       stackable: isStackableStatusEffect(entry?.id ?? ""),
     }));
@@ -548,13 +550,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!Number.isInteger(index)) return;
 
     const entries = this._getCurrentStatusEffectEntries();
-    entries[index] ??= { id: "", action: true, stacks: 1, stackable: false };
+    entries[index] ??= { id: "", action: true, applyMode: "manual", stacks: 1, stackable: false };
     if (event.currentTarget.classList.contains("status-effect-id")) {
       entries[index].id = event.currentTarget.value;
       entries[index].stackable = isStackableStatusEffect(entries[index].id);
       entries[index].stacks = this._normalizeStatusStacks(entries[index].stacks);
     } else if (event.currentTarget.classList.contains("status-effect-stacks")) {
       entries[index].stacks = this._normalizeStatusStacks(event.currentTarget.value);
+    } else if (event.currentTarget.classList.contains("status-effect-apply-mode")) {
+      entries[index].applyMode = event.currentTarget.value === "auto" ? "auto" : "manual";
     } else {
       entries[index].action = event.currentTarget.value === "true";
     }
@@ -565,6 +569,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           "system.status_effects": entries,
           "system.status_effect": "",
           "system.status_action": true,
+          "system.status_apply_mode": "manual",
         },
         { render: false },
       )
@@ -583,6 +588,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     entries.push({
       id: defaultEffect,
       action: true,
+      applyMode: "manual",
       stacks: 1,
       stackable: isStackableStatusEffect(defaultEffect),
     });
@@ -592,6 +598,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           "system.status_effects": entries,
           "system.status_effect": "",
           "system.status_action": true,
+          "system.status_apply_mode": "manual",
         },
         { render: false },
       )
@@ -614,6 +621,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           "system.status_effects": entries,
           "system.status_effect": "",
           "system.status_action": true,
+          "system.status_apply_mode": "manual",
         },
         { render: false },
       )
@@ -749,7 +757,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     html.on(
       "change.ffxivItemSheet",
-      ".status-effect-id, .status-effect-action, .status-effect-stacks",
+      ".status-effect-id, .status-effect-action, .status-effect-apply-mode, .status-effect-stacks",
       this._onChangeStatusEffect.bind(this),
     );
     html.on(

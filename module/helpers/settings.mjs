@@ -424,6 +424,26 @@ export class SettingsHelpers {
       requiresReload: false,
     });
 
+    game.settings.register("ffxiv", "floatingDamageNumbers", {
+      name: game.i18n.localize("FFXIV.Settings.FloatingDamageNumbers"),
+      hint: game.i18n.localize("FFXIV.Settings.FloatingDamageNumbersHint"),
+      scope: "world",
+      config: true,
+      default: true,
+      type: Boolean,
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "autoApplySocketRequests", {
+      name: game.i18n.localize("FFXIV.Settings.AutoApplySocketRequests"),
+      hint: game.i18n.localize("FFXIV.Settings.AutoApplySocketRequestsHint"),
+      scope: "world",
+      config: true,
+      default: false,
+      type: Boolean,
+      requiresReload: false,
+    });
+
     game.settings.register("ffxiv", "customAbilityTags", {
       name: "FFXIV.Settings.CustomAbilityTags",
       hint: "FFXIV.Settings.CustomTagsHint",

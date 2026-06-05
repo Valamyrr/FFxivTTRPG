@@ -43,17 +43,19 @@
                    title="{{localize 'FFXIV.CharacterSheet.StackIncrease'}}">+</a>
               </div>
             {{/if}}
-            <div class="effect-controls">
-              <a class="effect-control" data-action="toggle" title="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}">
-                <i class="fas {{#if effect.disabled}}fa-toggle-off{{else}}fa-toggle-on{{/if}}"></i>
-              </a>
-              <a class="effect-control" data-action="edit" title="{{localize 'DOCUMENT.Update' type=(localize 'DOCUMENT.ActiveEffect')}}">
-                <i class="fas fa-edit"></i>
-              </a>
-              <a class="effect-control" data-action="delete" title="{{localize 'DOCUMENT.Delete' type=(localize 'DOCUMENT.ActiveEffect')}}">
-                <span class="delete-icon">×</span>
-              </a>
-            </div>
+            {{#unless effect.ffxivLockedControls}}
+              <div class="effect-controls">
+                <a class="effect-control" data-action="toggle" title="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}">
+                  <i class="fas {{#if effect.disabled}}fa-toggle-off{{else}}fa-toggle-on{{/if}}"></i>
+                </a>
+                <a class="effect-control" data-action="edit" title="{{localize 'DOCUMENT.Update' type=(localize 'DOCUMENT.ActiveEffect')}}">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a class="effect-control" data-action="delete" title="{{localize 'DOCUMENT.Delete' type=(localize 'DOCUMENT.ActiveEffect')}}">
+                  <span class="delete-icon">×</span>
+                </a>
+              </div>
+            {{/unless}}
           </div>
         </li>
       {{/each}}

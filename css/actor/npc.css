@@ -645,6 +645,40 @@
   gap: 0.35em;
 }
 
+.npc-elite-foe-toggle,
+.npc-elite-foe-badge {
+  align-items: center;
+  border: 1px solid rgba(233, 199, 112, 0.52);
+  border-radius: 999px;
+  color: #efd699;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 5px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  min-height: 24px;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.npc-elite-foe-toggle {
+  background: rgba(20, 20, 24, 0.32);
+  cursor: pointer;
+  margin: 0;
+}
+
+.npc-elite-foe-toggle input {
+  margin: 0;
+}
+
+.npc-elite-foe-badge {
+  background: rgba(90, 56, 20, 0.36);
+  box-shadow: inset 0 0 0 1px rgba(255, 225, 140, 0.08);
+}
+
 .statblock-header-right {
   margin: auto;
   margin-right: 0
