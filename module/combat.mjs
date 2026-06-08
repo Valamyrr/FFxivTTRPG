@@ -227,10 +227,16 @@ export class FFXIVCombat extends Combat {
         if (result.nextBarrier !== result.currentBarrier) {
           updateData["system.barrier.value"] = result.nextBarrier;
         }
-        updates.push(actor.update(updateData, {
-          render: false,
-          ffxivSkipActorSheetRefresh: true,
-        }));
+        updates.push((async () => {
+          await actor.update(updateData, {
+            render: false,
+            ffxivSkipActorSheetRefresh: true,
+            ffxivSkipKnockedOutSync: true,
+          });
+          if (result.currentHealth > 0 && result.nextHealth <= 0) {
+            await applyStatusEffectChange(actor, "knocked_out", true);
+          }
+        })());
       }
       if (this._shouldReportStepEndResult(result)) {
         messages.push({ actor, ...result });

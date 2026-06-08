@@ -244,6 +244,7 @@
       "StatusStacks": "Stacks",
       "StatusAdd": "Add",
       "StatusRemove": "Remove",
+      "UndoStatusEffects": "Undo Status Effects",
       "LinkedActiveEffects": "Linked Active Effects",
       "ApplyActiveEffects": "Apply Active Effects",
       "UndoActiveEffects": "Undo Active Effects",
@@ -471,6 +472,8 @@
       "NotEnoughHP": "Not Enough HP to cast this ability (HP Cost)",
       "LimitationsConsumed": "All limitations for this ability are consumed.",
       "Silenced": "Silenced characters cannot use invoked abilities.",
+      "Incapacitated": "Incapacitated characters cannot use abilities.",
+      "CannotAct": "This character cannot act.",
       "ParalysisInterrupted": "Paralysis interrupts the ability.",
       "CharacterSheetLocked": "This character sheet is locked. Enable edit mode to make changes.",
       "ActorEffectFromItemLocked": "This effect comes from an item. Edit or remove it from the source ability/item."

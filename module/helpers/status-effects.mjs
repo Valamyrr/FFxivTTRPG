@@ -173,6 +173,11 @@ const TARGET_ADVANTAGE_STATUS_IDS = new Set([
   "stun",
 ]);
 const COMATOSE_ALLOWED_STATUS_IDS = new Set(["comatose", "death"]);
+const KNOCKED_OUT_ALLOWED_STATUS_IDS = new Set([
+  "comatose",
+  "death",
+  "knocked_out",
+]);
 const ELITE_FOE_ALLOWED_ENFEEBLEMENT_IDS = new Set([
   "dot",
   "enmity",
@@ -346,7 +351,7 @@ export function getActorDrainValue(actor) {
 }
 
 export function canActorRecover(actor) {
-  return !hasStatus(actor, "knocked_out");
+  return !hasStatus(actor, "knocked_out") && !hasStatus(actor, "comatose");
 }
 
 export async function recoverActorHealth(actor, amount, options = {}) {
@@ -506,6 +511,12 @@ export async function applyStatusEffectStackDelta(
   const normalizedStatusId = String(statusId ?? "").trim();
   if (
     amount > 0 &&
+    hasStatus(actor, "knocked_out") &&
+    !KNOCKED_OUT_ALLOWED_STATUS_IDS.has(normalizedStatusId)
+  )
+    return false;
+  if (
+    amount > 0 &&
     hasStatus(actor, "comatose") &&
     !COMATOSE_ALLOWED_STATUS_IDS.has(normalizedStatusId)
   )
@@ -545,6 +556,12 @@ export async function applyStatusEffectStackValue(
   if (!actor || !statusId) return;
   const normalizedStatusId = String(statusId ?? "").trim();
   const normalizedCount = Math.max(Number.parseInt(count, 10) || 0, 0);
+  if (
+    normalizedCount > 0 &&
+    hasStatus(actor, "knocked_out") &&
+    !KNOCKED_OUT_ALLOWED_STATUS_IDS.has(normalizedStatusId)
+  )
+    return false;
   if (
     normalizedCount > 0 &&
     hasStatus(actor, "comatose") &&
@@ -626,6 +643,12 @@ async function clearComatoseBlockedStatuses(actor) {
   await deleteStatusEffects(actor, blockedStatusIds);
 }
 
+async function clearKnockedOutBlockedStatuses(actor) {
+  const blockedStatusIds = [...BENEFICIAL_STATUS_IDS, ...NEGATIVE_STATUS_IDS]
+    .filter((statusId) => !KNOCKED_OUT_ALLOWED_STATUS_IDS.has(statusId));
+  await deleteStatusEffects(actor, blockedStatusIds);
+}
+
 async function applyComatoseStatusEffect(
   actor,
   { overlay = false, origin = null } = {},
@@ -636,6 +659,20 @@ async function applyComatoseStatusEffect(
     origin,
   });
   await clearComatoseBlockedStatuses(actor);
+  return result;
+}
+
+async function applyKnockedOutStatusEffect(
+  actor,
+  { overlay = false, origin = null } = {},
+) {
+  await clearKnockedOutBlockedStatuses(actor);
+  const result = await replaceNonStackableStatusEffect(actor, "knocked_out", {
+    overlay,
+    origin,
+  });
+  await clearKnockedOutBlockedStatuses(actor);
+  await removeEnmityInflictedByActor(actor);
   return result;
 }
 
@@ -709,6 +746,13 @@ export async function applyStatusEffectChange(
 
   if (
     isActive &&
+    hasStatus(actor, "knocked_out") &&
+    !KNOCKED_OUT_ALLOWED_STATUS_IDS.has(normalizedStatusId)
+  )
+    return false;
+
+  if (
+    isActive &&
     hasStatus(actor, "comatose") &&
     !COMATOSE_ALLOWED_STATUS_IDS.has(normalizedStatusId)
   )
@@ -739,6 +783,10 @@ export async function applyStatusEffectChange(
 
   if (isActive && normalizedStatusId === "comatose") {
     return applyComatoseStatusEffect(actor, { overlay, origin });
+  }
+
+  if (isActive && normalizedStatusId === "knocked_out") {
+    return applyKnockedOutStatusEffect(actor, { overlay, origin });
   }
 
   if (
@@ -773,9 +821,6 @@ export async function applyStatusEffectChange(
   }
   if (isActive && normalizedStatusId === "stun") {
     await actor.setFlag("ffxiv", "stunnedInEncounter", true);
-  }
-  if (isActive && normalizedStatusId === "knocked_out") {
-    await removeEnmityInflictedByActor(actor);
   }
   return result;
 }

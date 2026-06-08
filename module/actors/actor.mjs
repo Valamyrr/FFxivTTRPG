@@ -411,6 +411,9 @@ export class FFXIVActor extends Actor {
     if (hasStatus(this, "heavy")) {
       speed = Math.ceil(speed / 2);
     }
+    if (hasStatus(this, "slow")) {
+      speed = Math.ceil(speed / 2);
+    }
     return speed;
   }
 

@@ -126,6 +126,11 @@ Hooks.on("preCreateActiveEffect", (effect) => {
   const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
   if (!actor) return;
   const statuses = Array.from(effect.statuses ?? effect._source?.statuses ?? []);
+  if (
+    hasStatus(actor, "knocked_out") &&
+    statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+  )
+    return false;
   if (statuses.some((statusId) => isEliteFoeBlockedStatus(actor, statusId)))
     return false;
 });
@@ -133,6 +138,14 @@ Hooks.on("preCreateActiveEffect", (effect) => {
 Hooks.on("preUpdateActiveEffect", (effect, changes, options) => {
   if (options?.ffxivSyncEliteFoeEffect) return;
   if (effect?.parent?.documentName !== "Actor") return;
+  if (
+    foundry.utils.hasProperty(changes, "statuses") &&
+    hasStatus(effect.parent, "knocked_out")
+  ) {
+    const statuses = Array.from(changes.statuses ?? []);
+    if (statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId)))
+      return false;
+  }
   if (effect.getFlag("ffxiv", ELITE_FOE_EFFECT_FLAG) !== true) return;
   if (foundry.utils.hasProperty(changes, "disabled") && changes.disabled === true)
     return false;
@@ -160,10 +173,19 @@ Hooks.on("createActor", (actor) => {
   });
 });
 
-Hooks.on("updateActor", (actor, changes) => {
-  if (!foundry.utils.hasProperty(changes, "system.elite_foe")) return;
-  syncEliteFoeEffect(actor).catch((error) => {
-    debugError("FFXIV | Failed to sync elite foe effect:", error);
+Hooks.on("updateActor", (actor, changes, options) => {
+  if (foundry.utils.hasProperty(changes, "system.elite_foe")) {
+    syncEliteFoeEffect(actor).catch((error) => {
+      debugError("FFXIV | Failed to sync elite foe effect:", error);
+    });
+  }
+
+  if (options?.ffxivSkipKnockedOutSync) return;
+  if (!foundry.utils.hasProperty(changes, "system.health.value")) return;
+  const health = Number(actor.system?.health?.value ?? 0);
+  if (health > 0 || hasStatus(actor, "knocked_out")) return;
+  applyStatusEffectChange(actor, "knocked_out", true).catch((error) => {
+    debugError("FFXIV | Failed to apply knocked out status:", error);
   });
 });
 
@@ -5159,18 +5181,22 @@ async function applyDamageToActor(actor, damage, options = {}) {
   const incomingDamage = Math.max(Number.parseInt(damage, 10) || 0, 0);
   const barrier = Math.max(Number(actor.system.barrier?.value) || 0, 0);
   const healthDamage = Math.max(incomingDamage - barrier, 0);
+  const nextHealth = Math.max(
+    (Number(actor.system.health?.value) || 0) - healthDamage,
+    0,
+  );
   const updates = {
-    "system.health.value": Math.max(
-      (Number(actor.system.health?.value) || 0) - healthDamage,
-      0,
-    ),
+    "system.health.value": nextHealth,
   };
 
   if (barrier > 0) {
     updates["system.barrier.value"] = Math.max(barrier - incomingDamage, 0);
   }
 
-  const result = await actor.update(updates);
+  const result = await actor.update(updates, { ffxivSkipKnockedOutSync: true });
+  if (healthDamage > 0 && nextHealth <= 0 && !hasStatus(actor, "knocked_out")) {
+    await applyStatusEffectChange(actor, "knocked_out", true);
+  }
   showFloatingCombatText(actor, incomingDamage, "damage", options);
   return result;
 }
@@ -5405,6 +5431,12 @@ function getStatusLabelById(statusId) {
   return game.i18n.localize(effect.label ?? effect.name ?? statusId);
 }
 
+function getStatusEntryNotificationKey(entry) {
+  return entry?.active === false
+    ? "FFXIV.Notifications.EffectRemoved"
+    : "FFXIV.Notifications.EffectApplied";
+}
+
 async function applyLinkedEffectsToActor(actor, effectDocs) {
   if (!actor || !Array.isArray(effectDocs) || !effectDocs.length) return;
   let normalizedEffectDocs = effectDocs.map((doc) =>
@@ -5458,12 +5490,18 @@ async function applyLinkedEffectsToActor(actor, effectDocs) {
     await actor.setFlag("ffxiv", "stunnedInEncounter", true);
   }
   if (appliedStatuses.has("knocked_out")) {
+    await deleteActorStatuses(actor, getKnockedOutBlockedStatusIds());
     await removeEnmityInflictedByActor(actor);
   }
   return created.length;
 }
 
 const COMATOSE_LINKED_ALLOWED_STATUS_IDS = new Set(["comatose", "death"]);
+const KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS = new Set([
+  "comatose",
+  "death",
+  "knocked_out",
+]);
 const ELITE_FOE_EFFECT_FLAG = "eliteFoeEffect";
 const ELITE_FOE_EFFECT_ICON = "systems/ffxiv/assets/effects/large_enemy.webp";
 
@@ -5576,6 +5614,12 @@ async function prepareLinkedActiveEffectStatusRules(actor, effectDocs) {
     }
 
     if (
+      hasStatus(actor, "knocked_out") &&
+      statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+    )
+      continue;
+
+    if (
       hasStatus(actor, "comatose") &&
       statuses.some((statusId) => !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId))
     )
@@ -5629,6 +5673,19 @@ async function prepareLinkedActiveEffectStatusRules(actor, effectDocs) {
     });
   }
 
+  if (preparedDocs.some((doc) => getLinkedEffectDocStatuses(doc).includes("knocked_out"))) {
+    await deleteActorStatuses(actor, getKnockedOutBlockedStatusIds());
+    return preparedDocs.filter((doc) => {
+      const statuses = getLinkedEffectDocStatuses(doc);
+      return (
+        !statuses.length ||
+        statuses.every((statusId) =>
+          KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId),
+        )
+      );
+    });
+  }
+
   if (removeWeakness) await deleteActorStatuses(actor, ["weakness"]);
   return preparedDocs;
 }
@@ -5646,6 +5703,11 @@ function isLinkedEffectDocAdditiveStackable(doc) {
 function canLinkedEffectDocApplyToActor(actor, doc) {
   const statuses = getLinkedEffectDocStatuses(doc);
   if (!statuses.length) return true;
+  if (
+    hasStatus(actor, "knocked_out") &&
+    statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+  )
+    return false;
   if (
     hasStatus(actor, "comatose") &&
     statuses.some((statusId) => !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId))
@@ -5690,6 +5752,15 @@ function getComatoseBlockedStatusIds() {
     .filter(
       (statusId) =>
         statusId && !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId),
+    );
+}
+
+function getKnockedOutBlockedStatusIds() {
+  return (CONFIG.statusEffects ?? [])
+    .map((entry) => String(entry?.id ?? "").trim().toLowerCase())
+    .filter(
+      (statusId) =>
+        statusId && !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId),
     );
 }
 
@@ -5837,6 +5908,25 @@ function parseJsonIdArray(raw) {
   }
 }
 
+function parseJsonStatusEntries(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((entry) => ({
+        statusId: String(entry?.statusId ?? "").trim(),
+        active: entry?.active !== false,
+        applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
+        stacks: normalizeStatusEntryStacks(entry),
+        sourceUuid: String(entry?.sourceUuid ?? "").trim() || null,
+      }))
+      .filter((entry) => entry.statusId);
+  } catch (_error) {
+    return [];
+  }
+}
+
 function getActorReference(actor) {
   return String(actor?.uuid ?? actor?.id ?? "").trim();
 }
@@ -5903,6 +5993,40 @@ function setApplyActiveEffectsButtonState(button, applied, options = {}) {
   button.dataset.appliedActorIds = JSON.stringify(actorIds);
   button.dataset.appliedSourceEffectIds = JSON.stringify(sourceEffectIds);
   button.dataset.appliedSourceItemUuid = String(options.sourceItemUuid ?? "").trim();
+  button.textContent = undoLabel;
+}
+
+function setApplyStatusButtonState(button, applied, options = {}) {
+  if (!(button instanceof HTMLButtonElement)) return;
+  const applyLabel = game.i18n.localize("FFXIV.Abilities.StatusEffect");
+  const undoLabel = game.i18n.localize("FFXIV.Abilities.UndoStatusEffects");
+  if (!applied) {
+    button.dataset.ffxivStatusState = "apply";
+    delete button.dataset.appliedActorIds;
+    delete button.dataset.appliedStatusEntries;
+    button.textContent = applyLabel;
+    return;
+  }
+
+  const actorIds = Array.from(
+    new Set(
+      (Array.isArray(options.actorIds) ? options.actorIds : [])
+        .map((id) => String(id ?? "").trim())
+        .filter(Boolean),
+    ),
+  );
+  const statusEntries = (Array.isArray(options.statusEntries) ? options.statusEntries : [])
+    .map((entry) => ({
+      statusId: String(entry?.statusId ?? "").trim(),
+      active: entry?.active !== false,
+      applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
+      stacks: normalizeStatusEntryStacks(entry),
+      sourceUuid: String(entry?.sourceUuid ?? "").trim() || null,
+    }))
+    .filter((entry) => entry.statusId);
+  button.dataset.ffxivStatusState = "applied";
+  button.dataset.appliedActorIds = JSON.stringify(actorIds);
+  button.dataset.appliedStatusEntries = JSON.stringify(statusEntries);
   button.textContent = undoLabel;
 }
 
@@ -6127,7 +6251,7 @@ Hooks.on("ready", function () {
                 const applied = await applyStatusEntryToActor(actor, entry);
                 if (applied) {
                   ui.notifications.info(
-                    game.i18n.format("FFXIV.Notifications.EffectApplied", {
+                    game.i18n.format(getStatusEntryNotificationKey(entry), {
                       effect: getStatusLabelById(entry.statusId),
                       actor: actor.name,
                     }),
@@ -6161,7 +6285,7 @@ Hooks.on("ready", function () {
                       const applied = await applyStatusEntryToActor(actor, entry);
                       if (applied) {
                         ui.notifications.info(
-                          game.i18n.format("FFXIV.Notifications.EffectApplied", {
+                          game.i18n.format(getStatusEntryNotificationKey(entry), {
                             effect: getStatusLabelById(entry.statusId),
                             actor: actor.name,
                           }),
@@ -6598,6 +6722,61 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
   });
 
   jqueryhtml.find(".ffxiv-apply-status").on("click", async (ev) => {
+    const button =
+      ev.currentTarget instanceof HTMLButtonElement ? ev.currentTarget : null;
+    const currentState = String(button?.dataset?.ffxivStatusState || "apply");
+    if (currentState === "applied") {
+      const actorIds = parseJsonIdArray(button?.dataset?.appliedActorIds);
+      const statusEntries = parseJsonStatusEntries(
+        button?.dataset?.appliedStatusEntries,
+      ).map((entry) => ({
+        ...entry,
+        active: entry.active === false,
+      }));
+      if (!actorIds.length || !statusEntries.length) {
+        setApplyStatusButtonState(button, false);
+        return;
+      }
+
+      const ownActors = [];
+      const actorsNeedingGM = [];
+      for (const actorRef of actorIds) {
+        const actor = await resolveActorFromReference(actorRef);
+        if (!actor) continue;
+        if (actor.testUserPermission(game.user, "OWNER")) ownActors.push(actor);
+        else actorsNeedingGM.push(actor);
+      }
+
+      for (const actor of ownActors) {
+        for (const entry of statusEntries) {
+          const applied = await applyStatusEntryToActor(actor, entry);
+          if (applied) {
+            ui.notifications.info(
+              game.i18n.format(getStatusEntryNotificationKey(entry), {
+                effect: getStatusLabelById(entry.statusId),
+                actor: actor.name,
+              }),
+            );
+          }
+        }
+      }
+
+      if (actorsNeedingGM.length > 0) {
+        game.socket.emit("system.ffxiv", {
+          type: "applyEffect",
+          data: {
+            actorIds: actorsNeedingGM.map((actor) => actor.id),
+            actorRefs: actorsNeedingGM.map((actor) => getActorReference(actor)),
+            effects: statusEntries,
+          },
+          userName: game.user.name,
+        });
+      }
+
+      setApplyStatusButtonState(button, false);
+      return;
+    }
+
     const item = await resolveChatAbilityItem(ev.currentTarget);
     const statusEntries = getStatusEffectEntriesForItem(item, ev.currentTarget);
     const targets = Array.from(game.user.targets);
@@ -6620,18 +6799,23 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       }
     }
 
+    const affectedActorIds = [];
     for (const actor of ownActors) {
+      let actorChanged = false;
       for (const entry of statusEntries) {
         const applied = await applyStatusEntryToActor(actor, entry);
         if (applied) {
+          actorChanged = true;
           ui.notifications.info(
-            game.i18n.format("FFXIV.Notifications.EffectApplied", {
+            game.i18n.format(getStatusEntryNotificationKey(entry), {
               effect: getStatusLabelById(entry.statusId),
               actor: actor.name,
             }),
           );
         }
       }
+      const actorRef = getActorReference(actor);
+      if (actorChanged && actorRef) affectedActorIds.push(actorRef);
     }
 
     if (actorsNeedingGM.length > 0) {
@@ -6648,6 +6832,17 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       ui.notifications.info(
         game.i18n.localize("FFXIV.Notifications.SendSocket"),
       );
+      for (const actor of actorsNeedingGM) {
+        const actorRef = getActorReference(actor);
+        if (actorRef) affectedActorIds.push(actorRef);
+      }
+    }
+
+    if (affectedActorIds.length) {
+      setApplyStatusButtonState(button, true, {
+        actorIds: affectedActorIds,
+        statusEntries,
+      });
     }
   });
 

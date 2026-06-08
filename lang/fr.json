@@ -244,6 +244,7 @@
       "StatusStacks": "Cumuls",
       "StatusAdd": "Ajouter",
       "StatusRemove": "Retirer",
+      "UndoStatusEffects": "Annuler les effets de statut",
       "LinkedActiveEffects": "Effets actifs liés",
       "ApplyActiveEffects": "Appliquer les effets actifs",
       "UndoActiveEffects": "Annuler les effets actifs",
@@ -468,6 +469,8 @@
       "NotEnoughHP": "Pas assez de PVs pour lancer cette compétence (Coût de PVs)",
       "LimitationsConsumed": "Toutes les restrictions de cette compétence sont consommées.",
       "Silenced": "Les personnages réduits au silence ne peuvent pas utiliser de compétences invoquées.",
+      "Incapacitated": "Les personnages incapables d'agir ne peuvent pas utiliser de compétences.",
+      "CannotAct": "Ce personnage ne peut pas agir.",
       "ParalysisInterrupted": "La paralysie interrompt la compétence.",
       "CharacterSheetLocked": "Cette fiche de personnage est verrouillée. Activez le mode modification pour la changer.",
       "ActorEffectFromItemLocked": "Cet effet provient d'un objet. Modifiez-le ou supprimez-le depuis la compétence/l'objet source."

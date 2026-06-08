@@ -864,7 +864,20 @@ export class FFXIVItem extends Item {
   }
 
   _canUseAbility() {
-    if (this.type !== "ability") return true;
+    const subtype = getAbilitySubtype(this);
+    const isAbility = this.type === "ability" || ABILITY_SUBTYPE_TYPES.includes(this.type);
+    if (!isAbility) return true;
+    if (hasStatus(this.parent, "knocked_out") || hasStatus(this.parent, "comatose")) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.Incapacitated"));
+      return false;
+    }
+    if (
+      subtype !== "limit_break" &&
+      (hasStatus(this.parent, "stun") || hasStatus(this.parent, "petrified"))
+    ) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.CannotAct"));
+      return false;
+    }
     if (!hasStatus(this.parent, "silence")) return true;
     if (!this._isInvokedAbility()) return true;
     ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.Silenced"));
