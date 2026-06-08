@@ -1562,6 +1562,8 @@ export class FFXIVItem extends Item {
           id: entry?.id ?? "",
           action: entry?.action !== false,
           applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
+          applyTo: this._normalizeStatusApplyTo(entry?.applyTo),
+          allSources: entry?.allSources === true,
           stacks: Math.max(1, Number.parseInt(entry?.stacks, 10) || 1),
         }))
         .filter((entry) => entry.id);
@@ -1572,9 +1574,16 @@ export class FFXIVItem extends Item {
         id: this.system.status_effect,
         action: this.system.status_action !== false,
         applyMode: this.system.status_apply_mode === "auto" ? "auto" : "manual",
+        applyTo: "target",
         stacks: 1,
       },
     ];
+  }
+
+  _normalizeStatusApplyTo(value) {
+    return String(value ?? "").trim().toLowerCase() === "self"
+      ? "self"
+      : "target";
   }
 
   _getAutoStatusEffectEntries() {
@@ -1592,6 +1601,42 @@ export class FFXIVItem extends Item {
     const statusEntries = this._getAutoStatusEffectEntries();
     if (!statusEntries.length) return;
 
+    const selfEntries = statusEntries.filter((entry) => entry.applyTo === "self");
+    const targetEntries = statusEntries.filter((entry) => entry.applyTo !== "self");
+
+    if (selfEntries.length && this.parent?.documentName === "Actor") {
+      if (this.parent.testUserPermission(game.user, "OWNER")) {
+        for (const entry of selfEntries) {
+          const applied = await this._applyStatusEntryToActor(this.parent, entry);
+          if (applied) {
+            ui.notifications.info(
+              game.i18n.format("FFXIV.Notifications.EffectApplied", {
+                effect: this._getStatusLabelById(entry.statusId),
+                actor: this.parent.name,
+              }),
+            );
+          }
+        }
+      } else {
+        game.socket.emit("system.ffxiv", {
+          type: "applyEffect",
+          data: {
+            actorIds: [this.parent.id],
+            actorRefs: [
+              String(this.parent.uuid ?? this.parent.id ?? "").trim(),
+            ].filter(Boolean),
+            effects: selfEntries,
+          },
+          userName: game.user.name,
+        });
+        ui.notifications.info(
+          game.i18n.localize("FFXIV.Notifications.SendSocket"),
+        );
+      }
+    }
+
+    if (!targetEntries.length) return;
+
     const targets = Array.from(game.user.targets ?? []);
     if (targets.length === 0) {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
@@ -1603,15 +1648,12 @@ export class FFXIVItem extends Item {
     for (const token of targets) {
       const actor = token.actor;
       if (!actor) continue;
-      if (actor.testUserPermission(game.user, "OWNER")) {
-        ownActors.push(actor);
-      } else {
-        actorsNeedingGM.push(actor);
-      }
+      if (actor.testUserPermission(game.user, "OWNER")) ownActors.push(actor);
+      else actorsNeedingGM.push(actor);
     }
 
     for (const actor of ownActors) {
-      for (const entry of statusEntries) {
+      for (const entry of targetEntries) {
         const applied = await this._applyStatusEntryToActor(actor, entry);
         if (applied) {
           ui.notifications.info(
@@ -1632,7 +1674,7 @@ export class FFXIVItem extends Item {
           actorRefs: actorsNeedingGM
             .map((actor) => String(actor?.uuid ?? actor?.id ?? "").trim())
             .filter(Boolean),
-          effects: statusEntries,
+          effects: targetEntries,
         },
         userName: game.user.name,
       });

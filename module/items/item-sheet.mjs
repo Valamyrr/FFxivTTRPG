@@ -531,9 +531,17 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       id: entry?.id ?? "",
       action: entry?.action !== false,
       applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
+      applyTo: this._normalizeStatusApplyTo(entry?.applyTo),
+      allSources: entry?.allSources === true,
       stacks: this._normalizeStatusStacks(entry?.stacks),
       stackable: isStackableStatusEffect(entry?.id ?? ""),
     }));
+  }
+
+  _normalizeStatusApplyTo(value) {
+    return String(value ?? "").trim().toLowerCase() === "self"
+      ? "self"
+      : "target";
   }
 
   _normalizeStatusStacks(value) {
@@ -550,7 +558,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!Number.isInteger(index)) return;
 
     const entries = this._getCurrentStatusEffectEntries();
-    entries[index] ??= { id: "", action: true, applyMode: "manual", stacks: 1, stackable: false };
+    entries[index] ??= {
+      id: "",
+      action: true,
+      applyMode: "manual",
+      applyTo: "target",
+      stacks: 1,
+      stackable: false,
+    };
     if (event.currentTarget.classList.contains("status-effect-id")) {
       entries[index].id = event.currentTarget.value;
       entries[index].stackable = isStackableStatusEffect(entries[index].id);
@@ -559,6 +574,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       entries[index].stacks = this._normalizeStatusStacks(event.currentTarget.value);
     } else if (event.currentTarget.classList.contains("status-effect-apply-mode")) {
       entries[index].applyMode = event.currentTarget.value === "auto" ? "auto" : "manual";
+    } else if (event.currentTarget.classList.contains("status-effect-apply-to")) {
+      entries[index].applyTo = this._normalizeStatusApplyTo(event.currentTarget.value);
     } else {
       entries[index].action = event.currentTarget.value === "true";
     }
@@ -589,6 +606,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       id: defaultEffect,
       action: true,
       applyMode: "manual",
+      applyTo: "target",
       stacks: 1,
       stackable: isStackableStatusEffect(defaultEffect),
     });
@@ -757,7 +775,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     html.on(
       "change.ffxivItemSheet",
-      ".status-effect-id, .status-effect-action, .status-effect-apply-mode, .status-effect-stacks",
+      ".status-effect-id, .status-effect-action, .status-effect-apply-mode, .status-effect-apply-to, .status-effect-stacks",
       this._onChangeStatusEffect.bind(this),
     );
     html.on(

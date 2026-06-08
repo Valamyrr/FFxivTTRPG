@@ -407,6 +407,13 @@
                   <option value="auto" {{#if (eq entry.applyMode "auto") }}selected{{/if}}>{{ localize "FFXIV.Abilities.StatusAutoApply" }}
                   </option>
                 </select>
+                <select class="ffxiv-text-center status-effect-apply-to"
+                        data-index="{{index}}">
+                  <option value="target" {{#if (eq entry.applyTo "target") }}selected{{/if}}>{{ localize "FFXIV.Abilities.ApplyToTarget" }}
+                  </option>
+                  <option value="self" {{#if (eq entry.applyTo "self") }}selected{{/if}}>{{ localize "FFXIV.Abilities.ApplyToSelf" }}
+                  </option>
+                </select>
                 {{#if entry.stackable}}
                   <input class="ffxiv-text-center status-effect-stacks"
                          data-index="{{index}}"

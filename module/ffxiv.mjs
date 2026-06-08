@@ -5371,12 +5371,39 @@ function normalizeStatusEntryStacks(entry) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
+function normalizeStatusEntryApplyTo(entry) {
+  return String(entry?.applyTo ?? "").trim().toLowerCase() === "self"
+    ? "self"
+    : "target";
+}
+
+function normalizeStatusEntry(entry, fallbackSourceUuid = null) {
+  return {
+    statusId: String(
+      entry?.statusId ?? entry?.id ?? entry?.effect?.id ?? "",
+    ).trim(),
+    active: entry?.active !== undefined
+      ? entry.active !== false
+      : entry?.action !== false,
+    applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
+    applyTo: normalizeStatusEntryApplyTo(entry),
+    stacks: normalizeStatusEntryStacks(entry),
+    allSources: entry?.allSources === true,
+    sourceUuid:
+      String(entry?.sourceUuid ?? fallbackSourceUuid ?? "").trim() || null,
+  };
+}
+
 async function applyStatusEntryToActor(actor, entry) {
   const statusId = String(entry?.statusId ?? entry?.effect?.id ?? "").trim();
   if (!actor || !statusId) return;
   const stacks = normalizeStatusEntryStacks(entry);
   const isActive = entry.active !== false;
   const origin = String(entry?.sourceUuid ?? "").trim() || null;
+
+  if (!isActive && entry?.allSources === true) {
+    return (await deleteActorStatuses(actor, [statusId])) > 0;
+  }
 
   if (isStackableStatusEffect(statusId)) {
     let result;
@@ -5765,7 +5792,7 @@ function getKnockedOutBlockedStatusIds() {
 }
 
 async function deleteActorStatuses(actor, statusIds) {
-  if (!actor?.effects?.size) return;
+  if (!actor?.effects?.size) return 0;
   const statusSet = new Set(statusIds);
   const ids = actor.effects
     .filter((effect) => {
@@ -5781,6 +5808,7 @@ async function deleteActorStatuses(actor, statusIds) {
   if (ids.length) {
     await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
   }
+  return ids.length;
 }
 
 function prepareLinkedActiveEffectDuration(actor, doc) {
@@ -5914,14 +5942,31 @@ function parseJsonStatusEntries(raw) {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed
-      .map((entry) => ({
-        statusId: String(entry?.statusId ?? "").trim(),
-        active: entry?.active !== false,
-        applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
-        stacks: normalizeStatusEntryStacks(entry),
-        sourceUuid: String(entry?.sourceUuid ?? "").trim() || null,
-      }))
+      .map((entry) => normalizeStatusEntry(entry))
       .filter((entry) => entry.statusId);
+  } catch (_error) {
+    return [];
+  }
+}
+
+function parseJsonStatusApplications(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((application) => ({
+        actorId: String(
+          application?.actorId ?? application?.actorRef ?? "",
+        ).trim(),
+        entries: (Array.isArray(application?.entries)
+          ? application.entries
+          : []
+        )
+          .map((entry) => normalizeStatusEntry(entry))
+          .filter((entry) => entry.statusId),
+      }))
+      .filter((application) => application.actorId && application.entries.length);
   } catch (_error) {
     return [];
   }
@@ -6004,6 +6049,7 @@ function setApplyStatusButtonState(button, applied, options = {}) {
     button.dataset.ffxivStatusState = "apply";
     delete button.dataset.appliedActorIds;
     delete button.dataset.appliedStatusEntries;
+    delete button.dataset.appliedStatusApplications;
     button.textContent = applyLabel;
     return;
   }
@@ -6016,17 +6062,25 @@ function setApplyStatusButtonState(button, applied, options = {}) {
     ),
   );
   const statusEntries = (Array.isArray(options.statusEntries) ? options.statusEntries : [])
-    .map((entry) => ({
-      statusId: String(entry?.statusId ?? "").trim(),
-      active: entry?.active !== false,
-      applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
-      stacks: normalizeStatusEntryStacks(entry),
-      sourceUuid: String(entry?.sourceUuid ?? "").trim() || null,
-    }))
+    .map((entry) => normalizeStatusEntry(entry))
     .filter((entry) => entry.statusId);
+  const applications = (Array.isArray(options.applications) ? options.applications : [])
+    .map((application) => ({
+      actorId: String(
+        application?.actorId ?? application?.actorRef ?? "",
+      ).trim(),
+      entries: (Array.isArray(application?.entries)
+        ? application.entries
+        : []
+      )
+        .map((entry) => normalizeStatusEntry(entry))
+        .filter((entry) => entry.statusId),
+    }))
+    .filter((application) => application.actorId && application.entries.length);
   button.dataset.ffxivStatusState = "applied";
   button.dataset.appliedActorIds = JSON.stringify(actorIds);
   button.dataset.appliedStatusEntries = JSON.stringify(statusEntries);
+  button.dataset.appliedStatusApplications = JSON.stringify(applications);
   button.textContent = undoLabel;
 }
 
@@ -6726,48 +6780,56 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       ev.currentTarget instanceof HTMLButtonElement ? ev.currentTarget : null;
     const currentState = String(button?.dataset?.ffxivStatusState || "apply");
     if (currentState === "applied") {
-      const actorIds = parseJsonIdArray(button?.dataset?.appliedActorIds);
-      const statusEntries = parseJsonStatusEntries(
-        button?.dataset?.appliedStatusEntries,
-      ).map((entry) => ({
-        ...entry,
-        active: entry.active === false,
-      }));
-      if (!actorIds.length || !statusEntries.length) {
+      let applications = parseJsonStatusApplications(
+        button?.dataset?.appliedStatusApplications,
+      );
+      if (!applications.length) {
+        const actorIds = parseJsonIdArray(button?.dataset?.appliedActorIds);
+        const statusEntries = parseJsonStatusEntries(
+          button?.dataset?.appliedStatusEntries,
+        );
+        applications = actorIds.map((actorId) => ({
+          actorId,
+          entries: statusEntries,
+        }));
+      }
+      applications = applications
+        .map((application) => ({
+          ...application,
+          entries: application.entries.map((entry) => ({
+            ...entry,
+            active: entry.active === false,
+          })),
+        }))
+        .filter((application) => application.entries.length);
+      if (!applications.length) {
         setApplyStatusButtonState(button, false);
         return;
       }
 
-      const ownActors = [];
-      const actorsNeedingGM = [];
-      for (const actorRef of actorIds) {
-        const actor = await resolveActorFromReference(actorRef);
+      for (const application of applications) {
+        const actor = await resolveActorFromReference(application.actorId);
         if (!actor) continue;
-        if (actor.testUserPermission(game.user, "OWNER")) ownActors.push(actor);
-        else actorsNeedingGM.push(actor);
-      }
-
-      for (const actor of ownActors) {
-        for (const entry of statusEntries) {
-          const applied = await applyStatusEntryToActor(actor, entry);
-          if (applied) {
-            ui.notifications.info(
-              game.i18n.format(getStatusEntryNotificationKey(entry), {
-                effect: getStatusLabelById(entry.statusId),
-                actor: actor.name,
-              }),
-            );
+        if (actor.testUserPermission(game.user, "OWNER")) {
+          for (const entry of application.entries) {
+            const applied = await applyStatusEntryToActor(actor, entry);
+            if (applied) {
+              ui.notifications.info(
+                game.i18n.format(getStatusEntryNotificationKey(entry), {
+                  effect: getStatusLabelById(entry.statusId),
+                  actor: actor.name,
+                }),
+              );
+            }
           }
+          continue;
         }
-      }
-
-      if (actorsNeedingGM.length > 0) {
         game.socket.emit("system.ffxiv", {
           type: "applyEffect",
           data: {
-            actorIds: actorsNeedingGM.map((actor) => actor.id),
-            actorRefs: actorsNeedingGM.map((actor) => getActorReference(actor)),
-            effects: statusEntries,
+            actorIds: [actor.id],
+            actorRefs: [getActorReference(actor)],
+            effects: application.entries,
           },
           userName: game.user.name,
         });
@@ -6779,30 +6841,47 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
 
     const item = await resolveChatAbilityItem(ev.currentTarget);
     const statusEntries = getStatusEffectEntriesForItem(item, ev.currentTarget);
+    if (!statusEntries.length) return;
+
+    const selfEntries = statusEntries.filter((entry) => entry.applyTo === "self");
+    const targetEntries = statusEntries.filter((entry) => entry.applyTo !== "self");
     const targets = Array.from(game.user.targets);
 
-    if (targets.length === 0) {
+    if (targetEntries.length && targets.length === 0) {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
       return;
     }
-    if (!statusEntries.length) return;
 
-    const ownActors = [];
-    const actorsNeedingGM = [];
+    const sourceActor = item?.parent?.documentName === "Actor"
+      ? item.parent
+      : await resolveActorFromReference(
+          ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
+        );
+    const applications = [];
+    let sentSocketRequest = false;
 
-    for (const token of targets) {
-      const actor = token.actor;
-      if (actor.testUserPermission(game.user, "OWNER")) {
-        ownActors.push(actor);
-      } else {
-        actorsNeedingGM.push(actor);
+    const applyEntries = async (actor, entries) => {
+      if (!actor || !entries.length) return;
+      const actorRef = getActorReference(actor);
+      if (!actorRef) return;
+
+      if (!actor.testUserPermission(game.user, "OWNER")) {
+        game.socket.emit("system.ffxiv", {
+          type: "applyEffect",
+          data: {
+            actorIds: [actor.id],
+            actorRefs: [actorRef],
+            effects: entries,
+          },
+          userName: game.user.name,
+        });
+        applications.push({ actorId: actorRef, entries });
+        sentSocketRequest = true;
+        return;
       }
-    }
 
-    const affectedActorIds = [];
-    for (const actor of ownActors) {
       let actorChanged = false;
-      for (const entry of statusEntries) {
+      for (const entry of entries) {
         const applied = await applyStatusEntryToActor(actor, entry);
         if (applied) {
           actorChanged = true;
@@ -6814,34 +6893,28 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
           );
         }
       }
-      const actorRef = getActorReference(actor);
-      if (actorChanged && actorRef) affectedActorIds.push(actorRef);
-    }
+      if (actorChanged) applications.push({ actorId: actorRef, entries });
+    };
 
-    if (actorsNeedingGM.length > 0) {
-      debugLog("Send socket to GM, statusEffects", statusEntries);
-      game.socket.emit("system.ffxiv", {
-        type: "applyEffect",
-        data: {
-          actorIds: actorsNeedingGM.map((a) => a.id),
-          actorRefs: actorsNeedingGM.map((a) => getActorReference(a)),
-          effects: statusEntries,
-        },
-        userName: game.user.name,
-      });
-      ui.notifications.info(
-        game.i18n.localize("FFXIV.Notifications.SendSocket"),
-      );
-      for (const actor of actorsNeedingGM) {
-        const actorRef = getActorReference(actor);
-        if (actorRef) affectedActorIds.push(actorRef);
+    if (selfEntries.length) await applyEntries(sourceActor, selfEntries);
+    if (targetEntries.length) {
+      debugLog("Apply status effects", targetEntries);
+      for (const token of targets) {
+        await applyEntries(token.actor, targetEntries);
       }
     }
 
-    if (affectedActorIds.length) {
+    if (sentSocketRequest) {
+      ui.notifications.info(
+        game.i18n.localize("FFXIV.Notifications.SendSocket"),
+      );
+    }
+
+    if (applications.length) {
       setApplyStatusButtonState(button, true, {
-        actorIds: affectedActorIds,
+        actorIds: applications.map((application) => application.actorId),
         statusEntries,
+        applications,
       });
     }
   });
@@ -7071,19 +7144,21 @@ function getStatusEffectEntriesForItem(item, element) {
       ? item.system.status_effects
       : item?.system?.status_effect
         ? [
-              {
-                id: item.system.status_effect,
-                action: item.system.status_action !== false,
-                applyMode:
-                  item.system.status_apply_mode === "auto" ? "auto" : "manual",
-              },
-            ]
+            {
+              id: item.system.status_effect,
+              action: item.system.status_action !== false,
+              applyMode:
+                item.system.status_apply_mode === "auto" ? "auto" : "manual",
+              applyTo: "target",
+            },
+          ]
           : element?.dataset?.effectId
             ? [
                 {
                   id: element.dataset.effectId,
                   action: element.dataset.action === "true",
                   applyMode: "manual",
+                  applyTo: "target",
                 },
               ]
             : [];
@@ -7091,15 +7166,7 @@ function getStatusEffectEntriesForItem(item, element) {
   const chosenEntries = sourceEntries.length ? sourceEntries : embeddedEntries;
 
   return chosenEntries
-    .map((entry) => ({
-      statusId: String(entry?.id ?? "").trim(),
-      active: entry?.action !== false,
-      applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
-      stacks: normalizeStatusEntryStacks(entry),
-      sourceUuid:
-        String(entry?.sourceUuid ?? element?.dataset?.sourceUuid ?? "").trim() ||
-        null,
-    }))
+    .map((entry) => normalizeStatusEntry(entry, element?.dataset?.sourceUuid))
     .filter((entry) => entry.statusId && entry.applyMode !== "auto");
 }
 
