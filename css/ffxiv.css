@@ -269,12 +269,6 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   width: 100%;
 }
 
-.ffxiv-settings-submenu .setting-control input::-moz-placeholder {
-  color: var(--placeholder-color, #8d8d8d);
-  font-style: italic;
-  opacity: 0.68;
-}
-
 .ffxiv-settings-submenu .setting-control input::placeholder {
   color: var(--placeholder-color, #8d8d8d);
   font-style: italic;
@@ -687,6 +681,52 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   flex: 0 0 200px;
   padding: 0 8px;
 }
+.ffxiv.item .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
+  grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em 34px;
+}
+.ffxiv.item .ability-automation-list li {
+  display: block;
+  align-items: start;
+  grid-template-columns: none;
+}
+.ffxiv.item .ability-automation-edit-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 8px;
+}
+.ffxiv.item .ability-automation-text {
+  display: block;
+  overflow-wrap: break-word;
+}
+.ffxiv.item .ability-automation-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+  margin-top: 4px;
+}
+.ffxiv.item .ability-automation-fields label {
+  display: grid;
+  grid-template-columns: minmax(5.5em, 0.8fr) minmax(0, 1.2fr);
+  gap: 4px;
+  align-items: center;
+  margin: 0;
+}
+.ffxiv.item .ability-automation-fields label span {
+  font-size: 12px;
+}
+.ffxiv.item .ability-automation-fields input,
+.ffxiv.item .ability-automation-fields select {
+  min-width: 0;
+  width: 100%;
+}
+.ffxiv.item .ability-automation-fields .ability-automation-checkbox {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.ffxiv.item .ability-automation-fields .ability-automation-checkbox input {
+  width: auto;
+}
 .ffxiv .effects .item .effect-source,
 .ffxiv .effects .item .effect-duration,
 .ffxiv .effects .item .effect-controls {
@@ -719,10 +759,8 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   flex: 0 0 48px;
   width: 48px;
   height: 64px;
-  -o-object-fit: contain;
-     object-fit: contain;
-  -o-object-position: center;
-     object-position: center;
+  object-fit: contain;
+  object-position: center;
 }
 .ffxiv .effect-meta,
 .ffxiv .ability-effect-name span {
@@ -762,10 +800,6 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
 
 .ffxiv .prosemirror menu .pm-dropdown:hover i {
   color: var(--text-color);
-}
-
-.ffxiv input::-moz-placeholder {
-  color: var(--placeholder-color);
 }
 
 .ffxiv input::placeholder {

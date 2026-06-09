@@ -66,6 +66,11 @@ const STATUS_DEFINITIONS = [
     icon: "systems/ffxiv/assets/effects/heavy.webp",
   },
   {
+    id: "hidden",
+    labelKey: "FFXIV.Effects.Hidden",
+    icon: "systems/ffxiv/assets/effects/hidden.webp",
+  },
+  {
     id: "invoking",
     labelKey: "FFXIV.Effects.Invoking",
     icon: "systems/ffxiv/assets/effects/invoking.webp",
@@ -130,6 +135,7 @@ const STATUS_DEFINITIONS = [
 export const BENEFICIAL_STATUS_IDS = [
   "critical_up",
   "drain",
+  "hidden",
   "invoking",
   "ready",
   "revivify",

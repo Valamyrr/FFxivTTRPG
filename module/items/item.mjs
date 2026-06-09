@@ -853,6 +853,8 @@ export class FFXIVItem extends Item {
       : null;
     if (checkResult?.interrupted) return;
 
+    await this._applyEffectRules("use");
+    await this._consumeEffectRequirements();
     await this._autoApplyStatusEffects();
     await this._applyInvokingStatus();
     await this._rollBase({
@@ -878,10 +880,11 @@ export class FFXIVItem extends Item {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.CannotAct"));
       return false;
     }
-    if (!hasStatus(this.parent, "silence")) return true;
-    if (!this._isInvokedAbility()) return true;
-    ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.Silenced"));
-    return false;
+    if (hasStatus(this.parent, "silence") && this._isInvokedAbility()) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.Silenced"));
+      return false;
+    }
+    return this._canSatisfyEffectRequirements();
   }
 
   _isInvokedAbility() {
@@ -1368,8 +1371,17 @@ export class FFXIVItem extends Item {
       content: `${rollHTML.html()} ${isInterrupted ? "" : extraButtons}`,
     });
 
+    if (!isInterrupted) {
+      await this._applyEffectRules("hitThreshold", {
+        d20Result,
+        roll,
+        directHitRoll: directHitResult?.roll ?? null,
+      });
+    }
+
     return {
       roll,
+      d20Result,
       isCritical,
       isCriticalFailure,
       interrupted: isInterrupted,
@@ -1714,6 +1726,293 @@ export class FFXIVItem extends Item {
       origin,
     });
     return result !== false;
+  }
+
+  _getEffectRules() {
+    const entries = Array.isArray(this.system.effect_rules)
+      ? this.system.effect_rules
+      : [];
+    return entries
+      .map((entry) => ({
+        action: String(entry?.action ?? "grant").trim().toLowerCase() || "grant",
+        trigger: String(entry?.trigger ?? "use").trim() || "use",
+        key: this._normalizeEffectKey(entry?.key ?? entry?.name),
+        name: String(entry?.name ?? entry?.key ?? "").trim(),
+        icon: String(entry?.icon ?? "").trim(),
+        applyTo: String(entry?.applyTo ?? "self").trim().toLowerCase(),
+        threshold: Number.parseInt(entry?.threshold, 10),
+        remove: this._normalizeEffectRefs(entry?.remove),
+        requires: this._normalizeEffectRefs(entry?.requires),
+        forbids: this._normalizeEffectRefs(entry?.forbids),
+        left: this._normalizeEffectRef(entry?.left),
+        right: this._normalizeEffectRef(entry?.right),
+        duration: entry?.duration,
+      }))
+      .filter((entry) => entry.key || entry.action === "toggle");
+  }
+
+  _getEffectRequirements() {
+    const entries = Array.isArray(this.system.effect_requirements)
+      ? this.system.effect_requirements
+      : [];
+    return entries
+      .map((entry) => ({
+        key: this._normalizeEffectKey(entry?.key ?? entry?.name),
+        name: String(entry?.name ?? entry?.key ?? "").trim(),
+        mode: entry?.mode === "forbidden" ? "forbidden" : "required",
+        consume: entry?.consume === true,
+        bypass: this._normalizeEffectRefs(entry?.bypass),
+      }))
+      .filter((entry) => entry.key);
+  }
+
+  _canSatisfyEffectRequirements() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return true;
+
+    const missing = [];
+    const blocked = [];
+    for (const requirement of this._getEffectRequirements()) {
+      const hasEffect = this._hasNamedEffect(actor, requirement.key);
+      if (requirement.mode === "forbidden") {
+        if (hasEffect) blocked.push(requirement.name || requirement.key);
+        continue;
+      }
+
+      const bypassed = requirement.bypass.some((entry) =>
+        this._hasNamedEffect(actor, entry.key),
+      );
+      if (!hasEffect && !bypassed)
+        missing.push(requirement.name || requirement.key);
+    }
+
+    if (!missing.length && !blocked.length) return true;
+
+    const messages = [];
+    if (missing.length) messages.push(`requires ${missing.join(", ")}`);
+    if (blocked.length) messages.push(`cannot be used while under ${blocked.join(", ")}`);
+    ui.notifications.warn(`${this.name}: ${messages.join("; ")}.`);
+    return false;
+  }
+
+  async _consumeEffectRequirements() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return;
+
+    for (const requirement of this._getEffectRequirements()) {
+      if (requirement.mode !== "required" || !requirement.consume) continue;
+      await this._removeNamedEffects(actor, [requirement]);
+    }
+  }
+
+  async _applyEffectRules(trigger, context = {}) {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return;
+
+    for (const rule of this._getEffectRules()) {
+      if (rule.trigger !== trigger) continue;
+      if (!this._canApplyEffectRule(actor, rule, context)) continue;
+      await this._applyEffectRule(actor, rule);
+    }
+  }
+
+  _canApplyEffectRule(actor, rule, context) {
+    if (rule.trigger === "hitThreshold") {
+      const threshold = Number.parseInt(rule.threshold, 10);
+      const d20Result = Number.parseInt(context?.d20Result, 10);
+      if (!Number.isFinite(threshold) || !Number.isFinite(d20Result))
+        return false;
+      if (d20Result < threshold) return false;
+    }
+
+    if (rule.requires.some((entry) => !this._hasNamedEffect(actor, entry.key)))
+      return false;
+    if (rule.forbids.some((entry) => this._hasNamedEffect(actor, entry.key)))
+      return false;
+    return true;
+  }
+
+  async _applyEffectRule(actor, rule) {
+    if (rule.action === "remove") {
+      await this._removeNamedEffects(actor, [rule]);
+      return;
+    }
+    if (rule.action === "toggle") {
+      await this._toggleNamedEffects(actor, rule);
+      return;
+    }
+
+    await this._removeNamedEffects(actor, rule.remove);
+    await this._grantNamedEffect(actor, rule);
+  }
+
+  async _toggleNamedEffects(actor, rule) {
+    if (!rule.left?.key || !rule.right?.key) return;
+    if (this._hasNamedEffect(actor, rule.left.key)) {
+      await this._removeNamedEffects(actor, [rule.left]);
+      await this._grantNamedEffect(actor, rule.right);
+      return;
+    }
+    if (this._hasNamedEffect(actor, rule.right.key)) {
+      await this._removeNamedEffects(actor, [rule.right]);
+      await this._grantNamedEffect(actor, rule.left);
+    }
+  }
+
+  async _grantNamedEffect(actor, rule) {
+    const key = this._normalizeEffectKey(rule?.key ?? rule?.name);
+    if (!actor || !key) return;
+    if (this._isStatusEffectId(key)) {
+      await applyStatusEffectChange(actor, key, true, { origin: this.uuid });
+      return;
+    }
+
+    const name = String(rule?.name ?? rule?.key ?? key).trim() || key;
+    const icon =
+      String(rule?.icon ?? "").trim() ||
+      "systems/ffxiv/assets/effects/ready.webp";
+
+    await this._removeNamedEffects(actor, [{ key }], {
+      suppressRemovalText: true,
+    });
+
+    const showAlways = CONST.ACTIVE_EFFECT_SHOW_ICON?.ALWAYS ?? 2;
+    const effectData = {
+      name,
+      img: icon,
+      icon,
+      origin: this.uuid,
+      disabled: false,
+      transfer: false,
+      displayStatusIcon: true,
+      showIcon: showAlways,
+      flags: {
+        ffxiv: {
+          abilityEffectRule: true,
+          effectKey: key,
+          sourceItemUuid: this.uuid,
+        },
+      },
+    };
+    const duration = this._prepareEffectRuleDuration(rule?.duration);
+    if (duration) effectData.duration = duration;
+    await actor.createEmbeddedDocuments("ActiveEffect", [effectData], {
+      render: false,
+    });
+  }
+
+  async _removeNamedEffects(actor, refs, options = {}) {
+    if (!actor?.effects?.size) return;
+    const keys = this._normalizeEffectRefs(refs).map((entry) => entry.key);
+    if (!keys.length) return;
+
+    for (const key of keys) {
+      if (this._isStatusEffectId(key))
+        await applyStatusEffectChange(actor, key, false);
+    }
+
+    const ids = actor.effects
+      .filter((effect) =>
+        keys.some((key) => this._effectMatchesKey(effect, key)),
+      )
+      .map((effect) => effect.id)
+      .filter(Boolean);
+    if (ids.length)
+      await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+        render: false,
+        ffxivSuppressRemovalText: options.suppressRemovalText === true,
+      });
+  }
+
+  _hasNamedEffect(actor, key) {
+    const normalizedKey = this._normalizeEffectKey(key);
+    if (!actor?.effects?.size || !normalizedKey) return false;
+    if (this._isStatusEffectId(normalizedKey) && hasStatus(actor, normalizedKey))
+      return true;
+
+    return actor.effects.some((effect) => {
+      if (!effect || effect.disabled) return false;
+      return this._effectMatchesKey(effect, normalizedKey);
+    });
+  }
+
+  _effectMatchesKey(effect, key) {
+    const normalizedKey = this._normalizeEffectKey(key);
+    if (!effect || !normalizedKey) return false;
+
+    const flagKey = this._normalizeEffectKey(
+      effect.getFlag?.("ffxiv", "effectKey"),
+    );
+    if (flagKey && flagKey === normalizedKey) return true;
+    return this._normalizeEffectKey(effect.name) === normalizedKey;
+  }
+
+  _isStatusEffectId(key) {
+    const normalizedKey = this._normalizeEffectKey(key);
+    return (CONFIG.statusEffects ?? []).some((effect) =>
+      this._normalizeEffectKey(effect?.id) === normalizedKey,
+    );
+  }
+
+  _normalizeEffectRefs(value) {
+    const entries = Array.isArray(value)
+      ? value
+      : value
+        ? [value]
+        : [];
+    return entries
+      .map((entry) => this._normalizeEffectRef(entry))
+      .filter((entry) => entry.key);
+  }
+
+  _normalizeEffectRef(value) {
+    if (!value) return { key: "", name: "" };
+    if (typeof value === "string") {
+      return {
+        key: this._normalizeEffectKey(value),
+        name: value.trim(),
+      };
+    }
+    const name = String(value.name ?? value.key ?? "").trim();
+    return {
+      key: this._normalizeEffectKey(value.key ?? name),
+      name,
+      icon: String(value.icon ?? "").trim(),
+      duration: value.duration,
+    };
+  }
+
+  _normalizeEffectKey(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  _prepareEffectRuleDuration(duration) {
+    if (!duration || typeof duration !== "object") return null;
+
+    const prepared = {};
+    for (const key of ["seconds", "rounds", "turns"]) {
+      const value = Number(duration[key]);
+      if (Number.isFinite(value) && value > 0) prepared[key] = value;
+    }
+    if (!Object.keys(prepared).length) return null;
+
+    prepared.startTime = game.time?.worldTime ?? null;
+    const combat = game.combat;
+    if (combat?.started && combat.turns?.length) {
+      prepared.combat = combat.id;
+      prepared.startRound = combat.round ?? null;
+      prepared.startTurn = combat.turn ?? null;
+    } else {
+      prepared.startRound = null;
+      prepared.startTurn = null;
+    }
+    return prepared;
   }
 
   _getStatusLabelById(statusId) {

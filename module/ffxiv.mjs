@@ -785,18 +785,30 @@ function installActorSheetActiveEffectRefresh() {
     });
   };
 
-  Hooks.on("createActiveEffect", refreshActorSheets);
+  Hooks.on("createActiveEffect", (effect) => {
+    showActiveEffectCreationText(effect);
+    refreshActorSheets(effect);
+  });
   Hooks.on("updateActiveEffect", (effect) => {
     cleanupExpiredEffect(effect);
     refreshActorSheets(effect);
   });
-  Hooks.on("deleteActiveEffect", (effect) => {
-    showActiveEffectRemovalText(effect);
+  Hooks.on("deleteActiveEffect", (effect, options) => {
+    if (options?.ffxivSuppressRemovalText !== true)
+      showActiveEffectRemovalText(effect);
     refreshActorSheets(effect);
   });
 }
 
+function showActiveEffectCreationText(effect) {
+  showActiveEffectChangeText(effect, "+", 0x57d67a);
+}
+
 function showActiveEffectRemovalText(effect) {
+  showActiveEffectChangeText(effect, "-", 0xff6b6b);
+}
+
+function showActiveEffectChangeText(effect, sign, fill) {
   const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
   if (effect?.getFlag?.("ffxiv", ELITE_FOE_EFFECT_FLAG) === true) return;
   if (!actor || typeof canvas?.interface?.createScrollingText !== "function") return;
@@ -806,12 +818,12 @@ function showActiveEffectRemovalText(effect) {
 
   const direction = CONST.TEXT_ANCHOR_POINTS?.TOP ?? 1;
   const anchor = CONST.TEXT_ANCHOR_POINTS?.CENTER ?? 0;
-  canvas.interface.createScrollingText(token.center, `-${effect.name}`, {
+  canvas.interface.createScrollingText(token.center, `${sign}${effect.name}`, {
     anchor,
     direction,
     distance: (canvas.grid?.size ?? 100) * 1.5,
     fontSize: 28,
-    fill: 0xff6b6b,
+    fill,
     stroke: 0x000000,
     strokeThickness: 4,
   });

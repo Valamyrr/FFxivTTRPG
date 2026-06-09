@@ -155,6 +155,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.config = CONFIG.FFXIV;
     context.statusEffects = CONFIG.statusEffects;
     context.itemStatusEffects = this._getStatusEffectEntries(itemData.system);
+    context.effectRequirementEntries = this._getEffectRequirementEntries(itemData.system);
+    context.effectRuleEntries = this._getEffectRuleEntries(itemData.system);
     context.cssClass = this._getSheetClasses().join(" ");
     context.editable = this.document.isOwner;
     const actionType =
@@ -516,6 +518,170 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return Boolean(check) && check !== "FFXIV.None" && check !== none;
   }
 
+  _getEffectRequirementEntries(system) {
+    const requirements = Array.isArray(system.effect_requirements)
+      ? system.effect_requirements
+      : [];
+    return requirements.map((requirement) => ({
+      name:
+        String(requirement?.name ?? "").trim() ||
+        this._titleizeEffectKey(requirement?.key),
+      mode: requirement?.mode === "forbidden" ? "forbidden" : "required",
+      consume: requirement?.consume === true,
+      bypassText: this._getEffectRefListInput(requirement?.bypass),
+      text: this._formatEffectRequirement(requirement),
+    }));
+  }
+
+  _getEffectRuleEntries(system) {
+    const rules = Array.isArray(system.effect_rules)
+      ? system.effect_rules
+      : [];
+    return rules.map((rule) => ({
+      action: this._normalizeEffectRuleAction(rule?.action),
+      trigger: this._normalizeEffectRuleTrigger(rule?.trigger),
+      name: String(rule?.name ?? "").trim() || this._titleizeEffectKey(rule?.key),
+      icon: String(rule?.icon ?? "").trim(),
+      threshold: Number.isFinite(Number.parseInt(rule?.threshold, 10))
+        ? Number.parseInt(rule.threshold, 10)
+        : "",
+      removeText: this._getEffectRefListInput(rule?.remove),
+      requiresText: this._getEffectRefListInput(rule?.requires),
+      forbidsText: this._getEffectRefListInput(rule?.forbids),
+      leftName: typeof rule?.left === "string"
+        ? rule.left
+        : String(rule?.left?.name ?? "").trim() ||
+          this._titleizeEffectKey(rule?.left?.key),
+      rightName: typeof rule?.right === "string"
+        ? rule.right
+        : String(rule?.right?.name ?? "").trim() ||
+          this._titleizeEffectKey(rule?.right?.key),
+      durationTurns: this._getPositiveIntegerInput(rule?.duration?.turns),
+      text: this._formatEffectRule(rule),
+    }));
+  }
+
+  _normalizeEffectRuleAction(value) {
+    const action = String(value ?? "grant").trim().toLowerCase();
+    return ["grant", "remove", "toggle"].includes(action) ? action : "grant";
+  }
+
+  _normalizeEffectRuleTrigger(value) {
+    const trigger = String(value ?? "use").trim();
+    return trigger === "hitThreshold" ? "hitThreshold" : "use";
+  }
+
+  _getPositiveIntegerInput(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : "";
+  }
+
+  _getEffectRefListInput(value) {
+    const entries = Array.isArray(value) ? value : value ? [value] : [];
+    return entries
+      .map((entry) => {
+        if (typeof entry === "string") return entry;
+        return String(entry?.name ?? entry?.key ?? "").trim();
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  _formatEffectRequirement(requirement) {
+    const name = this._formatEffectRef(requirement);
+    if (!name) return "";
+
+    const parts = [
+      requirement?.mode === "forbidden"
+        ? `Forbids ${name}`
+        : `Requires ${name}`,
+    ];
+    if (requirement?.consume === true) parts.push("consume after use");
+
+    const bypass = this._formatEffectRefList(requirement?.bypass);
+    if (bypass) parts.push(`bypassed by ${bypass}`);
+    return parts.join("; ");
+  }
+
+  _formatEffectRule(rule) {
+    const trigger = this._formatEffectRuleTrigger(rule);
+    const action = String(rule?.action ?? "grant").trim().toLowerCase();
+    const parts = [];
+
+    if (action === "toggle") {
+      const left = this._formatEffectRef(rule?.left);
+      const right = this._formatEffectRef(rule?.right);
+      if (!left || !right) return "";
+      parts.push(`${trigger}: toggle ${left} / ${right}`);
+    } else {
+      const name = this._formatEffectRef(rule);
+      if (!name) return "";
+      const verb = action === "remove" ? "remove" : "grant";
+      parts.push(`${trigger}: ${verb} ${name}`);
+    }
+
+    const remove = this._formatEffectRefList(rule?.remove);
+    if (remove) parts.push(`remove ${remove} first`);
+
+    const requires = this._formatEffectRefList(rule?.requires);
+    if (requires) parts.push(`requires ${requires}`);
+
+    const forbids = this._formatEffectRefList(rule?.forbids);
+    if (forbids) parts.push(`not while under ${forbids}`);
+
+    const duration = this._formatEffectDuration(rule?.duration);
+    if (duration) parts.push(`duration ${duration}`);
+
+    return parts.join("; ");
+  }
+
+  _formatEffectRuleTrigger(rule) {
+    const trigger = String(rule?.trigger ?? "use").trim();
+    if (trigger === "hitThreshold") {
+      const threshold = Number.parseInt(rule?.threshold, 10);
+      return Number.isFinite(threshold)
+        ? `On hit/check d20 ${threshold}+`
+        : "On hit/check";
+    }
+    if (!trigger || trigger === "use") return "On use";
+    return `On ${trigger}`;
+  }
+
+  _formatEffectRefList(value) {
+    const entries = Array.isArray(value) ? value : value ? [value] : [];
+    return entries
+      .map((entry) => this._formatEffectRef(entry))
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  _formatEffectRef(value) {
+    if (!value) return "";
+    if (typeof value === "string") return this._titleizeEffectKey(value);
+    const name = String(value.name ?? "").trim();
+    if (name) return name;
+    return this._titleizeEffectKey(value.key);
+  }
+
+  _titleizeEffectKey(value) {
+    return String(value ?? "")
+      .trim()
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+
+  _formatEffectDuration(duration) {
+    if (!duration || typeof duration !== "object") return "";
+    for (const unit of ["turns", "rounds", "seconds"]) {
+      const value = Number.parseInt(duration[unit], 10);
+      if (!Number.isFinite(value) || value <= 0) continue;
+      const label = value === 1 ? unit.slice(0, -1) : unit;
+      return `${value} ${label}`;
+    }
+    return "";
+  }
+
   _getStatusEffectEntries(system) {
     const entries = Array.isArray(system.status_effects)
       ? foundry.utils.deepClone(system.status_effects)
@@ -551,6 +717,216 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _getCurrentStatusEffectEntries() {
     return this._getStatusEffectEntries(this.item.system);
+  }
+
+  _getCurrentEffectRequirements() {
+    return Array.isArray(this.item.system.effect_requirements)
+      ? foundry.utils.deepClone(this.item.system.effect_requirements)
+      : [];
+  }
+
+  _getCurrentEffectRules() {
+    return Array.isArray(this.item.system.effect_rules)
+      ? foundry.utils.deepClone(this.item.system.effect_rules)
+      : [];
+  }
+
+  _getAutomationFieldValue(target) {
+    if (target.type === "checkbox") return target.checked;
+    if (target.type === "number")
+      return target.value === "" ? "" : Number.parseInt(target.value, 10);
+    return String(target.value ?? "").trim();
+  }
+
+  _onChangeEffectRequirement(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+    const field = String(event.currentTarget.dataset.field ?? "");
+    if (!field) return;
+
+    const requirements = this._getCurrentEffectRequirements();
+    requirements[index] ??= {
+      name: "",
+      mode: "required",
+      consume: false,
+    };
+    const value = this._getAutomationFieldValue(event.currentTarget);
+
+    if (field === "bypass") {
+      requirements[index].bypass = this._parseEffectRefList(value);
+      if (!requirements[index].bypass.length) delete requirements[index].bypass;
+    } else if (field === "consume") {
+      requirements[index].consume = value === true;
+    } else if (field === "mode") {
+      requirements[index].mode = value === "forbidden" ? "forbidden" : "required";
+    } else if (field === "name") {
+      requirements[index].name = value;
+      delete requirements[index].key;
+    } else {
+      requirements[index][field] = value;
+    }
+
+    this._captureSheetScroll();
+    this.item
+      .update({ "system.effect_requirements": requirements }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onChangeEffectRule(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+    const field = String(event.currentTarget.dataset.field ?? "");
+    if (!field) return;
+
+    const rules = this._getCurrentEffectRules();
+    rules[index] ??= {
+      trigger: "use",
+      action: "grant",
+      name: "",
+    };
+    const value = this._getAutomationFieldValue(event.currentTarget);
+
+    this._setEffectRuleField(rules[index], field, value);
+    this._captureSheetScroll();
+    this.item
+      .update({ "system.effect_rules": rules }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _setEffectRuleField(rule, field, value) {
+    if (["remove", "requires", "forbids"].includes(field)) {
+      rule[field] = this._parseEffectRefList(value);
+      if (!rule[field].length) delete rule[field];
+      return;
+    }
+
+    if (["rounds", "turns", "seconds"].includes(field)) {
+      rule.duration ??= {};
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        rule.duration[field] = parsed;
+      } else {
+        delete rule.duration[field];
+      }
+      if (!Object.keys(rule.duration).length) delete rule.duration;
+      return;
+    }
+
+    if (field === "leftName") {
+      rule.left ??= {};
+      rule.left.name = value;
+      delete rule.left.key;
+      this._cleanEffectRef(rule, "left");
+      return;
+    }
+
+    if (field === "rightName") {
+      rule.right ??= {};
+      rule.right.name = value;
+      delete rule.right.key;
+      this._cleanEffectRef(rule, "right");
+      return;
+    }
+
+    if (field === "action") {
+      rule.action = this._normalizeEffectRuleAction(value);
+      return;
+    }
+
+    if (field === "trigger") {
+      rule.trigger = this._normalizeEffectRuleTrigger(value);
+      return;
+    }
+
+    if (field === "threshold") {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) rule.threshold = parsed;
+      else delete rule.threshold;
+      return;
+    }
+
+    rule[field] = value;
+    if (field === "name") delete rule.key;
+  }
+
+  _cleanEffectRef(rule, field) {
+    if (rule[field]?.key || rule[field]?.name) return;
+    delete rule[field];
+  }
+
+  _parseEffectRefList(value) {
+    return String(value ?? "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  _onAddEffectRequirement(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    this._captureSheetScroll();
+
+    const requirements = this._getCurrentEffectRequirements();
+    requirements.push({
+      name: "",
+      mode: "required",
+      consume: false,
+    });
+    this.item
+      .update({ "system.effect_requirements": requirements }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onAddEffectRule(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    this._captureSheetScroll();
+
+    const rules = this._getCurrentEffectRules();
+    rules.push({
+      trigger: "use",
+      action: "grant",
+      name: "",
+    });
+    this.item
+      .update({ "system.effect_rules": rules }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onRemoveEffectRequirement(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+    this._captureSheetScroll();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const requirements = this._getCurrentEffectRequirements();
+    requirements.splice(index, 1);
+    this.item
+      .update({ "system.effect_requirements": requirements }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onRemoveEffectRule(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+    this._captureSheetScroll();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const rules = this._getCurrentEffectRules();
+    rules.splice(index, 1);
+    this.item
+      .update({ "system.effect_rules": rules }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
   }
 
   _onChangeStatusEffect(event) {
@@ -780,6 +1156,16 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     );
     html.on(
       "change.ffxivItemSheet",
+      ".effect-requirement-field",
+      this._onChangeEffectRequirement.bind(this),
+    );
+    html.on(
+      "change.ffxivItemSheet",
+      ".effect-rule-field",
+      this._onChangeEffectRule.bind(this),
+    );
+    html.on(
+      "change.ffxivItemSheet",
       ".ability-effect-scope",
       this._onChangeAbilityEffectScope.bind(this),
     );
@@ -817,6 +1203,26 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       "click.ffxivItemSheet",
       ".remove-status-effect",
       this._onRemoveStatusEffect.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".add-effect-requirement",
+      this._onAddEffectRequirement.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".add-effect-rule",
+      this._onAddEffectRule.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".remove-effect-requirement",
+      this._onRemoveEffectRequirement.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".remove-effect-rule",
+      this._onRemoveEffectRule.bind(this),
     );
 
     //Gear Classes, similar as tags

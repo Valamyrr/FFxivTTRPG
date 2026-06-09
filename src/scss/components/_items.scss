@@ -121,4 +121,62 @@
     flex: 0 0 200px;
     padding: 0 8px;
   }
+
+  &.item {
+    .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
+      grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em 34px;
+    }
+
+    .ability-automation-list li {
+      display: block;
+      align-items: start;
+      grid-template-columns: none;
+    }
+
+    .ability-automation-edit-list li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 34px;
+      gap: 8px;
+    }
+
+    .ability-automation-text {
+      display: block;
+      overflow-wrap: break-word;
+    }
+
+    .ability-automation-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 8px;
+      margin-top: 4px;
+    }
+
+    .ability-automation-fields label {
+      display: grid;
+      grid-template-columns: minmax(5.5em, 0.8fr) minmax(0, 1.2fr);
+      gap: 4px;
+      align-items: center;
+      margin: 0;
+    }
+
+    .ability-automation-fields label span {
+      font-size: 12px;
+    }
+
+    .ability-automation-fields input,
+    .ability-automation-fields select {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .ability-automation-fields .ability-automation-checkbox {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .ability-automation-fields .ability-automation-checkbox input {
+      width: auto;
+    }
+  }
 }

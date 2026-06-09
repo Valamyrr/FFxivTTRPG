@@ -62,6 +62,12 @@ function buildAbilityFields() {
     status_effects: new fields.ArrayField(
       new fields.AnyField({ required: false }),
     ),
+    effect_rules: new fields.ArrayField(
+      new fields.AnyField({ required: false }),
+    ),
+    effect_requirements: new fields.ArrayField(
+      new fields.AnyField({ required: false }),
+    ),
     marker_area: new fields.StringField({
       required: false,
       blank: true,
