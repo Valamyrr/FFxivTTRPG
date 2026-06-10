@@ -1,3 +1,4 @@
+@charset "UTF-8";
 @import url("vars.css");
 @import url("item.css");
 @import url("actor.css");
@@ -694,9 +695,46 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   grid-template-columns: minmax(0, 1fr) 34px;
   gap: 8px;
 }
-.ffxiv.item .ability-automation-text {
+.ffxiv.item .ability-automation-heading {
   display: block;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+.ffxiv.item .ability-automation-text {
+  display: inline;
   overflow-wrap: break-word;
+}
+.ffxiv.item .ability-automation-entry summary {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  cursor: pointer;
+}
+.ffxiv.item .ability-automation-entry summary::marker {
+  content: "";
+}
+.ffxiv.item .ability-automation-entry summary::-webkit-details-marker {
+  display: none;
+}
+.ffxiv.item .ability-automation-entry summary::before {
+  content: "▸";
+  flex: 0 0 auto;
+  color: var(--text-color);
+}
+.ffxiv.item .ability-automation-entry[open] summary::before {
+  content: "▾";
+}
+.ffxiv.item .remove-status-effect,
+.ffxiv.item .remove-effect-requirement,
+.ffxiv.item .remove-effect-rule,
+.ffxiv.item .effect-control-delete .delete-icon {
+  color: #ff3b30;
+}
+.ffxiv.item .remove-status-effect:hover,
+.ffxiv.item .remove-effect-requirement:hover,
+.ffxiv.item .remove-effect-rule:hover,
+.ffxiv.item .effect-control-delete:hover .delete-icon {
+  color: #ff6b61;
 }
 .ffxiv.item .ability-automation-fields {
   display: grid;
@@ -718,6 +756,17 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
 .ffxiv.item .ability-automation-fields select {
   min-width: 0;
   width: 100%;
+}
+.ffxiv.item .ability-automation-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  gap: 4px;
+}
+.ffxiv.item .ability-automation-file button {
+  height: 26px;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
 }
 .ffxiv.item .ability-automation-fields .ability-automation-checkbox {
   display: flex;

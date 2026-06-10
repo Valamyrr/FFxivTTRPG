@@ -40,6 +40,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     super(...args);
     this.options.window ??= {};
     this.options.window.resizable = !this._isLimitedDisplayMode();
+    this._expandedEffectRequirements = new Set();
+    this._expandedEffectRules = new Set();
   }
 
   /** @override */
@@ -229,16 +231,20 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     // Prepare active effects for easier access
     context.effects = prepareActiveEffectCategories(this.item.effects);
-    context.abilityLinkedEffects = Array.from(this.item.effects ?? []).map((effect) => ({
-      id: effect.id,
-      name: effect.name,
-      icon: effect.img || effect.icon || "icons/svg/aura.svg",
-      sourceName: effect.sourceName,
-      duration: effect.duration,
-      disabled: effect.disabled,
-      applyTo: this._getAbilityEffectApplyTo(effect),
-      applyAction: String(effect.getFlag("ffxiv", "applyAction") || "add"),
-    }));
+    context.abilityLinkedEffects = Array.from(this.item.effects ?? []).map((effect) => {
+      const applyTo = this._getAbilityEffectApplyTo(effect);
+      return {
+        id: effect.id,
+        name: effect.name,
+        icon: effect.img || effect.icon || "icons/svg/aura.svg",
+        sourceName: effect.sourceName,
+        duration: effect.duration,
+        disabled: effect.disabled,
+        applyTo,
+        isAutomation: applyTo === "automation",
+        applyAction: String(effect.getFlag("ffxiv", "applyAction") || "add"),
+      };
+    });
     return context;
   }
 
@@ -522,13 +528,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const requirements = Array.isArray(system.effect_requirements)
       ? system.effect_requirements
       : [];
-    return requirements.map((requirement) => ({
+    return requirements.map((requirement, index) => ({
       name:
         String(requirement?.name ?? "").trim() ||
         this._titleizeEffectKey(requirement?.key),
       mode: requirement?.mode === "forbidden" ? "forbidden" : "required",
       consume: requirement?.consume === true,
       bypassText: this._getEffectRefListInput(requirement?.bypass),
+      open: this._expandedEffectRequirements.has(index),
       text: this._formatEffectRequirement(requirement),
     }));
   }
@@ -537,11 +544,11 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const rules = Array.isArray(system.effect_rules)
       ? system.effect_rules
       : [];
-    return rules.map((rule) => ({
+    return rules.map((rule, index) => ({
       action: this._normalizeEffectRuleAction(rule?.action),
       trigger: this._normalizeEffectRuleTrigger(rule?.trigger),
       name: String(rule?.name ?? "").trim() || this._titleizeEffectKey(rule?.key),
-      icon: String(rule?.icon ?? "").trim(),
+      iconOverride: String(rule?.iconOverride ?? rule?.icon ?? "").trim(),
       threshold: Number.isFinite(Number.parseInt(rule?.threshold, 10))
         ? Number.parseInt(rule.threshold, 10)
         : "",
@@ -556,7 +563,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ? rule.right
         : String(rule?.right?.name ?? "").trim() ||
           this._titleizeEffectKey(rule?.right?.key),
-      durationTurns: this._getPositiveIntegerInput(rule?.duration?.turns),
+      open: this._expandedEffectRules.has(index),
       text: this._formatEffectRule(rule),
     }));
   }
@@ -569,11 +576,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _normalizeEffectRuleTrigger(value) {
     const trigger = String(value ?? "use").trim();
     return trigger === "hitThreshold" ? "hitThreshold" : "use";
-  }
-
-  _getPositiveIntegerInput(value) {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : "";
   }
 
   _getEffectRefListInput(value) {
@@ -669,6 +671,16 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       .replace(/[_-]+/g, " ")
       .replace(/\s+/g, " ")
       .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+
+  _normalizeEffectKey(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
   }
 
   _formatEffectDuration(duration) {
@@ -847,6 +859,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return;
     }
 
+    if (field === "iconOverride") {
+      if (value) rule.iconOverride = value;
+      else delete rule.iconOverride;
+      delete rule.icon;
+      return;
+    }
+
     rule[field] = value;
     if (field === "name") delete rule.key;
   }
@@ -875,6 +894,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       mode: "required",
       consume: false,
     });
+    this._expandedEffectRequirements.add(requirements.length - 1);
     this.item
       .update({ "system.effect_requirements": requirements }, { render: false })
       .then(() => this.render({ force: true }))
@@ -893,6 +913,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       action: "grant",
       name: "",
     });
+    this._expandedEffectRules.add(rules.length - 1);
     this.item
       .update({ "system.effect_rules": rules }, { render: false })
       .then(() => this.render({ force: true }))
@@ -1031,16 +1052,44 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const effect = this.item.effects.get(effectId);
     if (!effect) return;
     this._captureSheetScroll();
+    const updateData = {
+      "flags.ffxiv.applyTo": applyTo,
+      transfer: applyTo === "self",
+    };
+    if (applyTo === "automation") {
+      updateData["flags.ffxiv.effectKey"] = this._normalizeEffectKey(effect.name);
+    }
     effect
-      .update(
-        {
-          "flags.ffxiv.applyTo": applyTo,
-          transfer: applyTo === "self",
-        },
-        { render: false, ffxivSyncApplyTo: true },
-      )
+      .update(updateData, { render: false, ffxivSyncApplyTo: true })
+      .then(() => this._ensureAutomationRuleForEffect(effect, applyTo))
       .then(() => this.render({ force: true }))
       .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  async _ensureAutomationRuleForEffect(effect, applyTo) {
+    if (applyTo !== "automation") return;
+
+    const name = String(effect?.name ?? "").trim();
+    const key = this._normalizeEffectKey(
+      effect?.getFlag?.("ffxiv", "effectKey") ?? name,
+    );
+    if (!name || !key) return;
+
+    const rules = this._getCurrentEffectRules();
+    const hasRule = rules.some((rule) => {
+      if (String(rule?.action ?? "grant").trim().toLowerCase() !== "grant")
+        return false;
+      const ruleKey = this._normalizeEffectKey(rule?.key ?? rule?.name);
+      return ruleKey === key;
+    });
+    if (hasRule) return;
+
+    rules.push({
+      trigger: "use",
+      action: "grant",
+      name,
+    });
+    await this.item.update({ "system.effect_rules": rules }, { render: false });
   }
 
   _onChangeAbilityEffectAction(event) {
@@ -1059,7 +1108,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _getAbilityEffectApplyTo(effect) {
     const flagged = String(effect?.getFlag("ffxiv", "applyTo") || "").trim().toLowerCase();
-    if (flagged === "self" || flagged === "target" || flagged === "self_auto") return flagged;
+    if (flagged === "self" || flagged === "target" || flagged === "self_auto" || flagged === "automation") return flagged;
     return "target";
   }
 
@@ -1213,6 +1262,11 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       "click.ffxivItemSheet",
       ".add-effect-rule",
       this._onAddEffectRule.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".effect-rule-icon-picker",
+      this._onPickEffectRuleIcon.bind(this),
     );
     html.on(
       "click.ffxivItemSheet",
@@ -1867,6 +1921,33 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       type: "imagevideo",
       current: this.item.img,
       callback: (path) => this.item.update({ img: path }),
+    }).render(true);
+  }
+
+  _onPickEffectRuleIcon(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+
+    const rules = this._getCurrentEffectRules();
+    const rule = rules[index];
+    if (!rule) return;
+
+    const FilePickerImpl = foundry.applications.apps.FilePicker.implementation;
+    new FilePickerImpl({
+      type: "imagevideo",
+      current: String(rule.iconOverride ?? rule.icon ?? "").trim(),
+      callback: (path) => {
+        rules[index].iconOverride = path;
+        delete rules[index].icon;
+        this._captureSheetScroll();
+        this.item
+          .update({ "system.effect_rules": rules }, { render: false })
+          .then(() => this.render({ force: true }))
+          .catch((err) => ui.notifications.error(err, { console: true }));
+      },
     }).render(true);
   }
 

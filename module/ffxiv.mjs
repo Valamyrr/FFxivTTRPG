@@ -677,6 +677,13 @@ Hooks.once("ready", function () {
     return false;
   });
 
+  Hooks.on("deleteItem", (item, _options, userId) => {
+    if (game.user.id !== userId) return;
+    deletePairedItemMacros(item).catch((error) => {
+      debugError("FFXIV | Failed to delete paired item macro:", error);
+    });
+  });
+
   // Color Scheme to use with css variables
   if (game.settings.get("ffxiv", "overrideColorScheme")) {
     CONFIG.theme = "blue";
@@ -1438,7 +1445,7 @@ async function migrateAscendentStatusIdToTranscendent() {
   let migratedItems = 0;
   let migratedEffects = 0;
 
-    const remapStatusEntries = (entries) => {
+  const remapStatusEntries = (entries) => {
     if (!Array.isArray(entries) || !entries.length) return null;
     let changed = false;
     const next = entries.map((entry) => {
@@ -1450,7 +1457,7 @@ async function migrateAscendentStatusIdToTranscendent() {
     return changed ? next : null;
   };
 
-    const migrateItemStatusFields = async (item) => {
+  const migrateItemStatusFields = async (item) => {
     const updates = {};
     if (item.system?.status_effect === "ascendent") {
       updates["system.status_effect"] = "transcendent";
@@ -2311,7 +2318,7 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
           if (
             nextItemSystem.shop_tier !== normalizedTier.shop_tier ||
             (nextItemSystem.shop_tier_custom ?? "") !==
-              normalizedTier.shop_tier_custom
+            normalizedTier.shop_tier_custom
           ) {
             nextItemSystem.shop_tier = normalizedTier.shop_tier;
             nextItemSystem.shop_tier_custom = normalizedTier.shop_tier_custom;
@@ -2355,8 +2362,8 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
     source._id = item.id;
     return source;
   };
-  
-  
+
+
   const worldItems = Array.from(game.items);
   const worldLegacyItems = [];
   const worldAbilityItems = worldItems.filter(
@@ -2510,7 +2517,7 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
       updatedJobGrantUUIDs += jobUpdates.length;
     }
   }
-  
+
   const worldGrantUpdates = [];
   for (const item of game.items) {
     if (!grantOwnerTypes.has(item.type)) continue;
@@ -2619,7 +2626,7 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
       });
       updatedActorTags += tagUpdates.length;
     }
-    
+
     const UUIDMap = new Map([...worldUUIDMap, ...actorUUIDMap]);
     const jobUpdates = [];
     let actorJobGrantUUIDUpdates = 0;
@@ -3051,6 +3058,23 @@ return item.roll?.();`;
 
   game.user.assignHotbarMacro(macro, slot);
   return false;
+}
+
+async function deletePairedItemMacros(item) {
+  if (item?.type !== "ability") return;
+  if (item.parent?.documentName !== "Actor") return;
+
+  const uuid = String(item.uuid ?? "").trim();
+  if (!uuid) return;
+
+  const macros = game.macros.filter(
+    (macro) => String(macro.getFlag("ffxiv", "itemUuid") ?? "") === uuid,
+  );
+  if (!macros.length) return;
+
+  for (const macro of macros) {
+    await macro.delete();
+  }
 }
 
 async function getPlayerMacroFolder(item) {
@@ -4530,13 +4554,13 @@ async function configureMarkerShape() {
         </label>
         <div class="ffxiv-marker-grid" style="display: grid; grid-template-columns: repeat(${size}, 24px); flex: 0 0 auto;">
           ${state
-            .flatMap((row, y) =>
-              row.map(
-                (_on, x) =>
-                  `<div class="ffxiv-marker-cell" data-x="${x}" data-y="${y}" style="width: 24px; height: 24px; box-sizing: border-box; border: 1px solid #888; background: ${state[y][x] ? "orange" : "#222"}; cursor: pointer;"></div>`,
-              ),
-            )
-            .join("")}
+      .flatMap((row, y) =>
+        row.map(
+          (_on, x) =>
+            `<div class="ffxiv-marker-cell" data-x="${x}" data-y="${y}" style="width: 24px; height: 24px; box-sizing: border-box; border: 1px solid #888; background: ${state[y][x] ? "orange" : "#222"}; cursor: pointer;"></div>`,
+        ),
+      )
+      .join("")}
         </div>
       </div>
       <div class="ffxiv-marker-panel" style="display: flex; flex-direction: column; gap: 8px; flex: 0 0 260px;">
@@ -5996,7 +6020,7 @@ async function resolveActorFromReference(ref) {
       const doc = await fromUuid(value);
       if (doc?.documentName === "Actor") return doc;
       if (doc?.actor?.documentName === "Actor") return doc.actor;
-    } catch (_error) {}
+    } catch (_error) { }
   }
   return game.actors.get(value) ?? null;
 }
@@ -6100,7 +6124,7 @@ function getLinkedEffectApplyTo(effect) {
   const flagged = String(effect?.getFlag("ffxiv", "applyTo") || "")
     .trim()
     .toLowerCase();
-  if (flagged === "self" || flagged === "target" || flagged === "self_auto") return flagged;
+  if (flagged === "self" || flagged === "target" || flagged === "self_auto" || flagged === "automation") return flagged;
   return "target";
 }
 
@@ -6531,8 +6555,8 @@ Hooks.on("createChatMessage", async (message, _options, userId) => {
   const sourceActor = item.parent?.documentName === "Actor"
     ? item.parent
     : await resolveActorFromReference(
-        sourceElement.dataset.actorUuid ?? sourceElement.dataset.actorId,
-      );
+      sourceElement.dataset.actorUuid ?? sourceElement.dataset.actorId,
+    );
   if (!sourceActor) return;
 
   const selfAutoEffects = Array.from(item.effects ?? []).filter(
@@ -6677,9 +6701,9 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     const actor = item?.parent?.documentName === "Actor"
       ? item.parent
       : await resolveActorFromReference(
-          ev.currentTarget.dataset.actorUuid ??
-            ev.currentTarget.dataset.actorId,
-        );
+        ev.currentTarget.dataset.actorUuid ??
+        ev.currentTarget.dataset.actorId,
+      );
     debugLog(actor);
     if (actor) actor._showModifiers(ev);
   });
@@ -6867,8 +6891,8 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     const sourceActor = item?.parent?.documentName === "Actor"
       ? item.parent
       : await resolveActorFromReference(
-          ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
-        );
+        ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
+      );
     const applications = [];
     let sentSocketRequest = false;
 
@@ -6938,8 +6962,8 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     if (currentState === "applied") {
       let sourceItemUuid = String(
         button?.dataset?.appliedSourceItemUuid ??
-          button?.dataset?.itemUuid ??
-          "",
+        button?.dataset?.itemUuid ??
+        "",
       ).trim();
       if (!sourceItemUuid) {
         const sourceItem = await resolveChatAbilityItem(ev.currentTarget);
@@ -7021,15 +7045,16 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     const sourceActor = item.parent?.documentName === "Actor"
       ? item.parent
       : await resolveActorFromReference(
-          ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
-        );
+        ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
+      );
 
     const linkedEffects = Array.from(item.effects ?? []).filter(
       (effect) => !effect.disabled,
     );
-    const manualLinkedEffects = linkedEffects.filter(
-      (effect) => getLinkedEffectApplyTo(effect) !== "self_auto",
-    );
+    const manualLinkedEffects = linkedEffects.filter((effect) => {
+      const applyTo = getLinkedEffectApplyTo(effect);
+      return applyTo !== "self_auto" && applyTo !== "automation";
+    });
     if (!manualLinkedEffects.length) return;
 
     const selfEffects = manualLinkedEffects.filter(
@@ -7128,7 +7153,7 @@ async function resolveChatAbilityItem(element) {
     try {
       const byUuid = await fromUuid(itemUuid);
       if (byUuid?.documentName === "Item") return byUuid;
-    } catch (_error) {}
+    } catch (_error) { }
   }
 
   const actorUuid = String(element?.dataset?.actorUuid ?? "").trim();
@@ -7139,7 +7164,7 @@ async function resolveChatAbilityItem(element) {
         const item = actorDoc.items?.get(element?.dataset?.itemId);
         if (item) return item;
       }
-    } catch (_error) {}
+    } catch (_error) { }
   }
 
   const actorId = String(element?.dataset?.actorId ?? "").trim();
@@ -7152,28 +7177,28 @@ function getStatusEffectEntriesForItem(item, element) {
   const embeddedEntries = parseStatusEntriesFromElement(element);
   const sourceEntries =
     Array.isArray(item?.system?.status_effects) &&
-    item.system.status_effects.length
+      item.system.status_effects.length
       ? item.system.status_effects
       : item?.system?.status_effect
         ? [
+          {
+            id: item.system.status_effect,
+            action: item.system.status_action !== false,
+            applyMode:
+              item.system.status_apply_mode === "auto" ? "auto" : "manual",
+            applyTo: "target",
+          },
+        ]
+        : element?.dataset?.effectId
+          ? [
             {
-              id: item.system.status_effect,
-              action: item.system.status_action !== false,
-              applyMode:
-                item.system.status_apply_mode === "auto" ? "auto" : "manual",
+              id: element.dataset.effectId,
+              action: element.dataset.action === "true",
+              applyMode: "manual",
               applyTo: "target",
             },
           ]
-          : element?.dataset?.effectId
-            ? [
-                {
-                  id: element.dataset.effectId,
-                  action: element.dataset.action === "true",
-                  applyMode: "manual",
-                  applyTo: "target",
-                },
-              ]
-            : [];
+          : [];
 
   const chosenEntries = sourceEntries.length ? sourceEntries : embeddedEntries;
 

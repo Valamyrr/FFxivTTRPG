@@ -1023,11 +1023,9 @@ export class FFXIVItem extends Item {
   }
 
   _formatKeybinding(binding) {
-    if (globalThis.KeyboardManager?.getKeycodeDisplayString) {
-      try {
-        return KeyboardManager.getKeycodeDisplayString(binding);
-      } catch (_error) {}
-    }
+    try {
+      return foundry.helpers.interaction.KeyboardManager.getKeycodeDisplayString(binding);
+    } catch (_error) {}
 
     const modifiers = Array.isArray(binding?.modifiers)
       ? binding.modifiers
@@ -1738,6 +1736,7 @@ export class FFXIVItem extends Item {
         trigger: String(entry?.trigger ?? "use").trim() || "use",
         key: this._normalizeEffectKey(entry?.key ?? entry?.name),
         name: String(entry?.name ?? entry?.key ?? "").trim(),
+        iconOverride: String(entry?.iconOverride ?? "").trim(),
         icon: String(entry?.icon ?? "").trim(),
         applyTo: String(entry?.applyTo ?? "self").trim().toLowerCase(),
         threshold: Number.parseInt(entry?.threshold, 10),
@@ -1867,15 +1866,87 @@ export class FFXIVItem extends Item {
       return;
     }
 
-    const name = String(rule?.name ?? rule?.key ?? key).trim() || key;
-    const icon =
-      String(rule?.icon ?? "").trim() ||
-      "systems/ffxiv/assets/effects/ready.webp";
-
     await this._removeNamedEffects(actor, [{ key }], {
       suppressRemovalText: true,
     });
 
+    const template = this._getLinkedAutomationEffectTemplate(rule);
+    const effectData = template
+      ? this._buildLinkedAutomationEffectData(template, rule, key)
+      : this._buildNamedAutomationEffectData(rule, key);
+    await actor.createEmbeddedDocuments("ActiveEffect", [effectData], {
+      render: false,
+    });
+  }
+
+  _getLinkedAutomationEffectTemplate(rule) {
+    const key = this._normalizeEffectKey(rule?.key ?? rule?.name);
+    if (!key) return null;
+
+    const effects = Array.from(this.effects ?? []).filter((effect) =>
+      this._effectMatchesKey(effect, key),
+    );
+    return (
+      effects.find((effect) => this._getLinkedAutomationEffectScope(effect) === "automation") ??
+      effects[0] ??
+      null
+    );
+  }
+
+  _getLinkedAutomationEffectScope(effect) {
+    return String(effect?.getFlag?.("ffxiv", "applyTo") ?? "")
+      .trim()
+      .toLowerCase();
+  }
+
+  _buildLinkedAutomationEffectData(effect, rule, key) {
+    const effectData = foundry.utils.deepClone(effect.toObject());
+    delete effectData._id;
+
+    const name = String(rule?.name ?? effect.name ?? key).trim() || key;
+    const icon =
+      this._getAutomationIconOverride(rule) ||
+      this._getAutomationIcon(effectData.img) ||
+      this._getAutomationIcon(effectData.icon) ||
+      this._getAutomationIcon(this.img) ||
+      "icons/svg/aura.svg";
+    const showAlways = CONST.ACTIVE_EFFECT_SHOW_ICON?.ALWAYS ?? 2;
+
+    effectData.name = name;
+    effectData.img = icon;
+    effectData.icon = icon;
+    effectData.origin = this.uuid;
+    effectData.disabled = false;
+    effectData.transfer = false;
+    effectData.statuses = [];
+    effectData.displayStatusIcon = false;
+    effectData.showIcon = showAlways;
+    effectData.flags = foundry.utils.mergeObject(effectData.flags || {}, {
+      ffxiv: {
+        abilityEffectRule: true,
+        effectKey: key,
+        sourceItemUuid: this.uuid,
+        linkedAutomationTemplate: true,
+        linkedSourceEffectId: effect.id,
+        linkedSourceItemId: this.id,
+        linkedSourceItemUuid: this.uuid,
+      },
+    });
+
+    const duration = this._prepareEffectRuleDuration(
+      rule?.duration ?? effectData.duration,
+    );
+    if (duration) effectData.duration = duration;
+    else delete effectData.duration;
+    return effectData;
+  }
+
+  _buildNamedAutomationEffectData(rule, key) {
+    const name = String(rule?.name ?? rule?.key ?? key).trim() || key;
+    const icon =
+      this._getAutomationIconOverride(rule) ||
+      this._getAutomationIcon(this.img) ||
+      "icons/svg/aura.svg";
     const showAlways = CONST.ACTIVE_EFFECT_SHOW_ICON?.ALWAYS ?? 2;
     const effectData = {
       name,
@@ -1884,7 +1955,8 @@ export class FFXIVItem extends Item {
       origin: this.uuid,
       disabled: false,
       transfer: false,
-      displayStatusIcon: true,
+      statuses: [],
+      displayStatusIcon: false,
       showIcon: showAlways,
       flags: {
         ffxiv: {
@@ -1896,9 +1968,23 @@ export class FFXIVItem extends Item {
     };
     const duration = this._prepareEffectRuleDuration(rule?.duration);
     if (duration) effectData.duration = duration;
-    await actor.createEmbeddedDocuments("ActiveEffect", [effectData], {
-      render: false,
-    });
+    return effectData;
+  }
+
+  _getAutomationIconOverride(rule) {
+    return (
+      this._getAutomationIcon(rule?.iconOverride) ||
+      this._getAutomationIcon(rule?.icon)
+    );
+  }
+
+  _getAutomationIcon(icon) {
+    const value = String(icon ?? "").trim();
+    if (!value) return "";
+    const normalized = value.toLowerCase().replace(/\\/g, "/").split(/[?#]/)[0];
+    return normalized === "ready.webp" || normalized.endsWith("/ready.webp")
+      ? ""
+      : value;
   }
 
   async _removeNamedEffects(actor, refs, options = {}) {
@@ -1977,6 +2063,7 @@ export class FFXIVItem extends Item {
     return {
       key: this._normalizeEffectKey(value.key ?? name),
       name,
+      iconOverride: String(value.iconOverride ?? "").trim(),
       icon: String(value.icon ?? "").trim(),
       duration: value.duration,
     };

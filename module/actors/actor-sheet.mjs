@@ -444,6 +444,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     current.replaceWith(replacement);
     this._applyActorEditMode();
     this._applyStoredAbilityTab();
+    this.activateListeners($(this.element));
   }
 
   /** @override */
@@ -1267,10 +1268,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
 
       this.element.querySelectorAll('.ability-card[data-item-id]').forEach(card => {
-        if (card.dataset.ffxivMacroDragBound === "true") return;
-        card.dataset.ffxivMacroDragBound = "true";
-        card.setAttribute('draggable', true);
-        card.addEventListener('dragstart', this._onAbilityDragStart.bind(this), false);
+        card.setAttribute('draggable', false);
       });
 
       this.element.querySelectorAll('.ability-card .ability-icon[data-item-id]').forEach(icon => {
@@ -1795,17 +1793,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   _onAbilityDragStart(event) {
+    event.stopPropagation();
+
     const element = event.currentTarget;
     const itemId = element.dataset.itemId || element.closest(".ability-card")?.dataset.itemId;
     const item = this.actor.items.get(itemId);
     if (!item) return;
 
-    const dragData = JSON.stringify({
-      type: "Item",
-      uuid: item.uuid
-    });
+    const dragData = JSON.stringify(item.toDragData());
     event.dataTransfer.setData("text/plain", dragData);
-    event.dataTransfer.setData("application/json", dragData);
     event.dataTransfer.effectAllowed = "copy";
   }
 

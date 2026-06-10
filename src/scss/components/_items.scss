@@ -139,9 +139,54 @@
       gap: 8px;
     }
 
-    .ability-automation-text {
+    .ability-automation-heading {
       display: block;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    .ability-automation-text {
+      display: inline;
       overflow-wrap: break-word;
+    }
+
+    .ability-automation-entry summary {
+      display: flex;
+      gap: 4px;
+      align-items: baseline;
+      cursor: pointer;
+    }
+
+    .ability-automation-entry summary::marker {
+      content: "";
+    }
+
+    .ability-automation-entry summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .ability-automation-entry summary::before {
+      content: "\25B8";
+      flex: 0 0 auto;
+      color: var(--text-color);
+    }
+
+    .ability-automation-entry[open] summary::before {
+      content: "\25BE";
+    }
+
+    .remove-status-effect,
+    .remove-effect-requirement,
+    .remove-effect-rule,
+    .effect-control-delete .delete-icon {
+      color: #ff3b30;
+    }
+
+    .remove-status-effect:hover,
+    .remove-effect-requirement:hover,
+    .remove-effect-rule:hover,
+    .effect-control-delete:hover .delete-icon {
+      color: #ff6b61;
     }
 
     .ability-automation-fields {
@@ -167,6 +212,19 @@
     .ability-automation-fields select {
       min-width: 0;
       width: 100%;
+    }
+
+    .ability-automation-file {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 28px;
+      gap: 4px;
+    }
+
+    .ability-automation-file button {
+      height: 26px;
+      line-height: 1;
+      margin: 0;
+      padding: 0;
     }
 
     .ability-automation-fields .ability-automation-checkbox {
