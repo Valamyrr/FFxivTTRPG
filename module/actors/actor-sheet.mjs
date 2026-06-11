@@ -12,6 +12,19 @@ let isDraggingItem = false;
 let draggedItem = null;
 
 const NUMERIC_ACTOR_FIELD = /^(?:system\.(?:primary_attributes\.[^.]+\.value|secondary_attributes\.[^.]+\.value|adventuring_rank\.[^.]+|health\.(?:value|max)|barrier\.(?:value|max)|mana\.(?:value|max)|experience\.level\.(?:value|max)|criticalRange)|prototypeToken\.(?:width|height))$/;
+const ADVENTURING_RANK_KEYS = [
+  "miner",
+  "botanist",
+  "fisher",
+  "carpenter",
+  "blacksmith",
+  "armorer",
+  "goldsmith",
+  "leatherworker",
+  "weaver",
+  "alchemist",
+  "culinarian",
+];
 const CHARACTER_LOCK_ALLOWED_FIELDS = new Set([
   "system.health.value",
   "system.barrier.value",
@@ -157,6 +170,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.actor = this.actor;
     context.items = actorData.items ?? [];
     context.system = actorData.system;
+    this._prepareAdventuringRanks(context.system);
     context.source = this.actor._source.system;
     context.flags = actorData.flags;
     context.config = CONFIG.FFXIV;
@@ -220,6 +234,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     context.effects = prepareActiveEffectCategories(this.actor.effects.contents);
     this._effectsPanelSignature = this._getEffectsPanelSignature(context.effects);
+    context.profileTraitEffect = foundry.utils.getProperty(context.enriched ?? {}, "profile_trait.effect")
+      || context.system?.profile_trait?.effect
+      || "";
     return context;
   }
 
@@ -489,6 +506,22 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     titleElement.textContent = `- ${title}`;
   }
 
+  _prepareAdventuringRanks(system) {
+    if (!system?.adventuring_rank) return;
+    for (const key of ADVENTURING_RANK_KEYS) {
+      const value = system.adventuring_rank[key];
+      if (value === "" || value === null || value === undefined) {
+        system.adventuring_rank[key] = 0;
+      }
+    }
+  }
+
+  _refreshActorsDirectory() {
+    const directory = ui.actors ?? ui.sidebar?.tabs?.actors;
+    if (!directory?.rendered) return;
+    directory.render({ force: true });
+  }
+
   /** @override */
   async _onRender(context, options) {
     await super._onRender(context, options);
@@ -531,7 +564,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     event.preventDefault();
-    const updateValue = this._getChangedFieldValue(target);
+    let updateValue = this._getChangedFieldValue(target);
+    if (this.actor.type === "character" && fieldName === "name" && !String(updateValue).trim()) {
+      updateValue = "John Finalfantasy";
+    }
+    if (fieldName.startsWith("system.adventuring_rank.") && String(target.value ?? "").trim() === "") {
+      updateValue = 0;
+    }
     const updateData = { [fieldName]: updateValue };
     if (fieldName === "system.health.max") {
       const nextMax = Number(updateValue);
@@ -569,6 +608,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       if (this.actor.type === "character") this._updateManaBar();
       if (this.actor.type === "character" || this.actor.type === "npc") this._updateHealthBar();
       if (fieldName === "system.banner") this._updateHeaderBanner(target.value);
+      if (fieldName === "name") {
+        target.value = updateValue;
+        this._refreshActorsDirectory();
+      }
+      if (fieldName.startsWith("system.adventuring_rank.")) {
+        target.value = Number(updateValue) || 0;
+      }
       if (fieldName === "system.activeTitle") {
         this._enrichedCache = null;
         await this._refreshRoleplayPanel();
@@ -736,7 +782,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!EDIT_MODE_ACTOR_TYPES.has(this.actor.type) || !this.document.isOwner) return;
     if (!this._pendingSheetScrollPositions?.length) this._captureSheetScroll();
     this.actorEditMode = !this.actorEditMode;
-    this.render({ force: true, ffxivSkipEnrichment: true });
+    const skipEnrichment = this.actorEditMode || this.tabGroups?.primary !== "roleplay";
+    this.render({ force: true, ffxivSkipEnrichment: skipEnrichment });
     this._restoreSheetScroll();
   }
 
