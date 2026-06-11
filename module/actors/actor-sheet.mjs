@@ -426,6 +426,29 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._applyStoredCompanionTab();
   }
 
+  async _refreshRoleplayPanel() {
+    if (this.actor?.type !== "character") return;
+    const root = this.element;
+    if (!root) return;
+    const tab = root.querySelector('.tab[data-tab="roleplay"]');
+    const current = tab?.querySelector(".actor-profile");
+    if (!current) return;
+
+    const context = await this._prepareContext({
+      ffxivRenderTabs: ["roleplay"],
+    });
+    const html = await foundry.applications.handlebars.renderTemplate("systems/ffxiv/templates/actor/parts/actor-profile.hbs", context);
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html.trim();
+    const replacement = wrapper.firstElementChild;
+    if (!replacement) return;
+    current.replaceWith(replacement);
+    this._applyActorEditMode();
+    this._updateHeaderActiveTitle();
+    this._activateProseMirrorEditors();
+    this.activateListeners($(this.element));
+  }
+
   async _refreshAbilitiesPanel() {
     if (this.actor?.type !== "character") return;
     const root = this.element;
@@ -445,6 +468,25 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._applyActorEditMode();
     this._applyStoredAbilityTab();
     this.activateListeners($(this.element));
+  }
+
+  _updateHeaderActiveTitle() {
+    const title = String(this.actor.system?.activeTitle ?? "").trim();
+    const className = this.element.querySelector(".class-name");
+    if (!className) return;
+
+    let titleElement = className.querySelector(".active-title");
+    if (!title) {
+      titleElement?.remove();
+      return;
+    }
+
+    if (!titleElement) {
+      titleElement = document.createElement("span");
+      titleElement.classList.add("active-title");
+      className.appendChild(titleElement);
+    }
+    titleElement.textContent = `- ${title}`;
   }
 
   /** @override */
@@ -481,22 +523,24 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!formConfig.submitOnChange) return super._onChangeForm(formConfig, event);
     if (!this.isEditable) return;
     if (!event.target?.name) return;
-    if (EDIT_MODE_ACTOR_TYPES.has(this.actor.type) && !this._isActorEditMode() && !this._isActorLockAllowedField(event.target.name)) {
+    const target = event.target;
+    const fieldName = target.name;
+    if (EDIT_MODE_ACTOR_TYPES.has(this.actor.type) && !this._isActorEditMode() && !this._isActorLockAllowedField(fieldName)) {
       this._notifyActorSheetLocked();
       return;
     }
 
     event.preventDefault();
-    const updateValue = this._getChangedFieldValue(event.target);
-    const updateData = { [event.target.name]: updateValue };
-    if (event.target.name === "system.health.max") {
+    const updateValue = this._getChangedFieldValue(target);
+    const updateData = { [fieldName]: updateValue };
+    if (fieldName === "system.health.max") {
       const nextMax = Number(updateValue);
       const currentValue = Number(this.actor.system?.health?.value ?? 0);
       if (Number.isFinite(nextMax) && Number.isFinite(currentValue) && currentValue > nextMax) {
         updateData["system.health.value"] = Math.max(0, nextMax);
       }
     }
-    if (this.actor.type === "npc" && event.target.name === "system.size") {
+    if (this.actor.type === "npc" && fieldName === "system.size") {
       const SIZE_DIMENSIONS = {
         Small: [1, 1],
         Medium: [1, 1],
@@ -508,13 +552,14 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       updateData["prototypeToken.width"] = width;
       updateData["prototypeToken.height"] = height;
     }
-    this.document.update(updateData, { render: false }).then(() => {
-      this._syncResourceInputValue(event.target);
-      if (event.target.name === "system.health.max") {
+    if (fieldName === "system.activeTitle") this._captureSheetScroll();
+    this.document.update(updateData, { render: false }).then(async () => {
+      this._syncResourceInputValue(target);
+      if (fieldName === "system.health.max") {
         const healthInput = this.element.querySelector('input[name="system.health.value"]');
         if (healthInput) healthInput.value = Number(this.actor.system?.health?.value ?? 0);
       }
-      if (event.target.name === "system.size" && this.actor.type === "npc") {
+      if (fieldName === "system.size" && this.actor.type === "npc") {
         const widthInput = this.element.querySelector('input[name="prototypeToken.width"]');
         const heightInput = this.element.querySelector('input[name="prototypeToken.height"]');
         if (widthInput) widthInput.value = Number(this.actor.prototypeToken?.width ?? 1);
@@ -523,7 +568,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this._updateSecondaryAttributeModifierFields();
       if (this.actor.type === "character") this._updateManaBar();
       if (this.actor.type === "character" || this.actor.type === "npc") this._updateHealthBar();
-      if (event.target.name === "system.banner") this._updateHeaderBanner(event.target.value);
+      if (fieldName === "system.banner") this._updateHeaderBanner(target.value);
+      if (fieldName === "system.activeTitle") {
+        this._enrichedCache = null;
+        await this._refreshRoleplayPanel();
+        this._restoreSheetScroll();
+      }
     }).catch(err => ui.notifications.error(err, { console: true }));
   }
 
@@ -2220,6 +2270,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _onDeleteTitle(event) {
     event.preventDefault();
     event.stopPropagation();
+    const itemId = event.currentTarget.dataset.itemId;
+    const item = this.actor.items.get(itemId);
+    if (!item) return;
     new foundry.applications.api.DialogV2({
       id: "delete-title",
       window: { title: game.i18n.localize("FFXIV.Dialogs.DialogTitleConfirmation") },
@@ -2228,12 +2281,21 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           label: game.i18n.localize("FFXIV.Dialogs.Yes"),
           action: "delete",
           type: "submit",
-          callback: (event) => {
-            const button = event.currentTarget
-            const itemId = button.dataset.itemId
-            const item = this.actor.items.get(itemId)
-            item.delete();
-            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", { itemName: item.name }));
+          callback: async () => {
+            const itemName = item.name;
+            this._captureSheetScroll();
+            const updateData = {};
+            if (this.actor.system.activeTitle === itemName) {
+              updateData["system.activeTitle"] = "";
+            }
+            if (Object.keys(updateData).length) {
+              await this.actor.update(updateData, { render: false });
+            }
+            await this.actor.deleteEmbeddedDocuments("Item", [itemId], { render: false });
+            this._enrichedCache = null;
+            await this._refreshRoleplayPanel();
+            this._restoreSheetScroll();
+            ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", { itemName }));
           }
         },
         {
@@ -2359,6 +2421,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         debugLog('Ignored intra-actor ability drop for item', item.id);
         return;
       }
+      if (item?.documentName === "Item" && item.parent?.id === this.actor.id && this._isTitleItemDrop(item)) {
+        debugLog('Ignored intra-actor title drop for item', item.id);
+        return;
+      }
 
       if (item && this.actor.type === "character" && !this._isActorEditMode()) {
         const inventoryTypes = CONFIG.FFXIV?.inventory_items || [];
@@ -2395,6 +2461,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         return;
       }
 
+      if (this._isTitleItemDrop(item)) {
+        if (characterLocked) {
+          this._notifyActorSheetLocked();
+          return;
+        }
+        await this._equipDroppedTitle(item);
+        return;
+      }
+
       if (sheetLocked && !allowLockedAugmentDrop) {
         this._notifyActorSheetLocked();
         return;
@@ -2415,6 +2490,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return item?.documentName === "Item" && item?.type === "minion";
   }
 
+  _isTitleItemDrop(item) {
+    return item?.documentName === "Item" && item?.type === "title";
+  }
+
   async _equipDroppedAbility(sourceItem) {
     this._captureSheetScroll();
     const itemData = sourceItem.toObject();
@@ -2433,6 +2512,18 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._enrichedCache = null;
     await this.render({ force: true });
     await this._refreshAbilitiesPanel();
+    this._restoreSheetScroll();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+  }
+
+  async _equipDroppedTitle(sourceItem) {
+    if (this.actor?.type !== "character") return;
+    this._captureSheetScroll();
+    const itemData = sourceItem.toObject();
+    delete itemData._id;
+    await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
+    this._enrichedCache = null;
+    await this._refreshRoleplayPanel();
     this._restoreSheetScroll();
     this._playConfiguredSound("soundNotificationFFXIV_moveItem");
   }

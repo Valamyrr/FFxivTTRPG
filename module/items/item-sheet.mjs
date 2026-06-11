@@ -40,6 +40,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     super(...args);
     this.options.window ??= {};
     this.options.window.resizable = !this._isLimitedDisplayMode();
+    this.itemEditMode = false;
     this._expandedEffectRequirements = new Set();
     this._expandedEffectRules = new Set();
   }
@@ -161,6 +162,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.effectRuleEntries = this._getEffectRuleEntries(itemData.system);
     context.cssClass = this._getSheetClasses().join(" ");
     context.editable = this.document.isOwner;
+    context.itemEditMode = this._isItemEditMode();
     const actionType =
       this.item.type === "ability"
         ? getAbilitySubtype(this.item)
@@ -337,11 +339,25 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
   }
 
+  _isItemEditMode() {
+    return this.item.type !== "title" || (this.document.isOwner && this.itemEditMode);
+  }
+
+  _toggleItemEditMode(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (this.item.type !== "title" || !this.document.isOwner) return;
+    this.itemEditMode = !this.itemEditMode;
+    this.render({ force: true });
+  }
+
   /** @override */
   _onChangeForm(formConfig, event) {
     if (!formConfig.submitOnChange)
       return super._onChangeForm(formConfig, event);
     if (!this.isEditable) return;
+    if (!this._isItemEditMode()) return;
     if (!event.target?.name) return;
 
     event.preventDefault();
@@ -1118,6 +1134,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     // Everything below here is only needed if the sheet is editable
     if (!this.document.isOwner) return;
+
+    html.on(
+      "click.ffxivItemSheet",
+      ".item-edit-toggle",
+      this._toggleItemEditMode.bind(this),
+    );
+
+    if (!this._isItemEditMode()) return;
 
     // hidden here instead of css to prevent non-editable display of edit button
     html

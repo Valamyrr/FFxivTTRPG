@@ -2,16 +2,28 @@
   <header class="sheet-header">
     <img class="profile-img"
          src="{{item.img}}"
+         {{#if itemEditMode }}
          data-edit="img"
+         {{/if}}
          title="{{item.name}}"  alt="" width="32" height="32" />
     <div class="header-fields">
       <h1 class="charname">
-        <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
+        {{#if itemEditMode }}
+          <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
+        {{else}}
+          {{item.name}}
+        {{/if}}
       </h1>
     </div>
-    <button type="button" class="item-delete" aria-label="{{localize 'FFXIV.Item.Delete'}}">
-      <i class="fa-solid fa-trash-can"></i>
+    {{#if editable }}
+    <button type="button"
+            class="actor-edit-toggle item-edit-toggle {{#if itemEditMode }}active{{/if }}"
+            aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet' }}"
+            aria-pressed="{{#if itemEditMode }}true{{else }}false{{/if }}"
+            title="{{#if itemEditMode }}{{localize 'FFXIV.CharacterSheet.LockSheet' }}{{else }}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+      <i class="fa-solid {{#if itemEditMode }}fa-lock-open{{else }}fa-lock{{/if }}"></i>
     </button>
+    {{/if}}
   </header>
   <section class="sheet-body">
     <div class="attributes item-details-card">
@@ -19,45 +31,60 @@
         <div class="resource flex-group-center">
           <label for="system.source" class="resource-label">{{ localize "FFXIV.Item.Source" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input type="text" name="system.source" value="{{ system.source }}">
+            {{#if itemEditMode }}
+              <input type="text" name="system.source" value="{{ system.source }}">
+            {{else}}
+              <p class="profile-field-value">{{#if system.source }}{{system.source}}{{else}}{{localize "FFXIV.None"}}{{/if}}</p>
+            {{/if}}
           </div>
         </div>
       </div>
       <hr>
       <div class="tags-container">
         <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label>
+        {{#if itemEditMode }}
         <button type="button" class="add-modifier">+</button>
+        {{/if}}
         <ul class="tag-list">
           {{#each system.modifiers as |modifier index| }}
             <li>
-              <select class="ffxiv-text-center modifier-name"
-                      data-index="{{index}}">
-                {{#each ../config.attributes as |m| }}
-                  <option value="{{m.label}}"
-                          {{#if (eq m.label modifier.[0]) }}
-                          selected
-                          {{/if }}>{{ localize m.label }}
-                  </option>
-                {{/each}}
-                {{#each ../config.characteristics as |m| }}
-                  <option value="{{m.label}}"
-                          {{#if (eq m.label modifier.[0]) }}
-                          selected
-                          {{/if }}>{{ localize m.label }}
-                  </option>
-                {{/each}}
-              </select>
-              <input type="text"
-                     class="modifier-value"
-                     value="{{modifier.[1]}}"
-                     data-index="{{index}}">
-              <button type="button" class="remove-modifier" data-index="{{index}}">x</button>
+              {{#if ../itemEditMode }}
+                <select class="ffxiv-text-center modifier-name"
+                        data-index="{{index}}">
+                  {{#each ../config.attributes as |m| }}
+                    <option value="{{m.label}}"
+                            {{#if (eq m.label modifier.[0]) }}
+                            selected
+                            {{/if }}>{{ localize m.label }}
+                    </option>
+                  {{/each}}
+                  {{#each ../config.characteristics as |m| }}
+                    <option value="{{m.label}}"
+                            {{#if (eq m.label modifier.[0]) }}
+                            selected
+                            {{/if }}>{{ localize m.label }}
+                    </option>
+                  {{/each}}
+                </select>
+                <input type="text"
+                       class="modifier-value"
+                       value="{{modifier.[1]}}"
+                       data-index="{{index}}">
+                <button type="button" class="remove-modifier" data-index="{{index}}">x</button>
+              {{else}}
+                <span>{{localize modifier.[0]}}</span>
+                <span>{{modifier.[1]}}</span>
+              {{/if}}
             </li>
           {{/each}}
         </ul>
       </div>
       <hr>
-      <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
+      {{#if itemEditMode }}
+        <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
+      {{else}}
+        <div class="profile-paragraph-block">{{{enrichedDescription}}}</div>
+      {{/if}}
     </div>
   </section>
 </div>
