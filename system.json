@@ -1,7 +1,7 @@
 {
   "id": "ffxiv",
   "title": "Final Fantasy XIV TTRPG",
-  "description": "The Final Fantasy XIV TTRPG system for FoundryVTT",
+  "description": "An unofficial port of the Final Fantasy XIV TTRPG system for FoundryVTT",
   "compatibility": {
     "minimum": "14",
     "verified": "14.364"
