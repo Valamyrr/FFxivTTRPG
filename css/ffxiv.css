@@ -270,6 +270,12 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   width: 100%;
 }
 
+.ffxiv-settings-submenu .setting-control input::-moz-placeholder {
+  color: var(--placeholder-color, #8d8d8d);
+  font-style: italic;
+  opacity: 0.68;
+}
+
 .ffxiv-settings-submenu .setting-control input::placeholder {
   color: var(--placeholder-color, #8d8d8d);
   font-style: italic;
@@ -808,8 +814,10 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   flex: 0 0 48px;
   width: 48px;
   height: 64px;
-  object-fit: contain;
-  object-position: center;
+  -o-object-fit: contain;
+     object-fit: contain;
+  -o-object-position: center;
+     object-position: center;
 }
 .ffxiv .effect-meta,
 .ffxiv .ability-effect-name span {
@@ -849,6 +857,10 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
 
 .ffxiv .prosemirror menu .pm-dropdown:hover i {
   color: var(--text-color);
+}
+
+.ffxiv input::-moz-placeholder {
+  color: var(--placeholder-color);
 }
 
 .ffxiv input::placeholder {

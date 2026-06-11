@@ -428,7 +428,7 @@ async function createStatusStack(
   actor,
   statusId,
   count = 1,
-  { overlay = false, origin = null } = {},
+  { overlay = false, origin = null, ffxivSuppressStatusText = false } = {},
 ) {
   const ActiveEffectClass = getDocumentClass("ActiveEffect");
   const effect = await ActiveEffectClass.fromStatusEffect(statusId, {
@@ -440,14 +440,18 @@ async function createStatusStack(
   });
   if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
-  return ActiveEffectClass.create(effect.toObject(), { parent: actor, render: false });
+  return ActiveEffectClass.create(effect.toObject(), {
+    parent: actor,
+    render: false,
+    ffxivSuppressStatusText,
+  });
 }
 
 async function collapseLegacyStatusStacks(
   actor,
   statusId,
   overrideCount,
-  { origin = null } = {},
+  { origin = null, ffxivSuppressStatusText = false } = {},
 ) {
   const existing = getStatusStackEffects(actor, statusId);
   if (!existing.length) return null;
@@ -474,7 +478,7 @@ async function collapseLegacyStatusStacks(
       .map((effect) => effect.id)
       .filter(Boolean);
     if (duplicateIds.length)
-      await actor.deleteEmbeddedDocuments("ActiveEffect", duplicateIds, { render: false });
+      await actor.deleteEmbeddedDocuments("ActiveEffect", duplicateIds, { render: false, ffxivSuppressStatusText });
   }
   return primary;
 }
@@ -483,7 +487,7 @@ async function setStatusStackCount(
   actor,
   statusId,
   count,
-  { origin = null, sourceEffect = null } = {},
+  { origin = null, sourceEffect = null, ffxivSuppressStatusText = false } = {},
 ) {
   const normalizedCount = Number.parseInt(count, 10) || 0;
   const existing = getStatusStackSourceEffects(actor, statusId, origin, sourceEffect);
@@ -491,17 +495,18 @@ async function setStatusStackCount(
   if (normalizedCount <= 0) {
     if (!existing.length) return false;
     const ids = existing.map((effect) => effect.id).filter(Boolean);
-    if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+    if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false, ffxivSuppressStatusText });
     return true;
   }
 
   if (!existing.length) {
-    await createStatusStack(actor, statusId, normalizedCount, { origin });
+    await createStatusStack(actor, statusId, normalizedCount, { origin, ffxivSuppressStatusText });
     return true;
   }
 
   await collapseLegacyStatusStacks(actor, statusId, normalizedCount, {
     origin,
+    ffxivSuppressStatusText,
   });
   return true;
 }
@@ -510,7 +515,7 @@ export async function applyStatusEffectStackDelta(
   actor,
   statusId,
   delta,
-  { origin = null, sourceEffect = null } = {},
+  { origin = null, sourceEffect = null, ffxivSuppressStatusText = false } = {},
 ) {
   const amount = Number(delta) || 0;
   if (!actor || !statusId || !amount) return;
@@ -550,6 +555,7 @@ export async function applyStatusEffectStackDelta(
   return setStatusStackCount(actor, normalizedStatusId, nextCount, {
     origin,
     sourceEffect,
+    ffxivSuppressStatusText,
   });
 }
 
@@ -557,7 +563,7 @@ export async function applyStatusEffectStackValue(
   actor,
   statusId,
   count,
-  { origin = null, sourceEffect = null } = {},
+  { origin = null, sourceEffect = null, ffxivSuppressStatusText = false } = {},
 ) {
   if (!actor || !statusId) return;
   const normalizedStatusId = String(statusId ?? "").trim();
@@ -586,6 +592,7 @@ export async function applyStatusEffectStackValue(
   return setStatusStackCount(actor, normalizedStatusId, normalizedCount, {
     origin,
     sourceEffect,
+    ffxivSuppressStatusText,
   });
 }
 
@@ -604,7 +611,7 @@ async function setNonStackableStatusOrigin(actor, statusId, origin) {
 async function replaceNonStackableStatusEffect(
   actor,
   statusId,
-  { overlay = false, origin = null } = {},
+  { overlay = false, origin = null, ffxivSuppressStatusText = false } = {},
 ) {
   const existing = actor.effects.filter((effect) => {
     const statuses = effect?.statuses;
@@ -612,7 +619,7 @@ async function replaceNonStackableStatusEffect(
   });
   const ids = existing.map((effect) => effect.id).filter(Boolean);
   if (ids.length) {
-    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false, ffxivSuppressStatusText });
   }
 
   const ActiveEffectClass = getDocumentClass("ActiveEffect");
@@ -621,10 +628,14 @@ async function replaceNonStackableStatusEffect(
   });
   if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
-  return ActiveEffectClass.create(effect.toObject(), { parent: actor, render: false });
+  return ActiveEffectClass.create(effect.toObject(), {
+    parent: actor,
+    render: false,
+    ffxivSuppressStatusText,
+  });
 }
 
-async function deleteStatusEffects(actor, statusIds) {
+async function deleteStatusEffects(actor, statusIds, { ffxivSuppressStatusText = false } = {}) {
   if (!actor?.effects?.size) return;
   const statusSet = new Set(statusIds);
   const ids = actor.effects
@@ -639,7 +650,7 @@ async function deleteStatusEffects(actor, statusIds) {
     .map((effect) => effect.id)
     .filter(Boolean);
   if (ids.length) {
-    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false, ffxivSuppressStatusText });
   }
 }
 
@@ -657,12 +668,13 @@ async function clearKnockedOutBlockedStatuses(actor) {
 
 async function applyComatoseStatusEffect(
   actor,
-  { overlay = false, origin = null } = {},
+  { overlay = false, origin = null, ffxivSuppressStatusText = false } = {},
 ) {
   await clearComatoseBlockedStatuses(actor);
   const result = await replaceNonStackableStatusEffect(actor, "comatose", {
     overlay,
     origin,
+    ffxivSuppressStatusText,
   });
   await clearComatoseBlockedStatuses(actor);
   return result;
@@ -670,12 +682,13 @@ async function applyComatoseStatusEffect(
 
 async function applyKnockedOutStatusEffect(
   actor,
-  { overlay = false, origin = null } = {},
+  { overlay = false, origin = null, ffxivSuppressStatusText = false } = {},
 ) {
   await clearKnockedOutBlockedStatuses(actor);
   const result = await replaceNonStackableStatusEffect(actor, "knocked_out", {
     overlay,
     origin,
+    ffxivSuppressStatusText,
   });
   await clearKnockedOutBlockedStatuses(actor);
   await removeEnmityInflictedByActor(actor);
@@ -744,7 +757,7 @@ export async function applyStatusEffectChange(
   actor,
   statusId,
   active,
-  { overlay = false, origin = null } = {},
+  { overlay = false, origin = null, ffxivSuppressStatusText = false } = {},
 ) {
   if (!actor || !statusId) return;
   const normalizedStatusId = String(statusId ?? "").trim();
@@ -776,23 +789,24 @@ export async function applyStatusEffectChange(
 
   if (isActive && normalizedStatusId === "weakness") {
     if (hasStatus(actor, "brink_death")) {
-      return applyComatoseStatusEffect(actor, { overlay, origin });
+      return applyComatoseStatusEffect(actor, { overlay, origin, ffxivSuppressStatusText });
     }
     if (hasStatus(actor, "weakness")) {
-      await applyStatusEffectChange(actor, "weakness", false, { overlay, origin });
+      await applyStatusEffectChange(actor, "weakness", false, { overlay, origin, ffxivSuppressStatusText });
       return applyStatusEffectChange(actor, "brink_death", true, {
         overlay,
         origin,
+        ffxivSuppressStatusText,
       });
     }
   }
 
   if (isActive && normalizedStatusId === "comatose") {
-    return applyComatoseStatusEffect(actor, { overlay, origin });
+    return applyComatoseStatusEffect(actor, { overlay, origin, ffxivSuppressStatusText });
   }
 
   if (isActive && normalizedStatusId === "knocked_out") {
-    return applyKnockedOutStatusEffect(actor, { overlay, origin });
+    return applyKnockedOutStatusEffect(actor, { overlay, origin, ffxivSuppressStatusText });
   }
 
   if (
@@ -808,19 +822,21 @@ export async function applyStatusEffectChange(
       actor,
       normalizedStatusId,
       isActive ? 1 : -1,
-      { origin },
+      { origin, ffxivSuppressStatusText },
     );
   }
   if (normalizedStatusId === "enmity" && isActive && origin) {
     return replaceNonStackableStatusEffect(actor, normalizedStatusId, {
       overlay,
       origin,
+      ffxivSuppressStatusText,
     });
   }
   const result = await actor.toggleStatusEffect(normalizedStatusId, {
     active,
     overlay,
     render: false,
+    ffxivSuppressStatusText,
   });
   if (isActive && origin) {
     await setNonStackableStatusOrigin(actor, normalizedStatusId, origin);

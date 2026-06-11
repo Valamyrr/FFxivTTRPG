@@ -651,6 +651,7 @@ Hooks.once("ready", function () {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);
   });
   installCarouselCombatTrackerStepIndicators();
+  installTokenBarColors();
   installTokenBarrierOverlay();
   installTokenStatusStackCounterOverlay();
   refreshAllTokenStatusStackCounters().catch((error) => {
@@ -792,7 +793,11 @@ function installActorSheetActiveEffectRefresh() {
     });
   };
 
-  Hooks.on("createActiveEffect", (effect) => {
+  Hooks.on("createActiveEffect", (effect, options) => {
+    if (options?.ffxivSuppressStatusText === true) {
+      refreshActorSheets(effect);
+      return;
+    }
     showActiveEffectCreationText(effect);
     refreshActorSheets(effect);
   });
@@ -801,18 +806,32 @@ function installActorSheetActiveEffectRefresh() {
     refreshActorSheets(effect);
   });
   Hooks.on("deleteActiveEffect", (effect, options) => {
-    if (options?.ffxivSuppressRemovalText !== true)
+    if (options?.ffxivSuppressRemovalText !== true && options?.ffxivSuppressStatusText !== true)
       showActiveEffectRemovalText(effect);
     refreshActorSheets(effect);
   });
 }
 
 function showActiveEffectCreationText(effect) {
-  showActiveEffectChangeText(effect, "+", 0x57d67a);
+  try {
+    const statuses = Array.from(effect?.statuses ?? effect?._source?.statuses ?? []);
+    const detrimental = statuses.some((s) => isNegativeStatusEffect(String(s ?? "").trim()));
+    const fill = detrimental ? 0xff6b6b : 0x57d67a;
+    showActiveEffectChangeText(effect, "+", fill);
+  } catch (err) {
+    showActiveEffectChangeText(effect, "+", 0x57d67a);
+  }
 }
 
 function showActiveEffectRemovalText(effect) {
-  showActiveEffectChangeText(effect, "-", 0xff6b6b);
+  try {
+    const statuses = Array.from(effect?.statuses ?? effect?._source?.statuses ?? []);
+    const detrimental = statuses.some((s) => isNegativeStatusEffect(String(s ?? "").trim()));
+    const fill = detrimental ? 0x57d67a : 0xff6b6b;
+    showActiveEffectChangeText(effect, "-", fill);
+  } catch (err) {
+    showActiveEffectChangeText(effect, "-", 0xff6b6b);
+  }
 }
 
 function showActiveEffectChangeText(effect, sign, fill) {
@@ -833,6 +852,7 @@ function showActiveEffectChangeText(effect, sign, fill) {
     fill,
     stroke: 0x000000,
     strokeThickness: 4,
+    ffxivAllowStatusText: true,
   });
 }
 
@@ -3508,13 +3528,40 @@ function installTokenBarrierOverlay() {
   const originalDrawBars = tokenProto.drawBars;
   tokenProto.drawBars = function (...args) {
     const result = originalDrawBars.apply(this, args);
-    drawFFXIVHealthBarOverlay(this);
+    // If Foundry does not have the fancy new bar color hook, paint health the old-fashioned way.
+    // This behaviour was added in 14.364
+    if (!tokenProto._ffxivBarColorsPatched) drawFFXIVHealthBarOverlay(this);
     drawFFXIVBarrierOverlay(this);
     drawFFXIVManaOverlay(this);
     return result;
   };
 
   tokenProto._ffxivBarrierOverlayPatched = true;
+}
+
+function installTokenBarColors() {
+  const tokenProto = foundry.canvas.placeables.Token?.prototype;
+  if (!tokenProto || tokenProto._ffxivBarColorsPatched) return;
+
+  const originalGetBarColors = tokenProto._getBarColors;
+  if (typeof originalGetBarColors !== "function") {
+    // Older Foundry versions do not know this trick yet, so the overlay fallback gets to keep its job.
+    return;
+  }
+  tokenProto._getBarColors = function (index, data) {
+    if (["character", "npc"].includes(this.actor?.type) && data?.attribute === "health") {
+      const value = Math.max(Number(data.value) || 0, 0);
+      const max = Number(data.max) || 0;
+      if (max > 0) {
+        const color = foundry.utils.Color.from(value / max >= 0.3 ? "#54ad24" : "#c12c2c");
+        return { empty: color, full: color };
+      }
+    }
+
+    return originalGetBarColors.call(this, index, data);
+  };
+
+  tokenProto._ffxivBarColorsPatched = true;
 }
 
 function installTokenStatusStackCounterOverlay() {
@@ -5445,10 +5492,11 @@ async function applyStatusEntryToActor(actor, entry) {
     let result;
     if (isAdditiveStackableStatusEffect(statusId)) {
       const delta = isActive ? stacks : -stacks;
-      result = await applyStatusEffectStackDelta(actor, statusId, delta, { origin });
+      result = await applyStatusEffectStackDelta(actor, statusId, delta, { origin, ffxivSuppressStatusText: true });
     } else {
       result = await applyStatusEffectStackValue(actor, statusId, isActive ? stacks : 0, {
         origin,
+        ffxivSuppressStatusText: true,
       });
     }
     if (result === false) return false;
@@ -5469,7 +5517,7 @@ async function applyStatusEntryToActor(actor, entry) {
     }
     return true;
   }
-  const result = await applyStatusEffectChange(actor, statusId, isActive, { origin });
+  const result = await applyStatusEffectChange(actor, statusId, isActive, { origin, ffxivSuppressStatusText: true });
   if (result === false) return false;
   try {
     const label = getStatusLabelById(statusId);
@@ -6602,6 +6650,35 @@ Hooks.on("createChatMessage", async (message, _options, userId) => {
   });
 });
 
+Hooks.on("canvasReady", () => {
+  try {
+    if (!canvas?.interface || typeof canvas.interface.createScrollingText !== "function") return;
+    if (canvas.interface.__ffxivCreateScrollingTextWrapped) return;
+    const originalCreateScrollingText = canvas.interface.createScrollingText.bind(canvas.interface);
+    canvas.interface.createScrollingText = (center, text, options = {}) => {
+      try {
+        if (options?.ffxivAllowStatusText === true) {
+          return originalCreateScrollingText(center, text, options);
+        }
+        if (typeof text === "string" && Array.isArray(CONFIG.statusEffects) && CONFIG.statusEffects.length) {
+          for (const entry of CONFIG.statusEffects) {
+            const label = game.i18n.localize(entry.label ?? entry.name ?? entry.id);
+            if (label && text.includes(label)) return; // suppress default status scrolling text
+          }
+        }
+      } catch (err) {
+        // fall through to original
+      }
+      return originalCreateScrollingText(center, text, options);
+    };
+    canvas.interface.__ffxivCreateScrollingTextWrapped = true;
+  } catch (err) {
+    // This is a best effort attempt to suppress default status effect scrolling text, but it may not work in all versions of Foundry
+    // or with all modules that modify the canvas interface. If it fails, it will simply fall back to the original behavior without breaking anything.
+    // Hopefully. :')
+  }
+});
+
 Hooks.on("renderChatMessageHTML", (message, html) => {
   debugLog("renderChatMessageHTML hook");
   applyFFXIVChatTheme(html);
@@ -6662,7 +6739,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     }
 
     const updatedContent = jqueryhtml.find(".message-content").first().html();
-    if (updatedContent) await message.update({ content: updatedContent });
+    if (updatedContent) await message.update({ content: updatedContent }, { notify: true });
   };
 
   jqueryhtml.find(".ffxiv-roll-base").on("click", async (ev) => {
