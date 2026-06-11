@@ -123,6 +123,64 @@
   }
 
   &.item {
+    .item-locked-field {
+      display: inline-block;
+      width: 100%;
+      min-height: 26px;
+      padding: 4px 0;
+      color: var(--text-color);
+      overflow-wrap: anywhere;
+    }
+
+    .item-locked-field-block {
+      white-space: pre-wrap;
+    }
+
+    .sheet-header h1.charname .item-locked-field {
+      color: var(--text-color-input);
+      font-family: "Roboto", sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      height: 38px;
+      line-height: 38px;
+      margin: 0;
+      min-height: 38px;
+      overflow: hidden;
+      padding: 0 5px;
+      text-align: left;
+      text-overflow: ellipsis;
+      text-transform: none;
+      white-space: nowrap;
+    }
+
+    &.item-locked .tags-container {
+      .add-tag,
+      .remove-tag {
+        display: none;
+      }
+
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0;
+        list-style: none;
+      }
+
+      .tag-list li {
+        display: inline-flex;
+      }
+
+      .item-locked-field {
+        width: auto;
+        min-height: 0;
+        padding: 3px 8px;
+        border: 1px solid var(--color-border-light-tertiary);
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.08);
+      }
+    }
+
     .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
       grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em 34px;
     }
@@ -137,6 +195,10 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) 34px;
       gap: 8px;
+    }
+
+    .ability-automation-edit-list + .status-effects-header {
+      margin-top: 14px;
     }
 
     .ability-automation-heading {
@@ -182,10 +244,23 @@
       color: #ff3b30;
     }
 
+    .remove-effect-requirement,
+    .remove-effect-rule {
+      border-color: rgba(255, 59, 48, 0.45);
+      color: #ff3b30;
+      font-weight: 700;
+    }
+
     .remove-status-effect:hover,
     .remove-effect-requirement:hover,
     .remove-effect-rule:hover,
     .effect-control-delete:hover .delete-icon {
+      color: #ff6b61;
+    }
+
+    .remove-effect-requirement:hover,
+    .remove-effect-rule:hover {
+      border-color: rgba(255, 107, 97, 0.65);
       color: #ff6b61;
     }
 
@@ -235,6 +310,201 @@
 
     .ability-automation-fields .ability-automation-checkbox input {
       width: auto;
+    }
+
+    .job-tabs {
+      margin-bottom: 10px;
+      text-align: center;
+      filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+    }
+
+    .job-tabs .sub-tab {
+      align-items: center;
+      height: 23px;
+      justify-content: center;
+      line-height: 1;
+      margin: 4px -2px;
+      overflow: hidden;
+      padding: 0 6px !important;
+      position: relative;
+      text-align: center;
+      width: 31%;
+      background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+      border-radius: 3px;
+      clip-path: polygon(5% 0, 95% 0, 100% 30%, 95% 100%, 5% 100%, 0 70%);
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 12px;
+    }
+
+    .job-tabs .chip {
+      background: var(--chip-color);
+      border-radius: 2px;
+      bottom: 3px;
+      height: 5px;
+      left: 10px;
+      position: absolute;
+      transform: rotate(35deg);
+      width: 10px;
+    }
+
+    .job-tabs .sub-tab.active {
+      filter: var(--subtabactive-filter);
+      background: var(--subtabactive-background);
+    }
+
+    .job-tabs .sub-tab.active .chip {
+      background: var(--chip-color-active);
+    }
+
+    .job-progression-tab,
+    .job-pets-tab {
+      min-height: 180px;
+      padding: 8px;
+    }
+
+    .job-overview-basics {
+      margin-bottom: 12px;
+    }
+
+    .job-attribute-section {
+      margin: 12px 0;
+    }
+
+    .job-attribute-section h2 {
+      border: 0;
+      color: var(--text-color);
+      font-family: "Georgia", serif;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .job-primary-attributes,
+    .job-secondary-attributes {
+      display: grid;
+      gap: 8px;
+    }
+
+    .job-primary-attributes {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .job-secondary-attributes {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .job-primary-attributes .resource,
+    .job-secondary-attributes .resource {
+      align-items: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .job-secondary-attributes .resource {
+      grid-column: span 2;
+    }
+
+    .job-secondary-attributes .resource:nth-last-child(2) {
+      grid-column: 2 / span 2;
+    }
+
+    .job-secondary-attributes .resource:last-child {
+      grid-column: 4 / span 2;
+    }
+
+    .job-ability-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      list-style: none;
+      margin: 0;
+      min-height: 80px;
+      padding: 0;
+    }
+
+    .job-progression-tab.drag-over,
+    .job-pets-tab.drag-over {
+      outline: 2px solid var(--border-color-1);
+      outline-offset: 3px;
+    }
+
+    .job-ability-row {
+      align-items: center;
+      display: grid;
+      gap: 6px;
+      grid-template-columns: minmax(10em, 1fr) minmax(8em, auto) 28px 28px 32px;
+    }
+
+    .job-ability-edit,
+    .job-pet-edit {
+      cursor: pointer;
+    }
+
+    .job-ability-edit:hover .job-ability-name,
+    .job-ability-edit:hover .job-ability-type,
+    .job-pet-edit:hover .job-ability-name,
+    .job-pet-edit:hover .job-ability-type {
+      text-shadow: 0 0 8px var(--text-shadow-color);
+    }
+
+    .job-ability-name,
+    .job-ability-type {
+      align-items: center;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 3px;
+      display: flex;
+      justify-content: center;
+      line-height: 1.2;
+      min-height: 28px;
+      overflow: hidden;
+      padding: 4px 6px;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .job-ability-name {
+      font-weight: 700;
+    }
+
+    .job-ability-row button {
+      min-height: 28px;
+      padding: 0;
+    }
+
+    .job-ability-row button:disabled {
+      opacity: 0.35;
+    }
+
+    .job-ability-row button.remove-job-ability,
+    .job-ability-row button.remove-job-pet {
+      align-items: center;
+      background: #b00000;
+      border: 1px solid white;
+      display: inline-flex;
+      justify-content: center;
+    }
+
+    .job-ability-row button.remove-job-ability:hover,
+    .job-ability-row button.remove-job-pet:hover {
+      background: red;
+      box-shadow: 0 0 5px red;
+    }
+
+    .job-ability-empty {
+      align-items: center;
+      border: 1px dashed var(--color-border-light-tertiary);
+      border-radius: 5px;
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      min-height: 70px;
+      opacity: 0.75;
     }
   }
 }

@@ -287,6 +287,9 @@ export class FFXIVActor extends Actor {
 
   _prepareNpcData(actorData) {
     if (actorData.type !== 'npc') return;
+    const speed = actorData.system?.secondary_attributes?.speed;
+    if (!speed || typeof speed !== "object") return;
+    if (!Number.isFinite(speed.value)) speed.value = 5;
   }
 
   _preparePetData(actorData) {

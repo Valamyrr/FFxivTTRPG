@@ -17,7 +17,10 @@
     <a class="item sub-tab" data-tab="description">{{ localize "FFXIV.Job.Overview" }}
       <div class="chip"></div>
     </a>
-    <a class="item sub-tab" data-tab="progression">{{ localize "FFXIV.Job.Abilities" }}
+    <a class="item sub-tab" data-tab="progression">{{ localize "FFXIV.Abilities.Abilities" }}
+      <div class="chip"></div>
+    </a>
+    <a class="item sub-tab" data-tab="pets">{{ localize "FFXIV.CharacterSheet.Pets" }}
       <div class="chip"></div>
     </a>
   </nav>
@@ -46,17 +49,6 @@
                         {{/if}}>{{ localize role.label }}
                 </option>
               {{/each}}
-            </select>
-          </div>
-        </div>
-        <div class="resource flex-group-center">
-          <label for="system.has_pets" class="resource-label">{{ localize "FFXIV.Job.HasPets" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <select name="system.has_pets" data-dtype="Boolean">
-              <option value="true" {{#if system.has_pets }}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}
-              </option>
-              <option value="false" {{#unless system.has_pets}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}
-              </option>
             </select>
           </div>
         </div>
@@ -184,7 +176,38 @@
           </button>
         </li>
       {{/each}}
-    </ol>
-  </div>
-</section>
+      </ol>
+    </div>
+    <div class="tab job-pets-tab"
+         data-group="primary"
+         data-tab="pets">
+      <ol class="job-ability-list">
+        {{#unless system.pet_grants.length}}
+        <li class="job-ability-empty">{{ localize "FFXIV.Job.DropPets" }}</li>
+      {{/unless}}
+      {{#each system.pet_grants as |grant index| }}
+        <li class="job-ability-row job-pet-edit" data-index="{{index}}">
+          <span class="job-ability-name">{{grant.name}}</span>
+          <span class="job-ability-type">{{grant.typeLabel}}</span>
+          <button type="button"
+                  class="move-job-pet-up"
+                  data-index="{{index}}"
+                  aria-label="Move Up"
+                  {{#if @first}}disabled{{/if}}>▲</button>
+          <button type="button"
+                  class="move-job-pet-down"
+                  data-index="{{index}}"
+                  aria-label="Move Down"
+                  {{#if @last}}disabled{{/if}}>▼</button>
+          <button type="button"
+                  class="remove-job-pet"
+                  data-index="{{index}}"
+                  aria-label="{{localize 'FFXIV.Item.Delete'}}">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </li>
+      {{/each}}
+      </ol>
+    </div>
+  </section>
 </div>

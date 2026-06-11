@@ -197,11 +197,8 @@
     "Job": {
       "Role": "Rôle",
       "Overview": "Vue d'ensemble",
-      "Abilities": "Compétences",
-      "Progression": "Progression",
-      "AbilityGrants": "Compétences associées",
-      "HasPets": "A des familiers ?",
       "DropAbilities": "Déposez les compétences ici",
+      "DropPets": "Déposez les familiers ici",
       "DropJob": "Déposez un Job ici"
     },
     "ActorType": {
@@ -381,6 +378,8 @@
       "LockArtworkRotationGlobalHint": "Quand activé, les nouveaux prototypes de token et tokens de scène auront toujours la rotation de l'illustration verrouillée.",
       "LegacyManaClickBehavior": "Inverser les clics gauche/droite pour le mana",
       "LegacyManaClickBehaviorHint": "Inverse le comportement des clics gauche et droit pour le mana. Quand activé, le clic gauche retire du mana et le clic droit en ajoute.",
+      "CompactDirectories": "Répertoires compacts",
+      "CompactDirectoriesHint": "Réduit la hauteur des lignes dans les répertoires Acteurs, Objets et Compendiums de la barre latérale.",
       "AutoRollDirectHitDamage": "Lancer automatiquement les dégâts d'attaque directe",
       "AutoRollDirectHitDamageHint": "Lance automatiquement les dégâts d'attaque directe après un jet de touche supérieur à la Défense ou Défense magique de la cible.",
       "JobsAbbrv": "Abréviations des jobs",
@@ -428,6 +427,8 @@
       "AttributesImgMagicDefense": "Icône de l'attribut Défense magique",
       "AttributesImgVigilance": "Icône de l'attribut Vigilance",
       "AttributesImgSpeed": "Icône de l'attribut Vitesse",
+      "AutoApplySocketRequests": "Appliquer automatiquement les demandes des joueurs",
+      "AutoApplySocketRequestsHint": "Lorsque cette option est activée, le Maître du jeu accepte automatiquement les demandes des joueurs pour appliquer dégâts, soins et effets de statut. Lorsqu'elle est désactivée, une confirmation est demandée au MJ.",
       "SoundNotificationFFXIV": "Activer les bruitages de FFXIV",
       "SoundNotificationFFXIVHint": "Ajoute quelques bruitages déclenchés par des actions telles que la connexion d'un autre joueur, l'ouverture/fermeture de votre feuille de personnage, le déplacement d'objets dans votre inventaire, etc.",
       "FloatingDamageNumbers": "Nombres flottants de dégâts",
@@ -468,6 +469,7 @@
       "NoTargetWithKeybind": "Aucune cible sélectionnée.\nUtilisez {singleKeybind} en survolant un token pour sélectionner une cible.\nUtilisez {multipleKeybind} en survolant d'autres tokens pour sélectionner plusieurs cibles.",
       "SingleTargetMultipleSelected": "Cette capacité cible une seule créature, mais plusieurs cibles sont sélectionnées.\nUtilisez {singleKeybind} en survolant un token pour ne sélectionner que cette cible.",
       "EffectApplied": "Effet \"{effect}\" appliqué à {actor}.",
+      "EffectRemoved": "Effet \"{effect}\" retiré de {actor}.",
       "EffectRequest": "{playerName} demande d'appliquer l'effet \"{effect}\" aux cibles suivantes :",
       "HealRequest": "{playerName} demande de soigner \"{heal}\" PV aux cibles suivantes :",
       "DamageRequest": "{playerName} demande d'infliger \"{damage}\" PV aux cibles suivantes:",

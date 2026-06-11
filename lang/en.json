@@ -197,11 +197,8 @@
     "Job": {
       "Role": "Role",
       "Overview": "Overview",
-      "Abilities": "Abilities",
-      "Progression": "Progression",
-      "AbilityGrants": "Mapped Abilities",
-      "HasPets": "Has Pets?",
       "DropAbilities": "Drop abilities here",
+      "DropPets": "Drop pets here",
       "DropJob": "Drop a Job here"
     },
     "ActorType": {
@@ -381,6 +378,8 @@
       "LockArtworkRotationGlobalHint": "When enabled, newly created prototype and scene tokens always have Lock Artwork Rotation turned on.",
       "LegacyManaClickBehavior": "Invert Left/Right Mana Clicks",
       "LegacyManaClickBehaviorHint": "Invert left-click and right-click behavior for mana. When enabled, left-click removes mana and right-click adds mana.",
+      "CompactDirectories": "Compact Directories",
+      "CompactDirectoriesHint": "Reduce row height in the Actors, Items, and Compendium sidebar directories.",
       "AutoRollDirectHitDamage": "Auto Roll Direct Hit Damage",
       "AutoRollDirectHitDamageHint": "Automatically roll Direct Hit damage after a Roll to Hit beats a targeted token's matching Defense or Magic Defense.",
       "JobsAbbrv": "Job Abbreviations",

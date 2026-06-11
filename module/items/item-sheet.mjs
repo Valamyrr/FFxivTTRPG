@@ -27,6 +27,14 @@ import PopoutEditor from "../popout-editor.js";
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
 
+const EDIT_MODE_ITEM_TYPES = new Set([
+  "ability",
+  "primary_ability",
+  "secondary_ability",
+  "instant_ability",
+  "title",
+]);
+
 /**
  * ApplicationV2 implementation of the FFXIV item sheet.
  * @extends {ItemSheetV2}
@@ -208,6 +216,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ...grant,
         typeLabel: this._getJobGrantTypeLabel(grant),
       }));
+      context.system.pet_grants = this._normalizeJobPetGrants(
+        context.system.pet_grants,
+      ).map((grant) => ({
+        ...grant,
+        typeLabel: this._getJobPetGrantTypeLabel(grant),
+      }));
+      context.system.has_pets =
+        context.system.pet_grants.length > 0 || context.system.has_pets === true;
     }
     if (this.item.type === "augment") {
       context.system.ability_grants = this._getJobAbilityGrants().map(
@@ -218,14 +234,33 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       );
     }
 
-    context.enriched = await this.constructor.enrichAllStrings(
-      context.system ?? {},
-      this.item.getRollData(),
-      this.item,
-      this.document.isOwner,
-    );
-    context.enrichedDescription = context.enriched?.description ?? "";
-    context.enrichedTraits = context.enriched?.traits ?? "";
+    if (this.item.type === "job" || this.item.type === "augment") {
+      context.enrichedDescription = await this.constructor.enrichAllStrings(
+        context.system?.description ?? "",
+        this.item.getRollData(),
+        this.item,
+        this.document.isOwner,
+      );
+      context.enrichedTraits = await this.constructor.enrichAllStrings(
+        context.system?.traits ?? "",
+        this.item.getRollData(),
+        this.item,
+        this.document.isOwner,
+      );
+      context.enriched = {
+        description: context.enrichedDescription,
+        traits: context.enrichedTraits,
+      };
+    } else {
+      context.enriched = await this.constructor.enrichAllStrings(
+        context.system ?? {},
+        this.item.getRollData(),
+        this.item,
+        this.document.isOwner,
+      );
+      context.enrichedDescription = context.enriched?.description ?? "";
+      context.enrichedTraits = context.enriched?.traits ?? "";
+    }
 
     context.settings = {
       jobsAbbrv: game.settings.get("ffxiv", "jobsAbbrv").split(","),
@@ -310,6 +345,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.activateListeners($(this.element));
     this._activateJobDropZone();
     this._activateFormulaFieldVisibility();
+    this._applyItemEditMode();
     this._restoreSheetScroll();
   }
 
@@ -340,16 +376,76 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _isItemEditMode() {
-    return this.item.type !== "title" || (this.document.isOwner && this.itemEditMode);
+    return !EDIT_MODE_ITEM_TYPES.has(this.item.type) || (this.document.isOwner && this.itemEditMode);
   }
 
   _toggleItemEditMode(event) {
     event.preventDefault();
     event.stopPropagation();
 
-    if (this.item.type !== "title" || !this.document.isOwner) return;
+    if (!EDIT_MODE_ITEM_TYPES.has(this.item.type) || !this.document.isOwner) return;
     this.itemEditMode = !this.itemEditMode;
     this.render({ force: true });
+  }
+
+  _applyItemEditMode() {
+    if (!EDIT_MODE_ITEM_TYPES.has(this.item.type)) return;
+    const editing = this._isItemEditMode();
+    this.element.classList.toggle("item-editing", editing);
+    this.element.classList.toggle("item-locked", !editing);
+    const sheet = this.element.querySelector(".item-modern-sheet") ?? this.element.querySelector(".window-content") ?? this.element;
+
+    const toggle = sheet.querySelector(".item-edit-toggle");
+    if (toggle) {
+      toggle.classList.toggle("active", editing);
+      toggle.setAttribute("aria-pressed", editing ? "true" : "false");
+      toggle.title = game.i18n.localize(editing ? "FFXIV.CharacterSheet.LockSheet" : "FFXIV.CharacterSheet.EditSheet");
+      toggle.setAttribute("aria-label", toggle.title);
+      const icon = toggle.querySelector("i");
+      if (icon) {
+        icon.classList.toggle("fa-lock-open", editing);
+        icon.classList.toggle("fa-lock", !editing);
+      }
+    }
+
+    if (editing) return;
+    sheet
+      .querySelectorAll("input, select, textarea")
+      .forEach((control) => this._replaceLockedItemField(control));
+    sheet
+      .querySelectorAll("button")
+      .forEach((control) => {
+        if (control.closest(".item-edit-toggle")) return;
+        control.disabled = true;
+      });
+  }
+
+  _replaceLockedItemField(control) {
+    if (control.closest(".item-edit-toggle")) return;
+    if (control.type === "hidden" || control.classList.contains("ffxiv-hidden") || control.closest(".ffxiv-hidden")) {
+      control.disabled = true;
+      return;
+    }
+
+    const display = document.createElement(control instanceof HTMLTextAreaElement ? "div" : "span");
+    display.classList.add("item-locked-field");
+    if (control instanceof HTMLTextAreaElement) display.classList.add("item-locked-field-block");
+    display.textContent = this._getLockedItemFieldText(control);
+    control.replaceWith(display);
+  }
+
+  _getLockedItemFieldText(control) {
+    if (control instanceof HTMLSelectElement) {
+      const values = Array.from(control.selectedOptions)
+        .map((option) => option.textContent?.trim().replace(/\s+/g, " "))
+        .filter(Boolean);
+      return values.join(", ") || game.i18n.localize("FFXIV.None");
+    }
+    if (control.type === "checkbox") {
+      return game.i18n.localize(control.checked ? "FFXIV.Dialogs.Yes" : "FFXIV.Dialogs.No");
+    }
+    const value = String(control.value ?? "").trim();
+    return value || game.i18n.localize("FFXIV.None");
   }
 
   /** @override */
@@ -1352,6 +1448,33 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         this.item.update({ "system.ability_grants": grants });
         this.render();
       });
+      html.on(
+        "click.ffxivItemSheet",
+        ".job-pet-edit",
+        this._onEditJobPet.bind(this),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-job-pet-up",
+        this._moveJobPet.bind(this, -1),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-job-pet-down",
+        this._moveJobPet.bind(this, 1),
+      );
+      html.on("click.ffxivItemSheet", ".remove-job-pet", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = Number(event.currentTarget.dataset.index);
+        const grants = this._getJobPetGrants();
+        grants.splice(index, 1);
+        this.item.update({
+          "system.pet_grants": grants,
+          "system.has_pets": grants.length > 0,
+        });
+        this.render();
+      });
     }
     if (this.item.type === "augment") {
       html.on(
@@ -1902,9 +2025,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const dropZoneSelector =
       this.item.type === "augment"
         ? ".augment-grants-dropzone"
-        : ".job-progression-tab";
-    const dropZone = this.element.querySelector(dropZoneSelector);
-    if (!dropZone) return;
+        : ".job-progression-tab, .job-pets-tab";
+    const dropZones = this.element.querySelectorAll(dropZoneSelector);
+    if (!dropZones.length) return;
 
     this._jobDropController = new AbortController();
     const { signal } = this._jobDropController;
@@ -1913,27 +2036,33 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       event.preventDefault();
       event.stopPropagation();
       if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
-      dropZone.classList.add("drag-over");
+      event.currentTarget.classList.add("drag-over");
     };
 
-    dropZone.addEventListener("dragenter", allowDrop, { signal });
-    dropZone.addEventListener("dragover", allowDrop, { signal });
-    dropZone.addEventListener(
-      "dragleave",
-      (event) => {
-        if (!dropZone.contains(event.relatedTarget))
+    for (const dropZone of dropZones) {
+      dropZone.addEventListener("dragenter", allowDrop, { signal });
+      dropZone.addEventListener("dragover", allowDrop, { signal });
+      dropZone.addEventListener(
+        "dragleave",
+        (event) => {
+          if (!dropZone.contains(event.relatedTarget))
+            dropZone.classList.remove("drag-over");
+        },
+        { signal },
+      );
+      dropZone.addEventListener(
+        "drop",
+        (event) => {
           dropZone.classList.remove("drag-over");
-      },
-      { signal },
-    );
-    dropZone.addEventListener(
-      "drop",
-      (event) => {
-        dropZone.classList.remove("drag-over");
-        this._onDropJobAbility(event);
-      },
-      { signal },
-    );
+          if (dropZone.classList.contains("job-pets-tab")) {
+            this._onDropJobPet(event);
+            return;
+          }
+          this._onDropJobAbility(event);
+        },
+        { signal },
+      );
+    }
   }
 
   _onPickItemIcon(event) {
@@ -2003,6 +2132,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return entries.map((entry) => this._normalizeJobGrantEntry(entry));
   }
 
+  _normalizeJobPetGrants(grants) {
+    return Array.isArray(grants)
+      ? foundry.utils.deepClone(grants)
+      : grants && typeof grants === "object"
+        ? foundry.utils.deepClone(Object.values(grants))
+        : [];
+  }
+
   _getJobAbilityGrants() {
     const grants = this._normalizeJobAbilityGrants(
       this.item.system.ability_grants,
@@ -2049,6 +2186,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     ];
   }
 
+  _getJobPetGrants() {
+    return this._normalizeJobPetGrants(this.item.system.pet_grants);
+  }
+
   _getJobGrantTypeLabel(grantOrType) {
     // Accept either a grant object or a type string. Prefer to derive the
     // subtype from the grant's item (tags) when available so we can display
@@ -2075,6 +2216,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     const label = game.i18n.localize(`FFXIV.ItemType.${type}`);
     return label.replace(/\s+Ability$/i, "");
+  }
+
+  _getJobPetGrantTypeLabel() {
+    return game.i18n.localize("FFXIV.ItemType.pet");
   }
 
   _normalizeJobGrantEntry(grant) {
@@ -2123,6 +2268,20 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const itemData = sourceItem.toObject();
     delete itemData._id;
     return itemData;
+  }
+
+  async _getJobGrantActorData(grant) {
+    if (grant.uuid) {
+      const sourceActor = await fromUuid(grant.uuid).catch(() => null);
+      if (sourceActor) {
+        const actorData = sourceActor.toObject();
+        delete actorData._id;
+        return actorData;
+      }
+    }
+
+    if (grant.actor) return foundry.utils.deepClone(grant.actor);
+    return null;
   }
 
   async _onEditJobAbility(event) {
@@ -2179,6 +2338,63 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     tempItem.sheet.render({ force: true });
   }
 
+  async _onEditJobPet(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const grants = this._getJobPetGrants();
+    const grant = grants[index];
+    if (!grant) return;
+
+    const actorData = await this._getJobGrantActorData(grant);
+    if (!actorData) {
+      ui.notifications.warn("Could not find the mapped pet to edit.");
+      return;
+    }
+
+    const tempActor = new CONFIG.Actor.documentClass(actorData, {
+      temporary: true,
+    });
+    const persistGrant = async (changes) => {
+      const update = foundry.utils.expandObject(changes);
+      const nextData = foundry.utils.mergeObject(
+        foundry.utils.deepClone(actorData),
+        update,
+        {
+          inplace: false,
+          overwrite: true,
+        },
+      );
+      delete nextData._id;
+
+      grants[index] = {
+        ...grants[index],
+        name: nextData.name,
+        type: nextData.type,
+        actor: nextData,
+      };
+      await this.item.update(
+        {
+          "system.pet_grants": grants,
+          "system.has_pets": grants.length > 0,
+        },
+        { render: false },
+      );
+
+      foundry.utils.mergeObject(actorData, nextData, {
+        inplace: true,
+        overwrite: true,
+      });
+      tempActor.updateSource(update);
+      this.render({ force: true });
+      return tempActor;
+    };
+
+    tempActor.update = persistGrant;
+    tempActor.sheet.render({ force: true });
+  }
+
   async _moveJobAbility(direction, event) {
     event.preventDefault();
     event.stopPropagation();
@@ -2191,6 +2407,23 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     [grants[index], grants[target]] = [grants[target], grants[index]];
     await this.item.update(
       { "system.ability_grants": grants },
+      { render: false },
+    );
+    this.render({ force: true });
+  }
+
+  async _moveJobPet(direction, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const grants = this._getJobPetGrants();
+    const target = index + direction;
+    if (!grants[index] || !grants[target]) return;
+
+    [grants[index], grants[target]] = [grants[target], grants[index]];
+    await this.item.update(
+      { "system.pet_grants": grants },
       { render: false },
     );
     this.render({ force: true });
@@ -2255,6 +2488,40 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const updateData = { "system.ability_grants": grants };
     if (this.item.type === "augment") updateData["system.granted_ability"] = "";
     await this.item.update(updateData, { render: false });
+    this.render({ force: true });
+  }
+
+  async _onDropJobPet(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const data = this._getDropData(event);
+    let actor = data.uuid ? await fromUuid(data.uuid) : null;
+    if (!actor && typeof Actor.implementation.fromDropData === "function") {
+      actor = await Actor.implementation.fromDropData(data);
+    }
+    if (!actor || actor.documentName !== "Actor" || actor.type !== "pet") {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Job.DropPets"));
+      return;
+    }
+
+    const grants = this._getJobPetGrants();
+    if (grants.some((grant) => grant.uuid === actor.uuid)) return;
+    const actorData = actor.toObject();
+    delete actorData._id;
+    grants.push({
+      uuid: actor.uuid,
+      name: actor.name,
+      type: actor.type,
+      actor: actorData,
+    });
+    await this.item.update(
+      {
+        "system.pet_grants": grants,
+        "system.has_pets": true,
+      },
+      { render: false },
+    );
     this.render({ force: true });
   }
 }

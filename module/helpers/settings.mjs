@@ -1,5 +1,25 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+function toggleCompactDirectories(enabled) {
+  document.body?.classList.toggle("ffxiv-compact-directories", enabled);
+}
+
+function refreshCompactDirectoryTabs() {
+  const tabs = [
+    ui.actors,
+    ui.items,
+    ui.compendium,
+    ui.sidebar?.tabs?.actors,
+    ui.sidebar?.tabs?.items,
+    ui.sidebar?.tabs?.compendium,
+  ];
+
+  for (const tab of new Set(tabs.filter(Boolean))) {
+    if (!tab.rendered) continue;
+    tab.render({ force: true });
+  }
+}
+
 class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     options.id ??= `ffxiv-${new.target.menuId}`;
@@ -413,6 +433,24 @@ export class SettingsHelpers {
       type: Boolean,
       requiresReload: true,
     });
+
+    game.settings.register("ffxiv", "compactDirectories", {
+      name: game.i18n.localize("FFXIV.Settings.CompactDirectories"),
+      hint: game.i18n.localize("FFXIV.Settings.CompactDirectoriesHint"),
+      scope: "client",
+      config: true,
+      default: true,
+      type: Boolean,
+      onChange: (value) => {
+        toggleCompactDirectories(value);
+        refreshCompactDirectoryTabs();
+      },
+      requiresReload: false,
+    });
+    toggleCompactDirectories(game.settings.get("ffxiv", "compactDirectories"));
+    Hooks.once("ready", () =>
+      toggleCompactDirectories(game.settings.get("ffxiv", "compactDirectories")),
+    );
 
     game.settings.register("ffxiv", "autoRollDirectHitDamage", {
       name: game.i18n.localize("FFXIV.Settings.AutoRollDirectHitDamage"),

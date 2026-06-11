@@ -334,7 +334,7 @@ export class FFXIVItem extends Item {
         "system.class.name_custom": jobName || this.name,
         "system.class.role": this.system.role || "dps",
         "system.class.customIcon": this.img,
-        "system.showPets": this.system.has_pets ? "true" : "false",
+        "system.showPets": this._jobHasPets() ? "true" : "false",
         "system.experience.level.value": Number(this.system.level) || 30,
         "system.health.value": maxHP,
         "system.health.max": maxHP,
@@ -360,6 +360,7 @@ export class FFXIVItem extends Item {
       renderOptions(),
     );
     await this._grantJobAbilities(renderOptions());
+    await this._grantJobPets(renderOptions());
     await this._stripEmbeddedJobAbilityGrantItems(renderOptions());
     ui.notifications.info(
       `${this.name} assigned as ${this.parent.name}'s job.`,
@@ -374,21 +375,36 @@ export class FFXIVItem extends Item {
     )
       return;
 
-    const grants = Array.isArray(this.system.ability_grants)
+    const abilityGrants = Array.isArray(this.system.ability_grants)
       ? this.system.ability_grants
       : Object.values(this.system.ability_grants || {});
+    const petGrants = Array.isArray(this.system.pet_grants)
+      ? this.system.pet_grants
+      : Object.values(this.system.pet_grants || {});
     let changed = false;
-    const lightweightGrants = grants.map((grant) => {
+    const lightweightAbilityGrants = abilityGrants.map((grant) => {
       if (!grant || typeof grant !== "object" || !Object.hasOwn(grant, "item"))
         return grant;
       changed = true;
       const { item, ...rest } = grant;
       return rest;
     });
+    const lightweightPetGrants = petGrants.map((grant) => {
+      if (!grant || typeof grant !== "object" || !Object.hasOwn(grant, "actor"))
+        return grant;
+      changed = true;
+      const { actor, ...rest } = grant;
+      return rest;
+    });
     if (!changed) return;
 
     await this.update(
-      { "system.ability_grants": lightweightGrants },
+      {
+        "system.ability_grants": lightweightAbilityGrants,
+        "system.pet_grants": lightweightPetGrants,
+        "system.has_pets":
+          lightweightPetGrants.length > 0 || this.system.has_pets === true,
+      },
       {
         ...options,
         render: false,
@@ -401,6 +417,20 @@ export class FFXIVItem extends Item {
     return (
       Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {})
     ).filter((grant) => grant?.uuid);
+  }
+
+  _getNormalizedPetGrants(rawGrants) {
+    return (
+      Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {})
+    ).filter((grant) => grant?.uuid);
+  }
+
+  _jobHasPets() {
+    if (this.type !== "job") return false;
+    return (
+      this._getNormalizedPetGrants(this.system.pet_grants).length > 0 ||
+      this.system.has_pets === true
+    );
   }
 
   _getLegacyAugmentGrant() {
@@ -475,6 +505,63 @@ export class FFXIVItem extends Item {
       );
       await this._syncJobAbilityOrder(created, options);
     }
+  }
+
+  async _grantJobPets(options = {}) {
+    const grants = this._getNormalizedPetGrants(this.system.pet_grants);
+    if (!grants.length) return;
+
+    const actorPetIds = Array.isArray(this.parent.system?.pets)
+      ? foundry.utils.deepClone(this.parent.system.pets)
+      : [];
+    const actorPetOrder = Array.isArray(this.parent.system?.pet_order)
+      ? foundry.utils.deepClone(this.parent.system.pet_order)
+      : [];
+    const petSources = new Set(
+      actorPetIds
+        .map((id) => game.actors.get(id)?.flags?.ffxiv?.jobSourceUuid)
+        .filter(Boolean),
+    );
+    const actorsToCreate = [];
+
+    for (const grant of grants) {
+      if (petSources.has(grant.uuid)) continue;
+
+      let actorData = grant.actor ? foundry.utils.deepClone(grant.actor) : null;
+      if (!actorData) {
+        const sourceActor = await fromUuid(grant.uuid);
+        if (!sourceActor || sourceActor.documentName !== "Actor") continue;
+        actorData = sourceActor.toObject();
+      }
+      if (actorData.type !== "pet") continue;
+      delete actorData._id;
+      actorData.flags = foundry.utils.mergeObject(actorData.flags || {}, {
+        ffxiv: {
+          jobId: this.id,
+          jobSourceUuid: grant.uuid,
+          jobOwnerId: this.parent.id,
+        },
+      });
+      actorsToCreate.push(actorData);
+    }
+
+    if (!actorsToCreate.length) return;
+
+    const created = await Actor.createDocuments(actorsToCreate, options);
+    const nextPets = [...actorPetIds];
+    const nextPetOrder = actorPetOrder.filter((id) => actorPetIds.includes(id));
+    for (const actor of created) {
+      if (!nextPets.includes(actor.id)) nextPets.push(actor.id);
+      if (!nextPetOrder.includes(actor.id)) nextPetOrder.push(actor.id);
+    }
+    await this.parent.update(
+      {
+        "system.pets": nextPets,
+        "system.pet_order": nextPetOrder,
+        "system.showPets": "true",
+      },
+      { render: options.render ?? false },
+    );
   }
 
   _getAbilityOrderType(item) {
@@ -747,6 +834,15 @@ export class FFXIVItem extends Item {
         return grants.map((grant) => grant.uuid).filter(Boolean);
       }),
     );
+    const grantedPetUuids = new Set(
+      jobs.flatMap((job) => {
+        const rawGrants = job.system?.pet_grants;
+        const grants = Array.isArray(rawGrants)
+          ? rawGrants
+          : Object.values(rawGrants || {});
+        return grants.map((grant) => grant.uuid).filter(Boolean);
+      }),
+    );
     const grantedItems = this.parent.items.filter(
       (item) =>
         jobIds.has(item.flags?.ffxiv?.jobId) ||
@@ -755,6 +851,33 @@ export class FFXIVItem extends Item {
     const idsToDelete = [...jobs, ...grantedItems].map((item) => item.id);
     if (idsToDelete.length)
       await this.parent.deleteEmbeddedDocuments("Item", idsToDelete, options);
+
+    const actorPetIds = Array.isArray(this.parent.system?.pets)
+      ? this.parent.system.pets
+      : [];
+    const grantedPets = actorPetIds
+      .map((id) => game.actors.get(id))
+      .filter(
+        (actor) =>
+          actor &&
+          (jobIds.has(actor.flags?.ffxiv?.jobId) ||
+            grantedPetUuids.has(actor.flags?.ffxiv?.jobSourceUuid)),
+      );
+    if (!grantedPets.length) return;
+
+    const grantedPetIds = new Set(grantedPets.map((actor) => actor.id));
+    const nextPets = actorPetIds.filter((id) => !grantedPetIds.has(id));
+    const nextPetOrder = Array.isArray(this.parent.system?.pet_order)
+      ? this.parent.system.pet_order.filter((id) => !grantedPetIds.has(id))
+      : [];
+    await this.parent.update(
+      {
+        "system.pets": nextPets,
+        "system.pet_order": nextPetOrder,
+      },
+      { render: false },
+    );
+    await Actor.deleteDocuments([...grantedPetIds], options);
   }
 
   /**

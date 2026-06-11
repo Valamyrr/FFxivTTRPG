@@ -32,6 +32,7 @@
 @include meta.load-css("global/settings");
 @include meta.load-css("global/grid");
 @include meta.load-css("global/flex");
+@include meta.load-css("global/directory");
 
 /* Styles limited to ffxiv sheets */
 .ffxiv {

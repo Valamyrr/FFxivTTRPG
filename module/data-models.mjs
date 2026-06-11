@@ -969,6 +969,26 @@ class JobItemData extends foundry.abstract.TypeDataModel {
           item: new fields.AnyField({ required: false }),
         }),
       ),
+      pet_grants: new fields.ArrayField(
+        new fields.SchemaField({
+          uuid: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          name: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          type: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          actor: new fields.AnyField({ required: false }),
+        }),
+      ),
     };
   }
 }

@@ -171,6 +171,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.items = actorData.items ?? [];
     context.system = actorData.system;
     this._prepareAdventuringRanks(context.system);
+    this._prepareNpcSpeed(context.system);
     context.source = this.actor._source.system;
     context.flags = actorData.flags;
     context.config = CONFIG.FFXIV;
@@ -516,6 +517,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
+  _prepareNpcSpeed(system) {
+    if (this.actor?.type !== "npc") return;
+    const speed = system?.secondary_attributes?.speed;
+    if (!speed || typeof speed !== "object") return;
+    if (speed.value === "" || speed.value === null || speed.value === undefined) {
+      speed.value = 5;
+    }
+  }
+
   _refreshActorsDirectory() {
     const directory = ui.actors ?? ui.sidebar?.tabs?.actors;
     if (!directory?.rendered) return;
@@ -571,6 +581,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (fieldName.startsWith("system.adventuring_rank.") && String(target.value ?? "").trim() === "") {
       updateValue = 0;
     }
+    if (this.actor.type === "npc" && fieldName === "system.secondary_attributes.speed.value" && String(target.value ?? "").trim() === "") {
+      updateValue = 5;
+    }
     const updateData = { [fieldName]: updateValue };
     if (fieldName === "system.health.max") {
       const nextMax = Number(updateValue);
@@ -614,6 +627,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
       if (fieldName.startsWith("system.adventuring_rank.")) {
         target.value = Number(updateValue) || 0;
+      }
+      if (this.actor.type === "npc" && fieldName === "system.secondary_attributes.speed.value") {
+        target.value = Number(updateValue) || 5;
       }
       if (fieldName === "system.activeTitle") {
         this._enrichedCache = null;
@@ -1186,6 +1202,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _prepareCharacterData(context) {
     context.rollData = this.actor.getRollData()
     context.job = context.items.find(item => item.type === "job");
+    const jobPetGrants = Array.isArray(context.job?.system?.pet_grants)
+      ? context.job.system.pet_grants
+      : Object.values(context.job?.system?.pet_grants || {});
+    if ((context.job?.system?.has_pets === true || jobPetGrants.some(grant => grant?.uuid)) && context.system.showPets !== "true") {
+      context.system.showPets = "true";
+    }
 
     let pets = this.actor.system.pets || [];
     const validIds = pets.filter(id => game.actors.get(id));
@@ -2083,12 +2105,38 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       const grants = Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {});
       return grants.map(grant => grant.uuid).filter(Boolean);
     }));
+    const grantedPetUuids = new Set(jobs.flatMap(job => {
+      const rawGrants = job.system?.pet_grants;
+      const grants = Array.isArray(rawGrants) ? rawGrants : Object.values(rawGrants || {});
+      return grants.map(grant => grant.uuid).filter(Boolean);
+    }));
     const grantedItems = this.actor.items.filter(item =>
       jobIds.has(item.flags?.ffxiv?.jobId)
       || grantedUuids.has(item.flags?.ffxiv?.jobSourceUuid)
     );
     const idsToDelete = [...jobs, ...grantedItems].map(item => item.id);
     if (idsToDelete.length) await this.actor.deleteEmbeddedDocuments("Item", idsToDelete, options);
+
+    const actorPetIds = Array.isArray(this.actor.system?.pets) ? this.actor.system.pets : [];
+    const grantedPets = actorPetIds
+      .map(id => game.actors.get(id))
+      .filter(actor =>
+        actor
+        && (
+          jobIds.has(actor.flags?.ffxiv?.jobId)
+          || grantedPetUuids.has(actor.flags?.ffxiv?.jobSourceUuid)
+        )
+      );
+    if (!grantedPets.length) return;
+
+    const grantedPetIds = new Set(grantedPets.map(actor => actor.id));
+    await this.actor.update({
+      "system.pets": actorPetIds.filter(id => !grantedPetIds.has(id)),
+      "system.pet_order": Array.isArray(this.actor.system?.pet_order)
+        ? this.actor.system.pet_order.filter(id => !grantedPetIds.has(id))
+        : []
+    }, { render: false });
+    await Actor.deleteDocuments([...grantedPetIds], options);
   }
 
   async _onDeleteJob(event) {
