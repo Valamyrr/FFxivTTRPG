@@ -660,6 +660,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       action: this._normalizeEffectRuleAction(rule?.action),
       trigger: this._normalizeEffectRuleTrigger(rule?.trigger),
       name: String(rule?.name ?? "").trim() || this._titleizeEffectKey(rule?.key),
+      isToggle: this._normalizeEffectRuleAction(rule?.action) === "toggle",
       iconOverride: String(rule?.iconOverride ?? rule?.icon ?? "").trim(),
       threshold: Number.isFinite(Number.parseInt(rule?.threshold, 10))
         ? Number.parseInt(rule.threshold, 10)
@@ -667,14 +668,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       removeText: this._getEffectRefListInput(rule?.remove),
       requiresText: this._getEffectRefListInput(rule?.requires),
       forbidsText: this._getEffectRefListInput(rule?.forbids),
-      leftName: typeof rule?.left === "string"
-        ? rule.left
-        : String(rule?.left?.name ?? "").trim() ||
-          this._titleizeEffectKey(rule?.left?.key),
-      rightName: typeof rule?.right === "string"
-        ? rule.right
-        : String(rule?.right?.name ?? "").trim() ||
-          this._titleizeEffectKey(rule?.right?.key),
+      toggle1Name: this._getEffectRefName(rule?.toggle1),
+      toggle2Name: this._getEffectRefName(rule?.toggle2),
       open: this._expandedEffectRules.has(index),
       text: this._formatEffectRule(rule),
     }));
@@ -701,6 +696,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       .join(", ");
   }
 
+  _getEffectRefName(value) {
+    if (typeof value === "string") return value;
+    return (
+      String(value?.name ?? "").trim() ||
+      this._titleizeEffectKey(value?.key)
+    );
+  }
+
   _formatEffectRequirement(requirement) {
     const name = this._formatEffectRef(requirement);
     if (!name) return "";
@@ -723,10 +726,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const parts = [];
 
     if (action === "toggle") {
-      const left = this._formatEffectRef(rule?.left);
-      const right = this._formatEffectRef(rule?.right);
-      if (!left || !right) return "";
-      parts.push(`${trigger}: toggle ${left} / ${right}`);
+      const toggle1 = this._formatEffectRef(rule?.toggle1);
+      const toggle2 = this._formatEffectRef(rule?.toggle2);
+      if (!toggle1 || !toggle2) return "";
+      parts.push(`${trigger}: toggle ${toggle1} / ${toggle2}`);
     } else {
       const name = this._formatEffectRef(rule);
       if (!name) return "";
@@ -938,19 +941,19 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return;
     }
 
-    if (field === "leftName") {
-      rule.left ??= {};
-      rule.left.name = value;
-      delete rule.left.key;
-      this._cleanEffectRef(rule, "left");
+    if (field === "toggle1Name") {
+      rule.toggle1 ??= {};
+      rule.toggle1.name = value;
+      delete rule.toggle1.key;
+      this._cleanEffectRef(rule, "toggle1");
       return;
     }
 
-    if (field === "rightName") {
-      rule.right ??= {};
-      rule.right.name = value;
-      delete rule.right.key;
-      this._cleanEffectRef(rule, "right");
+    if (field === "toggle2Name") {
+      rule.toggle2 ??= {};
+      rule.toggle2.name = value;
+      delete rule.toggle2.key;
+      this._cleanEffectRef(rule, "toggle2");
       return;
     }
 

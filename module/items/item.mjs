@@ -1866,8 +1866,8 @@ export class FFXIVItem extends Item {
         remove: this._normalizeEffectRefs(entry?.remove),
         requires: this._normalizeEffectRefs(entry?.requires),
         forbids: this._normalizeEffectRefs(entry?.forbids),
-        left: this._normalizeEffectRef(entry?.left),
-        right: this._normalizeEffectRef(entry?.right),
+        toggle1: this._normalizeEffectRef(entry?.toggle1),
+        toggle2: this._normalizeEffectRef(entry?.toggle2),
         duration: entry?.duration,
       }))
       .filter((entry) => entry.key || entry.action === "toggle");
@@ -1969,15 +1969,15 @@ export class FFXIVItem extends Item {
   }
 
   async _toggleNamedEffects(actor, rule) {
-    if (!rule.left?.key || !rule.right?.key) return;
-    if (this._hasNamedEffect(actor, rule.left.key)) {
-      await this._removeNamedEffects(actor, [rule.left]);
-      await this._grantNamedEffect(actor, rule.right);
+    if (!rule.toggle1?.key || !rule.toggle2?.key) return;
+    if (this._hasNamedEffect(actor, rule.toggle1.key)) {
+      await this._removeNamedEffects(actor, [rule.toggle1]);
+      await this._grantNamedEffect(actor, rule.toggle2);
       return;
     }
-    if (this._hasNamedEffect(actor, rule.right.key)) {
-      await this._removeNamedEffects(actor, [rule.right]);
-      await this._grantNamedEffect(actor, rule.left);
+    if (this._hasNamedEffect(actor, rule.toggle2.key)) {
+      await this._removeNamedEffects(actor, [rule.toggle2]);
+      await this._grantNamedEffect(actor, rule.toggle1);
     }
   }
 

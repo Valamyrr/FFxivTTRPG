@@ -270,12 +270,6 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   width: 100%;
 }
 
-.ffxiv-settings-submenu .setting-control input::-moz-placeholder {
-  color: var(--placeholder-color, #8d8d8d);
-  font-style: italic;
-  opacity: 0.68;
-}
-
 .ffxiv-settings-submenu .setting-control input::placeholder {
   color: var(--placeholder-color, #8d8d8d);
   font-style: italic;
@@ -825,6 +819,9 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
   grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em 34px;
 }
+.ffxiv.item .ability-linked-effect-list li {
+  grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;
+}
 .ffxiv.item .ability-automation-list li {
   display: block;
   align-items: start;
@@ -1129,10 +1126,8 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   flex: 0 0 48px;
   width: 48px;
   height: 64px;
-  -o-object-fit: contain;
-     object-fit: contain;
-  -o-object-position: center;
-     object-position: center;
+  object-fit: contain;
+  object-position: center;
 }
 .ffxiv .effect-meta,
 .ffxiv .ability-effect-name span {
@@ -1172,10 +1167,6 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 
 .ffxiv .prosemirror menu .pm-dropdown:hover i {
   color: var(--text-color);
-}
-
-.ffxiv input::-moz-placeholder {
-  color: var(--placeholder-color);
 }
 
 .ffxiv input::placeholder {

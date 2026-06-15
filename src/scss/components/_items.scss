@@ -185,6 +185,10 @@
       grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em 34px;
     }
 
+    .ability-linked-effect-list li {
+      grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;
+    }
+
     .ability-automation-list li {
       display: block;
       align-items: start;
