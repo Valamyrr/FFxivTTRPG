@@ -44,10 +44,10 @@ const ENTER_COMMIT_FIELDS = new Set([
 const EDIT_MODE_ACTOR_TYPES = new Set(["character", "npc", "pet"]);
 
 const DEFAULT_SOUNDS = {
-  soundNotificationFFXIV_deleteItem: "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
-  soundNotificationFFXIV_moveItem: "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
-  soundNotificationFFXIV_openSheet: "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
-  soundNotificationFFXIV_closeSheet: "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
+  soundNotificationFFXIV_deleteItem: "systems/ffxiv/assets/sfx/ffxiv-close-window.ogg",
+  soundNotificationFFXIV_moveItem: "systems/ffxiv/assets/sfx/ffxiv-obtain-item.ogg",
+  soundNotificationFFXIV_openSheet: "systems/ffxiv/assets/sfx/ffxiv-switch-target.ogg",
+  soundNotificationFFXIV_closeSheet: "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
 };
 
 const DEFAULT_ATTRIBUTE_ICONS = {
@@ -737,6 +737,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && src) {
       foundry.audio.AudioHelper.play({
         src,
+        channel: "interface",
         volume: 1,
         autoplay: true,
         loop: false
@@ -745,7 +746,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   _settingOrDefault(setting, defaults) {
-    return game.settings.get("ffxiv", setting) || defaults[setting] || "";
+    const configured = game.settings.get("ffxiv", setting);
+    const fallback = defaults[setting] || "";
+    if (configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")) return fallback;
+    return configured || fallback;
   }
 
   /** @override */
@@ -787,7 +791,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!control) return false;
     if (control.name && this._isActorLockAllowedField(control.name)) return true;
     return control.matches?.(
-      ".ability-limitations input.limitation, .ability-limitations input.job_resource, .ability-limitations input.active, .limit-break-control"
+      ".ability-limitations input.limitation, .ability-limitations input.job_resource, .ability-limitations input.active"
     ) ?? false;
   }
 
@@ -1192,22 +1196,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.dtypes = ["String", "Number", "Boolean"];
     context.owner = this.document.isOwner;
     context.isGM = game.user?.isGM ?? false;
-    context.limitBreakGauge = this._prepareLimitBreakGauge();
-  }
-
-  _prepareLimitBreakGauge() {
-    const enabled = !!game.settings.get("ffxiv", "limitBreakEnabled");
-    const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
-    const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
-    return {
-      enabled,
-      max,
-      value,
-      segments: Array.from({ length: max }, (_segment, index) => ({
-        value: index + 1,
-        filled: index < value,
-      })),
-    };
   }
 
   /**
@@ -1365,7 +1353,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     html.on('click.ffxivActorSheet', '.companions-sub-tabs .companions-sub-tab', this._displayCompanionTab.bind(this));
     html.on('click.ffxivActorSheet', '.actor-edit-toggle', this._toggleActorEditMode.bind(this));
     html.on('click.ffxivActorSheet', '.actor-avatar', this._onActorAvatarClick.bind(this));
-    html.on('click.ffxivActorSheet', '.limit-break-control', this._onLimitBreakControl.bind(this));
 
     if (!this.document.isOwner) return;
 
@@ -1919,14 +1906,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             this._captureSheetScroll();
             await item.delete();
             ui.notifications.info(game.i18n.format("FFXIV.Notifications.ItemDelete", { itemName: item.name }));
-            if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && game.settings.get('ffxiv', 'soundNotificationFFXIV_deleteItem')) {
-              foundry.audio.AudioHelper.play({
-                src: game.settings.get('ffxiv', 'soundNotificationFFXIV_deleteItem'),
-                volume: 1,
-                autoplay: true,
-                loop: false
-              });
-            }
+            this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
             await this.render({ force: true });
             this._restoreSheetScroll();
           }
@@ -2194,25 +2174,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     dialog.data.content = newHtml;
     dialog.render(true);
   };
-
-  async _onLimitBreakControl(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!game.user?.isGM) return;
-
-    const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
-    const current = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
-    const action = String(event.currentTarget.dataset.action ?? "");
-    let value = current;
-
-    if (action === "increase") value += 1;
-    else if (action === "decrease") value -= 1;
-    else if (action === "set") value = Number(event.currentTarget.dataset.value);
-
-    value = Math.max(0, Math.min(max, Number.isFinite(value) ? value : current));
-    if (value === current) return;
-    await game.settings.set("ffxiv", "limitBreakValue", value);
-  }
 
   _updateManaBar() {
     const currentMana = Number(this.actor.system?.mana?.value ?? 0);

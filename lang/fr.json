@@ -429,6 +429,8 @@
       "AttributesImgSpeed": "Icône de l'attribut Vitesse",
       "AutoApplySocketRequests": "Appliquer automatiquement les demandes des joueurs",
       "AutoApplySocketRequestsHint": "Lorsque cette option est activée, le Maître du jeu accepte automatiquement les demandes des joueurs pour appliquer dégâts, soins et effets de statut. Lorsqu'elle est désactivée, une confirmation est demandée au MJ.",
+      "LimitBreakActive": "Limit Break active",
+      "LimitBreakActiveHint": "Indique si la jauge partagée de Limit Break est actuellement visible et utilisable.",
       "LimitBreakEnabled": "Activer les Limit Breaks",
       "LimitBreakEnabledHint": "Affiche la jauge partagée de Limit Break et autorise l'utilisation des Limit Breaks.",
       "LimitBreakMax": "Segments de Limit Break",
@@ -439,13 +441,16 @@
       "SoundNotificationFFXIVHint": "Ajoute quelques bruitages déclenchés par des actions telles que la connexion d'un autre joueur, l'ouverture/fermeture de votre feuille de personnage, le déplacement d'objets dans votre inventaire, etc.",
       "FloatingDamageNumbers": "Nombres flottants de dégâts",
       "FloatingDamageNumbersHint": "Afficher des nombres flottants au-dessus des tokens lorsque des dégâts ou des soins sont appliqués.",
-      "soundNotificationFFXIV_Hint": "Sélectionner un fichier son à jouer lorsque l'événement est activé. Laisser vider pour ne jamais le jouer.",
+      "soundNotificationFFXIV_Hint": "Sélectionner un fichier son à jouer lorsque l'événement est activé. Laisser vide pour utiliser la valeur par défaut lorsqu'elle existe.",
       "soundNotificationFFXIV_deleteItem": "Son de suppression d'objet",
       "soundNotificationFFXIV_moveItem": "Son de déplacement d'objet",
       "soundNotificationFFXIV_enterChat": "Son d'arrivée d'un joueur",
       "soundNotificationFFXIV_openSheet": "Son d'ouverture de feuille",
       "soundNotificationFFXIV_closeSheet": "Son de fermeture de feuille",
       "soundNotificationFFXIV_critical": "Son de coup critique",
+      "soundNotificationFFXIV_limitBreakCharged": "Son de Limit Break chargée",
+      "soundNotificationFFXIV_limitBreakActivated": "Son de Limit Break activée",
+      "soundNotificationFFXIV_enmity": "Son d'inimitié",
       "Dark": "Sombre",
       "Light": "Clair",
       "Blue": "Bleu",
@@ -464,6 +469,11 @@
       "OK": "OK",
       "Yes": "Oui",
       "No": "Non"
+    },
+    "LimitBreak": {
+      "Activate": "Activer la Limit Break",
+      "Control": "Accorder des Limit Breaks",
+      "Segments": "Segments"
     },
     "Controls": {
       "FFXIVTools": "Outils FF XIV",

@@ -186,7 +186,8 @@
     cursor: pointer;
     height: 18px;
     margin: 0;
-    padding: 4px 18px;
+    overflow: hidden;
+    padding: 0;
     position: relative;
   }
 
@@ -202,10 +203,10 @@
       inset 0 0 3px rgba(255, 255, 255, 0.65),
       0 0 6px rgba(255, 167, 30, 0.75);
     display: block;
-    height: 100%;
+    inset: 4px clamp(4px, 7%, 18px);
     opacity: 0;
+    position: absolute;
     transition: opacity 120ms ease;
-    width: 100%;
   }
 
   .limit-break-segment.filled .limit-break-segment-fill {
@@ -239,18 +240,20 @@
     text-align: center;
   }
 
-  .limit-break-hud {
-    z-index: 1200;
+  &#ffxiv-limit-break-hud {
     position: fixed;
-    left: 0;
-    right: auto; /* width/position controlled by JS */
-    bottom: auto; /* top will be set by JS to sit above hotbar */
-    pointer-events: auto;
+    z-index: 1200;
+    pointer-events: none;
+  }
+
+  .limit-break-hud {
     display: flex;
     justify-content: center;
+
     .window-header {
       display: none;
     }
+
     .limit-break-hud-root {
       width: 100%;
       max-width: 100%;
@@ -258,10 +261,11 @@
       justify-content: center;
       padding: 6px 8px;
       box-sizing: border-box;
+      pointer-events: auto;
     }
+
     .limit-break-gauge {
       width: 100%;
-      max-width: 1000px;
       background: transparent;
       margin: 0;
       padding: 6px 12px;

@@ -18,6 +18,11 @@ import {
   getAbilitySubtype,
   getSubtypeTagLabel,
 } from "../helpers/ability-subtype.mjs";
+import {
+  getLimitBreakValue,
+  isLimitBreakActive,
+  playLimitBreakActivatedSound,
+} from "../helpers/limit-break-hud.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
   "consumable",
@@ -919,6 +924,7 @@ export class FFXIVItem extends Item {
     if (!(await this._spendHPCostIfNeeded())) return;
     if (!(await this._consumeLimitationIfNeeded())) return;
     if (!(await this._consumeLimitBreakIfNeeded())) return;
+    if (getAbilitySubtype(this) === "limit_break") playLimitBreakActivatedSound();
     await this._removeTranscendentStatus();
 
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
@@ -1014,13 +1020,12 @@ export class FFXIVItem extends Item {
 
   _canUseLimitBreak() {
     if (getAbilitySubtype(this) !== "limit_break") return true;
-    if (!game.settings.get("ffxiv", "limitBreakEnabled")) {
+    if (!isLimitBreakActive()) {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakDisabled"));
       return false;
     }
 
-    const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
-    const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+    const value = getLimitBreakValue();
     if (!game.user?.isGM && !game.users.find((user) => user.isGM && user.active)) {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakNoGM"));
       return false;
@@ -1032,10 +1037,9 @@ export class FFXIVItem extends Item {
 
   async _consumeLimitBreakIfNeeded() {
     if (getAbilitySubtype(this) !== "limit_break") return true;
-    if (!game.settings.get("ffxiv", "limitBreakEnabled")) return false;
+    if (!isLimitBreakActive()) return false;
 
-    const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
-    const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+    const value = getLimitBreakValue();
     if (value <= 0) return false;
 
     if (game.user?.isGM) {
@@ -1476,6 +1480,7 @@ export class FFXIVItem extends Item {
     ) {
       foundry.audio.AudioHelper.play({
         src: game.settings.get("ffxiv", "soundNotificationFFXIV_critical"),
+        channel: "interface",
         volume: 1,
         autoplay: true,
         loop: false,

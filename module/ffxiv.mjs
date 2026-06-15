@@ -10,6 +10,14 @@ import { FFXIVItemSheet } from "./items/item-sheet.mjs";
 import { preloadHandlebarsTemplates } from "./helpers/templates.mjs";
 import { FFXIV } from "./helpers/config.mjs";
 import { debugError, debugLog } from "./helpers/debug.mjs";
+import {
+  activateLimitBreakGauge,
+  deactivateLimitBreakGauge,
+  getLimitBreakMax,
+  getLimitBreakValue,
+  initLimitBreakHud,
+  isLimitBreakActive,
+} from "./helpers/limit-break-hud.mjs";
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
 import {
@@ -480,23 +488,31 @@ function getCharacterTabIcon(settingKey) {
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_moveItem:
-    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.ogg",
   soundNotificationFFXIV_enterChat:
-    "systems/ffxiv/assets/sfx/ffxiv-full-party.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-full-party.ogg",
   soundNotificationFFXIV_openSheet:
-    "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-switch-target.ogg",
   soundNotificationFFXIV_closeSheet:
-    "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
+  soundNotificationFFXIV_enmity:
+    "systems/ffxiv/assets/sfx/ffxiv-aggro.ogg",
 };
 const FFXIV_BARRIER_OVERLAY_KEY = "ffxivBarrierOverlay";
 const FFXIV_MANA_OVERLAY_KEY = "ffxivManaOverlay";
 const FFXIV_HEALTH_OVERLAY_KEY = "ffxivHealthOverlay";
 
 function playConfiguredSound(setting) {
-  const src = game.settings.get("ffxiv", setting) || DEFAULT_SOUNDS[setting];
+  const configured = game.settings.get("ffxiv", setting);
+  const fallback = DEFAULT_SOUNDS[setting] || "";
+  const src =
+    configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")
+      ? fallback
+      : configured || fallback;
   if (!game.settings.get("ffxiv", "soundNotificationFFXIV") || !src) return;
   foundry.audio.AudioHelper.play({
     src,
+    channel: "interface",
     volume: 1,
     autoplay: true,
     loop: false,
@@ -672,6 +688,7 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 /* -------------------------------------------- */
 
 Hooks.once("ready", function () {
+  initLimitBreakHud();
   configureCombatTrackedResource().catch((error) => {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);
   });
@@ -837,12 +854,7 @@ function installActorSheetActiveEffectRefresh() {
         if (actor) {
           const token = getActorCanvasToken(actor);
           if (token?.center) {
-            foundry.audio.AudioHelper.play({
-              src: "systems/ffxiv/assets/sfx/ffxiv-aggro.mp3",
-              volume: 1,
-              autoplay: true,
-              loop: false,
-            });
+            playConfiguredSound("soundNotificationFFXIV_enmity");
           }
         }
       }
@@ -4426,6 +4438,21 @@ const FFXIV_MARKER_SOCKET_TYPE = "placeMarkerTile";
 const markerDialogs = new WeakSet();
 
 Hooks.on("getSceneControlButtons", (controls) => {
+  if (game.user?.isGM) {
+    controls.ffxivLimitBreak = {
+      name: "ffxivLimitBreak",
+      title: game.i18n.localize("FFXIV.LimitBreak.Control"),
+      icon: "fa-regular fa-swords",
+      order: (Number(controls.walls?.order) || 4) - 0.1,
+      visible: true,
+      active: isLimitBreakActive(),
+      onChange: async (_event, active) => {
+        if (!active) return;
+        await toggleLimitBreakGauge();
+      },
+    };
+  }
+
   if (!controls.tiles?.tools) return;
   controls.tiles.visible = true;
 
@@ -4456,6 +4483,88 @@ function insertSceneToolAfterSelect(tools, toolKey, tool) {
   const insertIndex = selectIndex >= 0 ? selectIndex + 1 : entries.length;
   entries.splice(insertIndex, 0, [toolKey, tool]);
   return Object.fromEntries(entries);
+}
+
+async function toggleLimitBreakGauge() {
+  if (!game.user?.isGM) return;
+
+  if (isLimitBreakActive()) {
+    await deactivateLimitBreakGauge();
+    refreshSceneControls();
+    restoreDefaultSceneControl();
+    return;
+  }
+
+  const max = await promptLimitBreakMax();
+  if (!max) {
+    refreshSceneControls();
+    restoreDefaultSceneControl();
+    return;
+  }
+
+  await activateLimitBreakGauge(max);
+  refreshSceneControls();
+  restoreDefaultSceneControl();
+}
+
+async function promptLimitBreakMax() {
+  let max = getLimitBreakMax();
+  const content = `
+    <form class="ffxiv-limit-break-dialog">
+      <div class="form-group">
+        <label for="ffxiv-limit-break-max">${game.i18n.localize("FFXIV.LimitBreak.Segments")}</label>
+        <input id="ffxiv-limit-break-max" type="number" name="max" min="1" max="10" step="1" value="${max}">
+      </div>
+    </form>`;
+
+  const confirmed = await foundry.applications.api.DialogV2.wait({
+    window: { title: game.i18n.localize("FFXIV.LimitBreak.Activate") },
+    content,
+    buttons: [
+      {
+        action: "activate",
+        label: game.i18n.localize("FFXIV.LimitBreak.Activate"),
+        icon: "fas fa-check",
+        default: true,
+        callback: () => true,
+      },
+      {
+        action: "cancel",
+        label: game.i18n.localize("FFXIV.Dialogs.Cancel"),
+        icon: "fas fa-times",
+        callback: () => false,
+      },
+    ],
+    render: (_app, html) => {
+      const root = getHookHTMLElement(html);
+      const input = root?.querySelector?.("input[name='max']");
+      input?.addEventListener("change", () => {
+        max = Number(input.value) || max;
+      });
+      input?.addEventListener("input", () => {
+        max = Number(input.value) || max;
+      });
+    },
+  });
+
+  if (!confirmed) return null;
+  return Math.max(1, Math.min(10, Number(max) || 3));
+}
+
+function refreshSceneControls() {
+  globalThis.ui?.controls?.render?.({ force: true });
+}
+
+function restoreDefaultSceneControl() {
+  const controls = globalThis.ui?.controls;
+  const fallback = controls?.controls?.tokens
+    ? "tokens"
+    : controls?.controls?.token
+      ? "token"
+      : controls?.controls?.tiles
+        ? "tiles"
+        : null;
+  if (fallback) controls.activate?.({ control: fallback });
 }
 
 async function openMarkerPlacementTool() {
@@ -6640,9 +6749,8 @@ Hooks.on("ready", function () {
 
 async function consumeLimitBreakSegment() {
   if (!game.user?.isGM) return false;
-  if (!game.settings.get("ffxiv", "limitBreakEnabled")) return false;
-  const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
-  const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+  if (!isLimitBreakActive()) return false;
+  const value = getLimitBreakValue();
   if (value <= 0) return false;
   await game.settings.set("ffxiv", "limitBreakValue", value - 1);
   return true;

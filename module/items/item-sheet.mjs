@@ -13,13 +13,13 @@ import { isStackableStatusEffect } from "../helpers/status-effects.mjs";
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem:
-    "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-close-window.ogg",
   soundNotificationFFXIV_moveItem:
-    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.ogg",
   soundNotificationFFXIV_openSheet:
-    "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-switch-target.ogg",
   soundNotificationFFXIV_closeSheet:
-    "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
 };
 
 import PopoutEditor from "../popout-editor.js";
@@ -364,15 +364,23 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _playConfiguredSound(setting) {
-    const src = game.settings.get("ffxiv", setting) || DEFAULT_SOUNDS[setting];
+    const src = this._settingOrDefault(setting, DEFAULT_SOUNDS);
     if (game.settings.get("ffxiv", "soundNotificationFFXIV") && src) {
       foundry.audio.AudioHelper.play({
         src,
+        channel: "interface",
         volume: 1,
         autoplay: true,
         loop: false,
       });
     }
+  }
+
+  _settingOrDefault(setting, defaults) {
+    const configured = game.settings.get("ffxiv", setting);
+    const fallback = defaults[setting] || "";
+    if (configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")) return fallback;
+    return configured || fallback;
   }
 
   _isItemEditMode() {
@@ -1661,17 +1669,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const newQuantity = this.item.system.quantity - 1;
     if (newQuantity < 1) {
       this._deleteItem(event);
-      const deleteSound =
-        game.settings.get("ffxiv", "soundNotificationFFXIV_deleteItem") ||
-        DEFAULT_SOUNDS.soundNotificationFFXIV_deleteItem;
-      if (game.settings.get("ffxiv", "soundNotificationFFXIV") && deleteSound) {
-        foundry.audio.AudioHelper.play({
-          src: deleteSound,
-          volume: 1,
-          autoplay: true,
-          loop: false,
-        });
-      }
+      this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
     } else {
       this.item.update({ "system.quantity": parseInt(newQuantity) });
     }

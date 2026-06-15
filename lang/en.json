@@ -429,6 +429,8 @@
       "AttributesImgSpeed": "Speed Attribute Icon",
       "AutoApplySocketRequests": "Auto-apply player apply requests",
       "AutoApplySocketRequestsHint": "When enabled, the Gamemaster will automatically accept player requests to apply damage/healing/status effects. When disabled, the GM will be prompted.",
+      "LimitBreakActive": "Limit Break Active",
+      "LimitBreakActiveHint": "Whether the shared Limit Break gauge is currently visible and usable.",
       "LimitBreakEnabled": "Enable Limit Breaks",
       "LimitBreakEnabledHint": "Show the shared Limit Break gauge and allow Limit Break abilities to be used.",
       "LimitBreakMax": "Limit Break Segments",
@@ -439,13 +441,16 @@
       "SoundNotificationFFXIVHint": "Adds a few sounds triggered by action such as another player logs in, opening/closing your character sheet, moving items in your inventory, etc.",
       "FloatingDamageNumbers": "Floating Damage Numbers",
       "FloatingDamageNumbersHint": "Show floating numbers over tokens when damage or healing is applied.",
-      "soundNotificationFFXIV_Hint": "Select a sound file to play when this event is triggered. Leave empty to never play this.",
+      "soundNotificationFFXIV_Hint": "Select a sound file to play when this event is triggered. Leave empty to use the default where one exists.",
       "soundNotificationFFXIV_deleteItem": "Delete Item Sound",
       "soundNotificationFFXIV_moveItem": "Move Item Sound",
       "soundNotificationFFXIV_enterChat": "Player Join Sound",
       "soundNotificationFFXIV_openSheet": "Open Sheet Sound",
       "soundNotificationFFXIV_closeSheet": "Close Sheet Sound",
       "soundNotificationFFXIV_critical": "Critical Hit Sound",
+      "soundNotificationFFXIV_limitBreakCharged": "Limit Break Charged Sound",
+      "soundNotificationFFXIV_limitBreakActivated": "Limit Break Activated Sound",
+      "soundNotificationFFXIV_enmity": "Enmity Sound",
       "Dark": "Dark",
       "Light": "Light",
       "Blue": "Blue",
@@ -464,6 +469,11 @@
       "OK": "OK",
       "Yes": "Yes",
       "No": "No"
+    },
+    "LimitBreak": {
+      "Activate": "Activate Limit Break",
+      "Control": "Grant Limit Breaks",
+      "Segments": "Segments"
     },
     "Controls": {
       "FFXIVTools": "FF XIV Tools",

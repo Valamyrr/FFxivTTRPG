@@ -57,7 +57,6 @@
     <div class="tab fight actor-abilities modern-panel"
        data-group="primary"
        data-tab="fight">
-    {{> "systems/ffxiv/templates/actor/parts/actor-limitbreak-gauge.hbs"}}
     {{#each (sortAbilities items system.ability_order "primary_ability") }}
       <div class="ability-container">
         {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
@@ -128,7 +127,6 @@
   <div class="tab traits actor-abilities modern-panel"
      data-group="primary"
      data-tab="traits">
-  {{> "systems/ffxiv/templates/actor/parts/actor-limitbreak-gauge.hbs"}}
   {{#each (reverse items) }}
     {{#if (isAbilitySubtype this "limit_break") }}
       {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
