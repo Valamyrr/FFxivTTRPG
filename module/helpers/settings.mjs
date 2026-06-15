@@ -20,6 +20,27 @@ function refreshCompactDirectoryTabs() {
   }
 }
 
+function refreshActorSheets() {
+  const apps = new Set([
+    ...Object.values(ui.windows ?? {}),
+    ...Array.from(game.actors ?? []).flatMap((actor) => Object.values(actor.apps ?? {})),
+  ]);
+  for (const app of apps) {
+    if (app?.document?.documentName === "Actor" && app.rendered !== false) {
+      app.render({ force: true, ffxivSkipEnrichment: true });
+    }
+  }
+}
+
+function clampLimitBreakValue() {
+  if (!game.user?.isGM) return;
+  const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
+  const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+  if (value !== game.settings.get("ffxiv", "limitBreakValue")) {
+    game.settings.set("ffxiv", "limitBreakValue", value);
+  }
+}
+
 class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     options.id ??= `ffxiv-${new.target.menuId}`;
@@ -479,6 +500,52 @@ export class SettingsHelpers {
       config: true,
       default: false,
       type: Boolean,
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "limitBreakEnabled", {
+      name: game.i18n.localize("FFXIV.Settings.LimitBreakEnabled"),
+      hint: game.i18n.localize("FFXIV.Settings.LimitBreakEnabledHint"),
+      scope: "world",
+      config: true,
+      default: true,
+      type: Boolean,
+      onChange: (value) => {
+        if (value && game.user?.isGM && !game.settings.get("ffxiv", "limitBreakValue")) {
+          game.settings.set("ffxiv", "limitBreakValue", game.settings.get("ffxiv", "limitBreakMax"));
+        }
+        refreshActorSheets();
+      },
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "limitBreakMax", {
+      name: game.i18n.localize("FFXIV.Settings.LimitBreakMax"),
+      hint: game.i18n.localize("FFXIV.Settings.LimitBreakMaxHint"),
+      scope: "world",
+      config: true,
+      default: 3,
+      type: Number,
+      range: {
+        min: 1,
+        max: 10,
+        step: 1,
+      },
+      onChange: () => {
+        clampLimitBreakValue();
+        refreshActorSheets();
+      },
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "limitBreakValue", {
+      name: game.i18n.localize("FFXIV.Settings.LimitBreakValue"),
+      hint: game.i18n.localize("FFXIV.Settings.LimitBreakValueHint"),
+      scope: "world",
+      config: false,
+      default: 3,
+      type: Number,
+      onChange: refreshActorSheets,
       requiresReload: false,
     });
 

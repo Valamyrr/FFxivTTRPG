@@ -13,16 +13,17 @@
       </button>
     </div>
     <div class="ability-header">
-      <div class="ability-name">{{name}}</div>
+      <div class="trait-name-stack">
+        {{#if flags.ffxiv.activeEffectLinked}}
+          <span class="trait-active-badge">ACTIVE</span>
+        {{/if}}
+        <div class="ability-name">{{name}}</div>
+      </div>
       <div class="ability-right">
         <div class="ability-tags">
-          {{#each (customActionTags system.tags) as |tag| }}
+          {{#each (traitCardTags system) as |tag| }}
             <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
-          {{/each}}
-          {{#if (and (hasCustomActionTags system.tags) system.job_resources_max) }}
-            , {{/if}}
-            {{#if system.job_resources_max }}
-              <span class="tag">{{localize "FFXIV.Abilities.JobResource"}}</span>{{/if}}
+            {{/each}}
             </div>
             <div class="ability-limitations">
               {{#repeat system.job_resources_max}}

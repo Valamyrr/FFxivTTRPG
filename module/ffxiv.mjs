@@ -125,6 +125,7 @@ Hooks.once("init", function () {
 Hooks.on("preCreateActiveEffect", (effect) => {
   const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
   if (!actor) return;
+  applyLinkedTraitDataToActiveEffectSource(effect, actor);
   const statuses = Array.from(effect.statuses ?? effect._source?.statuses ?? []);
   if (
     hasStatus(actor, "knocked_out") &&
@@ -166,6 +167,22 @@ Hooks.on("updateActiveEffect", (effect, _changes, options) => {
     debugError("FFXIV | Failed to sync elite foe effect:", error);
   });
 });
+
+function applyLinkedTraitDataToActiveEffectSource(effect, actor = null) {
+  const parent = actor ?? (effect?.parent?.documentName === "Actor" ? effect.parent : null);
+  const trait = parent?.findTraitLinkedToActiveEffect?.(effect);
+  if (!trait) return;
+
+  const updates = {
+    "flags.ffxiv.linkedTraitId": trait.id,
+    "flags.ffxiv.linkedTraitUuid": trait.uuid,
+    "flags.ffxiv.linkedTraitName": trait.name,
+  };
+  const traitDescription = String(trait.system?.description ?? "").trim();
+  const effectDescription = String(effect.description ?? effect._source?.description ?? "").trim();
+  if (traitDescription && !effectDescription) updates.description = traitDescription;
+  effect.updateSource(updates);
+}
 
 Hooks.on("createActor", (actor) => {
   syncEliteFoeEffect(actor).catch((error) => {
@@ -390,12 +407,20 @@ Handlebars.registerHelper("actionTags", function (type, tags) {
 
 Handlebars.registerHelper("customActionTags", function (tags) {
   return Array.isArray(tags)
-    ? tags.filter((tag) => !isBakedActionTag(tag))
+    ? tags.filter((tag) => tag && !isBakedActionTag(tag))
     : [];
 });
 
 Handlebars.registerHelper("hasCustomActionTags", function (tags) {
-  return Array.isArray(tags) && tags.some((tag) => !isBakedActionTag(tag));
+  return Array.isArray(tags) && tags.some((tag) => tag && !isBakedActionTag(tag));
+});
+
+Handlebars.registerHelper("traitCardTags", function (system) {
+  const tags = Handlebars.helpers.customActionTags(system?.tags);
+  if (Number(system?.job_resources_max ?? 0) > 0) {
+    tags.push("FFXIV.Abilities.JobResource");
+  }
+  return tags;
 });
 
 Handlebars.registerHelper("bakedActionTag", function (type) {
@@ -774,6 +799,11 @@ function installActorSheetActiveEffectRefresh() {
           debugError("FFXIV | Failed to refresh actor effects panel:", error);
         });
       }
+      if (typeof app._refreshAbilitiesPanel === "function") {
+        app._refreshAbilitiesPanel().catch((error) => {
+          debugError("FFXIV | Failed to refresh actor abilities panel:", error);
+        });
+      }
     }
   };
 
@@ -799,6 +829,26 @@ function installActorSheetActiveEffectRefresh() {
       return;
     }
     showActiveEffectCreationText(effect);
+    try {
+      const statuses = Array.from(effect?.statuses ?? effect?._source?.statuses ?? []);
+      const hasEnmity = statuses.some((s) => String(s ?? "").trim() === "enmity");
+      if (hasEnmity) {
+        const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
+        if (actor) {
+          const token = getActorCanvasToken(actor);
+          if (token?.center) {
+            foundry.audio.AudioHelper.play({
+              src: "systems/ffxiv/assets/sfx/ffxiv-aggro.mp3",
+              volume: 1,
+              autoplay: true,
+              loop: false,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      debugError("FFXIV | Failed to play enmity sound:", err);
+    }
     refreshActorSheets(effect);
   });
   Hooks.on("updateActiveEffect", (effect) => {
@@ -6577,12 +6627,26 @@ Hooks.on("ready", function () {
           }).render(true);
           break;
         }
+        case "limitBreakSpend": {
+          await consumeLimitBreakSegment();
+          break;
+        }
         default:
           debugError("socket error : type of request not found", type);
       }
     });
   }
 });
+
+async function consumeLimitBreakSegment() {
+  if (!game.user?.isGM) return false;
+  if (!game.settings.get("ffxiv", "limitBreakEnabled")) return false;
+  const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
+  const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+  if (value <= 0) return false;
+  await game.settings.set("ffxiv", "limitBreakValue", value - 1);
+  return true;
+}
 
 Hooks.on("createChatMessage", async (message, _options, userId) => {
   if (userId !== game.user.id) return;

@@ -9,6 +9,53 @@ import {
  * @extends {Actor}
  */
 export class FFXIVActor extends Actor {
+  static _normalizeLinkedTraitName(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  getLinkedActiveTraitKeys() {
+    const keys = new Set();
+    for (const effect of this.effects ?? []) {
+      if (effect.disabled) continue;
+      const flagKey = FFXIVActor._normalizeLinkedTraitName(
+        effect.getFlag?.("ffxiv", "effectKey"),
+      );
+      if (flagKey) keys.add(flagKey);
+
+      const nameKey = FFXIVActor._normalizeLinkedTraitName(effect.name);
+      if (nameKey) keys.add(nameKey);
+    }
+    return keys;
+  }
+
+  isTraitLinkedToActiveEffect(item, keys = null) {
+    if (item?.type !== "trait") return false;
+    const traitKey = FFXIVActor._normalizeLinkedTraitName(item.name);
+    if (!traitKey) return false;
+    return (keys ?? this.getLinkedActiveTraitKeys()).has(traitKey);
+  }
+
+  findTraitLinkedToActiveEffect(effect) {
+    const keys = [
+      effect?.getFlag?.("ffxiv", "effectKey"),
+      effect?.name,
+    ]
+      .map((value) => FFXIVActor._normalizeLinkedTraitName(value))
+      .filter(Boolean);
+    if (!keys.length) return null;
+    return this.items.find(
+      (item) =>
+        item.type === "trait" &&
+        keys.includes(FFXIVActor._normalizeLinkedTraitName(item.name)),
+    );
+  }
+
   _toFiniteNumber(value, fallback = 0) {
     if (Number.isFinite(value)) return value;
     const parsed = Number(value);
@@ -349,10 +396,12 @@ export class FFXIVActor extends Actor {
     if (this.type === "pet") {
       data.speed = this._getStatusAdjustedSpeed(Number(data.speed?.value ?? data.speed) || 0);
     }
+    const linkedTraitEffectKeys = this.getLinkedActiveTraitKeys();
     for (let item of this.items) {
       if (!Array.isArray(item.system.modifiers)) continue; // Skip if item has no modifiers
-      if (item.system.activable) {
-        if (!item.system.active) continue; // Skip if activable but not active
+      const linkedTraitActive = this.isTraitLinkedToActiveEffect(item, linkedTraitEffectKeys);
+      if (item.system.activable || linkedTraitActive) {
+        if (!item.system.active && !linkedTraitActive) continue; // Skip if activable but not active
       }
       if (Object.prototype.hasOwnProperty.call(item.system, "equipped")) {
         if (!item.system.equipped) continue; // Skip if equipped exists but is false

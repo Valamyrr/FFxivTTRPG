@@ -122,6 +122,153 @@
     padding: 0 8px;
   }
 
+  .trait-active-badge {
+    align-items: center;
+    background: rgba(90, 56, 20, 0.36);
+    border: 1px solid rgba(233, 199, 112, 0.52);
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(255, 225, 140, 0.08);
+    color: #efd699;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    min-height: 24px;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .trait-name-stack {
+    align-items: flex-start;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 3px;
+    max-width: calc(100% - 10em);
+    vertical-align: top;
+  }
+
+  .limit-break-gauge {
+    margin: 0 0 12px;
+    padding: 8px 10px;
+  }
+
+  .limit-break-gauge-title {
+    color: #fff3c4;
+    font-family: "Cinzel", "Roboto", serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    margin: 0 0 4px 14px;
+    text-shadow:
+      0 0 3px #ff7900,
+      0 0 6px #ff3c00,
+      1px 1px 0 #2a0800;
+    text-transform: uppercase;
+  }
+
+  .limit-break-gauge-row {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(var(--limit-break-segments, 3), minmax(0, 1fr));
+  }
+
+  .limit-break-segment {
+    appearance: none;
+    background:
+      linear-gradient(to right, rgba(213, 167, 79, 0.95) 0%, transparent 15%, transparent 85%, rgba(213, 167, 79, 0.95) 100%),
+      linear-gradient(#5a4526 10%, #1b2d43 40%, #6a4a24 95%);
+    border: 0;
+    clip-path: polygon(7% 0, 96% 0, 100% 35%, 94% 100%, 4% 100%, 0 62%);
+    cursor: pointer;
+    height: 18px;
+    margin: 0;
+    padding: 4px 18px;
+    position: relative;
+  }
+
+  .limit-break-segment:disabled {
+    cursor: default;
+  }
+
+  .limit-break-segment-fill {
+    background: linear-gradient(90deg, #ffd74f 0%, #fff05c 46%, #ff9f20 100%);
+    border: 1px solid rgba(255, 240, 160, 0.9);
+    border-radius: 8px;
+    box-shadow:
+      inset 0 0 3px rgba(255, 255, 255, 0.65),
+      0 0 6px rgba(255, 167, 30, 0.75);
+    display: block;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    width: 100%;
+  }
+
+  .limit-break-segment.filled .limit-break-segment-fill {
+    opacity: 1;
+  }
+
+  .limit-break-controls {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .limit-break-controls button {
+    align-items: center;
+    display: inline-flex;
+    height: 24px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    width: 28px;
+  }
+
+  .limit-break-value {
+    color: var(--text-color);
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 3.5em;
+    text-align: center;
+  }
+
+  .limit-break-hud {
+    z-index: 1200;
+    position: fixed;
+    left: 0;
+    right: auto; /* width/position controlled by JS */
+    bottom: auto; /* top will be set by JS to sit above hotbar */
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+    .window-header {
+      display: none;
+    }
+    .limit-break-hud-root {
+      width: 100%;
+      max-width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 6px 8px;
+      box-sizing: border-box;
+    }
+    .limit-break-gauge {
+      width: 100%;
+      max-width: 1000px;
+      background: transparent;
+      margin: 0;
+      padding: 6px 12px;
+      display: block;
+    }
+  }
+
   &.item {
     .item-locked-field {
       display: inline-block;
@@ -187,6 +334,10 @@
 
     .ability-linked-effect-list li {
       grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;
+    }
+
+    .ability-linked-effect-list .ability-linked-effect-automation {
+      grid-template-columns: minmax(10em, 1fr) 8.75em auto;
     }
 
     .ability-automation-list li {

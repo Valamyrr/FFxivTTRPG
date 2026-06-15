@@ -20,6 +20,7 @@ export const preloadHandlebarsTemplates = async function () {
     "systems/ffxiv/templates/actor/parts/actor-effects.hbs",
     "systems/ffxiv/templates/actor/parts/actor-gear.hbs",
     "systems/ffxiv/templates/actor/parts/actor-items.hbs",
+    "systems/ffxiv/templates/actor/parts/actor-limitbreak-gauge.hbs",
     "systems/ffxiv/templates/actor/parts/actor-npc-statblock.hbs",
     "systems/ffxiv/templates/actor/parts/actor-settings.hbs",
     "systems/ffxiv/templates/actor/parts/actor-sidebar.hbs",

@@ -787,7 +787,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!control) return false;
     if (control.name && this._isActorLockAllowedField(control.name)) return true;
     return control.matches?.(
-      ".ability-limitations input.limitation, .ability-limitations input.job_resource, .ability-limitations input.active"
+      ".ability-limitations input.limitation, .ability-limitations input.job_resource, .ability-limitations input.active, .limit-break-control"
     ) ?? false;
   }
 
@@ -1192,6 +1192,22 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.dtypes = ["String", "Number", "Boolean"];
     context.owner = this.document.isOwner;
     context.isGM = game.user?.isGM ?? false;
+    context.limitBreakGauge = this._prepareLimitBreakGauge();
+  }
+
+  _prepareLimitBreakGauge() {
+    const enabled = !!game.settings.get("ffxiv", "limitBreakEnabled");
+    const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
+    const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+    return {
+      enabled,
+      max,
+      value,
+      segments: Array.from({ length: max }, (_segment, index) => ({
+        value: index + 1,
+        filled: index < value,
+      })),
+    };
   }
 
   /**
@@ -1254,6 +1270,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const instant_abilities = [];
     const limit_break = [];
     const traits = [];
+    const linkedTraitEffectKeys =
+      this.actor.getLinkedActiveTraitKeys?.() ?? new Set();
 
     for (let i of context.items) {
       i.img = i.img || Item.DEFAULT_ICON;
@@ -1275,6 +1293,16 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         limit_break.push(i);
       }
       if (i.type === "trait") {
+        if (this.actor.isTraitLinkedToActiveEffect?.(i, linkedTraitEffectKeys)) {
+          i.system.active = true;
+          i.flags ??= {};
+          i.flags.ffxiv ??= {};
+          i.flags.ffxiv.activeEffectLinked = true;
+          if (Number(i.system?.job_resources_max ?? 0) === 1) {
+            i.system.job_resources_max = 0;
+            i.system.job_resource_status = [];
+          }
+        }
         traits.push(i);
       }
     }
@@ -1337,6 +1365,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     html.on('click.ffxivActorSheet', '.companions-sub-tabs .companions-sub-tab', this._displayCompanionTab.bind(this));
     html.on('click.ffxivActorSheet', '.actor-edit-toggle', this._toggleActorEditMode.bind(this));
     html.on('click.ffxivActorSheet', '.actor-avatar', this._onActorAvatarClick.bind(this));
+    html.on('click.ffxivActorSheet', '.limit-break-control', this._onLimitBreakControl.bind(this));
 
     if (!this.document.isOwner) return;
 
@@ -2166,6 +2195,24 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     dialog.render(true);
   };
 
+  async _onLimitBreakControl(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!game.user?.isGM) return;
+
+    const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
+    const current = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+    const action = String(event.currentTarget.dataset.action ?? "");
+    let value = current;
+
+    if (action === "increase") value += 1;
+    else if (action === "decrease") value -= 1;
+    else if (action === "set") value = Number(event.currentTarget.dataset.value);
+
+    value = Math.max(0, Math.min(max, Number.isFinite(value) ? value : current));
+    if (value === current) return;
+    await game.settings.set("ffxiv", "limitBreakValue", value);
+  }
 
   _updateManaBar() {
     const currentMana = Number(this.actor.system?.mana?.value ?? 0);

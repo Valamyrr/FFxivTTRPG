@@ -404,7 +404,8 @@
           </div>
           <ul class="status-effect-list ability-linked-effect-list">
             {{#each abilityLinkedEffects as |effect| }}
-              <li data-effect-id="{{effect.id}}">
+              <li class="{{#if effect.isAutomation}}ability-linked-effect-automation{{/if}}"
+                  data-effect-id="{{effect.id}}">
                 <div class="ability-effect-name">
                   <img src="{{effect.icon}}" alt="{{effect.name}}" />
                   <span>{{effect.name}}</span>
@@ -416,17 +417,14 @@
                   <option value="self_auto" {{#if (eq effect.applyTo "self_auto")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToSelfAuto"}}</option>
                   <option value="automation" {{#if (eq effect.applyTo "automation")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToAutomation"}}</option>
                 </select>
-                <select class="ffxiv-text-center ability-effect-action"
-                        data-effect-id="{{effect.id}}">
-                  <option value="add" {{#if (eq effect.applyAction "add")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusAdd"}}</option>
-                  <option value="remove" {{#if (eq effect.applyAction "remove")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusRemove"}}</option>
-                </select>
+                {{#unless effect.isAutomation}}
+                  <select class="ffxiv-text-center ability-effect-action"
+                          data-effect-id="{{effect.id}}">
+                    <option value="add" {{#if (eq effect.applyAction "add")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusAdd"}}</option>
+                    <option value="remove" {{#if (eq effect.applyAction "remove")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusRemove"}}</option>
+                  </select>
+                {{/unless}}
                 <div class="effect-controls">
-                  <a class="effect-control"
-                     data-action="toggle"
-                     title="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}">
-                    <i class="fas {{#if effect.disabled}}fa-toggle-off{{else}}fa-toggle-on{{/if}}"></i>
-                  </a>
                   <a class="effect-control"
                      data-action="edit"
                      title="{{localize 'DOCUMENT.Update' type=(localize 'DOCUMENT.ActiveEffect')}}">

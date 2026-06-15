@@ -915,8 +915,10 @@ export class FFXIVItem extends Item {
   async roll() {
     if (!(await this._confirmTargetSelection())) return;
     if (!this._canUseAbility()) return;
+    if (!this._canUseLimitBreak()) return;
     if (!(await this._spendHPCostIfNeeded())) return;
     if (!(await this._consumeLimitationIfNeeded())) return;
+    if (!(await this._consumeLimitBreakIfNeeded())) return;
     await this._removeTranscendentStatus();
 
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
@@ -1008,6 +1010,55 @@ export class FFXIVItem extends Item {
       return false;
     }
     return this._canSatisfyEffectRequirements();
+  }
+
+  _canUseLimitBreak() {
+    if (getAbilitySubtype(this) !== "limit_break") return true;
+    if (!game.settings.get("ffxiv", "limitBreakEnabled")) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakDisabled"));
+      return false;
+    }
+
+    const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
+    const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+    if (!game.user?.isGM && !game.users.find((user) => user.isGM && user.active)) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakNoGM"));
+      return false;
+    }
+    if (value > 0) return true;
+    ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakEmpty"));
+    return false;
+  }
+
+  async _consumeLimitBreakIfNeeded() {
+    if (getAbilitySubtype(this) !== "limit_break") return true;
+    if (!game.settings.get("ffxiv", "limitBreakEnabled")) return false;
+
+    const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
+    const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+    if (value <= 0) return false;
+
+    if (game.user?.isGM) {
+      await game.settings.set("ffxiv", "limitBreakValue", value - 1);
+    } else {
+      const gm = game.users.find((user) => user.isGM && user.active);
+      if (!gm) {
+        ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakNoGM"));
+        return false;
+      }
+      game.socket.emit("system.ffxiv", {
+        type: "limitBreakSpend",
+        data: {
+          actorId: this.parent?.id ?? null,
+          actorUuid: this.parent?.uuid ?? null,
+          itemId: this.id,
+          itemUuid: this.uuid,
+        },
+        userName: game.user.name,
+        gmUserId: gm.id,
+      });
+    }
+    return true;
   }
 
   _isInvokedAbility() {
