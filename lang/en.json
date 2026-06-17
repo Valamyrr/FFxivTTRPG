@@ -285,7 +285,7 @@
       "LimitationsDescription": "Limitation (Description)",
       "Limitations_max": "Limitation Boxes Number",
       "JobResource": "Job Resource",
-      "JobResourceMax": "Job Resource Boxes Number",
+      "JobResourceMax": "Resource Boxes",
       "BaseFormula": "Base Effect Formula",
       "AlternateFormula": "Alternate Formula",
       "DirectFormula": "Direct Hit Formula",

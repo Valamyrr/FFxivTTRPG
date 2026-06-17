@@ -34,6 +34,7 @@ import {
   isStackableStatusEffect,
   migrateLegacyStatusStackEffects,
   recoverActorHealth,
+  recoverActorMana,
   removeEnmityInflictedByActor,
   updateStatusEffects,
 } from "./helpers/status-effects.mjs";
@@ -803,7 +804,7 @@ function installActorSheetActiveEffectRefresh() {
   if (globalThis.__ffxivActorSheetActiveEffectRefreshInstalled) return;
   globalThis.__ffxivActorSheetActiveEffectRefreshInstalled = true;
 
-  const refreshActorSheetApps = (actor) => {
+  const refreshActorSheetApps = async (actor) => {
     const apps = new Set([
       ...Object.values(actor.apps ?? {}),
       ...Object.values(ui.windows ?? {}).filter((app) => app?.document === actor),
@@ -811,15 +812,20 @@ function installActorSheetActiveEffectRefresh() {
     for (const app of apps) {
       if (!(app instanceof FFXIVActorSheet)) continue;
       if (app.rendered === false) continue;
-      if (typeof app._refreshEffectsPanelIfChanged === "function") {
-        app._refreshEffectsPanelIfChanged().catch((error) => {
-          debugError("FFXIV | Failed to refresh actor effects panel:", error);
-        });
+      if (!app._pendingSheetScrollPositions?.length && typeof app._captureSheetScroll === "function") {
+        app._captureSheetScroll();
       }
-      if (typeof app._refreshAbilitiesPanel === "function") {
-        app._refreshAbilitiesPanel().catch((error) => {
-          debugError("FFXIV | Failed to refresh actor abilities panel:", error);
-        });
+      try {
+        if (typeof app._refreshEffectsPanelIfChanged === "function") {
+          await app._refreshEffectsPanelIfChanged();
+        }
+        if (typeof app._refreshAbilitiesPanel === "function") {
+          await app._refreshAbilitiesPanel();
+        }
+      } finally {
+        if (typeof app._restoreSheetScroll === "function") {
+          app._restoreSheetScroll();
+        }
       }
     }
   };
@@ -827,7 +833,9 @@ function installActorSheetActiveEffectRefresh() {
   const refreshActorSheets = (effect) => {
     const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
     if (!actor) return;
-    refreshActorSheetApps(actor);
+    refreshActorSheetApps(actor).catch((error) => {
+      debugError("FFXIV | Failed to refresh actor sheet active effects:", error);
+    });
   };
 
   const cleanupExpiredEffect = (effect) => {
@@ -5554,6 +5562,66 @@ async function applyDrainRecovery(sourceActor) {
   await applyHealingToActor(sourceActor, drain);
 }
 
+async function applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults) {
+  if (!sourceActor || !sourceItem) return;
+  const damageInstances = Array.from(damageResults ?? []).filter(
+    (result) => Number(result?.resolvedDamage) > 0,
+  ).length;
+  if (damageInstances <= 0) return;
+
+  const amount = getActorDamageMpRecovery(sourceActor, sourceItem);
+  if (amount <= 0) return;
+  await recoverActorMana(sourceActor, amount * damageInstances, {
+    render: false,
+  });
+}
+
+function getActorDamageMpRecovery(actor, item) {
+  let recovery = 0;
+  const effects = Array.from(actor?.allApplicableEffects?.() ?? []);
+  for (const effect of effects) {
+    if (!effect || effect.disabled) continue;
+
+    const data = foundry.utils.getProperty(effect, "flags.ffxiv.mpRecovery.onDamage");
+    const entries = Array.isArray(data) ? data : data ? [data] : [];
+    for (const entry of entries) {
+      if (!mpRecoveryEntryAppliesToItem(entry, item)) continue;
+      const amount = Number(entry.amount ?? entry.flat);
+      if (Number.isFinite(amount)) recovery += amount;
+    }
+
+    for (const change of effect.changes ?? []) {
+      const key = String(change?.key ?? "").trim().toLowerCase();
+      if (key !== "flags.ffxiv.mprecovery.ondamage.amount") continue;
+
+      const amount = Number(change?.value);
+      if (!Number.isFinite(amount)) continue;
+      const mode = normalizeActiveEffectChangeMode(change?.mode);
+      if (mode === "multiply") recovery *= amount;
+      else if (mode === "override") recovery = amount;
+      else if (mode === "subtract") recovery -= amount;
+      else recovery += amount;
+    }
+  }
+  return Math.max(Math.floor(recovery), 0);
+}
+
+function mpRecoveryEntryAppliesToItem(entry, item) {
+  if (!entry || typeof entry !== "object") return false;
+  const requiredTags = toArray(entry.tags ?? entry.tag).filter(Boolean);
+  if (!requiredTags.length) return true;
+
+  const itemTags = Array.isArray(item?.system?.tags) ? item.system.tags : [];
+  return requiredTags.some((tag) =>
+    itemTags.some((itemTag) => FFXIVItem._tagMatches(itemTag, [tag])),
+  );
+}
+
+function toArray(value) {
+  if (Array.isArray(value)) return value;
+  return value === undefined || value === null || value === "" ? [] : [value];
+}
+
 function getActorDamageEffectModifiers(actor, channel) {
   const channelPath = `damage.${channel}`;
 
@@ -6232,6 +6300,18 @@ async function resolveActorFromReference(ref) {
   return game.actors.get(value) ?? null;
 }
 
+async function resolveItemFromReference(ref, actor = null) {
+  const value = String(ref ?? "").trim();
+  if (!value) return null;
+  if (value.includes(".")) {
+    try {
+      const doc = await fromUuid(value);
+      if (doc?.documentName === "Item") return doc;
+    } catch (_error) { }
+  }
+  return actor?.items?.get(value) ?? game.items?.get(value) ?? null;
+}
+
 async function resolveSocketActors(data = {}) {
   data = data ?? {};
   const refs =
@@ -6652,10 +6732,17 @@ Hooks.on("ready", function () {
           const sourceActor = await resolveActorFromReference(
             data.sourceActorUuid ?? data.sourceActorId,
           );
+          const sourceItem = await resolveItemFromReference(
+            data.sourceItemUuid ?? data.sourceItemId,
+            sourceActor,
+          );
           if (autoApply) {
+            const damageResults = [];
             for (const actor of actors) {
-              await applyDamageToActorWithEffects(actor, damage, { sourceActor });
+              const result = await applyDamageToActorWithEffects(actor, damage, { sourceActor });
+              if (result) damageResults.push(result);
             }
+            await applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults);
             break;
           }
 
@@ -6674,9 +6761,12 @@ Hooks.on("ready", function () {
                 action: "accept",
                 type: "submit",
                 callback: async () => {
+                  const damageResults = [];
                   for (const actor of actors) {
-                    await applyDamageToActorWithEffects(actor, damage, { sourceActor });
+                    const result = await applyDamageToActorWithEffects(actor, damage, { sourceActor });
+                    if (result) damageResults.push(result);
                   }
+                  await applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults);
                 },
               },
               {
@@ -6934,6 +7024,16 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     if (item) await item._rollDirect(ev);
   });
 
+  jqueryhtml.find(".ffxiv-roll-option-direct").on("click", async (ev) => {
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollOptionDirect(ev);
+  });
+
+  jqueryhtml.find(".ffxiv-roll-resource-bonus").on("click", async (ev) => {
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollJobResourceBonus(ev);
+  });
+
   jqueryhtml.find(".ffxiv-roll-critical").on("click", async (ev) => {
     const item = await resolveChatAbilityItem(ev.currentTarget);
     if (item) await item._rollCritical(ev);
@@ -7007,6 +7107,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
       return;
     }
+    const sourceItem = await resolveChatAbilityItem(ev.currentTarget);
     const damage = parseInt(eval(ev.currentTarget.dataset.damage));
     const sourceActor = await resolveActorFromReference(
       ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
@@ -7022,13 +7123,18 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       }
     }
     const damageResults = [];
+    const ownDamageResults = [];
     for (const { actor, token } of ownActors) {
       const result = await applyDamageToActorWithEffects(actor, damage, {
         sourceActor,
         targetToken: token,
       });
-      if (result) damageResults.push(result);
+      if (result) {
+        damageResults.push(result);
+        ownDamageResults.push(result);
+      }
     }
+    await applyDamageSourceManaRecovery(sourceActor, sourceItem, ownDamageResults);
     for (const { actor } of actorsNeedingGM) {
       const result = getDamageWithEffects(actor, damage, { sourceActor });
       if (result) damageResults.push(result);
@@ -7043,6 +7149,8 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
           damage: damage,
           sourceActorId: sourceActor?.id ?? null,
           sourceActorUuid: sourceActor?.uuid ?? null,
+          sourceItemId: sourceItem?.id ?? ev.currentTarget.dataset.itemId ?? null,
+          sourceItemUuid: sourceItem?.uuid ?? ev.currentTarget.dataset.itemUuid ?? null,
           active: ev.currentTarget.dataset.action === "true",
         },
         userName: game.user.name,

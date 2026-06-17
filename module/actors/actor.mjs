@@ -534,10 +534,35 @@ export class FFXIVActor extends Actor {
     for (const effect of this._getEnmityEffects()) {
       const sourceActor = await this._getEnmitySourceActor(effect);
       if (sourceActor && !this._targetsIncludeActor(sourceActor)) {
-        return { penalty: -5, sourceActor };
+        return {
+          penalty: this._getEnmityCheckPenalty(effect, sourceActor),
+          sourceActor,
+        };
       }
     }
     return { penalty: 0, sourceActor: null };
+  }
+
+  _getEnmityCheckPenalty(effect, sourceActor) {
+    const sourcePenalty = this._getEnmityCheckPenaltyFromEffects(sourceActor);
+    if (sourcePenalty !== null) return sourcePenalty;
+
+    const effectPenalty = Number(
+      foundry.utils.getProperty(effect, "flags.ffxiv.enmity.checkPenalty"),
+    );
+    return Number.isFinite(effectPenalty) ? effectPenalty : 0;
+  }
+
+  _getEnmityCheckPenaltyFromEffects(sourceActor) {
+    let penalty = null;
+    for (const effect of sourceActor?.allApplicableEffects?.() ?? []) {
+      if (!effect || effect.disabled) continue;
+      const value = Number(
+        foundry.utils.getProperty(effect, "flags.ffxiv.enmity.checkPenalty"),
+      );
+      if (Number.isFinite(value)) penalty = value;
+    }
+    return penalty;
   }
 
   async _getEnmityCheckPenalty() {

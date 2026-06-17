@@ -23,6 +23,17 @@ import {
   isLimitBreakActive,
   playLimitBreakActivatedSound,
 } from "../helpers/limit-break-hud.mjs";
+import {
+  applyActorJobResourceDelta,
+  fillActorJobResource,
+  findActorJobResource,
+  findActorTrait,
+  getActorJobResourceCount,
+  getActorLevel,
+  hasActorJobResource,
+  normalizeJobResourceName,
+  setActorJobResourceCount,
+} from "../helpers/job-resources.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
   "consumable",
@@ -918,9 +929,11 @@ export class FFXIVItem extends Item {
    * @private
    */
   async roll() {
+    this._ffxivJobResourceCostResult = {};
     if (!(await this._confirmTargetSelection())) return;
     if (!this._canUseAbility()) return;
     if (!this._canUseLimitBreak()) return;
+    if (!(await this._consumeJobResourceCostsIfNeeded())) return;
     if (!(await this._spendHPCostIfNeeded())) return;
     if (!(await this._consumeLimitationIfNeeded())) return;
     if (!(await this._consumeLimitBreakIfNeeded())) return;
@@ -980,18 +993,21 @@ export class FFXIVItem extends Item {
     });
 
     const checkResult = this._shouldAutoCheckBeforeBase()
-      ? await this._rollHit({ auto: true })
+      ? await this._rollHit({ auto: true, deferHitThresholdRules: true })
       : null;
     if (checkResult?.interrupted) return;
 
-    await this._applyEffectRules("use");
-    await this._consumeEffectRequirements();
-    await this._autoApplyStatusEffects();
-    await this._applyInvokingStatus();
     await this._rollBase({
       critical: checkResult?.isCritical ?? false,
       autoFromHit: Boolean(checkResult),
     });
+    await this._applyEffectRules("use", {
+      jobResourceCosts: this._ffxivJobResourceCostResult,
+    });
+    await this._consumeEffectRequirements();
+    await this._applyDeferredHitThresholdRules(checkResult);
+    await this._autoApplyStatusEffects();
+    await this._applyInvokingStatus();
 
     await this._consumeFromInventoryIfNeeded();
   }
@@ -1004,10 +1020,13 @@ export class FFXIVItem extends Item {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.Incapacitated"));
       return false;
     }
-    if (
-      subtype !== "limit_break" &&
-      (hasStatus(this.parent, "stun") || hasStatus(this.parent, "petrified"))
-    ) {
+    const blockedByStun =
+      hasStatus(this.parent, "stun") &&
+      !this._ignoresCheckPenaltyStatus("stun");
+    const blockedByPetrified =
+      hasStatus(this.parent, "petrified") &&
+      !this._ignoresCheckPenaltyStatus("petrified");
+    if (subtype !== "limit_break" && (blockedByStun || blockedByPetrified)) {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.CannotAct"));
       return false;
     }
@@ -1015,7 +1034,10 @@ export class FFXIVItem extends Item {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.Silenced"));
       return false;
     }
-    return this._canSatisfyEffectRequirements();
+    return (
+      this._canSatisfyEffectRequirements() &&
+      this._canSatisfyJobResourceCosts()
+    );
   }
 
   _canUseLimitBreak() {
@@ -1276,7 +1298,7 @@ export class FFXIVItem extends Item {
   }
 
   async _rollHit(options = {}) {
-    if (options instanceof Event) options = {};
+    options = this._normalizeRollOptions(options);
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
 
@@ -1297,8 +1319,13 @@ export class FFXIVItem extends Item {
       ? await this.parent._getEnmityCheckPenaltyInfo()
       : { penalty: 0, sourceActor: null };
     const enmityPenalty = enmityPenaltyInfo.penalty;
-    const statusPenalty = getActorCheckPenalty(this.parent);
-    const targetAdvantageDice = this._getTargetStatusAdvantageDice();
+    const ignoredStatuses = this._getIgnoredCheckPenaltyStatuses(options);
+    const statusPenalty = getActorCheckPenalty(this.parent, {
+      ignoredStatuses,
+    });
+    const targetAdvantageDice =
+      this._getTargetStatusAdvantageDice() +
+      this._getActiveEffectCheckAdvantageDice(options);
     let result = { advantageDice: targetAdvantageDice, flatModifier: 0 };
 
     if (!options.auto)
@@ -1487,11 +1514,13 @@ export class FFXIVItem extends Item {
       });
     }
 
-    const autoDirectHit = !isInterrupted && this._shouldAutoRollDirectHit(roll);
+    const autoDirectHit =
+      !isInterrupted && this._shouldAutoRollDirectHit(roll, options);
     const directHitResult = autoDirectHit
       ? await this._evaluateDirectHitRoll({
           critical: isCritical,
           autoFromHit: true,
+          effectSnapshot: options.effectSnapshot,
         })
       : null;
     const buttonData = this._getChatButtonData();
@@ -1500,6 +1529,13 @@ export class FFXIVItem extends Item {
     if (this._hasDirectRoll() && !autoDirectHit) {
       extraButtons += `<button class="ffxiv-roll-direct" ${buttonData}>${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`;
       extraButtons += `<button class="ffxiv-roll-critical" ${buttonData}>${game.i18n.localize("FFXIV.Chat.RollCriticalHitFormula")}</button>`;
+      for (const option of this._getDirectHitOptions({ checkMana: false }, options)) {
+        const critical = isCritical ? "true" : "false";
+        const label = isCritical
+          ? this._getDirectHitOptionCriticalButtonLabel(option)
+          : this._getDirectHitOptionButtonLabel(option);
+        extraButtons += `<button class="ffxiv-roll-option-direct" data-critical="${critical}" data-direct-hit-option="${option.key}" ${buttonData}>${label}</button>`;
+      }
     }
     if (!autoDirectHit && this._hasFormula(this.system.alternate_formula_critical))
       extraButtons += `<button class="ffxiv-roll-critical-alternate" ${buttonData}>${game.i18n.localize("FFXIV.Chat.RollAlternateCriticalHitFormula")}</button>`;
@@ -1548,13 +1584,14 @@ export class FFXIVItem extends Item {
       content: `${rollHTML.html()} ${isInterrupted ? "" : extraButtons}`,
     });
 
-    if (!isInterrupted) {
+    if (!isInterrupted && !options.deferHitThresholdRules) {
       await this._applyEffectRules("hitThreshold", {
         d20Result,
         roll,
         directHitRoll: directHitResult?.roll ?? null,
       });
     }
+    if (!isInterrupted) await this._applyCriticalJobResourceAutomation(isCritical);
 
     return {
       roll,
@@ -1563,11 +1600,12 @@ export class FFXIVItem extends Item {
       isCriticalFailure,
       interrupted: isInterrupted,
       directHitRoll: directHitResult?.roll ?? null,
+      deferredHitThresholdRules: options.deferHitThresholdRules === true,
     };
   }
 
   async _rollDirect(options = {}) {
-    if (options instanceof Event) options = {};
+    options = this._normalizeRollOptions(options);
     const directHitResult = await this._evaluateDirectHitRoll(options);
     if (!directHitResult) return;
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
@@ -1582,35 +1620,281 @@ export class FFXIVItem extends Item {
   }
 
   async _evaluateDirectHitRoll(options = {}) {
+    options = this._normalizeRollOptions(options);
     if (!this._hasDirectRoll()) return null;
+    const critical = options.critical || this._shouldForceDirectHitCritical(options);
     const rollData = this.getRollData();
-    const formula = options.critical
-      ? await this._getCriticalDirectFormula(rollData)
-      : this._composeFormulaWithAttribute(
-          rollData.direct_formula,
-          rollData.direct_formula_attribute,
-        );
-    const roll = new Roll(formula, rollData);
+    const formula = critical
+      ? await this._getCriticalDirectFormula(rollData, options)
+      : this._getDirectFormula(rollData, options);
+    const directHitOption = this._getDirectHitOption(
+      options.directHitOption,
+      options,
+    );
+    const resolvedFormula = directHitOption
+      ? this._applyDirectHitOptionFormula(formula, directHitOption)
+      : formula;
+    const roll = new Roll(resolvedFormula, rollData);
     await roll.evaluate();
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
     return {
       roll,
       html: rollHTML,
       flavor: this._getDirectRollFlavor({
-        critical: options.critical,
+        critical,
         autoFromHit: options.autoFromHit,
+        directHitOption,
       }),
     };
   }
 
-  async _rollCritical() {
+  async _rollOptionDirect(options = {}) {
+    options = this._normalizeRollOptions(options);
+    const directHitOption = this._getDirectHitOption(
+      options.directHitOption,
+      options,
+    );
+    if (!directHitOption) {
+      ui.notifications.warn(`${this.name}: direct hit option unavailable.`);
+      return;
+    }
+    if (!this._canUseDirectHitOption(directHitOption)) {
+      ui.notifications.warn(
+        `${this.name}: ${directHitOption.name} requires ${directHitOption.mpCost} MP.`,
+      );
+      return;
+    }
+
+    const currentMana = Number(this.parent?.system?.mana?.value ?? 0);
+    await this.parent.update(
+      { "system.mana.value": Math.max(currentMana - directHitOption.mpCost, 0) },
+      { render: false },
+    );
+    await this._rollDirect({
+      ...options,
+      directHitOption: directHitOption.key,
+    });
+  }
+
+  _getDirectHitOption(key, options = {}) {
+    const normalizedKey = this._normalizeEffectKey(key);
+    if (!normalizedKey) return null;
+    return this._getDirectHitOptions({ checkMana: false }, options).find(
+      (option) => option.key === normalizedKey,
+    ) ?? null;
+  }
+
+  _getJobResourceBonusOption(key, { checkResource = true } = {}) {
+    const normalizedKey = this._normalizeEffectKey(key);
+    if (!normalizedKey) return null;
+    return this._getJobResourceBonusOptions({ checkResource }).find(
+      (option) => option.key === normalizedKey,
+    ) ?? null;
+  }
+
+  _getJobResourceBonusOptions({ checkResource = true } = {}) {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return [];
+
+    const optionsByAbility = {
+      bootshine: {
+        resource: "Opo-Opo's Fury",
+        name: "Bestial Fury: Opo-Opo",
+      },
+      true_strike: {
+        resource: "Raptor's Fury",
+        name: "Bestial Fury: Raptor",
+      },
+      snap_punch: {
+        resource: "Coeurl's Fury",
+        name: "Bestial Fury: Coeurl",
+      },
+    };
+    const option = optionsByAbility[this._normalizeEffectKey(this.name)];
+    if (!option) return [];
+    if (checkResource && getActorJobResourceCount(actor, option.resource) <= 0)
+      return [];
+
+    return [
+      {
+        key: this._normalizeEffectKey(option.name),
+        name: option.name,
+        resource: option.resource,
+        formula: this._getBestialFuryFormula(actor),
+        buttonLabel: option.name,
+      },
+    ];
+  }
+
+  _getBestialFuryFormula(actor) {
+    return getActorLevel(actor) >= 60 || findActorTrait(actor, "Solar and Lunar Mastery")
+      ? "2d6"
+      : "1d6";
+  }
+
+  async _rollJobResourceBonus(options = {}) {
+    options = this._normalizeRollOptions(options);
+    const bonus = this._getJobResourceBonusOption(options.resourceBonus, {
+      checkResource: false,
+    });
+    if (!bonus) return;
+    if (getActorJobResourceCount(this.parent, bonus.resource) <= 0) {
+      ui.notifications.warn(`${this.name}: requires 1 ${bonus.resource}.`);
+      return;
+    }
+
+    await applyActorJobResourceDelta(this.parent, bonus.resource, -1, {
+      render: false,
+    });
+
+    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
+    const user = game.user.id;
+    const roll = new Roll(bonus.formula, this.getRollData());
+    await roll.evaluate();
+    const rollHTML = $("<div>" + (await roll.render()) + "</div>");
+    await ChatMessage.create({
+      user,
+      speaker,
+      rolls: [roll],
+      flavor: bonus.name,
+      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`,
+    });
+  }
+
+  _getDirectHitOptions({ checkMana = true } = {}, options = {}) {
+    const optionsByKey = new Map();
+    for (const effect of this._getApplicableEffects(options)) {
+      if (!effect || effect.disabled) continue;
+      for (const entry of this._getDirectHitOptionEntries(effect)) {
+        if (!this._traitModifierEntryApplies(entry)) continue;
+        const option = this._prepareDirectHitOption(effect, entry);
+        if (!this._canUseDirectHitOption(option, { checkMana })) continue;
+        if (!optionsByKey.has(option.key)) optionsByKey.set(option.key, option);
+      }
+    }
+    return Array.from(optionsByKey.values());
+  }
+
+  _getDirectHitOptionEntries(effect) {
+    const data = foundry.utils.getProperty(effect, "flags.ffxiv.directHit.options");
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === "object") return Object.values(data);
+    return [];
+  }
+
+  _prepareDirectHitOption(effect, entry) {
+    const name = String(entry.name ?? effect.name ?? "").trim();
+    const key =
+      this._normalizeEffectKey(entry.key) ||
+      this._normalizeEffectKey(name) ||
+      this._normalizeEffectKey(effect.getFlag?.("ffxiv", "effectKey"));
+    const mpCost = Number(entry.mpCost ?? entry.cost ?? 0);
+    return {
+      key,
+      name: name || key,
+      buttonLabel: String(entry.buttonLabel ?? "").trim(),
+      criticalButtonLabel: String(entry.criticalButtonLabel ?? "").trim(),
+      flavorLabel: String(entry.flavorLabel ?? entry.name ?? "").trim(),
+      mpCost: Number.isFinite(mpCost) ? Math.max(Math.floor(mpCost), 0) : 0,
+      diceTransform: entry.diceTransform ?? entry.formulaTransform ?? null,
+    };
+  }
+
+  _canUseDirectHitOption(option, { checkMana = true } = {}) {
+    if (!option?.key) return false;
+    if (!this._hasDirectRoll()) return false;
+    if (!this._isSingleTargetAbility()) return false;
+    if (!checkMana) return true;
+    return Number(this.parent?.system?.mana?.value ?? 0) >= option.mpCost;
+  }
+
+  _getDirectHitOptionButtonLabel(option) {
+    if (option.buttonLabel) return option.buttonLabel;
+    return `${option.name} ${game.i18n.localize("FFXIV.Abilities.DirectHitRoll")}`;
+  }
+
+  _getDirectHitOptionCriticalButtonLabel(option) {
+    if (option.criticalButtonLabel) return option.criticalButtonLabel;
+    return `${option.name} ${game.i18n.localize("FFXIV.Abilities.CriticalHitRoll")}`;
+  }
+
+  _applyDirectHitOptionFormula(formula, option) {
+    let resolved = String(formula ?? "");
+    for (const transform of this._toArray(option.diceTransform)) {
+      resolved = this._applyDirectHitDiceTransform(resolved, transform);
+    }
+    return resolved;
+  }
+
+  _applyDirectHitDiceTransform(formula, transform) {
+    if (!transform || typeof transform !== "object") return formula;
+
+    const faces = Number.parseInt(transform.faces ?? transform.dieFaces, 10);
+    const failureFaces = Number.parseInt(
+      transform.failureFaces ?? transform.zeroFaces,
+      10,
+    );
+    const successValue = Number(transform.successValue ?? transform.value);
+    if (
+      !Number.isFinite(faces) ||
+      faces <= 0 ||
+      !Number.isFinite(failureFaces) ||
+      failureFaces <= 0 ||
+      !Number.isFinite(successValue)
+    )
+      return formula;
+
+    const successFaces = faces - failureFaces;
+    if (successFaces !== failureFaces) return formula;
+
+    const pattern = new RegExp(`\\b(\\d*)d${faces}\\b(?![a-z])`, "gi");
+    return String(formula ?? "").replace(pattern, (_match, countText) => {
+      const count = Math.max(Number.parseInt(countText, 10) || 1, 1);
+      return `(${count}d2 * ${successValue} - ${count * successValue})`;
+    });
+  }
+
+  _isSingleTargetAbility() {
+    const target = String(this.system?.target ?? "").trim().toLowerCase();
+    return target === "single" || target.startsWith("single ");
+  }
+
+  _getDirectFormula(rollData, options = {}) {
+    return this._applyDamageDiceModifiers(
+      this._appendDamageFormulaModifiers(
+        this._composeFormulaWithAttribute(
+          rollData.direct_formula,
+          rollData.direct_formula_attribute,
+        ),
+        "direct",
+        options,
+      ),
+      "direct",
+      options,
+    );
+  }
+
+  _shouldForceDirectHitCritical(options = {}) {
+    if (this._normalizeEffectKey(this.name) !== "bootshine") return false;
+    return this._getApplicableEffects(options).some((effect) => {
+      if (!effect || effect.disabled) return false;
+      return (
+        this._effectMatchesKey(effect, "opo_opo_form") ||
+        this._effectMatchesKey(effect, "formless_fist")
+      );
+    });
+  }
+
+  async _rollCritical(options = {}) {
+    options = this._normalizeRollOptions(options);
     if (!this._hasDirectRoll()) return;
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
     const rollData = this.getRollData();
 
     let roll = new Roll(
-      await this._getCriticalDirectFormula(rollData),
+      await this._getCriticalDirectFormula(rollData, options),
       rollData,
     );
     await roll.evaluate();
@@ -1624,15 +1908,24 @@ export class FFXIVItem extends Item {
     });
   }
 
-  async _rollCriticalAlternate() {
+  async _rollCriticalAlternate(options = {}) {
+    options = this._normalizeRollOptions(options);
     if (!this._hasFormula(this.system.alternate_formula_critical)) return;
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
     const rollData = this.getRollData();
     let roll = new Roll(
-      this._composeFormulaWithAttribute(
-        rollData.alternate_formula_critical,
-        rollData.alternate_formula_critical_attribute,
+      this._applyDamageDiceModifiers(
+        this._appendDamageFormulaModifiers(
+          this._composeFormulaWithAttribute(
+            rollData.alternate_formula_critical,
+            rollData.alternate_formula_critical_attribute,
+          ),
+          "alternate",
+          options,
+        ),
+        "alternate",
+        options,
       ),
       rollData,
     );
@@ -1647,14 +1940,23 @@ export class FFXIVItem extends Item {
     });
   }
 
-  async _rollBase({ critical = false, autoFromHit = false } = {}) {
+  async _rollBase(options = {}) {
+    options = this._normalizeRollOptions(options);
+    const { critical = false, autoFromHit = false } = options;
     if (!this._hasFormula(this.system.base_formula)) return;
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
     const rollData = this.getRollData();
-    const formula = critical
-      ? this._doubleDiceCounts(rollData.base_formula)
-      : rollData.base_formula;
+    const baseFormula = this._appendDamageFormulaModifiers(
+      rollData.base_formula,
+      "base",
+      options,
+    );
+    const formula = this._applyDamageDiceModifiers(
+      critical ? this._doubleDiceCounts(baseFormula) : baseFormula,
+      "base",
+      options,
+    );
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
 
@@ -1668,15 +1970,24 @@ export class FFXIVItem extends Item {
     });
   }
 
-  async _rollAlternate() {
+  async _rollAlternate(options = {}) {
+    options = this._normalizeRollOptions(options);
     if (!this._hasFormula(this.system.alternate_formula)) return;
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
     const rollData = this.getRollData();
     const roll = new Roll(
-      this._composeFormulaWithAttribute(
-        rollData.alternate_formula,
-        rollData.alternate_formula_attribute,
+      this._applyDamageDiceModifiers(
+        this._appendDamageFormulaModifiers(
+          this._composeFormulaWithAttribute(
+            rollData.alternate_formula,
+            rollData.alternate_formula_attribute,
+          ),
+          "alternate",
+          options,
+        ),
+        "alternate",
+        options,
       ),
       rollData,
     );
@@ -1707,7 +2018,7 @@ export class FFXIVItem extends Item {
     }
     const manuallyAppliedEffects = Array.from(this.effects ?? []).filter((effect) => {
       const applyTo = String(effect.getFlag("ffxiv", "applyTo") || "target").trim().toLowerCase();
-      return applyTo !== "self_auto";
+      return !effect.disabled && applyTo !== "self_auto" && applyTo !== "automation";
     });
     if (manuallyAppliedEffects.length) {
       buttons += `<button class="ffxiv-apply-active-effects" data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent._id}" data-actor-uuid="${this.parent?.uuid ?? ""}">${game.i18n.localize("FFXIV.Abilities.ApplyActiveEffects")}</button>`;
@@ -1718,6 +2029,9 @@ export class FFXIVItem extends Item {
           ? game.i18n.localize("FFXIV.Abilities.Check")
           : game.i18n.localize("FFXIV.Chat.RollHitFormula");
       buttons += `<button class="ffxiv-roll-hit" ${buttonData}>${hitLabel}</button>`;
+    }
+    for (const option of this._getJobResourceBonusOptions()) {
+      buttons += `<button class="ffxiv-roll-resource-bonus" data-resource-bonus="${option.key}" ${buttonData}>${option.buttonLabel}</button>`;
     }
     if (
       this.type != "trait" &&
@@ -1730,7 +2044,63 @@ export class FFXIVItem extends Item {
   }
 
   _getChatButtonData() {
-    return `data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent?._id ?? ""}" data-actor-uuid="${this.parent?.uuid ?? ""}"`;
+    return `data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent?._id ?? ""}" data-actor-uuid="${this.parent?.uuid ?? ""}" data-effect-snapshot="${this._encodeEffectSnapshotData()}"`;
+  }
+
+  _normalizeRollOptions(options = {}) {
+    const isEvent = typeof Event !== "undefined" && options instanceof Event;
+    const dataset = isEvent ? options.currentTarget?.dataset : null;
+    const normalized =
+      options && typeof options === "object" && !isEvent ? { ...options } : {};
+
+    if (dataset?.critical !== undefined)
+      normalized.critical = dataset.critical === "true";
+    if (dataset?.directHitOption !== undefined)
+      normalized.directHitOption = dataset.directHitOption;
+    if (dataset?.resourceBonus !== undefined)
+      normalized.resourceBonus = dataset.resourceBonus;
+
+    const snapshot =
+      dataset?.effectSnapshot ?? normalized.effectSnapshot ?? null;
+    if (snapshot !== null) {
+      const parsed = this._parseEffectSnapshotData(snapshot);
+      if (parsed) normalized.effectSnapshot = parsed;
+    }
+
+    return normalized;
+  }
+
+  _getEffectSnapshotData() {
+    return Array.from(this.parent?.allApplicableEffects?.() ?? [])
+      .filter((effect) => effect && !effect.disabled)
+      .map((effect) => ({
+        id: effect.id ?? effect._id ?? "",
+        name: effect.name ?? "",
+        flags: foundry.utils.deepClone(effect.flags ?? {}),
+        changes: foundry.utils.deepClone(effect.changes ?? []),
+        statuses: Array.from(effect.statuses ?? []),
+        disabled: false,
+      }));
+  }
+
+  _encodeEffectSnapshotData() {
+    return encodeURIComponent(JSON.stringify(this._getEffectSnapshotData()));
+  }
+
+  _parseEffectSnapshotData(value) {
+    if (Array.isArray(value)) return value;
+    if (!value) return null;
+    try {
+      const parsed = JSON.parse(decodeURIComponent(String(value)));
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  _getApplicableEffects(options = {}) {
+    if (Array.isArray(options?.effectSnapshot)) return options.effectSnapshot;
+    return Array.from(this.parent?.allApplicableEffects?.() ?? []);
   }
 
   _hasDisplayableModifiers() {
@@ -1921,12 +2291,26 @@ export class FFXIVItem extends Item {
         threshold: Number.parseInt(entry?.threshold, 10),
         remove: this._normalizeEffectRefs(entry?.remove),
         requires: this._normalizeEffectRefs(entry?.requires),
+        requiresAny: this._normalizeEffectRefs(entry?.requiresAny),
         forbids: this._normalizeEffectRefs(entry?.forbids),
+        requiresResourceSpent: String(entry?.requiresResourceSpent ?? "").trim(),
+        operation: String(entry?.operation ?? entry?.resourceAction ?? "grant")
+          .trim()
+          .toLowerCase(),
+        resource: String(entry?.resource ?? entry?.resourceName ?? "").trim(),
+        amount: entry?.amount ?? 1,
+        min: entry?.min,
+        flags: foundry.utils.deepClone(entry?.flags ?? {}),
         toggle1: this._normalizeEffectRef(entry?.toggle1),
         toggle2: this._normalizeEffectRef(entry?.toggle2),
         duration: entry?.duration,
       }))
-      .filter((entry) => entry.key || entry.action === "toggle");
+      .filter(
+        (entry) =>
+          entry.key ||
+          entry.action === "toggle" ||
+          (entry.action === "resource" && entry.resource),
+      );
   }
 
   _getEffectRequirements() {
@@ -1957,9 +2341,11 @@ export class FFXIVItem extends Item {
         continue;
       }
 
-      const bypassed = requirement.bypass.some((entry) =>
-        this._hasNamedEffect(actor, entry.key),
-      );
+      const bypassed =
+        this._hasFormRequirementBypass(actor, requirement) ||
+        requirement.bypass.some((entry) =>
+          this._hasNamedEffect(actor, entry.key),
+        );
       if (!hasEffect && !bypassed)
         missing.push(requirement.name || requirement.key);
     }
@@ -1983,6 +2369,88 @@ export class FFXIVItem extends Item {
     }
   }
 
+  _hasFormRequirementBypass(actor, requirement) {
+    if (!this._isFormEffectKey(requirement?.key)) return false;
+    return Array.from(actor?.effects ?? []).some((effect) => {
+      if (!effect || effect.disabled) return false;
+      return foundry.utils.getProperty(effect, "flags.ffxiv.formRequirementBypass") === true;
+    });
+  }
+
+  _isFormEffectKey(key) {
+    return ["opo_opo_form", "raptor_form", "coeurl_form"].includes(
+      this._normalizeEffectKey(key),
+    );
+  }
+
+  _getJobResourceCostRules() {
+    return this._getEffectRules().filter(
+      (rule) =>
+        rule.action === "resource" &&
+        rule.trigger === "cost" &&
+        rule.operation === "consume",
+    );
+  }
+
+  _canSatisfyJobResourceCosts() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return true;
+
+    const missing = [];
+    for (const rule of this._getJobResourceCostRules()) {
+      const required = this._getJobResourceRequiredAmount(actor, rule);
+      if (required <= 0) continue;
+      if (!hasActorJobResource(actor, rule.resource, required)) {
+        missing.push(`${required} ${rule.resource}`);
+      }
+    }
+
+    if (!missing.length) return true;
+    ui.notifications.warn(`${this.name}: requires ${missing.join(", ")}.`);
+    return false;
+  }
+
+  async _consumeJobResourceCostsIfNeeded() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return true;
+
+    const costRules = this._getJobResourceCostRules();
+    if (!costRules.length) return true;
+    if (!this._canSatisfyJobResourceCosts()) return false;
+
+    const spent = {};
+    for (const rule of costRules) {
+      const amount = this._getJobResourceSpendAmount(actor, rule);
+      if (amount <= 0) continue;
+      const result = await applyActorJobResourceDelta(
+        actor,
+        rule.resource,
+        -amount,
+        { render: false },
+      );
+      if (result.item) {
+        const key = normalizeJobResourceName(rule.resource);
+        spent[key] = (spent[key] ?? 0) + Math.max(result.current - result.next, 0);
+      }
+    }
+    this._ffxivJobResourceCostResult = spent;
+    return true;
+  }
+
+  _getJobResourceRequiredAmount(actor, rule) {
+    const min = Number.parseInt(rule?.min, 10);
+    if (Number.isFinite(min)) return Math.max(min, 0);
+    if (String(rule?.amount ?? "").trim().toLowerCase() === "all")
+      return 0;
+    return Math.max(Number.parseInt(rule?.amount, 10) || 0, 0);
+  }
+
+  _getJobResourceSpendAmount(actor, rule) {
+    if (String(rule?.amount ?? "").trim().toLowerCase() === "all")
+      return getActorJobResourceCount(actor, rule.resource);
+    return Math.max(Number.parseInt(rule?.amount, 10) || 0, 0);
+  }
+
   async _applyEffectRules(trigger, context = {}) {
     const actor = this.parent;
     if (actor?.documentName !== "Actor") return;
@@ -1991,6 +2459,41 @@ export class FFXIVItem extends Item {
       if (rule.trigger !== trigger) continue;
       if (!this._canApplyEffectRule(actor, rule, context)) continue;
       await this._applyEffectRule(actor, rule);
+    }
+  }
+
+  async _applyDeferredHitThresholdRules(checkResult) {
+    if (!checkResult?.deferredHitThresholdRules || checkResult.interrupted)
+      return;
+    await this._applyEffectRules("hitThreshold", {
+      d20Result: checkResult.d20Result,
+      roll: checkResult.roll,
+      directHitRoll: checkResult.directHitRoll,
+    });
+  }
+
+  async _applyCriticalJobResourceAutomation(isCritical) {
+    const actor = this.parent;
+    if (!isCritical || actor?.documentName !== "Actor") return;
+
+    for (const trait of actor.items ?? []) {
+      if (trait?.type !== "trait") continue;
+      const data = foundry.utils.getProperty(
+        trait,
+        "flags.ffxiv.jobResource.onCritical",
+      );
+      const entries = Array.isArray(data) ? data : data ? [data] : [];
+      for (const entry of entries) {
+        const minLevel = Number.parseInt(entry?.minLevel, 10);
+        if (Number.isFinite(minLevel) && getActorLevel(actor) < minLevel)
+          continue;
+        const resource = String(entry?.resource ?? entry?.name ?? "").trim();
+        if (!resource) continue;
+        const amount = Math.max(Number.parseInt(entry?.amount, 10) || 1, 1);
+        await applyActorJobResourceDelta(actor, resource, amount, {
+          render: false,
+        });
+      }
     }
   }
 
@@ -2005,12 +2508,26 @@ export class FFXIVItem extends Item {
 
     if (rule.requires.some((entry) => !this._hasNamedEffect(actor, entry.key)))
       return false;
+    if (
+      rule.requiresAny.length &&
+      !rule.requiresAny.some((entry) => this._hasNamedEffect(actor, entry.key))
+    )
+      return false;
     if (rule.forbids.some((entry) => this._hasNamedEffect(actor, entry.key)))
       return false;
+    if (rule.requiresResourceSpent) {
+      const key = normalizeJobResourceName(rule.requiresResourceSpent);
+      const spent = Number(context?.jobResourceCosts?.[key] ?? 0);
+      if (!Number.isFinite(spent) || spent <= 0) return false;
+    }
     return true;
   }
 
   async _applyEffectRule(actor, rule) {
+    if (rule.action === "resource") {
+      await this._applyJobResourceRule(actor, rule);
+      return;
+    }
     if (rule.action === "remove") {
       await this._removeNamedEffects(actor, [rule]);
       return;
@@ -2022,6 +2539,27 @@ export class FFXIVItem extends Item {
 
     await this._removeNamedEffects(actor, rule.remove);
     await this._grantNamedEffect(actor, rule);
+  }
+
+  async _applyJobResourceRule(actor, rule) {
+    const resource = String(rule?.resource ?? "").trim();
+    if (!resource) return;
+
+    if (rule.operation === "fill") {
+      await fillActorJobResource(actor, resource, { render: false });
+      return;
+    }
+    if (rule.operation === "clear") {
+      await setActorJobResourceCount(actor, resource, 0, { render: false });
+      return;
+    }
+
+    const amount = Math.max(Number.parseInt(rule?.amount, 10) || 1, 1);
+    if (rule.operation === "consume") {
+      await applyActorJobResourceDelta(actor, resource, -amount, { render: false });
+      return;
+    }
+    await applyActorJobResourceDelta(actor, resource, amount, { render: false });
   }
 
   async _toggleNamedEffects(actor, rule) {
@@ -2054,6 +2592,17 @@ export class FFXIVItem extends Item {
       ? this._buildLinkedAutomationEffectData(template, rule, key)
       : this._buildNamedAutomationEffectData(rule, key);
     await actor.createEmbeddedDocuments("ActiveEffect", [effectData], {
+      render: false,
+    });
+    if (this._isFormEffectKey(key)) {
+      await this._grantPerfectBalanceBeastChakra(actor);
+    }
+  }
+
+  async _grantPerfectBalanceBeastChakra(actor) {
+    if (!this._hasNamedEffect(actor, "perfect_balance")) return;
+    if (!findActorJobResource(actor, "Beast Chakra")) return;
+    await applyActorJobResourceDelta(actor, "Beast Chakra", 1, {
       render: false,
     });
   }
@@ -2111,6 +2660,12 @@ export class FFXIVItem extends Item {
         linkedSourceItemUuid: this.uuid,
       },
     });
+    if (rule?.flags && typeof rule.flags === "object") {
+      effectData.flags = foundry.utils.mergeObject(
+        effectData.flags || {},
+        foundry.utils.deepClone(rule.flags),
+      );
+    }
 
     const duration = this._prepareEffectRuleDuration(
       rule?.duration ?? effectData.duration,
@@ -2145,6 +2700,12 @@ export class FFXIVItem extends Item {
         },
       },
     };
+    if (rule?.flags && typeof rule.flags === "object") {
+      effectData.flags = foundry.utils.mergeObject(
+        effectData.flags || {},
+        foundry.utils.deepClone(rule.flags),
+      );
+    }
     const duration = this._prepareEffectRuleDuration(rule?.duration);
     if (duration) effectData.duration = duration;
     return effectData;
@@ -2206,7 +2767,8 @@ export class FFXIVItem extends Item {
     if (!effect || !normalizedKey) return false;
 
     const flagKey = this._normalizeEffectKey(
-      effect.getFlag?.("ffxiv", "effectKey"),
+      effect.getFlag?.("ffxiv", "effectKey") ??
+      foundry.utils.getProperty(effect, "flags.ffxiv.effectKey"),
     );
     if (flagKey && flagKey === normalizedKey) return true;
     return this._normalizeEffectKey(effect.name) === normalizedKey;
@@ -2290,7 +2852,10 @@ export class FFXIVItem extends Item {
   async _applyInvokingStatus() {
     if (!this._isInvokedAbility() || !this.parent?.toggleStatusEffect) return;
 
-    await this.parent.toggleStatusEffect("invoking", { active: true });
+    await this.parent.toggleStatusEffect("invoking", {
+      active: true,
+      render: false,
+    });
   }
 
   _hasFormula(formula) {
@@ -2365,7 +2930,9 @@ export class FFXIVItem extends Item {
     return (
       this._hasCheck() &&
       this._hasFormula(this.system.base_formula) &&
-      this._formulaHasDice(this.system.base_formula)
+      this._formulaHasDice(
+        this._appendDamageFormulaModifiers(this.system.base_formula, "base"),
+      )
     );
   }
 
@@ -2380,32 +2947,48 @@ export class FFXIVItem extends Item {
     return baseFlavor;
   }
 
-  _getDirectRollFlavor({ critical = false, autoFromHit = false } = {}) {
+  _getDirectRollFlavor({
+    critical = false,
+    autoFromHit = false,
+    directHitOption = null,
+  } = {}) {
     const baseFlavor = game.i18n.format(
       critical
         ? "FFXIV.Abilities.CriticalHitRoll"
         : "FFXIV.Abilities.DirectHitRoll",
     );
+    const prefix = directHitOption
+      ? `${directHitOption.flavorLabel || directHitOption.name} `
+      : "";
     if (autoFromHit && critical)
-      return `${baseFlavor} (${game.i18n.localize("FFXIV.Chat.AutoCriticalDamageFromHit")})`;
+      return `${prefix}${baseFlavor} (${game.i18n.localize(
+        "FFXIV.Chat.AutoCriticalDamageFromHit",
+      )})`;
     if (autoFromHit)
-      return `${baseFlavor} (${game.i18n.localize("FFXIV.Chat.AutoDamageFromHit")})`;
-    return baseFlavor;
+      return `${prefix}${baseFlavor} (${game.i18n.localize(
+        "FFXIV.Chat.AutoDamageFromHit",
+      )})`;
+    return `${prefix}${baseFlavor}`;
   }
 
-  async _getCriticalDirectFormula(rollData = this.getRollData()) {
+  async _getCriticalDirectFormula(rollData = this.getRollData(), options = {}) {
     let formula = this._composeFormulaWithAttribute(
       rollData.direct_formula,
       rollData.direct_formula_attribute,
     );
+    formula = this._appendDamageFormulaModifiers(formula, "direct", options);
     const criticalDamage = Number(
       (await new Roll("@cdmg", rollData).evaluate()).result,
     );
     if (criticalDamage > 0) formula += " + @cdmg";
-    return this._doubleDiceCounts(formula);
+    return this._applyDamageDiceModifiers(
+      this._doubleDiceCounts(formula),
+      "direct",
+      options,
+    );
   }
 
-  _shouldAutoRollDirectHit(roll) {
+  _shouldAutoRollDirectHit(roll, options = {}) {
     if (!this._hasDirectRoll()) return false;
     if (this._targetsHaveStatus("heavy")) return true;
     if (!game.settings.get("ffxiv", "autoRollDirectHitDamage")) return false;
@@ -2417,7 +3000,7 @@ export class FFXIVItem extends Item {
     if (!target?.actor) return false;
 
     const total = Number(roll.total);
-    const defense = this._getTargetDefense(target.actor, defenseType);
+    const defense = this._getTargetDefense(target.actor, defenseType, options);
     return (
       Number.isFinite(total) && Number.isFinite(defense) && total > defense
     );
@@ -2440,8 +3023,14 @@ export class FFXIVItem extends Item {
     return null;
   }
 
-  _getTargetDefense(actor, defenseType) {
+  _getTargetDefense(actor, defenseType, options = {}) {
     const rollData = actor.getRollData?.();
+    if (this._usesLowerTargetDefense(options)) {
+      const def = Number(rollData?.def);
+      const mdef = Number(rollData?.mdef);
+      if (Number.isFinite(def) && Number.isFinite(mdef))
+        return Math.min(def, mdef);
+    }
     const value = defenseType === "magic" ? rollData?.mdef : rollData?.def;
     return Number(value);
   }
@@ -2463,11 +3052,272 @@ export class FFXIVItem extends Item {
       );
   }
 
+  _usesLowerTargetDefense(options = {}) {
+    for (const effect of this._getApplicableEffects(options)) {
+      if (!effect || effect.disabled) continue;
+      const data = foundry.utils.getProperty(
+        effect,
+        "flags.ffxiv.targetDefense.useLower",
+      );
+      const entries = Array.isArray(data) ? data : data ? [data] : [];
+      for (const entry of entries) {
+        if (entry === true) return true;
+        if (!this._traitModifierEntryApplies(entry)) continue;
+        const enabled = entry.enabled ?? entry.value ?? true;
+        if (enabled === true || String(enabled).toLowerCase() === "true")
+          return true;
+      }
+    }
+    return false;
+  }
+
+  _getIgnoredCheckPenaltyStatuses(options = {}) {
+    const ignored = new Set();
+    for (const effect of this._getApplicableEffects(options)) {
+      if (!effect || effect.disabled) continue;
+
+      const data = foundry.utils.getProperty(
+        effect,
+        "flags.ffxiv.check.ignoreStatuses",
+      );
+      const entries = Array.isArray(data) ? data : data ? [data] : [];
+      for (const entry of entries) {
+        if (!this._statusIgnoreEntryApplies(entry)) continue;
+        for (const statusId of this._getStatusIgnoreEntryStatuses(entry)) {
+          ignored.add(statusId);
+        }
+      }
+    }
+    return Array.from(ignored);
+  }
+
+  _statusIgnoreEntryApplies(entry) {
+    if (!entry) return false;
+    if (typeof entry === "string") return true;
+    if (!this._traitModifierEntryApplies(entry)) return false;
+
+    const keys = this._toArray(
+      entry.abilities ?? entry.abilityKeys ?? entry.items ?? entry.itemKeys,
+    )
+      .map((value) => this._normalizeEffectKey(value))
+      .filter(Boolean);
+    return !keys.length || keys.includes(this._normalizeEffectKey(this.name));
+  }
+
+  _getStatusIgnoreEntryStatuses(entry) {
+    const statuses =
+      typeof entry === "string"
+        ? [entry]
+        : this._toArray(entry.statuses ?? entry.status ?? entry.ids ?? entry.id);
+    return statuses
+      .map((statusId) => String(statusId ?? "").trim())
+      .filter(Boolean);
+  }
+
+  _ignoresCheckPenaltyStatus(statusId) {
+    const normalizedStatusId = String(statusId ?? "").trim();
+    if (!normalizedStatusId) return false;
+    return this._getIgnoredCheckPenaltyStatuses().includes(normalizedStatusId);
+  }
+
+  _matchesAnyEffectKey(keys) {
+    const nameKey = this._normalizeEffectKey(this.name);
+    return keys.some((key) => this._normalizeEffectKey(key) === nameKey);
+  }
+
+  _getActiveEffectCheckAdvantageDice(options = {}) {
+    let dice = 0;
+    for (const effect of this._getApplicableEffects(options)) {
+      if (!effect || effect.disabled) continue;
+
+      const data = foundry.utils.getProperty(
+        effect,
+        "flags.ffxiv.check.advantage",
+      );
+      const entries = Array.isArray(data) ? data : data ? [data] : [];
+      for (const entry of entries) {
+        if (entry && typeof entry === "object") {
+          if (!this._traitModifierEntryApplies(entry)) continue;
+        }
+        const amount = Number(entry?.amount ?? entry?.value ?? entry);
+        if (Number.isFinite(amount)) dice += amount;
+      }
+
+      for (const change of effect.changes ?? []) {
+        const key = String(change?.key ?? "").trim().toLowerCase();
+        if (key !== "flags.ffxiv.check.advantage") continue;
+        const amount = Number(change?.value);
+        if (Number.isFinite(amount)) dice += amount;
+      }
+    }
+    return Math.max(Math.floor(dice), 0);
+  }
+
+  _appendDamageFormulaModifiers(formula, rollType, options = {}) {
+    const base = String(formula ?? "").trim();
+    if (!base) return base;
+
+    const terms = this._getDamageFormulaModifierTerms(rollType, options);
+    if (!terms.length) return base;
+    return [base, ...terms].join(" + ");
+  }
+
+  _applyDamageDiceModifiers(formula, rollType, options = {}) {
+    const base = String(formula ?? "").trim();
+    if (!base) return base;
+
+    const minimum = this._getDamageDiceMinimum(rollType, options);
+    return minimum > 1 ? this._applyDiceMinimumToFormula(base, minimum) : base;
+  }
+
+  _getDamageDiceMinimum(rollType, options = {}) {
+    let minimum = 0;
+    for (const effect of this._getApplicableEffects(options)) {
+      if (!effect || effect.disabled) continue;
+
+      const data = foundry.utils.getProperty(
+        effect,
+        "flags.ffxiv.damageDice.minimum",
+      );
+      const entries = Array.isArray(data) ? data : data ? [data] : [];
+      for (const entry of entries) {
+        if (!this._damageFormulaEntryApplies(entry, rollType)) continue;
+        const value = Number(entry.minimum ?? entry.value ?? entry);
+        if (Number.isFinite(value)) minimum = Math.max(minimum, value);
+      }
+
+      for (const change of effect.changes ?? []) {
+        const key = String(change?.key ?? "").trim().toLowerCase();
+        if (
+          key !== "flags.ffxiv.damagedice.minimum" &&
+          key !== `flags.ffxiv.damagedice.${rollType}.minimum`
+        )
+          continue;
+        const value = Number(change?.value);
+        if (Number.isFinite(value)) minimum = Math.max(minimum, value);
+      }
+    }
+    return Math.max(Math.floor(minimum), 0);
+  }
+
+  _applyDiceMinimumToFormula(formula, minimum) {
+    return String(formula ?? "").replace(
+      /\b(\d*d\d+)\b(?!\s*(?:min|max|kh|kl|dh|dl|r|rr|x|xo|cs|cf))/gi,
+      `$1min${minimum}`,
+    );
+  }
+
+  _getDamageFormulaModifierTerms(rollType, options = {}) {
+    const terms = [];
+    for (const effect of this._getApplicableEffects(options)) {
+      if (!effect || effect.disabled) continue;
+      this._collectDamageFormulaFlagTerms(effect, rollType, terms);
+      this._collectDamageFormulaChangeTerms(effect, rollType, terms);
+    }
+    return terms;
+  }
+
+  _collectDamageFormulaFlagTerms(effect, rollType, terms) {
+    const data = foundry.utils.getProperty(effect, "flags.ffxiv.damageFormula");
+    if (!data || typeof data !== "object") return;
+
+    const entries = Array.isArray(data) ? data : [data];
+    for (const entry of entries) {
+      if (!this._damageFormulaEntryApplies(entry, rollType)) continue;
+
+      const formula = this._getDamageFormulaEntryFormula(effect, entry);
+      if (formula) terms.push(formula);
+      const flat = Number(entry.flat);
+      if (Number.isFinite(flat) && flat !== 0) terms.push(String(flat));
+    }
+  }
+
+  _collectDamageFormulaChangeTerms(effect, rollType, terms) {
+    for (const change of effect.changes ?? []) {
+      const key = String(change?.key ?? "").trim().toLowerCase();
+      if (
+        key !== "flags.ffxiv.damageformula.formula" &&
+        key !== `flags.ffxiv.damageformula.${rollType}.formula` &&
+        key !== "flags.ffxiv.damageformula.flat" &&
+        key !== `flags.ffxiv.damageformula.${rollType}.flat`
+      )
+        continue;
+
+      const value = String(change?.value ?? "").trim();
+      if (!value) continue;
+      if (key.endsWith(".flat")) {
+        const numeric = Number(value);
+        if (Number.isFinite(numeric) && numeric !== 0)
+          terms.push(String(numeric));
+        continue;
+      }
+      terms.push(value);
+    }
+  }
+
+  _damageFormulaEntryApplies(entry, rollType) {
+    if (!entry || typeof entry !== "object") return false;
+
+    const rollTypes = this._toArray(
+      entry.rolls ?? entry.rollTypes ?? entry.appliesTo,
+    )
+      .map((value) => String(value ?? "").trim().toLowerCase())
+      .filter(Boolean);
+    if (rollTypes.length && !rollTypes.includes(String(rollType).toLowerCase()))
+      return false;
+
+    const tags = this._toArray(entry.tags ?? entry.tag).filter(Boolean);
+    if (!tags.length) return true;
+    const itemTags = Array.isArray(this.system?.tags) ? this.system.tags : [];
+    return tags.some((tag) =>
+      itemTags.some((itemTag) => FFXIVItem._tagMatches(itemTag, [tag])),
+    );
+  }
+
+  _traitModifierEntryApplies(entry) {
+    if (!entry || typeof entry !== "object") return false;
+
+    const tags = this._toArray(entry.tags ?? entry.tag).filter(Boolean);
+    if (!tags.length) return true;
+    const itemTags = Array.isArray(this.system?.tags) ? this.system.tags : [];
+    return tags.some((tag) =>
+      itemTags.some((itemTag) => FFXIVItem._tagMatches(itemTag, [tag])),
+    );
+  }
+
+  _getDamageFormulaEntryFormula(effect, entry) {
+    if (this._effectMatchesKey(effect, "astral_fire"))
+      return (
+        this._getAstralFireDamageFormula() ||
+        String(entry.formula ?? "").trim()
+      );
+    return String(entry.formula ?? "").trim();
+  }
+
+  _getAstralFireDamageFormula() {
+    const trait = this.parent?.items?.find((item) =>
+      item?.type === "trait" &&
+      this._normalizeEffectKey(item.name) === "astral_fire",
+    );
+    const description = String(trait?.system?.description ?? "").toLowerCase();
+    if (description.includes("2d6")) return "2d6";
+    if (description.includes("1d6")) return "1d6";
+    return "";
+  }
+
+  _toArray(value) {
+    if (Array.isArray(value)) return value;
+    return value === undefined || value === null || value === ""
+      ? []
+      : [value];
+  }
+
   _isInterruptedByParalysis(d20Result) {
     return (
       d20Result !== null &&
       Number(d20Result) <= 5 &&
       hasStatus(this.parent, "paralysis") &&
+      !this._ignoresCheckPenaltyStatus("paralysis") &&
       getAbilitySubtype(this) === "primary_ability"
     );
   }

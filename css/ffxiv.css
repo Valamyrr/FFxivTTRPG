@@ -868,7 +868,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 }
 .ffxiv#ffxiv-limit-break-hud {
   position: fixed;
-  z-index: 1200;
+  z-index: calc(var(--z-index-ui, 60) - 1);
   pointer-events: none;
 }
 .ffxiv .limit-break-hud {

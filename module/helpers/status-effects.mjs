@@ -19,16 +19,32 @@ const STATUS_DEFINITIONS = [
     id: "bind",
     labelKey: "FFXIV.Effects.Bind",
     icon: "systems/ffxiv/assets/effects/bind.webp",
+    flags: {
+      ffxiv: {
+        target: { check: { advantage: 1 } },
+      },
+    },
   },
   {
     id: "blind",
     labelKey: "FFXIV.Effects.Blind",
     icon: "systems/ffxiv/assets/effects/blind.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -2 },
+        target: { check: { advantage: 1 } },
+      },
+    },
   },
   {
     id: "brink_death",
     labelKey: "FFXIV.Effects.BrinkDeath",
     icon: "systems/ffxiv/assets/effects/brink-of-death.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -5 },
+      },
+    },
   },
   {
     id: "comatose",
@@ -59,6 +75,11 @@ const STATUS_DEFINITIONS = [
     id: "enmity",
     labelKey: "FFXIV.Effects.Enmity",
     icon: "systems/ffxiv/assets/effects/enmity.webp",
+    flags: {
+      ffxiv: {
+        enmity: { checkPenalty: -5 },
+      },
+    },
   },
   {
     id: "heavy",
@@ -69,6 +90,11 @@ const STATUS_DEFINITIONS = [
     id: "hidden",
     labelKey: "FFXIV.Effects.Hidden",
     icon: "systems/ffxiv/assets/effects/hidden.webp",
+    flags: {
+      ffxiv: {
+        check: { advantage: 1 },
+      },
+    },
   },
   {
     id: "invoking",
@@ -79,6 +105,12 @@ const STATUS_DEFINITIONS = [
     id: "knocked_out",
     labelKey: "FFXIV.Effects.KnockedOut",
     icon: "systems/ffxiv/assets/effects/knocked-out.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -7 },
+        target: { check: { advantage: 2 } },
+      },
+    },
   },
   {
     id: "paralysis",
@@ -89,11 +121,23 @@ const STATUS_DEFINITIONS = [
     id: "petrified",
     labelKey: "FFXIV.Effects.Petrified",
     icon: "systems/ffxiv/assets/effects/petrified.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -5 },
+        target: { check: { advantage: 1 } },
+      },
+    },
   },
   {
     id: "prone",
     labelKey: "FFXIV.Effects.Prone",
     icon: "systems/ffxiv/assets/effects/prone.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -2 },
+        target: { check: { advantage: 1 } },
+      },
+    },
   },
   {
     id: "ready",
@@ -114,21 +158,42 @@ const STATUS_DEFINITIONS = [
     id: "sleep",
     labelKey: "FFXIV.Effects.Sleep",
     icon: "systems/ffxiv/assets/effects/sleep.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -3 },
+      },
+    },
   },
   {
     id: "slow",
     labelKey: "FFXIV.Effects.Slow",
     icon: "systems/ffxiv/assets/effects/slow.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -2 },
+      },
+    },
   },
   {
     id: "stun",
     labelKey: "FFXIV.Effects.Stun",
     icon: "systems/ffxiv/assets/effects/stun.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -5 },
+        target: { check: { advantage: 1 } },
+      },
+    },
   },
   {
     id: "weakness",
     labelKey: "FFXIV.Effects.Weakness",
     icon: "systems/ffxiv/assets/effects/weakness.webp",
+    flags: {
+      ffxiv: {
+        check: { penalty: -2 },
+      },
+    },
   },
 ];
 
@@ -161,23 +226,6 @@ export const NEGATIVE_STATUS_IDS = [
   "weakness",
 ];
 
-const CHECK_PENALTY_STATUS_MODIFIERS = {
-  blind: -2,
-  brink_death: -5,
-  petrified: -5,
-  prone: -2,
-  sleep: -3,
-  slow: -2,
-  stun: -5,
-  weakness: -2,
-};
-const TARGET_ADVANTAGE_STATUS_IDS = new Set([
-  "bind",
-  "blind",
-  "petrified",
-  "prone",
-  "stun",
-]);
 const COMATOSE_ALLOWED_STATUS_IDS = new Set(["comatose", "death"]);
 const KNOCKED_OUT_ALLOWED_STATUS_IDS = new Set([
   "comatose",
@@ -209,6 +257,9 @@ function createStatusEffect(id, labelKey, icon, order) {
     img: icon,
     icon,
     order,
+    flags: foundry.utils.deepClone(
+      STATUS_DEFINITIONS.find((definition) => definition.id === id)?.flags ?? {},
+    ),
   };
 }
 
@@ -319,29 +370,32 @@ export function getStatusStackCount(actor, statusId) {
   return getHighestStatusStackCount(actor, statusId);
 }
 
-export function getActorCheckPenalty(actor) {
-  let penalty = Object.entries(CHECK_PENALTY_STATUS_MODIFIERS).reduce(
-    (total, [statusId, modifier]) =>
-      hasStatus(actor, statusId) ? total + modifier : total,
-    0,
+export function getActorCheckPenalty(actor, { ignoredStatuses = [] } = {}) {
+  const ignored = new Set(
+    (Array.isArray(ignoredStatuses) ? ignoredStatuses : [])
+      .map((statusId) => String(statusId ?? "").trim())
+      .filter(Boolean),
   );
-  if (hasStatus(actor, "knocked_out")) {
-    if (!hasStatus(actor, "prone")) penalty += CHECK_PENALTY_STATUS_MODIFIERS.prone;
-    if (!hasStatus(actor, "stun")) penalty += CHECK_PENALTY_STATUS_MODIFIERS.stun;
-  }
-  return penalty;
+  return getActorEffectFlagTotal(actor, "flags.ffxiv.check.penalty", {
+    ignoredStatuses: ignored,
+  });
 }
 
 export function getTargetStatusAdvantage(actor) {
-  let advantage = 0;
-  for (const statusId of TARGET_ADVANTAGE_STATUS_IDS) {
-    if (hasStatus(actor, statusId)) advantage += 1;
-  }
-  if (hasStatus(actor, "knocked_out")) {
-    if (!hasStatus(actor, "prone")) advantage += 1;
-    if (!hasStatus(actor, "stun")) advantage += 1;
-  }
-  return advantage;
+  return getActorEffectFlagTotal(actor, "flags.ffxiv.target.check.advantage");
+}
+
+function getActorEffectFlagTotal(actor, path, { ignoredStatuses = null } = {}) {
+  return Array.from(actor?.effects ?? []).reduce((total, effect) => {
+    if (!effect || effect.disabled) return total;
+    if (
+      ignoredStatuses instanceof Set &&
+      Array.from(effect.statuses ?? []).some((statusId) => ignoredStatuses.has(statusId))
+    )
+      return total;
+    const value = Number(foundry.utils.getProperty(effect, path));
+    return Number.isFinite(value) ? total + value : total;
+  }, 0);
 }
 
 export function getActorCriticalRange(actor, fallback = 20) {
@@ -392,6 +446,39 @@ export async function recoverActorHealth(actor, amount, options = {}) {
     currentHealth,
     nextHealth,
     healing: nextHealth - currentHealth,
+  };
+}
+
+export async function recoverActorMana(actor, amount, options = {}) {
+  const recovery = Math.max(Number.parseInt(amount, 10) || 0, 0);
+  const currentMana = Number(actor?.system?.mana?.value ?? 0);
+  if (!actor || recovery <= 0 || !canActorRecover(actor)) {
+    return {
+      changed: false,
+      currentMana,
+      nextMana: currentMana,
+      recovery: 0,
+    };
+  }
+
+  const maxMana = Number(actor.system?.mana?.max);
+  const manaCap = Number.isFinite(maxMana) && maxMana > 0 ? maxMana : 5;
+  const nextMana = Math.min(currentMana + recovery, manaCap);
+  if (nextMana === currentMana) {
+    return {
+      changed: false,
+      currentMana,
+      nextMana,
+      recovery: 0,
+    };
+  }
+
+  await actor.update({ "system.mana.value": nextMana }, options);
+  return {
+    changed: true,
+    currentMana,
+    nextMana,
+    recovery: nextMana - currentMana,
   };
 }
 

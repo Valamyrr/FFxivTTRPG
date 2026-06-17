@@ -32,6 +32,8 @@ const EDIT_MODE_ITEM_TYPES = new Set([
   "primary_ability",
   "secondary_ability",
   "instant_ability",
+  "trait",
+  "limit_break",
   "title",
 ]);
 

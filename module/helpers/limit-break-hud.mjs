@@ -7,6 +7,28 @@ const DEFAULT_SOUNDS = {
 };
 
 let resizeObserver = null;
+let mutationObserver = null;
+let currentObservedHotbar = null;
+let hotbarTransitionListener = null;
+
+function observeHotbar(hotbar) {
+  if (!hotbar || typeof ResizeObserver === "undefined") return;
+  if (currentObservedHotbar && currentObservedHotbar !== hotbar) {
+    if (hotbarTransitionListener) {
+      currentObservedHotbar.removeEventListener("transitionend", hotbarTransitionListener, true);
+      hotbarTransitionListener = null;
+    }
+  }
+  resizeObserver?.disconnect();
+  mutationObserver?.disconnect();
+  resizeObserver = new ResizeObserver(() => requestAnimationFrame(positionLimitBreakHud));
+  resizeObserver.observe(hotbar);
+  mutationObserver = new MutationObserver(() => requestAnimationFrame(positionLimitBreakHud));
+  mutationObserver.observe(hotbar, { attributes: true, childList: true, subtree: true });
+  hotbarTransitionListener = () => requestAnimationFrame(positionLimitBreakHud);
+  hotbar.addEventListener("transitionend", hotbarTransitionListener, true);
+  currentObservedHotbar = hotbar;
+}
 
 function getLimitBreakGaugeContext() {
   const enabled = !!game.settings.get("ffxiv", "limitBreakActive");
@@ -103,7 +125,7 @@ function getVisibleHotbarSlots(hotbar) {
         return rect.width > 0 && rect.height > 0;
       })
       .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-    if (slots.length >= 10) return slots;
+    if (slots.length > 0) return slots;
   }
 
   return [];
@@ -125,17 +147,17 @@ function getHotbarBounds() {
   const hotbar = getHotbarElement();
   if (!hotbar) return null;
 
-  const secondSlot = getHotbarSlot(hotbar, 2);
-  const ninthSlot = getHotbarSlot(hotbar, 9);
-  if (secondSlot && ninthSlot) {
-    const start = secondSlot.getBoundingClientRect();
-    const end = ninthSlot.getBoundingClientRect();
-    if (start.width && end.width) {
-      return {
-        left: start.left,
-        top: Math.min(start.top, end.top),
-        width: end.right - start.left,
-      };
+  const slots = getVisibleHotbarSlots(hotbar);
+  if (slots && slots.length > 0) {
+    const rects = slots
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r && (r.width > 0 || r.height > 0));
+    if (rects.length > 0) {
+      const left = Math.min(...rects.map((r) => r.left));
+      const right = Math.max(...rects.map((r) => r.right));
+      const top = Math.min(...rects.map((r) => r.top));
+      const width = right - left;
+      if (width > 0) return { left, top, width };
     }
   }
 
@@ -210,16 +232,16 @@ export async function renderLimitBreakHud() {
 }
 
 export function initLimitBreakHud() {
-  Hooks.on("renderHotbar", () => requestAnimationFrame(positionLimitBreakHud));
+  Hooks.on("renderHotbar", () => {
+    requestAnimationFrame(positionLimitBreakHud);
+    const hotbar = getHotbarElement();
+    observeHotbar(hotbar);
+  });
   Hooks.on("canvasReady", () => renderLimitBreakHud());
-  window.addEventListener("resize", positionLimitBreakHud);
+  window.addEventListener("resize", () => requestAnimationFrame(positionLimitBreakHud));
 
   const hotbar = getHotbarElement();
-  if (hotbar && typeof ResizeObserver !== "undefined") {
-    resizeObserver?.disconnect();
-    resizeObserver = new ResizeObserver(positionLimitBreakHud);
-    resizeObserver.observe(hotbar);
-  }
+  observeHotbar(hotbar);
 
   renderLimitBreakHud();
 }

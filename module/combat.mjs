@@ -3,6 +3,13 @@ import {
   canActorRecover,
   getHighestStatusStackCount,
 } from "./helpers/status-effects.mjs";
+import {
+  fillActorJobResource,
+  findActorTrait,
+  normalizeJobResourceName,
+} from "./helpers/job-resources.mjs";
+
+const ADVENTURER_STEP_MP_RECOVERY = 2;
 
 const STEP_END_STATUS_ICONS = {
   dot: "systems/ffxiv/assets/effects/dot.webp",
@@ -26,6 +33,7 @@ export class FFXIVCombat extends Combat {
       await this._resetEncounterStatusFlags();
       const startedCombat = await super.startCombat();
       await this._applyStartingMpOverrides();
+      await this._applyEncounterStartJobAutomation();
       return startedCombat;
     });
   }
@@ -162,7 +170,10 @@ export class FFXIVCombat extends Combat {
 
   async _removeInvokingStatus(actor) {
     if (!actor.statuses?.has("invoking")) return;
-    await actor.toggleStatusEffect("invoking", { active: false });
+    await actor.toggleStatusEffect("invoking", {
+      active: false,
+      render: false,
+    });
   }
 
   async _removeTurnStartStatuses(actor) {
@@ -221,11 +232,15 @@ export class FFXIVCombat extends Combat {
       if (!result.changed && !result.statusEffectsResolved) continue;
       if (result.changed) {
         updatedActorIds.add(actor.id);
-        const updateData = {
-          "system.health.value": result.nextHealth,
-        };
+        const updateData = {};
+        if (result.nextHealth !== result.currentHealth) {
+          updateData["system.health.value"] = result.nextHealth;
+        }
         if (result.nextBarrier !== result.currentBarrier) {
           updateData["system.barrier.value"] = result.nextBarrier;
+        }
+        if (result.nextMana !== result.currentMana) {
+          updateData["system.mana.value"] = result.nextMana;
         }
         updates.push((async () => {
           await actor.update(updateData, {
@@ -292,6 +307,9 @@ export class FFXIVCombat extends Combat {
   _getStepEndHealthResult(actor, step) {
     const currentHealth = Number(actor.system?.health?.value ?? 0);
     const currentBarrier = Math.max(Number(actor.system?.barrier?.value) || 0, 0);
+    const currentMana = Number(actor.system?.mana?.value ?? 0);
+    const maxMana = Number(actor.system?.mana?.max);
+    const manaCap = Number.isFinite(maxMana) && maxMana > 0 ? maxMana : 5;
     const maxHealth = Number(actor.system?.health?.max);
     const healthCap = Number.isFinite(maxHealth) && maxHealth > 0
       ? maxHealth
@@ -318,6 +336,8 @@ export class FFXIVCombat extends Combat {
     let nextHealth = currentHealth;
     let nextBarrier = currentBarrier;
     let resolvedRevivifyHealing = 0;
+    let nextMana = currentMana;
+    let manaRecovery = 0;
 
     if (dotAfterRevivify) {
       if (availableRevivifyHealing > 0) {
@@ -344,7 +364,16 @@ export class FFXIVCombat extends Combat {
       }
     }
 
-    const changed = nextHealth !== currentHealth || nextBarrier !== currentBarrier;
+    if (isAdventurerStep && actor.type === "character" && canActorRecover(actor)) {
+      manaRecovery = this._getAdventurerStepMpRecovery(actor);
+      if (manaRecovery > 0) nextMana = Math.min(currentMana + manaRecovery, manaCap);
+      manaRecovery = Math.max(nextMana - currentMana, 0);
+    }
+
+    const changed =
+      nextHealth !== currentHealth ||
+      nextBarrier !== currentBarrier ||
+      nextMana !== currentMana;
     const statusEffectsResolved = changed ||
       (dotDamage > 0 && resolvedRevivifyHealing > 0);
 
@@ -355,10 +384,82 @@ export class FFXIVCombat extends Combat {
       nextHealth,
       currentBarrier,
       nextBarrier,
+      currentMana,
+      nextMana,
       dotDamage,
       revivifyHealing: resolvedRevivifyHealing,
+      manaRecovery,
       dotAfterRevivify,
     };
+  }
+
+  _getAdventurerStepMpRecovery(actor) {
+    let recovery = ADVENTURER_STEP_MP_RECOVERY;
+    let multiplier = 1;
+    let override = null;
+    let suppressed = false;
+
+    for (const effect of actor?.allApplicableEffects?.() ?? []) {
+      if (!effect || effect.disabled) continue;
+
+      const data = foundry.utils.getProperty(effect, "flags.ffxiv.mpRecovery") ?? {};
+      if (data.suppress === true) suppressed = true;
+      const flat = Number(data.flat);
+      if (Number.isFinite(flat)) recovery += flat;
+      const mult = Number(data.mult);
+      if (Number.isFinite(mult)) multiplier *= mult;
+      const overrideValue = Number(data.override);
+      if (Number.isFinite(overrideValue)) override = overrideValue;
+
+      for (const change of effect.changes ?? []) {
+        const key = String(change?.key ?? "").trim().toLowerCase();
+        if (!key.startsWith("flags.ffxiv.mprecovery.")) continue;
+
+        const mode = this._normalizeActiveEffectChangeMode(change?.mode);
+        const rawValue = String(change?.value ?? "").trim();
+        const value = Number(rawValue);
+        if (key === "flags.ffxiv.mprecovery.suppress") {
+          suppressed ||= ["true", "1", "yes"].includes(rawValue.toLowerCase());
+          continue;
+        }
+        if (!Number.isFinite(value)) continue;
+
+        if (key === "flags.ffxiv.mprecovery.flat") {
+          if (mode === "multiply") recovery *= value;
+          else if (mode === "override") recovery = value;
+          else if (mode === "subtract") recovery -= value;
+          else recovery += value;
+        }
+        if (key === "flags.ffxiv.mprecovery.mult") {
+          if (mode === "add") multiplier += value;
+          else if (mode === "override") multiplier = value;
+          else if (mode === "subtract") multiplier -= value;
+          else multiplier *= value;
+        }
+        if (key === "flags.ffxiv.mprecovery.override") {
+          override = value;
+        }
+      }
+    }
+
+    if (suppressed) return 0;
+    const total = override === null ? recovery * multiplier : override;
+    return Math.max(Math.floor(total), 0);
+  }
+
+  _normalizeActiveEffectChangeMode(mode) {
+    if (typeof mode === "string" && mode) return mode.toLowerCase();
+    const legacy = Number.parseInt(mode, 10);
+    switch (legacy) {
+      case 1:
+        return "multiply";
+      case 2:
+        return "add";
+      case 5:
+        return "override";
+      default:
+        return "add";
+    }
   }
 
   _applyStepEndDOT(health, barrier, damage) {
@@ -420,11 +521,21 @@ export class FFXIVCombat extends Combat {
           this._formatStepEndStatusEffect("revivify", result.revivifyHealing),
         );
       }
-      const resourceChanges = [`${result.currentHealth} -> ${result.nextHealth}`];
+      const resourceChanges = [];
+      if (result.nextHealth !== result.currentHealth) {
+        resourceChanges.push(`${result.currentHealth} -> ${result.nextHealth}`);
+      }
       if (result.nextBarrier !== result.currentBarrier) {
         resourceChanges.push(`${game.i18n.localize("FFXIV.Health.barrier")} ${result.currentBarrier} -> ${result.nextBarrier}`);
       }
-      return `<li><strong>${result.actor.name}</strong>: ${parts.join(", ")} (${resourceChanges.join(", ")})</li>`;
+      if (result.nextMana !== result.currentMana) {
+        resourceChanges.push(`${game.i18n.localize("FFXIV.Mana.long")} ${result.currentMana} -> ${result.nextMana}`);
+      }
+      if (!resourceChanges.length) {
+        resourceChanges.push(`${result.currentHealth} -> ${result.nextHealth}`);
+      }
+      const effectsText = parts.length ? `${parts.join(", ")} ` : "";
+      return `<li><strong>${result.actor.name}</strong>: ${effectsText}(${resourceChanges.join(", ")})</li>`;
     }).join("");
 
     await ChatMessage.create({
@@ -498,7 +609,19 @@ export class FFXIVCombat extends Combat {
     return highestOverride;
   }
 
-  async _resetEncounterStatusFlags() {
+  async _applyEncounterStartJobAutomation() {
+    const actors = this._getUniqueCombatActors();
+    for (const actor of actors.values()) {
+      if (findActorTrait(actor, "Deep Meditation")) {
+        await fillActorJobResource(actor, "Chakra", { render: false });
+      }
+      if (findActorTrait(actor, "Sect Mastery")) {
+        await this._grantEncounterFormlessFist(actor);
+      }
+    }
+  }
+
+  _getUniqueCombatActors() {
     const actors = new Map();
     for (const combatant of this.combatants) {
       const actor = combatant?.actor;
@@ -506,6 +629,86 @@ export class FFXIVCombat extends Combat {
       if (!actor || actors.has(actorRef)) continue;
       actors.set(actorRef, actor);
     }
+    return actors;
+  }
+
+  async _grantEncounterFormlessFist(actor) {
+    await this._removeActorNamedEffects(actor, [
+      "opo_opo_form",
+      "raptor_form",
+      "coeurl_form",
+      "formless_fist",
+    ]);
+
+    const trait = findActorTrait(actor, "Formless Fist") ?? findActorTrait(actor, "Sect Mastery");
+    const icon =
+      trait?.img ??
+      "modules/ffxiv-ttrpg-icons-pack/ffxiv/icons/MNK/FormlessFist.webp";
+    const showAlways = CONST.ACTIVE_EFFECT_SHOW_ICON?.ALWAYS ?? 2;
+    const effectData = {
+      name: "Formless Fist",
+      img: icon,
+      icon,
+      origin: trait?.uuid ?? "",
+      disabled: false,
+      transfer: false,
+      statuses: [],
+      displayStatusIcon: false,
+      showIcon: showAlways,
+      flags: {
+        ffxiv: {
+          abilityEffectRule: true,
+          effectKey: "formless_fist",
+          sourceItemUuid: trait?.uuid ?? "",
+          check: {
+            advantage: {
+              amount: 1,
+              tags: ["FFXIV.Tags.Physical"],
+            },
+          },
+        },
+      },
+      duration: this._getEncounterEffectDuration(2),
+    };
+    await actor.createEmbeddedDocuments("ActiveEffect", [effectData], {
+      render: false,
+    });
+  }
+
+  _getEncounterEffectDuration(turns) {
+    const duration = {
+      turns,
+      startTime: game.time?.worldTime ?? null,
+      combat: this.id,
+      startRound: this.round ?? null,
+      startTurn: this.turn ?? null,
+    };
+    return duration;
+  }
+
+  async _removeActorNamedEffects(actor, keys) {
+    if (!actor?.effects?.size) return;
+    const normalizedKeys = new Set(keys.map((key) => normalizeJobResourceName(key)));
+    const ids = actor.effects
+      .filter((effect) => {
+        if (!effect || effect.disabled) return false;
+        const key =
+          effect.getFlag?.("ffxiv", "effectKey") ??
+          foundry.utils.getProperty(effect, "flags.ffxiv.effectKey") ??
+          effect.name;
+        return normalizedKeys.has(normalizeJobResourceName(key));
+      })
+      .map((effect) => effect.id)
+      .filter(Boolean);
+    if (ids.length)
+      await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+        render: false,
+        ffxivSuppressRemovalText: true,
+      });
+  }
+
+  async _resetEncounterStatusFlags() {
+    const actors = this._getUniqueCombatActors();
     for (const actor of actors.values()) {
       if (actor.getFlag("ffxiv", "stunnedInEncounter") !== undefined) {
         await actor.unsetFlag("ffxiv", "stunnedInEncounter");
