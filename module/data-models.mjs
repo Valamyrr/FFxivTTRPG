@@ -97,6 +97,15 @@ function buildAbilityFields() {
       min: 0,
       initial: 0,
     }),
+    job_resources_max: new fields.NumberField({
+      required: false,
+      integer: true,
+      min: 0,
+      initial: 0,
+    }),
+    job_resource_status: new fields.ArrayField(
+      new fields.BooleanField({ required: false, initial: false }),
+    ),
     hit_formula: new fields.StringField({
       required: false,
       blank: true,
@@ -143,6 +152,12 @@ function buildAbilityFields() {
       initial: "",
     }),
     hpcost: new fields.NumberField({
+      required: false,
+      integer: true,
+      min: 0,
+      initial: 0,
+    }),
+    mpcost: new fields.NumberField({
       required: false,
       integer: true,
       min: 0,
@@ -205,6 +220,29 @@ function buildPriceField() {
       initial: "Fortune",
     }),
   });
+}
+
+function buildActorGrantField() {
+  return new fields.ArrayField(
+    new fields.SchemaField({
+      uuid: new fields.StringField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      name: new fields.StringField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      type: new fields.StringField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      actor: new fields.AnyField({ required: false }),
+    }),
+  );
 }
 
 function buildInventoryFields() {
@@ -787,6 +825,7 @@ class AbilityItemData extends foundry.abstract.TypeDataModel {
     return {
       ...buildItemFields(),
       ...buildAbilityFields(),
+      summon_actors: buildActorGrantField(),
     };
   }
 }
@@ -816,6 +855,7 @@ class TraitItemData extends foundry.abstract.TypeDataModel {
       job_resource_status: new fields.ArrayField(
         new fields.BooleanField({ required: false, initial: false }),
       ),
+      summon_actors: buildActorGrantField(),
     };
   }
 }

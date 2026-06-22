@@ -32,6 +32,7 @@ import {
   isNegativeStatusEffect,
   isAdditiveStackableStatusEffect,
   isStackableStatusEffect,
+  markPetrifiedAppliedThisTurn,
   migrateLegacyStatusStackEffects,
   recoverActorHealth,
   recoverActorMana,
@@ -50,6 +51,11 @@ import {
   canonicalizeBakedTag,
   canonicalizeBakedTags,
 } from "./helpers/ability-subtype.mjs";
+import { clearActorJobResources } from "./helpers/job-resources.mjs";
+import {
+  createSummonTokenFromRequest,
+  FFXIV_SUMMON_SOCKET_TYPE,
+} from "./helpers/summons.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -141,6 +147,16 @@ Hooks.on("preCreateActiveEffect", (effect) => {
     statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
   )
     return false;
+  if (
+    hasStatus(actor, "comatose") &&
+    statuses.some((statusId) => !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+  )
+    return false;
+  if (
+    hasStatus(actor, "transcendent") &&
+    statuses.some((statusId) => isNegativeStatusEffect(statusId))
+  )
+    return false;
   if (statuses.some((statusId) => isEliteFoeBlockedStatus(actor, statusId)))
     return false;
 });
@@ -149,11 +165,25 @@ Hooks.on("preUpdateActiveEffect", (effect, changes, options) => {
   if (options?.ffxivSyncEliteFoeEffect) return;
   if (effect?.parent?.documentName !== "Actor") return;
   if (
-    foundry.utils.hasProperty(changes, "statuses") &&
-    hasStatus(effect.parent, "knocked_out")
+    foundry.utils.hasProperty(changes, "statuses")
   ) {
     const statuses = Array.from(changes.statuses ?? []);
-    if (statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId)))
+    if (
+      hasStatus(effect.parent, "knocked_out") &&
+      statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+    )
+      return false;
+    if (
+      hasStatus(effect.parent, "comatose") &&
+      statuses.some((statusId) => !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+    )
+      return false;
+    if (
+      hasStatus(effect.parent, "transcendent") &&
+      statuses.some((statusId) => isNegativeStatusEffect(statusId))
+    )
+      return false;
+    if (statuses.some((statusId) => isEliteFoeBlockedStatus(effect.parent, statusId)))
       return false;
   }
   if (effect.getFlag("ffxiv", ELITE_FOE_EFFECT_FLAG) !== true) return;
@@ -5827,9 +5857,13 @@ async function applyLinkedEffectsToActor(actor, effectDocs) {
   if (appliedStatuses.has("stun")) {
     await actor.setFlag("ffxiv", "stunnedInEncounter", true);
   }
+  if (appliedStatuses.has("petrified")) {
+    await markPetrifiedAppliedThisTurn(actor);
+  }
   if (appliedStatuses.has("knocked_out")) {
     await deleteActorStatuses(actor, getKnockedOutBlockedStatusIds());
     await removeEnmityInflictedByActor(actor);
+    await clearActorJobResources(actor);
   }
   return created.length;
 }
@@ -6606,6 +6640,13 @@ Hooks.on("ready", function () {
             await createMarkerTileFromRequest(data);
           } catch (err) {
             debugError("socket marker placement failed:", err);
+          }
+          break;
+        case FFXIV_SUMMON_SOCKET_TYPE:
+          try {
+            await createSummonTokenFromRequest(data);
+          } catch (err) {
+            debugError("socket summon actor failed:", err);
           }
           break;
         case "applyEffect": {

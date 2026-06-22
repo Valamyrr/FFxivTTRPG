@@ -46,4 +46,38 @@
   .ability-effect-name span {
     min-width: 0;
   }
+
+  &.actor .actor-effects {
+    .effect-row {
+      flex-wrap: wrap;
+    }
+
+    .effect-main {
+      flex: 1 1 180px;
+    }
+
+    .effect-meta h4,
+    .effect-meta p {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .effect-right {
+      flex: 1 1 220px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 0;
+    }
+
+    .effect-type {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .effect-stack,
+    .effect-controls {
+      flex: 0 0 auto;
+    }
+  }
 }

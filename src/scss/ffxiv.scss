@@ -1,5 +1,6 @@
 @use "sass:meta";
 @use "components/effects";
+@use "components/abilities";
 @use "components/forms";
 @use "components/items";
 @use "components/resource";
@@ -37,6 +38,7 @@
 /* Styles limited to ffxiv sheets */
 .ffxiv {
   @include forms.styles;
+  @include abilities.styles;
   @include resource.styles;
   @include items.styles;
   @include effects.styles;

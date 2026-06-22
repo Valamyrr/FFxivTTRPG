@@ -4,6 +4,10 @@ import {
 } from '../helpers/effects.mjs';
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import { getAbilitySubtype, getSubtypeTagLabel, ensureAbilitySubtypeTags } from "../helpers/ability-subtype.mjs";
+import {
+  getItemJobResourceName,
+  getNormalizedJobResourceStatus,
+} from "../helpers/job-resources.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -754,6 +758,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   /** @override */
   async _onClose(options) {
+    this._abilityQuickTabsController?.abort();
+    this._abilityQuickTabsController = null;
     this._exitActorEditMode();
     this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
     this._closeInventoryContextMenu();
@@ -791,7 +797,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!control) return false;
     if (control.name && this._isActorLockAllowedField(control.name)) return true;
     return control.matches?.(
-      ".ability-limitations input.limitation, .ability-limitations input.job_resource, .ability-limitations input.active"
+      ".ability-limitations input.job_resource, .ability-limitations input.active"
     ) ?? false;
   }
 
@@ -905,6 +911,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         panel.classList.toggle("active", active);
         panel.style.display = active ? "" : "none";
       });
+      if (tab === "abilities") {
+        this._activateAbilityQuickTabs();
+      } else {
+        this._abilityQuickTabsController?.abort();
+        this._abilityQuickTabsController = null;
+      }
       if (playSound && changed) this._playConfiguredSound("soundNotificationFFXIV_openSheet");
     };
 
@@ -1317,6 +1329,25 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       context.system.ability_order,
       "trait",
     );
+    context.hasTraitAbilities = limit_break.length > 0 || traits.length > 0;
+    context.jobResources = this._getJobResourceSummary(context.items);
+  }
+
+  _getJobResourceSummary(items) {
+    return items
+      .map((item) => {
+        const max = Math.max(Number.parseInt(item.system?.job_resources_max, 10) || 0, 0);
+        if (max <= 0) return null;
+        const status = getNormalizedJobResourceStatus(item);
+        return {
+          id: item._id,
+          status,
+          name: getItemJobResourceName(item),
+          count: status.filter(Boolean).length,
+          max,
+        };
+      })
+      .filter(Boolean);
   }
 
   /* -------------------------------------------- */
@@ -1353,6 +1384,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     html.on('click.ffxivActorSheet', '.companions-sub-tabs .companions-sub-tab', this._displayCompanionTab.bind(this));
     html.on('click.ffxivActorSheet', '.actor-edit-toggle', this._toggleActorEditMode.bind(this));
     html.on('click.ffxivActorSheet', '.actor-avatar', this._onActorAvatarClick.bind(this));
+    this._activateAbilityQuickTabs();
 
     if (!this.document.isOwner) return;
 
@@ -1471,8 +1503,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     html.on('click.ffxivActorSheet', '.pet-ability-roll-button', this._rollPet.bind(this));
 
     html.on('click.ffxivActorSheet', '.roll-attribute', this._rollAttribute.bind(this));
-
-    html.on('change.ffxivActorSheet', '.ability-limitations .limitation', this._onChangeLimitations.bind(this))
 
     html.on('change.ffxivActorSheet', '.ability-limitations .job_resource', this._onChangeJobResource.bind(this))
 
@@ -1939,6 +1969,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const selectors = [
       ".window-content",
+      ".fixed-part",
       ".sheet-body",
       ".sheet-body .tab.active",
       ".sub-tab-content.active"
@@ -1977,6 +2008,45 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         if (this._pendingSheetScrollPositions === positions) restore();
       }, 50);
     });
+  }
+
+  _activateAbilityQuickTabs() {
+    this._abilityQuickTabsController?.abort();
+    this._abilityQuickTabsController = null;
+
+    const root = this.element;
+    const scrollRoot = root?.querySelector(".sheet-body");
+    const fullTabs = root?.querySelector(".actor-abilities .ability-full-tabs");
+    const quickTabs = root?.querySelector(".actor-abilities .ability-quick-tabs");
+    if (!scrollRoot || !fullTabs || !quickTabs) return;
+
+    const controller = new AbortController();
+    this._abilityQuickTabsController = controller;
+    let queued = false;
+
+    const update = () => {
+      queued = false;
+      if (!scrollRoot.isConnected || !fullTabs.isConnected || !quickTabs.isConnected) {
+        controller.abort();
+        if (this._abilityQuickTabsController === controller) this._abilityQuickTabsController = null;
+        return;
+      }
+
+      const scrollRect = scrollRoot.getBoundingClientRect();
+      const tabsRect = fullTabs.getBoundingClientRect();
+      const tabsVisible = tabsRect.bottom > scrollRect.top + 2 && tabsRect.top < scrollRect.bottom - 2;
+      quickTabs.classList.toggle("is-visible", !tabsVisible && scrollRoot.scrollTop > 0);
+    };
+
+    const queueUpdate = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
+    };
+
+    scrollRoot.addEventListener("scroll", queueUpdate, { passive: true, signal: controller.signal });
+    window.addEventListener("resize", queueUpdate, { signal: controller.signal });
+    requestAnimationFrame(update);
   }
 
   _activateProseMirrorEditors() {
@@ -2308,28 +2378,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     $(`#${characterSheet} .companions-sub-tab-content`).removeClass('active').prop("hidden", true).hide();
     $(`#${characterSheet} .companions-sub-tabs .companions-sub-tab[data-tab=${resolvedTab}]`).addClass("active");
     $(`#${characterSheet} .companions-sub-tab-content[data-tab=${resolvedTab}]`).prop("hidden", false).addClass('active').show();
-  }
-
-  async _onChangeLimitations(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const checkbox = event.currentTarget
-    const index = parseInt(checkbox.dataset.index, 10);
-    const itemId = checkbox.dataset.itemId;
-
-    const item = this.actor.items.get(itemId)
-    if (!item) return;
-
-    var limitations_status;
-    if (item.system.limitations_status) {
-      limitations_status = item.system.limitations_status.slice(0, item.system.limitations_max);
-    } else {
-      limitations_status = new Array(item.system.limitations_max).fill(false)
-    }
-    limitations_status[index] = checkbox.checked;
-
-    await this._updateAbilityCheckboxState(item, { 'system.limitations_status': limitations_status });
-
   }
 
   async _onChangeJobResource(event) {

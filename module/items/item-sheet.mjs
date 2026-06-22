@@ -179,6 +179,11 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         : this.item.type;
     context.bakedActionTag = this._getBakedActionTag(actionType);
     context.customTags = this._getCustomActionTags(itemData.system.tags);
+    if (this._hasSummonActorSupport()) {
+      context.system.summon_actors = this._getSummonActorEntries(
+        itemData.system.summon_actors,
+      );
+    }
     context.hasMarkerTag = this._hasMarkerTag(itemData.system.tags);
     context.hasCheck = this._hasCheck(itemData.system.check);
     if (Object.hasOwn(context.system, "shop_tier")) {
@@ -346,6 +351,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     this.activateListeners($(this.element));
     this._activateJobDropZone();
+    this._activateJobGrantReorder();
+    this._activateSummonDropZone();
     this._activateFormulaFieldVisibility();
     this._applyItemEditMode();
     this._restoreSheetScroll();
@@ -646,6 +653,52 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return Boolean(check) && check !== "FFXIV.None" && check !== none;
   }
 
+  _hasSummonActorSupport() {
+    return [
+      "ability",
+      "primary_ability",
+      "secondary_ability",
+      "instant_ability",
+      "trait",
+    ].includes(this.item.type);
+  }
+
+  _getSummonActorEntries(
+    entries = this.item.system?.summon_actors,
+    { includeLabels = true } = {},
+  ) {
+    const grants = Array.isArray(entries)
+      ? foundry.utils.deepClone(entries)
+      : entries && typeof entries === "object"
+        ? foundry.utils.deepClone(Object.values(entries))
+        : [];
+    return grants
+      .map((grant) => {
+        const entry = {
+          uuid: String(grant?.uuid ?? "").trim(),
+          name: String(grant?.name ?? "").trim(),
+          type: String(grant?.type ?? "").trim(),
+        };
+        if (includeLabels)
+          entry.typeLabel = this._getSummonActorTypeLabel(entry);
+        return entry;
+      })
+      .filter((grant) => grant.uuid);
+  }
+
+  _getSummonActorGrants() {
+    return this._getSummonActorEntries(this.item.system?.summon_actors, {
+      includeLabels: false,
+    });
+  }
+
+  _getSummonActorTypeLabel(grant) {
+    const type = String(grant?.type ?? "").trim();
+    if (!type) return game.i18n.localize("FFXIV.ItemType.ItemType");
+    const label = game.i18n.localize(`FFXIV.ActorType.${type}`);
+    return label === `FFXIV.ActorType.${type}` ? type : label;
+  }
+
   _getEffectRequirementEntries(system) {
     const requirements = Array.isArray(system.effect_requirements)
       ? system.effect_requirements
@@ -657,23 +710,63 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       mode: requirement?.mode === "forbidden" ? "forbidden" : "required",
       consume: requirement?.consume === true,
       bypassText: this._getEffectRefListInput(requirement?.bypass),
+      resourceSpent: String(requirement?.resourceSpent ?? "").trim(),
+      resourceSpentMin: Number.isFinite(Number.parseInt(
+        requirement?.resourceSpentMin ?? requirement?.spentMin ?? requirement?.min,
+        10,
+      ))
+        ? Number.parseInt(
+          requirement?.resourceSpentMin ?? requirement?.spentMin ?? requirement?.min,
+          10,
+        )
+        : "",
+      resourceSpentMax: Number.isFinite(Number.parseInt(
+        requirement?.resourceSpentMax ?? requirement?.spentMax ?? requirement?.max,
+        10,
+      ))
+        ? Number.parseInt(
+          requirement?.resourceSpentMax ?? requirement?.spentMax ?? requirement?.max,
+          10,
+        )
+        : "",
       open: this._expandedEffectRequirements.has(index),
       text: this._formatEffectRequirement(requirement),
     }));
   }
 
   _getEffectRuleEntries(system) {
-    const rules = Array.isArray(system.effect_rules)
-      ? system.effect_rules
-      : [];
+    const rules = this._getEffectRulesFrom(system, { includeDrafts: true });
     return rules.map((rule, index) => ({
       action: this._normalizeEffectRuleAction(rule?.action),
       trigger: this._normalizeEffectRuleTrigger(rule?.trigger),
       name: String(rule?.name ?? "").trim() || this._titleizeEffectKey(rule?.key),
+      isResource: this._normalizeEffectRuleAction(rule?.action) === "resource",
       isToggle: this._normalizeEffectRuleAction(rule?.action) === "toggle",
       iconOverride: String(rule?.iconOverride ?? rule?.icon ?? "").trim(),
       threshold: Number.isFinite(Number.parseInt(rule?.threshold, 10))
         ? Number.parseInt(rule.threshold, 10)
+        : "",
+      operation: this._normalizeEffectRuleOperation(
+        rule?.operation ?? rule?.resourceAction,
+      ),
+      resource: String(rule?.resource ?? rule?.resourceName ?? "").trim(),
+      amount: String(rule?.amount ?? "").trim() || "1",
+      min: Number.isFinite(Number.parseInt(rule?.min, 10))
+        ? Number.parseInt(rule.min, 10)
+        : "",
+      spentResource: String(rule?.spentResource ?? rule?.amountResource ?? "").trim(),
+      requiresResourceSpent: String(rule?.requiresResourceSpent ?? "").trim(),
+      requiresResourceSpentMin: Number.isFinite(Number.parseInt(
+        rule?.requiresResourceSpentMin ?? rule?.spentMin,
+        10,
+      ))
+        ? Number.parseInt(rule?.requiresResourceSpentMin ?? rule?.spentMin, 10)
+        : "",
+      requiresResourceSpentMax: Number.isFinite(Number.parseInt(
+        rule?.requiresResourceSpentMax ?? rule?.spentMax,
+        10,
+      ))
+        ? Number.parseInt(rule?.requiresResourceSpentMax ?? rule?.spentMax, 10)
         : "",
       removeText: this._getEffectRefListInput(rule?.remove),
       requiresText: this._getEffectRefListInput(rule?.requires),
@@ -687,12 +780,22 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _normalizeEffectRuleAction(value) {
     const action = String(value ?? "grant").trim().toLowerCase();
-    return ["grant", "remove", "toggle"].includes(action) ? action : "grant";
+    return ["grant", "remove", "toggle", "resource"].includes(action)
+      ? action
+      : "grant";
   }
 
   _normalizeEffectRuleTrigger(value) {
     const trigger = String(value ?? "use").trim();
+    if (trigger === "cost") return "cost";
     return trigger === "hitThreshold" ? "hitThreshold" : "use";
+  }
+
+  _normalizeEffectRuleOperation(value) {
+    const operation = String(value ?? "grant").trim().toLowerCase();
+    return ["grant", "consume", "fill", "clear", "set"].includes(operation)
+      ? operation
+      : "grant";
   }
 
   _getEffectRefListInput(value) {
@@ -727,6 +830,22 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     const bypass = this._formatEffectRefList(requirement?.bypass);
     if (bypass) parts.push(`bypassed by ${bypass}`);
+    const resourceSpent = String(requirement?.resourceSpent ?? "").trim();
+    if (resourceSpent) {
+      const min = Number.parseInt(
+        requirement?.resourceSpentMin ?? requirement?.spentMin ?? requirement?.min,
+        10,
+      );
+      const max = Number.parseInt(
+        requirement?.resourceSpentMax ?? requirement?.spentMax ?? requirement?.max,
+        10,
+      );
+      const range = [
+        Number.isFinite(min) ? `min ${min}` : "",
+        Number.isFinite(max) ? `max ${max}` : "",
+      ].filter(Boolean).join(", ");
+      parts.push(`spent ${resourceSpent}${range ? ` (${range})` : ""}`);
+    }
     return parts.join("; ");
   }
 
@@ -735,7 +854,30 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const action = String(rule?.action ?? "grant").trim().toLowerCase();
     const parts = [];
 
-    if (action === "toggle") {
+    if (action === "resource") {
+      const resource = String(rule?.resource ?? rule?.resourceName ?? "").trim();
+      if (!resource) return "";
+      const operation = this._normalizeEffectRuleOperation(
+        rule?.operation ?? rule?.resourceAction,
+      );
+      const amount = String(rule?.amount ?? "").trim() || "1";
+      const min = Number.parseInt(rule?.min, 10);
+      const verb =
+        operation === "consume"
+          ? "consume"
+          : operation === "fill"
+            ? "fill"
+            : operation === "clear"
+              ? "clear"
+              : operation === "set"
+                ? "set"
+                : "grant";
+      const quantity = ["fill", "clear"].includes(operation) ? "" : `${amount} `;
+      parts.push(`${trigger}: ${verb} ${quantity}${resource}`);
+      if (Number.isFinite(min) && min > 0) parts.push(`minimum ${min}`);
+      const spentResource = String(rule?.spentResource ?? "").trim();
+      if (spentResource) parts.push(`from spent ${spentResource}`);
+    } else if (action === "toggle") {
       const toggle1 = this._formatEffectRef(rule?.toggle1);
       const toggle2 = this._formatEffectRef(rule?.toggle2);
       if (!toggle1 || !toggle2) return "";
@@ -756,6 +898,17 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const forbids = this._formatEffectRefList(rule?.forbids);
     if (forbids) parts.push(`not while under ${forbids}`);
 
+    const spent = String(rule?.requiresResourceSpent ?? "").trim();
+    if (spent) {
+      const min = Number.parseInt(rule?.requiresResourceSpentMin, 10);
+      const max = Number.parseInt(rule?.requiresResourceSpentMax, 10);
+      const range = [
+        Number.isFinite(min) ? `min ${min}` : "",
+        Number.isFinite(max) ? `max ${max}` : "",
+      ].filter(Boolean).join(", ");
+      parts.push(`spent ${spent}${range ? ` (${range})` : ""}`);
+    }
+
     const duration = this._formatEffectDuration(rule?.duration);
     if (duration) parts.push(`duration ${duration}`);
 
@@ -770,6 +923,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ? `On hit/check d20 ${threshold}+`
         : "On hit/check";
     }
+    if (trigger === "cost") return "On cost";
     if (!trigger || trigger === "use") return "On use";
     return `On ${trigger}`;
   }
@@ -863,9 +1017,31 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _getCurrentEffectRules() {
-    return Array.isArray(this.item.system.effect_rules)
-      ? foundry.utils.deepClone(this.item.system.effect_rules)
+    return this._getEffectRulesFrom(this.item.system, { includeDrafts: true });
+  }
+
+  _getEffectRulesFrom(system, { includeDrafts = false } = {}) {
+    const rules = Array.isArray(system.effect_rules)
+      ? foundry.utils.deepClone(system.effect_rules)
       : [];
+    return rules.filter(
+      (rule, index) =>
+        (includeDrafts && this._expandedEffectRules.has(index)) ||
+        this._isUsableEffectRule(rule),
+    );
+  }
+
+  _isUsableEffectRule(rule) {
+    if (!rule || typeof rule !== "object") return false;
+    const action = this._normalizeEffectRuleAction(rule?.action);
+    if (action === "toggle")
+      return Boolean(
+        this._getEffectRefName(rule?.toggle1) &&
+        this._getEffectRefName(rule?.toggle2),
+      );
+    if (action === "resource")
+      return Boolean(String(rule?.resource ?? rule?.resourceName ?? "").trim());
+    return Boolean(this._formatEffectRef(rule));
   }
 
   _getAutomationFieldValue(target) {
@@ -899,6 +1075,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     } else if (field === "name") {
       requirements[index].name = value;
       delete requirements[index].key;
+    } else if (field === "resourceSpent") {
+      if (value) requirements[index].resourceSpent = value;
+      else delete requirements[index].resourceSpent;
+    } else if (["resourceSpentMin", "resourceSpentMax"].includes(field)) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) requirements[index][field] = parsed;
+      else delete requirements[index][field];
     } else {
       requirements[index][field] = value;
     }
@@ -969,6 +1152,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (field === "action") {
       rule.action = this._normalizeEffectRuleAction(value);
+      if (rule.action === "resource") {
+        rule.operation ??= "grant";
+        rule.amount ??= 1;
+      }
       return;
     }
 
@@ -981,6 +1168,54 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const parsed = Number.parseInt(value, 10);
       if (Number.isFinite(parsed)) rule.threshold = parsed;
       else delete rule.threshold;
+      return;
+    }
+
+    if (field === "operation") {
+      rule.operation = this._normalizeEffectRuleOperation(value);
+      delete rule.resourceAction;
+      return;
+    }
+
+    if (field === "resource") {
+      if (value) rule.resource = value;
+      else delete rule.resource;
+      delete rule.resourceName;
+      return;
+    }
+
+    if (field === "amount") {
+      const amount = String(value ?? "").trim();
+      if (amount)
+        rule.amount = amount.toLowerCase() === "all" ? "all" : amount;
+      else delete rule.amount;
+      return;
+    }
+
+    if (field === "min") {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) rule.min = parsed;
+      else delete rule.min;
+      return;
+    }
+
+    if (field === "spentResource") {
+      if (value) rule.spentResource = value;
+      else delete rule.spentResource;
+      delete rule.amountResource;
+      return;
+    }
+
+    if (field === "requiresResourceSpent") {
+      if (value) rule.requiresResourceSpent = value;
+      else delete rule.requiresResourceSpent;
+      return;
+    }
+
+    if (["requiresResourceSpentMin", "requiresResourceSpentMax"].includes(field)) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) rule[field] = parsed;
+      else delete rule[field];
       return;
     }
 
@@ -1505,6 +1740,32 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           "system.ability_grants": grants,
           "system.granted_ability": "",
         });
+        this.render();
+      });
+    }
+    if (this._hasSummonActorSupport()) {
+      html.on(
+        "click.ffxivItemSheet",
+        ".summon-actor-edit",
+        this._onEditSummonActor.bind(this),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-summon-actor-up",
+        this._moveSummonActor.bind(this, -1),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-summon-actor-down",
+        this._moveSummonActor.bind(this, 1),
+      );
+      html.on("click.ffxivItemSheet", ".remove-summon-actor", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = Number(event.currentTarget.dataset.index);
+        const summons = this._getSummonActorGrants();
+        summons.splice(index, 1);
+        this.item.update({ "system.summon_actors": summons });
         this.render();
       });
     }
@@ -2068,6 +2329,248 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
   }
 
+  _activateJobGrantReorder() {
+    this._jobGrantReorderController?.abort();
+    if (this.item.type !== "job" || !this.document.isOwner) return;
+
+    const list = this.element.querySelector(".job-progression-tab .job-ability-list");
+    if (!list) return;
+
+    this._jobGrantReorderController = new AbortController();
+    const { signal } = this._jobGrantReorderController;
+    const rows = Array.from(list.querySelectorAll(".job-ability-row"));
+
+    for (const row of rows) {
+      row.draggable = true;
+      row.addEventListener(
+        "dragstart",
+        (event) => this._onJobGrantDragStart(event),
+        { signal },
+      );
+      row.addEventListener(
+        "dragover",
+        (event) => this._onJobGrantDragOver(event),
+        { signal },
+      );
+      row.addEventListener(
+        "dragleave",
+        (event) => this._onJobGrantDragLeave(event),
+        { signal },
+      );
+      row.addEventListener(
+        "drop",
+        (event) => this._onJobGrantDrop(event),
+        { signal },
+      );
+      row.addEventListener(
+        "dragend",
+        () => this._clearJobGrantDragState(),
+        { signal },
+      );
+    }
+
+    list.addEventListener(
+      "dragover",
+      (event) => {
+        if (!Number.isInteger(this._getJobGrantDragIndex(event))) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      },
+      { signal },
+    );
+  }
+
+  _onJobGrantDragStart(event) {
+    if (event.target?.closest?.("button")) {
+      event.preventDefault();
+      return;
+    }
+
+    const row = event.currentTarget;
+    const index = Number(row?.dataset?.index);
+    if (!Number.isInteger(index)) return;
+
+    this._jobGrantDragIndex = index;
+    this._jobGrantDragInProgress = true;
+    event.dataTransfer?.setData("application/x-ffxiv-job-grant-index", String(index));
+    event.dataTransfer?.setData("text/plain", `ffxiv-job-grant:${index}`);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    row.classList.add("dragging");
+  }
+
+  _onJobGrantDragOver(event) {
+    const sourceIndex = this._getJobGrantDragIndex(event);
+    if (!Number.isInteger(sourceIndex)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+
+    const row = event.currentTarget;
+    const targetIndex = Number(row?.dataset?.index);
+    if (!Number.isInteger(targetIndex) || targetIndex === sourceIndex) {
+      this._clearJobGrantDropTargets();
+      return;
+    }
+
+    this._clearJobGrantDropTargets(row);
+    row.classList.toggle("drop-before", sourceIndex > targetIndex);
+    row.classList.toggle("drop-after", sourceIndex < targetIndex);
+  }
+
+  _onJobGrantDragLeave(event) {
+    const row = event.currentTarget;
+    if (row.contains(event.relatedTarget)) return;
+    row.classList.remove("drop-before", "drop-after");
+  }
+
+  async _onJobGrantDrop(event) {
+    const sourceIndex = this._getJobGrantDragIndex(event);
+    if (!Number.isInteger(sourceIndex)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const targetIndex = Number(event.currentTarget?.dataset?.index);
+    if (!Number.isInteger(targetIndex) || targetIndex === sourceIndex) {
+      this._clearJobGrantDragState();
+      return;
+    }
+
+    await this._moveJobGrantToIndex(sourceIndex, targetIndex);
+    this._clearJobGrantDragState();
+  }
+
+  _getJobGrantDragIndex(event) {
+    const raw =
+      event?.dataTransfer?.getData("application/x-ffxiv-job-grant-index") ??
+      "";
+    const index = raw === "" ? this._jobGrantDragIndex : Number(raw);
+    return Number.isInteger(index) ? index : null;
+  }
+
+  _clearJobGrantDropTargets(except = null) {
+    this.element
+      .querySelectorAll(".job-ability-row.drop-before, .job-ability-row.drop-after")
+      .forEach((row) => {
+        if (row === except) return;
+        row.classList.remove("drop-before", "drop-after");
+      });
+  }
+
+  _clearJobGrantDragState() {
+    if (this._jobGrantDragInProgress) {
+      this._jobGrantDragJustEnded = true;
+      setTimeout(() => {
+        this._jobGrantDragJustEnded = false;
+      }, 100);
+    }
+    this._jobGrantDragIndex = null;
+    this._jobGrantDragInProgress = false;
+    this.element
+      .querySelectorAll(".job-ability-row.dragging, .job-ability-row.drop-before, .job-ability-row.drop-after")
+      .forEach((row) =>
+        row.classList.remove("dragging", "drop-before", "drop-after"),
+      );
+  }
+
+  async _moveJobGrantToIndex(sourceIndex, targetIndex) {
+    const grants = this._getJobAbilityGrants();
+    if (!grants[sourceIndex] || !grants[targetIndex]) return;
+
+    const [grant] = grants.splice(sourceIndex, 1);
+    grants.splice(targetIndex, 0, grant);
+    this._captureSheetScroll();
+    await this.item.update(
+      { "system.ability_grants": grants },
+      { render: false },
+    );
+    this.render({ force: true });
+  }
+
+  _activateSummonDropZone() {
+    this._summonDropController?.abort();
+    if (
+      !this._hasSummonActorSupport() ||
+      !this.document.isOwner ||
+      !this._isItemEditMode()
+    )
+      return;
+
+    const dropZones = this.element.querySelectorAll(".summon-actors-dropzone");
+    if (!dropZones.length) return;
+
+    this._summonDropController = new AbortController();
+    const { signal } = this._summonDropController;
+
+    const allowDrop = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+      event.currentTarget.classList.add("drag-over");
+    };
+
+    for (const dropZone of dropZones) {
+      dropZone.addEventListener("dragenter", allowDrop, { signal });
+      dropZone.addEventListener("dragover", allowDrop, { signal });
+      dropZone.addEventListener(
+        "dragleave",
+        (event) => {
+          if (!dropZone.contains(event.relatedTarget))
+            dropZone.classList.remove("drag-over");
+        },
+        { signal },
+      );
+      dropZone.addEventListener(
+        "drop",
+        (event) => {
+          dropZone.classList.remove("drag-over");
+          this._onDropSummonActor(event);
+        },
+        { signal },
+      );
+    }
+  }
+
+  async _onEditSummonActor(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const summon = this._getSummonActorEntries()[index];
+    if (!summon?.uuid) return;
+
+    try {
+      const actor = await fromUuid(summon.uuid);
+      if (actor?.documentName === "Actor") {
+        actor.sheet.render({ force: true });
+        return;
+      }
+    } catch (_error) { }
+    ui.notifications.warn(
+      game.i18n.format("FFXIV.Notifications.SummonActorMissing", {
+        actor: summon.name || game.i18n.localize("FFXIV.ItemType.ability"),
+      }),
+    );
+  }
+
+  async _moveSummonActor(direction, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const summons = this._getSummonActorGrants();
+    const target = index + direction;
+    if (!summons[index] || !summons[target]) return;
+
+    [summons[index], summons[target]] = [summons[target], summons[index]];
+    await this.item.update(
+      { "system.summon_actors": summons },
+      { render: false },
+    );
+    this.render({ force: true });
+  }
+
   _onPickItemIcon(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -2290,6 +2793,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   async _onEditJobAbility(event) {
     event.preventDefault();
     event.stopPropagation();
+    if (this._jobGrantDragJustEnded) return;
 
     const index = Number(event.currentTarget.dataset.index);
     const grants = this._getJobAbilityGrants();
@@ -2408,6 +2912,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!grants[index] || !grants[target]) return;
 
     [grants[index], grants[target]] = [grants[target], grants[index]];
+    this._captureSheetScroll();
     await this.item.update(
       { "system.ability_grants": grants },
       { render: false },
@@ -2425,6 +2930,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!grants[index] || !grants[target]) return;
 
     [grants[index], grants[target]] = [grants[target], grants[index]];
+    this._captureSheetScroll();
     await this.item.update(
       { "system.pet_grants": grants },
       { render: false },
@@ -2523,6 +3029,35 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "system.pet_grants": grants,
         "system.has_pets": true,
       },
+      { render: false },
+    );
+    this.render({ force: true });
+  }
+
+  async _onDropSummonActor(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const data = this._getDropData(event);
+    let actor = data.uuid ? await fromUuid(data.uuid) : null;
+    if (!actor && typeof Actor.implementation.fromDropData === "function") {
+      actor = await Actor.implementation.fromDropData(data);
+    }
+    if (!actor || actor.documentName !== "Actor") {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Abilities.DropSummons"));
+      return;
+    }
+
+    const summons = this._getSummonActorGrants();
+    if (summons.some((summon) => summon.uuid === actor.uuid)) return;
+
+    summons.push({
+      uuid: actor.uuid,
+      name: actor.name,
+      type: actor.type,
+    });
+    await this.item.update(
+      { "system.summon_actors": summons },
       { render: false },
     );
     this.render({ force: true });

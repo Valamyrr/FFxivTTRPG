@@ -1,6 +1,7 @@
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import {
   getActorCheckPenalty,
+  getLargestCheckPenalty,
   hasStatus,
 } from "../helpers/status-effects.mjs";
 
@@ -19,6 +20,22 @@ export class FFXIVActor extends Actor {
       .replace(/^_+|_+$/g, "");
   }
 
+  static _getLinkedTraitRefs(value) {
+    if (Array.isArray(value))
+      return value.flatMap((entry) => FFXIVActor._getLinkedTraitRefs(entry));
+    if (typeof value === "string") return [value];
+    if (!value || typeof value !== "object") return [];
+    return [value.key, value.name].filter(Boolean);
+  }
+
+  static _getEffectCountsAsRefs(effect) {
+    return [
+      effect.getFlag?.("ffxiv", "countsAs"),
+      effect.getFlag?.("ffxiv", "equivalentEffects"),
+      effect.getFlag?.("ffxiv", "effectAliases"),
+    ].flatMap((value) => FFXIVActor._getLinkedTraitRefs(value));
+  }
+
   getLinkedActiveTraitKeys() {
     const keys = new Set();
     for (const effect of this.effects ?? []) {
@@ -30,6 +47,11 @@ export class FFXIVActor extends Actor {
 
       const nameKey = FFXIVActor._normalizeLinkedTraitName(effect.name);
       if (nameKey) keys.add(nameKey);
+
+      for (const value of FFXIVActor._getEffectCountsAsRefs(effect)) {
+        const key = FFXIVActor._normalizeLinkedTraitName(value);
+        if (key) keys.add(key);
+      }
     }
     return keys;
   }
@@ -583,17 +605,19 @@ export class FFXIVActor extends Actor {
     const modifiers = rollData[attrKey] ?? 0;
     const enmityPenaltyInfo = await this._getEnmityCheckPenaltyInfo();
     const enmityPenalty = enmityPenaltyInfo.penalty;
-    const checkPenalty = getActorCheckPenalty(this);
+    const statusPenalty = getActorCheckPenalty(this);
+    const checkPenalty = getLargestCheckPenalty(enmityPenalty, statusPenalty);
+    const enmityPenaltyApplies =
+      enmityPenalty && Math.abs(enmityPenalty) >= Math.abs(statusPenalty);
     let formula = `1d20 + ${modifiers}`;
-    if (enmityPenalty) formula += ` - ${Math.abs(enmityPenalty)}`;
     if (checkPenalty) formula += ` - ${Math.abs(checkPenalty)}`;
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
-    const enmityNote = enmityPenalty
+    const enmityNote = enmityPenaltyApplies
       ? `<br>${game.i18n.localize("FFXIV.Effects.Enmity")}: ${enmityPenalty} (${enmityPenaltyInfo.sourceActor.name} not targeted)`
       : "";
-    const checkPenaltyNote = checkPenalty
-      ? `<br>${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${checkPenalty}`
+    const checkPenaltyNote = checkPenalty && !enmityPenaltyApplies
+      ? `<br>${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${statusPenalty}`
       : "";
 
     roll.toMessage({

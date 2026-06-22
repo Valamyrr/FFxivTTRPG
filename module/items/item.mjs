@@ -1,10 +1,11 @@
-import { debugLog } from "../helpers/debug.mjs";
+import { debugError, debugLog } from "../helpers/debug.mjs";
 import {
   applyStatusEffectChange,
   applyStatusEffectStackDelta,
   applyStatusEffectStackValue,
   getActorCheckPenalty,
   getActorCriticalRange,
+  getLargestCheckPenalty,
   getStatusStackTotal,
   getTargetStatusAdvantage,
   hasStatus,
@@ -26,14 +27,16 @@ import {
 import {
   applyActorJobResourceDelta,
   fillActorJobResource,
-  findActorJobResource,
-  findActorTrait,
   getActorJobResourceCount,
   getActorLevel,
   hasActorJobResource,
   normalizeJobResourceName,
   setActorJobResourceCount,
 } from "../helpers/job-resources.mjs";
+import {
+  createSummonTokenFromRequest,
+  FFXIV_SUMMON_SOCKET_TYPE,
+} from "../helpers/summons.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
   "consumable",
@@ -934,9 +937,11 @@ export class FFXIVItem extends Item {
     if (!this._canUseAbility()) return;
     if (!this._canUseLimitBreak()) return;
     if (!(await this._consumeJobResourceCostsIfNeeded())) return;
+    if (!(await this._spendMPCostIfNeeded())) return;
     if (!(await this._spendHPCostIfNeeded())) return;
     if (!(await this._consumeLimitationIfNeeded())) return;
     if (!(await this._consumeLimitBreakIfNeeded())) return;
+    await this._clearVolatileJobResourcesIfNeeded();
     if (getAbilitySubtype(this) === "limit_break") playLimitBreakActivatedSound();
     await this._removeTranscendentStatus();
 
@@ -1008,6 +1013,7 @@ export class FFXIVItem extends Item {
     await this._applyDeferredHitThresholdRules(checkResult);
     await this._autoApplyStatusEffects();
     await this._applyInvokingStatus();
+    await this._summonActorsIfNeeded();
 
     await this._consumeFromInventoryIfNeeded();
   }
@@ -1036,7 +1042,8 @@ export class FFXIVItem extends Item {
     }
     return (
       this._canSatisfyEffectRequirements() &&
-      this._canSatisfyJobResourceCosts()
+      this._canSatisfyJobResourceCosts() &&
+      this._canSatisfyMPCost()
     );
   }
 
@@ -1097,6 +1104,217 @@ export class FFXIVItem extends Item {
     if (this.type !== "ability") return;
     if (!hasStatus(this.parent, "transcendent")) return;
     await applyStatusEffectChange(this.parent, "transcendent", false);
+  }
+
+  _getSummonActorEntries() {
+    const entries = Array.isArray(this.system?.summon_actors)
+      ? this.system.summon_actors
+      : Object.values(this.system?.summon_actors || {});
+    return entries.filter((entry) =>
+      String(entry?.uuid ?? "").trim(),
+    );
+  }
+
+  async _summonActorsIfNeeded() {
+    const summons = this._getSummonActorEntries();
+    if (!summons.length) return;
+
+    if (!canvas?.scene) {
+      ui.notifications.warn(
+        game.i18n.localize("FFXIV.Notifications.SummonNoScene"),
+      );
+      return;
+    }
+
+    const sourceToken = this._getSummonSourceToken();
+    if (!sourceToken) {
+      ui.notifications.warn(
+        game.i18n.localize("FFXIV.Notifications.SummonNoToken"),
+      );
+      return;
+    }
+
+    const position = this._getSummonPosition(sourceToken);
+    if (!position) {
+      ui.notifications.warn(
+        game.i18n.localize("FFXIV.Notifications.SummonNoToken"),
+      );
+      return;
+    }
+
+    for (const summon of summons) {
+      await this._summonActor(summon, sourceToken, position);
+    }
+  }
+
+  _getSummonSourceToken() {
+    const actor = this.parent?.documentName === "Actor" ? this.parent : null;
+    if (!actor) return null;
+
+    const controlled = canvas?.tokens?.controlled?.find((token) =>
+      this._isSummonSourceTokenForActor(token, actor),
+    );
+    if (controlled?.document) return controlled.document;
+
+    const tokens =
+      typeof actor.getActiveTokens === "function"
+        ? actor.getActiveTokens(false, true)
+        : [];
+    return (
+      tokens.find((token) => token?.parent?.id === canvas?.scene?.id) ??
+      tokens[0] ??
+      null
+    );
+  }
+
+  _isSummonSourceTokenForActor(token, actor) {
+    if (!token || !actor) return false;
+    const tokenActor = token.actor ?? token.document?.actor;
+    if (tokenActor === actor) return true;
+    if (String(tokenActor?.uuid ?? "") === String(actor.uuid ?? "")) return true;
+    const tokenActorId = String(token.document?.actorId ?? token.actorId ?? "");
+    return tokenActorId && tokenActorId === String(actor.id ?? "");
+  }
+
+  _getSummonPosition(sourceToken) {
+    const x = Number(sourceToken?.x ?? sourceToken?.object?.x);
+    const y = Number(sourceToken?.y ?? sourceToken?.object?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+    const position = { x, y };
+    for (const key of ["elevation", "level"]) {
+      const value = sourceToken?.[key] ?? sourceToken?.object?.document?.[key];
+      if (value !== undefined && value !== null) position[key] = value;
+    }
+    return position;
+  }
+
+  async _summonActor(summon, sourceToken, position) {
+    const actor = await this._resolveSummonActor(summon);
+    if (!actor) {
+      ui.notifications.warn(
+        game.i18n.format("FFXIV.Notifications.SummonActorMissing", {
+          actor: summon?.name || game.i18n.localize("FFXIV.ItemType.ability"),
+        }),
+      );
+      return;
+    }
+
+    try {
+      const tokenData = await this._getSummonTokenData(actor, position);
+      tokenData.flags = foundry.utils.mergeObject(tokenData.flags || {}, {
+        ffxiv: {
+          summoned: true,
+          summon: {
+            actorUuid: actor.uuid,
+            sourceActorUuid: this.parent?.uuid ?? "",
+            sourceItemUuid: this.uuid,
+            sourceItemName: this.name,
+            sourceTokenId: sourceToken.id ?? sourceToken._id ?? "",
+          },
+        },
+      });
+      const combatData = this._getSummonCombatData(sourceToken);
+
+      if (game.user?.isGM) {
+        await this._createSummonToken(tokenData, combatData);
+        return;
+      }
+
+      const gm = game.users.find((user) => user.active && user.isGM);
+      if (!gm) {
+        ui.notifications.warn(
+          game.i18n.localize("FFXIV.Notifications.SummonNoGM"),
+        );
+        return;
+      }
+
+      game.socket.emit("system.ffxiv", {
+        type: FFXIV_SUMMON_SOCKET_TYPE,
+        userName: game.user.name,
+        gmUserId: gm.id,
+        data: {
+          sceneId: canvas.scene.id,
+          tokenData,
+          combatData,
+        },
+      });
+      ui.notifications.info(
+        game.i18n.localize("FFXIV.Notifications.SummonRequestSent"),
+      );
+    } catch (error) {
+      debugError("FFXIV | Failed to summon actor:", error);
+      ui.notifications.error(
+        game.i18n.localize("FFXIV.Notifications.SummonFailed"),
+      );
+    }
+  }
+
+  async _getSummonTokenData(actor, position) {
+    const tokenDocument = await actor.getTokenDocument(position);
+    const tokenData = tokenDocument.toObject();
+    const actorData = this._getSummonActorData(actor);
+
+    tokenData.actorLink = false;
+    tokenData.actorId = null;
+    tokenData.delta = foundry.utils.deepClone(actorData);
+    return tokenData;
+  }
+
+  _getSummonActorData(actor) {
+    const source = actor.toObject();
+    return {
+      name: source.name,
+      type: source.type,
+      img: source.img,
+      system: foundry.utils.deepClone(source.system ?? {}),
+      items: foundry.utils.deepClone(source.items ?? []),
+      effects: foundry.utils.deepClone(source.effects ?? []),
+      flags: foundry.utils.deepClone(source.flags ?? {}),
+    };
+  }
+
+  _getSummonCombatData(sourceToken) {
+    const actor = this.parent?.documentName === "Actor" ? this.parent : null;
+    return {
+      sourceActorId: actor?.id ?? "",
+      sourceActorUuid: actor?.uuid ?? "",
+      sourceTokenId: sourceToken?.id ?? sourceToken?._id ?? "",
+    };
+  }
+
+  async _resolveSummonActor(summon) {
+    const uuid = String(summon?.uuid ?? "").trim();
+    if (!uuid) return null;
+
+    try {
+      const actor = await fromUuid(uuid);
+      return actor?.documentName === "Actor" ? actor : null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  async _createSummonToken(tokenData, combatData = null) {
+    try {
+      const token = await createSummonTokenFromRequest({
+        sceneId: canvas.scene.id,
+        tokenData,
+        combatData,
+      });
+      if (token) {
+        ui.notifications.info(
+          game.i18n.format("FFXIV.Notifications.SummonCreated", {
+            actor: token.name,
+          }),
+        );
+      }
+    } catch (error) {
+      debugError("FFXIV | Failed to create summon token:", error);
+      ui.notifications.error(
+        game.i18n.localize("FFXIV.Notifications.SummonFailed"),
+      );
+    }
   }
 
   async _confirmTargetSelection() {
@@ -1249,16 +1467,17 @@ export class FFXIVItem extends Item {
   async _consumeLimitationIfNeeded() {
     if (this.type !== "ability") return true;
     if (this.parent?.documentName !== "Actor") return true;
+    if (!String(this.system?.limitations ?? "").trim()) return true;
 
-    const max = Number.parseInt(this.system?.limitations_max, 10);
+    const max = Number.parseInt(this.system?.job_resources_max, 10);
     if (!Number.isFinite(max) || max <= 0) return true;
 
-    const limitationsStatus = Array.isArray(this.system?.limitations_status)
-      ? this.system.limitations_status.slice(0, max)
+    const resourceStatus = Array.isArray(this.system?.job_resource_status)
+      ? this.system.job_resource_status.slice(0, max)
       : [];
-    while (limitationsStatus.length < max) limitationsStatus.push(false);
+    while (resourceStatus.length < max) resourceStatus.push(false);
 
-    const index = limitationsStatus.findIndex((status) => !status);
+    const index = resourceStatus.findIndex((status) => !status);
     if (index === -1) {
       ui.notifications.warn(
         game.i18n.localize("FFXIV.Notifications.LimitationsConsumed"),
@@ -1266,9 +1485,9 @@ export class FFXIVItem extends Item {
       return false;
     }
 
-    limitationsStatus[index] = true;
+    resourceStatus[index] = true;
     await this.update(
-      { "system.limitations_status": limitationsStatus },
+      { "system.job_resource_status": resourceStatus },
       { render: false },
     );
     return true;
@@ -1297,6 +1516,224 @@ export class FFXIVItem extends Item {
     return true;
   }
 
+  _canSatisfyMPCost() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return true;
+
+    const cost = this._getResolvedMPCost(actor);
+    if (cost.amount <= 0) return true;
+    const currentMana = Number(actor.system?.mana?.value ?? 0);
+    if (currentMana >= cost.amount) return true;
+    ui.notifications.warn(`${this.name}: requires ${cost.amount} MP.`);
+    return false;
+  }
+
+  async _spendMPCostIfNeeded() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return true;
+
+    const cost = this._getResolvedMPCost(actor);
+    if (cost.amount <= 0) return true;
+    const currentMana = Number(actor.system?.mana?.value ?? 0);
+    if (currentMana < cost.amount) {
+      ui.notifications.warn(`${this.name}: requires ${cost.amount} MP.`);
+      return false;
+    }
+
+    for (const reduction of cost.reductions) {
+      await applyActorJobResourceDelta(
+        actor,
+        reduction.resource,
+        -reduction.amount,
+        { render: false },
+      );
+    }
+    await actor.update(
+      { "system.mana.value": Math.max(currentMana - cost.amount, 0) },
+      { render: false },
+    );
+    return true;
+  }
+
+  _getResolvedMPCost(actor) {
+    const baseCost = this._getBaseMPCost(actor);
+    if (baseCost <= 0) return { amount: 0, baseCost: 0, reductions: [] };
+
+    let amount = baseCost;
+    const reductions = [];
+    for (const entry of this._getMPCostReductionEntries(actor)) {
+      if (!this._mpCostReductionApplies(entry)) continue;
+      const override = Number.parseInt(entry.override, 10);
+      if (Number.isFinite(override)) {
+        amount = Math.max(override, 0);
+        continue;
+      }
+      const resource = String(entry.resource ?? entry.resourceName ?? "").trim();
+      if (!resource) continue;
+      const resourceAmount = Math.max(
+        Number.parseInt(entry.amount ?? entry.resourceAmount, 10) || 1,
+        1,
+      );
+      if (getActorJobResourceCount(actor, resource) < resourceAmount) continue;
+
+      const minCost = Math.max(Number.parseInt(entry.minCost, 10) || 0, 0);
+      if (amount <= minCost) continue;
+      const reductionAmount = Math.max(
+        Number.parseInt(entry.reduction ?? entry.mp ?? entry.value, 10) || 1,
+        1,
+      );
+      const nextAmount = Math.max(amount - reductionAmount, minCost);
+      if (nextAmount >= amount) continue;
+      reductions.push({ resource, amount: resourceAmount });
+      amount = nextAmount;
+
+      const maxApplications = Number.parseInt(entry.maxApplications, 10);
+      if (!Number.isFinite(maxApplications) || maxApplications <= 1) continue;
+      for (let index = 1; index < maxApplications; index += 1) {
+        if (amount <= minCost) break;
+        if (getActorJobResourceCount(actor, resource) < resourceAmount * (index + 1))
+          break;
+        const repeatedAmount = Math.max(amount - reductionAmount, minCost);
+        if (repeatedAmount >= amount) break;
+        reductions.push({ resource, amount: resourceAmount });
+        amount = repeatedAmount;
+      }
+    }
+    return { amount, baseCost, reductions };
+  }
+
+  _getBaseMPCost(actor) {
+    const explicitCost = Number.parseInt(this.system?.mpcost, 10);
+    if (Number.isFinite(explicitCost) && explicitCost > 0) return explicitCost;
+
+    const costText = String(this.system?.cost ?? "").trim();
+    if (!costText) return 0;
+    if (/\ball\s*mp\b/i.test(costText)) {
+      return Math.max(Number(actor?.system?.mana?.value ?? 0) || 0, 0);
+    }
+    const match = costText.match(/(\d+)\s*MP\b/i);
+    return match ? Math.max(Number.parseInt(match[1], 10) || 0, 0) : 0;
+  }
+
+  _getMPCostReductionEntries(actor) {
+    const entries = [];
+    for (const item of actor?.items ?? []) {
+      entries.push(...this._getMPCostReductionEntriesFrom(item));
+    }
+    for (const effect of actor?.allApplicableEffects?.() ?? []) {
+      if (!effect || effect.disabled) continue;
+      entries.push(...this._getMPCostReductionEntriesFrom(effect));
+    }
+    return entries;
+  }
+
+  _getMPCostReductionEntriesFrom(document) {
+    const data =
+      foundry.utils.getProperty(document, "flags.ffxiv.mpCost.reductions") ??
+      foundry.utils.getProperty(document, "flags.ffxiv.mpCost.reduction");
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data !== "object") return [];
+    if (data.resource || data.resourceName) return [data];
+    return Object.values(data);
+  }
+
+  _mpCostReductionApplies(entry) {
+    const names = this._toArray(
+      entry.abilityNames ?? entry.abilityName ?? entry.items ?? entry.item,
+    );
+    if (
+      names.length &&
+      !names.some((name) =>
+        this._normalizeEffectKey(name) === this._normalizeEffectKey(this.name),
+      )
+    )
+      return false;
+
+    const requiredTags = this._toArray(
+      entry.tags ?? entry.tag ?? entry.requiresTags ?? entry.requiresTag,
+    );
+    if (!requiredTags.length) return true;
+    const tags = new Set(
+      (Array.isArray(this.system?.tags) ? this.system.tags : []).map((tag) =>
+        this._normalizeTag(tag),
+      ),
+    );
+    return requiredTags.every((tag) => tags.has(this._normalizeTag(tag)));
+  }
+
+  _normalizeTag(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  async _clearVolatileJobResourcesIfNeeded() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return;
+    if (!this._isAbilityLikeItem()) return;
+
+    for (const entry of this._getVolatileJobResourceEntries(actor)) {
+      const resource = String(entry.resource ?? entry.name ?? "").trim();
+      if (!resource) continue;
+      if (getActorJobResourceCount(actor, resource) <= 0) continue;
+      if (this._preservesVolatileJobResource(resource, entry)) continue;
+      await setActorJobResourceCount(actor, resource, 0, { render: false });
+    }
+  }
+
+  _isAbilityLikeItem() {
+    return (
+      this.type === "ability" ||
+      ABILITY_SUBTYPE_TYPES.includes(this.type) ||
+      getAbilitySubtype(this) === "limit_break"
+    );
+  }
+
+  _getVolatileJobResourceEntries(actor) {
+    const entries = [];
+    for (const item of actor?.items ?? []) {
+      if (item?.type !== "trait") continue;
+      const data = foundry.utils.getProperty(
+        item,
+        "flags.ffxiv.jobResource.clearOnAction",
+      );
+      for (const entry of this._toArray(data)) {
+        if (!entry) continue;
+        entries.push(typeof entry === "string" ? { resource: entry } : entry);
+      }
+    }
+    return entries;
+  }
+
+  _preservesVolatileJobResource(resource, entry) {
+    if (this._costRulesConsumeResource(resource)) return true;
+    const preserveResources = this._toArray(
+      foundry.utils.getProperty(this, "flags.ffxiv.jobResource.preserveOnAction"),
+    );
+    if (preserveResources.some((value) =>
+      normalizeJobResourceName(value) === normalizeJobResourceName(resource),
+    ))
+      return true;
+
+    const actionNames = this._toArray(
+      entry.preserveActions ??
+      entry.exceptActions ??
+      entry.exceptions ??
+      entry.except,
+    );
+    const currentName = this._normalizeEffectKey(this.name);
+    return actionNames.some((name) => this._normalizeEffectKey(name) === currentName);
+  }
+
+  _costRulesConsumeResource(resource) {
+    const key = normalizeJobResourceName(resource);
+    return this._getJobResourceCostRules().some(
+      (rule) => normalizeJobResourceName(rule.resource) === key,
+    );
+  }
+
   async _rollHit(options = {}) {
     options = this._normalizeRollOptions(options);
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
@@ -1323,6 +1760,11 @@ export class FFXIVItem extends Item {
     const statusPenalty = getActorCheckPenalty(this.parent, {
       ignoredStatuses,
     });
+    const checkPenalty = getLargestCheckPenalty(enmityPenalty, statusPenalty);
+    const enmityPenaltyApplies =
+      checkPenalty && enmityPenalty && Math.abs(enmityPenalty) >= Math.abs(statusPenalty);
+    const statusPenaltyApplies =
+      checkPenalty && statusPenalty && !enmityPenaltyApplies;
     const targetAdvantageDice =
       this._getTargetStatusAdvantageDice() +
       this._getActiveEffectCheckAdvantageDice(options);
@@ -1412,15 +1854,14 @@ export class FFXIVItem extends Item {
                 ")";
             }
 
-            previewFormula = appendFormulaModifier(previewFormula, statusPenalty);
+            previewFormula = appendFormulaModifier(previewFormula, checkPenalty);
             if (statusPenaltyPreview) {
-              statusPenaltyPreview.textContent = statusPenalty
+              statusPenaltyPreview.textContent = statusPenaltyApplies
                 ? `${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${statusPenalty}`
                 : "";
             }
-            previewFormula = appendFormulaModifier(previewFormula, enmityPenalty);
             if (enmityPreview) {
-              enmityPreview.textContent = enmityPenalty
+              enmityPreview.textContent = enmityPenaltyApplies
                 ? `${game.i18n.localize("FFXIV.Effects.Enmity")}: ${enmityPenalty} (${enmityPenaltyInfo.sourceActor.name} not targeted)`
                 : "";
             }
@@ -1470,8 +1911,7 @@ export class FFXIVItem extends Item {
       );
     }
 
-    formula = appendFormulaModifier(formula, statusPenalty);
-    formula = appendFormulaModifier(formula, enmityPenalty);
+    formula = appendFormulaModifier(formula, checkPenalty);
 
     if (flatModifier !== 0) {
       formula +=
@@ -1544,12 +1984,12 @@ export class FFXIVItem extends Item {
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
     if (isCritical) rollHTML.find(".dice-total").css({ color: "blue" });
     if (isCriticalFailure) rollHTML.find(".dice-total").css({ color: "red" });
-    if (enmityPenalty) {
+    if (enmityPenaltyApplies) {
       rollHTML.append(
         `<div>${game.i18n.localize("FFXIV.Effects.Enmity")}: ${enmityPenalty} (${enmityPenaltyInfo.sourceActor.name} not targeted)</div>`,
       );
     }
-    if (statusPenalty) {
+    if (statusPenaltyApplies) {
       rollHTML.append(
         `<div>${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${statusPenalty}</div>`,
       );
@@ -1696,40 +2136,62 @@ export class FFXIVItem extends Item {
     const actor = this.parent;
     if (actor?.documentName !== "Actor") return [];
 
-    const optionsByAbility = {
-      bootshine: {
-        resource: "Opo-Opo's Fury",
-        name: "Bestial Fury: Opo-Opo",
-      },
-      true_strike: {
-        resource: "Raptor's Fury",
-        name: "Bestial Fury: Raptor",
-      },
-      snap_punch: {
-        resource: "Coeurl's Fury",
-        name: "Bestial Fury: Coeurl",
-      },
-    };
-    const option = optionsByAbility[this._normalizeEffectKey(this.name)];
-    if (!option) return [];
-    if (checkResource && getActorJobResourceCount(actor, option.resource) <= 0)
-      return [];
-
-    return [
-      {
-        key: this._normalizeEffectKey(option.name),
-        name: option.name,
-        resource: option.resource,
-        formula: this._getBestialFuryFormula(actor),
-        buttonLabel: option.name,
-      },
-    ];
+    return this._getJobResourceBonusEntries()
+      .map((entry) => this._prepareJobResourceBonusOption(entry, actor))
+      .filter((option) => {
+        if (!option?.key || !option.resource || !option.formula) return false;
+        if (checkResource && getActorJobResourceCount(actor, option.resource) < option.amount)
+          return false;
+        return true;
+      });
   }
 
-  _getBestialFuryFormula(actor) {
-    return getActorLevel(actor) >= 60 || findActorTrait(actor, "Solar and Lunar Mastery")
-      ? "2d6"
-      : "1d6";
+  _getJobResourceBonusEntries() {
+    const data =
+      foundry.utils.getProperty(this, "flags.ffxiv.jobResource.bonus") ??
+      foundry.utils.getProperty(this, "flags.ffxiv.jobResource.bonuses");
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data !== "object") return [];
+    if (data.resource || data.formula || data.name) return [data];
+    return Object.values(data);
+  }
+
+  _prepareJobResourceBonusOption(entry, actor) {
+    const resource = String(entry?.resource ?? entry?.resourceName ?? "").trim();
+    const name = String(entry?.name ?? resource).trim();
+    const key =
+      this._normalizeEffectKey(entry?.key) ||
+      this._normalizeEffectKey(name) ||
+      this._normalizeEffectKey(resource);
+    return {
+      key,
+      name,
+      resource,
+      amount: Math.max(Number.parseInt(entry?.amount ?? entry?.cost, 10) || 1, 1),
+      formula: this._getJobResourceBonusFormula(entry, actor),
+      buttonLabel: String(entry?.buttonLabel ?? name).trim() || name,
+    };
+  }
+
+  _getJobResourceBonusFormula(entry, actor) {
+    let formula = String(entry?.formula ?? entry?.rollFormula ?? "").trim();
+    const level = getActorLevel(actor);
+    let selectedMinLevel = -Infinity;
+    const upgrades = [
+      ...this._toArray(entry?.formulaByLevel),
+      ...this._toArray(entry?.formulaUpgrades),
+    ];
+    for (const upgrade of upgrades) {
+      const minLevel = Number.parseInt(upgrade?.minLevel, 10);
+      if (!Number.isFinite(minLevel) || level < minLevel) continue;
+      if (minLevel < selectedMinLevel) continue;
+      const upgradeFormula = String(upgrade?.formula ?? upgrade?.rollFormula ?? "").trim();
+      if (!upgradeFormula) continue;
+      formula = upgradeFormula;
+      selectedMinLevel = minLevel;
+    }
+    return formula;
   }
 
   async _rollJobResourceBonus(options = {}) {
@@ -1738,12 +2200,12 @@ export class FFXIVItem extends Item {
       checkResource: false,
     });
     if (!bonus) return;
-    if (getActorJobResourceCount(this.parent, bonus.resource) <= 0) {
-      ui.notifications.warn(`${this.name}: requires 1 ${bonus.resource}.`);
+    if (getActorJobResourceCount(this.parent, bonus.resource) < bonus.amount) {
+      ui.notifications.warn(`${this.name}: requires ${bonus.amount} ${bonus.resource}.`);
       return;
     }
 
-    await applyActorJobResourceDelta(this.parent, bonus.resource, -1, {
+    await applyActorJobResourceDelta(this.parent, bonus.resource, -bonus.amount, {
       render: false,
     });
 
@@ -1876,14 +2338,47 @@ export class FFXIVItem extends Item {
   }
 
   _shouldForceDirectHitCritical(options = {}) {
-    if (this._normalizeEffectKey(this.name) !== "bootshine") return false;
-    return this._getApplicableEffects(options).some((effect) => {
-      if (!effect || effect.disabled) return false;
-      return (
-        this._effectMatchesKey(effect, "opo_opo_form") ||
-        this._effectMatchesKey(effect, "formless_fist")
-      );
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return false;
+    return this._getDirectHitForceCriticalRules().some((rule) => {
+      if (!this._traitModifierEntryApplies(rule)) return false;
+      if (rule.requires.some((entry) => !this._hasNamedApplicableEffect(actor, entry.key, options)))
+        return false;
+      if (
+        rule.requiresAny.length &&
+        !rule.requiresAny.some((entry) =>
+          this._hasNamedApplicableEffect(actor, entry.key, options),
+        )
+      )
+        return false;
+      if (rule.forbids.some((entry) => this._hasNamedApplicableEffect(actor, entry.key, options)))
+        return false;
+      return true;
     });
+  }
+
+  _getDirectHitForceCriticalRules() {
+    const data = foundry.utils.getProperty(this, "flags.ffxiv.directHit.forceCritical");
+    const entries = this._toArray(data);
+    return entries
+      .map((entry) => {
+        const rule = entry === true ? { always: true } : entry;
+        return {
+          always: rule?.always === true,
+          tags: rule?.tags,
+          tag: rule?.tag,
+          requires: this._normalizeEffectRefs(rule?.requires),
+          requiresAny: this._normalizeEffectRefs(rule?.requiresAny),
+          forbids: this._normalizeEffectRefs(rule?.forbids),
+        };
+      })
+      .filter(
+        (entry) =>
+          entry.always ||
+          entry.requires.length ||
+          entry.requiresAny.length ||
+          entry.forbids.length,
+      );
   }
 
   async _rollCritical(options = {}) {
@@ -2280,37 +2775,57 @@ export class FFXIVItem extends Item {
       ? this.system.effect_rules
       : [];
     return entries
-      .map((entry) => ({
-        action: String(entry?.action ?? "grant").trim().toLowerCase() || "grant",
-        trigger: String(entry?.trigger ?? "use").trim() || "use",
-        key: this._normalizeEffectKey(entry?.key ?? entry?.name),
-        name: String(entry?.name ?? entry?.key ?? "").trim(),
-        iconOverride: String(entry?.iconOverride ?? "").trim(),
-        icon: String(entry?.icon ?? "").trim(),
-        applyTo: String(entry?.applyTo ?? "self").trim().toLowerCase(),
-        threshold: Number.parseInt(entry?.threshold, 10),
-        remove: this._normalizeEffectRefs(entry?.remove),
-        requires: this._normalizeEffectRefs(entry?.requires),
-        requiresAny: this._normalizeEffectRefs(entry?.requiresAny),
-        forbids: this._normalizeEffectRefs(entry?.forbids),
-        requiresResourceSpent: String(entry?.requiresResourceSpent ?? "").trim(),
-        operation: String(entry?.operation ?? entry?.resourceAction ?? "grant")
-          .trim()
-          .toLowerCase(),
-        resource: String(entry?.resource ?? entry?.resourceName ?? "").trim(),
-        amount: entry?.amount ?? 1,
-        min: entry?.min,
-        flags: foundry.utils.deepClone(entry?.flags ?? {}),
-        toggle1: this._normalizeEffectRef(entry?.toggle1),
-        toggle2: this._normalizeEffectRef(entry?.toggle2),
-        duration: entry?.duration,
-      }))
-      .filter(
-        (entry) =>
-          entry.key ||
-          entry.action === "toggle" ||
-          (entry.action === "resource" && entry.resource),
-      );
+      .map((entry) => this._normalizeEffectRule(entry))
+      .filter((entry) => this._isUsableEffectRule(entry));
+  }
+
+  _normalizeEffectRule(entry) {
+    return {
+      action: String(entry?.action ?? "grant").trim().toLowerCase() || "grant",
+      trigger: String(entry?.trigger ?? "use").trim() || "use",
+      key: this._normalizeEffectKey(entry?.key ?? entry?.name),
+      name: String(entry?.name ?? entry?.key ?? "").trim(),
+      iconOverride: String(entry?.iconOverride ?? "").trim(),
+      icon: String(entry?.icon ?? "").trim(),
+      applyTo: String(entry?.applyTo ?? "self").trim().toLowerCase(),
+      threshold: Number.parseInt(entry?.threshold, 10),
+      remove: this._normalizeEffectRefs(entry?.remove),
+      requires: this._normalizeEffectRefs(entry?.requires),
+      requiresAny: this._normalizeEffectRefs(entry?.requiresAny),
+      forbids: this._normalizeEffectRefs(entry?.forbids),
+      requiresResourceSpent: String(entry?.requiresResourceSpent ?? "").trim(),
+      requiresResourceSpentMin: entry?.requiresResourceSpentMin ?? entry?.spentMin,
+      requiresResourceSpentMax: entry?.requiresResourceSpentMax ?? entry?.spentMax,
+      operation: String(entry?.operation ?? entry?.resourceAction ?? "grant")
+        .trim()
+        .toLowerCase(),
+      resource: String(entry?.resource ?? entry?.resourceName ?? "").trim(),
+      amount: entry?.amount ?? 1,
+      min: entry?.min,
+      spentResource: String(entry?.spentResource ?? entry?.amountResource ?? "").trim(),
+      storeResourceCosts:
+        entry?.storeResourceCosts === true ||
+        entry?.storeJobResourceCosts === true,
+      flags: foundry.utils.deepClone(entry?.flags ?? {}),
+      toggle1: this._normalizeEffectRef(entry?.toggle1),
+      toggle2: this._normalizeEffectRef(entry?.toggle2),
+      duration: entry?.duration,
+      onGrant: this._normalizeEffectRuleEntries(entry?.onGrant),
+    };
+  }
+
+  _normalizeEffectRuleEntries(entries) {
+    return this._toArray(entries)
+      .map((entry) => this._normalizeEffectRule(entry))
+      .filter((entry) => this._isUsableEffectRule(entry));
+  }
+
+  _isUsableEffectRule(entry) {
+    return (
+      entry.key ||
+      entry.action === "toggle" ||
+      (entry.action === "resource" && entry.resource)
+    );
   }
 
   _getEffectRequirements() {
@@ -2324,8 +2839,11 @@ export class FFXIVItem extends Item {
         mode: entry?.mode === "forbidden" ? "forbidden" : "required",
         consume: entry?.consume === true,
         bypass: this._normalizeEffectRefs(entry?.bypass),
+        resourceSpent: String(entry?.resourceSpent ?? "").trim(),
+        resourceSpentMin: entry?.resourceSpentMin ?? entry?.spentMin ?? entry?.min,
+        resourceSpentMax: entry?.resourceSpentMax ?? entry?.spentMax ?? entry?.max,
       }))
-      .filter((entry) => entry.key);
+      .filter((entry) => entry.key || entry.resourceSpent);
   }
 
   _canSatisfyEffectRequirements() {
@@ -2335,19 +2853,26 @@ export class FFXIVItem extends Item {
     const missing = [];
     const blocked = [];
     for (const requirement of this._getEffectRequirements()) {
-      const hasEffect = this._hasNamedEffect(actor, requirement.key);
+      const hasEffect = requirement.key
+        ? this._hasNamedEffect(actor, requirement.key)
+        : true;
+      const hasResourceSpent = this._requirementResourceSpentSatisfied(
+        actor,
+        requirement,
+      );
       if (requirement.mode === "forbidden") {
-        if (hasEffect) blocked.push(requirement.name || requirement.key);
+        if (hasEffect && hasResourceSpent)
+          blocked.push(requirement.name || requirement.key || requirement.resourceSpent);
         continue;
       }
 
       const bypassed =
-        this._hasFormRequirementBypass(actor, requirement) ||
+        (requirement.key && this._hasRequirementBypass(actor, requirement)) ||
         requirement.bypass.some((entry) =>
           this._hasNamedEffect(actor, entry.key),
         );
-      if (!hasEffect && !bypassed)
-        missing.push(requirement.name || requirement.key);
+      if ((!hasEffect || !hasResourceSpent) && !bypassed)
+        missing.push(requirement.name || requirement.key || requirement.resourceSpent);
     }
 
     if (!missing.length && !blocked.length) return true;
@@ -2369,18 +2894,51 @@ export class FFXIVItem extends Item {
     }
   }
 
-  _hasFormRequirementBypass(actor, requirement) {
-    if (!this._isFormEffectKey(requirement?.key)) return false;
+  _hasRequirementBypass(actor, requirement) {
+    const requirementKey = this._normalizeEffectKey(requirement?.key);
+    if (!requirementKey) return false;
     return Array.from(actor?.effects ?? []).some((effect) => {
       if (!effect || effect.disabled) return false;
-      return foundry.utils.getProperty(effect, "flags.ffxiv.formRequirementBypass") === true;
+      return this._getRequirementBypassRefs(effect).some(
+        (entry) => entry.key === requirementKey,
+      );
     });
   }
 
-  _isFormEffectKey(key) {
-    return ["opo_opo_form", "raptor_form", "coeurl_form"].includes(
-      this._normalizeEffectKey(key),
+  _requirementResourceSpentSatisfied(actor, requirement) {
+    const resource = String(requirement?.resourceSpent ?? "").trim();
+    if (!resource) return true;
+    const key = normalizeJobResourceName(resource);
+    const spent = Math.max(
+      ...Array.from(actor?.effects ?? []).map((effect) => {
+        if (!effect || effect.disabled) return 0;
+        if (
+          requirement.key &&
+          !this._effectMatchesKey(effect, requirement.key)
+        )
+          return 0;
+        return Number(foundry.utils.getProperty(
+          effect,
+          `flags.ffxiv.jobResourceCosts.${key}`,
+        )) || 0;
+      }),
+      0,
     );
+    const min = Number.parseInt(requirement.resourceSpentMin, 10);
+    if (Number.isFinite(min) && spent < min) return false;
+    const max = Number.parseInt(requirement.resourceSpentMax, 10);
+    if (Number.isFinite(max) && spent > max) return false;
+    return spent > 0;
+  }
+
+  _getRequirementBypassRefs(effect) {
+    const data = foundry.utils.getProperty(effect, "flags.ffxiv.requirementBypass");
+    if (!data) return [];
+    if (Array.isArray(data)) return this._normalizeEffectRefs(data);
+    if (typeof data === "string") return this._normalizeEffectRefs([data]);
+    if (typeof data !== "object") return [];
+    const refs = data.keys ?? data.requirements ?? data.effects ?? data;
+    return this._normalizeEffectRefs(refs);
   }
 
   _getJobResourceCostRules() {
@@ -2458,7 +3016,7 @@ export class FFXIVItem extends Item {
     for (const rule of this._getEffectRules()) {
       if (rule.trigger !== trigger) continue;
       if (!this._canApplyEffectRule(actor, rule, context)) continue;
-      await this._applyEffectRule(actor, rule);
+      await this._applyEffectRule(actor, rule, context);
     }
   }
 
@@ -2519,13 +3077,17 @@ export class FFXIVItem extends Item {
       const key = normalizeJobResourceName(rule.requiresResourceSpent);
       const spent = Number(context?.jobResourceCosts?.[key] ?? 0);
       if (!Number.isFinite(spent) || spent <= 0) return false;
+      const min = Number.parseInt(rule.requiresResourceSpentMin, 10);
+      if (Number.isFinite(min) && spent < min) return false;
+      const max = Number.parseInt(rule.requiresResourceSpentMax, 10);
+      if (Number.isFinite(max) && spent > max) return false;
     }
     return true;
   }
 
-  async _applyEffectRule(actor, rule) {
+  async _applyEffectRule(actor, rule, context = {}) {
     if (rule.action === "resource") {
-      await this._applyJobResourceRule(actor, rule);
+      await this._applyJobResourceRule(actor, rule, context);
       return;
     }
     if (rule.action === "remove") {
@@ -2538,10 +3100,10 @@ export class FFXIVItem extends Item {
     }
 
     await this._removeNamedEffects(actor, rule.remove);
-    await this._grantNamedEffect(actor, rule);
+    await this._grantNamedEffect(actor, rule, context);
   }
 
-  async _applyJobResourceRule(actor, rule) {
+  async _applyJobResourceRule(actor, rule, context = {}) {
     const resource = String(rule?.resource ?? "").trim();
     if (!resource) return;
 
@@ -2553,13 +3115,29 @@ export class FFXIVItem extends Item {
       await setActorJobResourceCount(actor, resource, 0, { render: false });
       return;
     }
+    if (rule.operation === "set") {
+      const amount = this._resolveJobResourceRuleAmount(rule, context, 0);
+      await setActorJobResourceCount(actor, resource, amount, { render: false });
+      return;
+    }
 
-    const amount = Math.max(Number.parseInt(rule?.amount, 10) || 1, 1);
+    const amount = this._resolveJobResourceRuleAmount(rule, context, 1);
+    if (amount <= 0) return;
     if (rule.operation === "consume") {
       await applyActorJobResourceDelta(actor, resource, -amount, { render: false });
       return;
     }
     await applyActorJobResourceDelta(actor, resource, amount, { render: false });
+  }
+
+  _resolveJobResourceRuleAmount(rule, context, fallback) {
+    const amountText = String(rule?.amount ?? "").trim().toLowerCase();
+    if (amountText === "spent") {
+      const resource = String(rule?.spentResource || rule?.resource || "").trim();
+      const key = normalizeJobResourceName(resource);
+      return Math.max(Number(context?.jobResourceCosts?.[key] ?? 0) || 0, 0);
+    }
+    return Math.max(Number.parseInt(rule?.amount, 10) || fallback, 0);
   }
 
   async _toggleNamedEffects(actor, rule) {
@@ -2575,7 +3153,7 @@ export class FFXIVItem extends Item {
     }
   }
 
-  async _grantNamedEffect(actor, rule) {
+  async _grantNamedEffect(actor, rule, context = {}) {
     const key = this._normalizeEffectKey(rule?.key ?? rule?.name);
     if (!actor || !key) return;
     if (this._isStatusEffectId(key)) {
@@ -2589,22 +3167,19 @@ export class FFXIVItem extends Item {
 
     const template = this._getLinkedAutomationEffectTemplate(rule);
     const effectData = template
-      ? this._buildLinkedAutomationEffectData(template, rule, key)
-      : this._buildNamedAutomationEffectData(rule, key);
+      ? this._buildLinkedAutomationEffectData(template, rule, key, context)
+      : this._buildNamedAutomationEffectData(rule, key, context);
     await actor.createEmbeddedDocuments("ActiveEffect", [effectData], {
       render: false,
     });
-    if (this._isFormEffectKey(key)) {
-      await this._grantPerfectBalanceBeastChakra(actor);
+    for (const nestedRule of rule.onGrant ?? []) {
+      if (!this._canApplyEffectRule(actor, nestedRule, {
+        ...context,
+        grantedKey: key,
+      }))
+        continue;
+      await this._applyEffectRule(actor, nestedRule, context);
     }
-  }
-
-  async _grantPerfectBalanceBeastChakra(actor) {
-    if (!this._hasNamedEffect(actor, "perfect_balance")) return;
-    if (!findActorJobResource(actor, "Beast Chakra")) return;
-    await applyActorJobResourceDelta(actor, "Beast Chakra", 1, {
-      render: false,
-    });
   }
 
   _getLinkedAutomationEffectTemplate(rule) {
@@ -2627,7 +3202,7 @@ export class FFXIVItem extends Item {
       .toLowerCase();
   }
 
-  _buildLinkedAutomationEffectData(effect, rule, key) {
+  _buildLinkedAutomationEffectData(effect, rule, key, context = {}) {
     const effectData = foundry.utils.deepClone(effect.toObject());
     delete effectData._id;
 
@@ -2666,6 +3241,7 @@ export class FFXIVItem extends Item {
         foundry.utils.deepClone(rule.flags),
       );
     }
+    this._applyRuleContextFlags(effectData, rule, context);
 
     const duration = this._prepareEffectRuleDuration(
       rule?.duration ?? effectData.duration,
@@ -2675,7 +3251,7 @@ export class FFXIVItem extends Item {
     return effectData;
   }
 
-  _buildNamedAutomationEffectData(rule, key) {
+  _buildNamedAutomationEffectData(rule, key, context = {}) {
     const name = String(rule?.name ?? rule?.key ?? key).trim() || key;
     const icon =
       this._getAutomationIconOverride(rule) ||
@@ -2706,9 +3282,22 @@ export class FFXIVItem extends Item {
         foundry.utils.deepClone(rule.flags),
       );
     }
+    this._applyRuleContextFlags(effectData, rule, context);
     const duration = this._prepareEffectRuleDuration(rule?.duration);
     if (duration) effectData.duration = duration;
     return effectData;
+  }
+
+  _applyRuleContextFlags(effectData, rule, context = {}) {
+    if (rule?.storeResourceCosts !== true) return;
+    const costs = context?.jobResourceCosts;
+    if (!costs || typeof costs !== "object" || !Object.keys(costs).length)
+      return;
+    effectData.flags = foundry.utils.mergeObject(effectData.flags || {}, {
+      ffxiv: {
+        jobResourceCosts: foundry.utils.deepClone(costs),
+      },
+    });
   }
 
   _getAutomationIconOverride(rule) {
@@ -2758,8 +3347,27 @@ export class FFXIVItem extends Item {
 
     return actor.effects.some((effect) => {
       if (!effect || effect.disabled) return false;
-      return this._effectMatchesKey(effect, normalizedKey);
+      return this._effectSatisfiesKey(effect, normalizedKey);
     });
+  }
+
+  _hasNamedApplicableEffect(actor, key, options = {}) {
+    const normalizedKey = this._normalizeEffectKey(key);
+    if (!normalizedKey) return false;
+    if (Array.isArray(options?.effectSnapshot)) {
+      return options.effectSnapshot.some((effect) => {
+        if (!effect || effect.disabled) return false;
+        return this._effectSatisfiesKey(effect, normalizedKey);
+      });
+    }
+    return this._hasNamedEffect(actor, normalizedKey);
+  }
+
+  _effectSatisfiesKey(effect, key) {
+    const normalizedKey = this._normalizeEffectKey(key);
+    if (!effect || !normalizedKey) return false;
+    if (this._effectMatchesKey(effect, normalizedKey)) return true;
+    return this._getEffectCountsAsKeys(effect).includes(normalizedKey);
   }
 
   _effectMatchesKey(effect, key) {
@@ -2772,6 +3380,18 @@ export class FFXIVItem extends Item {
     );
     if (flagKey && flagKey === normalizedKey) return true;
     return this._normalizeEffectKey(effect.name) === normalizedKey;
+  }
+
+  _getEffectCountsAsKeys(effect) {
+    const refs = [];
+    for (const value of [
+      foundry.utils.getProperty(effect, "flags.ffxiv.countsAs"),
+      foundry.utils.getProperty(effect, "flags.ffxiv.equivalentEffects"),
+      foundry.utils.getProperty(effect, "flags.ffxiv.effectAliases"),
+    ]) {
+      refs.push(...this._normalizeEffectRefs(value).map((entry) => entry.key));
+    }
+    return Array.from(new Set(refs.filter(Boolean)));
   }
 
   _isStatusEffectId(key) {
@@ -3325,20 +3945,21 @@ export class FFXIVItem extends Item {
   async _restoreLimitationUseIfNeeded() {
     if (this.type !== "ability") return;
     if (this.parent?.documentName !== "Actor") return;
+    if (!String(this.system?.limitations ?? "").trim()) return;
 
-    const max = Number.parseInt(this.system?.limitations_max, 10);
+    const max = Number.parseInt(this.system?.job_resources_max, 10);
     if (!Number.isFinite(max) || max <= 0) return;
 
-    const limitationsStatus = Array.isArray(this.system?.limitations_status)
-      ? this.system.limitations_status.slice(0, max)
+    const resourceStatus = Array.isArray(this.system?.job_resource_status)
+      ? this.system.job_resource_status.slice(0, max)
       : [];
-    while (limitationsStatus.length < max) limitationsStatus.push(false);
+    while (resourceStatus.length < max) resourceStatus.push(false);
 
-    const index = limitationsStatus.lastIndexOf(true);
+    const index = resourceStatus.lastIndexOf(true);
     if (index === -1) return;
-    limitationsStatus[index] = false;
+    resourceStatus[index] = false;
     await this.update(
-      { "system.limitations_status": limitationsStatus },
+      { "system.job_resource_status": resourceStatus },
       { render: false },
     );
   }

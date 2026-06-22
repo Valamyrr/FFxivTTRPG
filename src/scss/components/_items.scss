@@ -586,7 +586,8 @@
     }
 
     .job-progression-tab.drag-over,
-    .job-pets-tab.drag-over {
+    .job-pets-tab.drag-over,
+    .summon-actors-dropzone.drag-over {
       outline: 2px solid var(--border-color-1);
       outline-offset: 3px;
     }
@@ -598,15 +599,32 @@
       grid-template-columns: minmax(10em, 1fr) minmax(8em, auto) 28px 28px 32px;
     }
 
+    .job-ability-row.dragging {
+      opacity: 0.55;
+    }
+
+    .job-ability-row.drop-before {
+      border-top: 2px solid var(--border-color-1);
+      padding-top: 4px;
+    }
+
+    .job-ability-row.drop-after {
+      border-bottom: 2px solid var(--border-color-1);
+      padding-bottom: 4px;
+    }
+
     .job-ability-edit,
-    .job-pet-edit {
+    .job-pet-edit,
+    .summon-actor-edit {
       cursor: pointer;
     }
 
     .job-ability-edit:hover .job-ability-name,
     .job-ability-edit:hover .job-ability-type,
     .job-pet-edit:hover .job-ability-name,
-    .job-pet-edit:hover .job-ability-type {
+    .job-pet-edit:hover .job-ability-type,
+    .summon-actor-edit:hover .job-ability-name,
+    .summon-actor-edit:hover .job-ability-type {
       text-shadow: 0 0 8px var(--text-shadow-color);
     }
 
@@ -641,7 +659,8 @@
     }
 
     .job-ability-row button.remove-job-ability,
-    .job-ability-row button.remove-job-pet {
+    .job-ability-row button.remove-job-pet,
+    .job-ability-row button.remove-summon-actor {
       align-items: center;
       background: #b00000;
       border: 1px solid white;
@@ -650,7 +669,8 @@
     }
 
     .job-ability-row button.remove-job-ability:hover,
-    .job-ability-row button.remove-job-pet:hover {
+    .job-ability-row button.remove-job-pet:hover,
+    .job-ability-row button.remove-summon-actor:hover {
       background: red;
       box-shadow: 0 0 5px red;
     }

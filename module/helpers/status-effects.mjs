@@ -1,3 +1,5 @@
+import { clearActorJobResources } from "./job-resources.mjs";
+
 export const STACKABLE_STATUS_EFFECT_IDS = new Set([
   "critical_up",
   "dot",
@@ -8,6 +10,7 @@ const ADDITIVE_STACKABLE_STATUS_EFFECT_IDS = new Set(["critical_up"]);
 const STACK_COUNT_FLAG_SCOPE = "ffxiv";
 const STACK_COUNT_FLAG_KEY = "stackCount";
 const MANUAL_STACK_SOURCE = "__manual__";
+const PETRIFIED_APPLIED_TURN_FLAG = "petrifiedAppliedTurn";
 
 const STATUS_DEFINITIONS = [
   {
@@ -233,6 +236,7 @@ const KNOCKED_OUT_ALLOWED_STATUS_IDS = new Set([
   "knocked_out",
 ]);
 const ELITE_FOE_ALLOWED_ENFEEBLEMENT_IDS = new Set([
+  "death",
   "dot",
   "enmity",
   "knocked_out",
@@ -376,13 +380,36 @@ export function getActorCheckPenalty(actor, { ignoredStatuses = [] } = {}) {
       .map((statusId) => String(statusId ?? "").trim())
       .filter(Boolean),
   );
-  return getActorEffectFlagTotal(actor, "flags.ffxiv.check.penalty", {
+  return getActorEffectFlagPenalty(actor, "flags.ffxiv.check.penalty", {
     ignoredStatuses: ignored,
   });
 }
 
+export function getLargestCheckPenalty(...penalties) {
+  return penalties.flat().reduce((largest, penalty) => {
+    const value = Number(penalty);
+    if (!Number.isFinite(value) || value === 0) return largest;
+    const normalized = -Math.abs(value);
+    return Math.abs(normalized) > Math.abs(largest) ? normalized : largest;
+  }, 0);
+}
+
 export function getTargetStatusAdvantage(actor) {
   return getActorEffectFlagTotal(actor, "flags.ffxiv.target.check.advantage");
+}
+
+function getActorEffectFlagPenalty(actor, path, { ignoredStatuses = null } = {}) {
+  return Array.from(actor?.effects ?? []).reduce((largest, effect) => {
+    if (!effect || effect.disabled) return largest;
+    if (
+      ignoredStatuses instanceof Set &&
+      Array.from(effect.statuses ?? []).some((statusId) => ignoredStatuses.has(statusId))
+    )
+      return largest;
+    const value = Number(foundry.utils.getProperty(effect, path));
+    if (!Number.isFinite(value) || value === 0) return largest;
+    return getLargestCheckPenalty(largest, value);
+  }, 0);
 }
 
 function getActorEffectFlagTotal(actor, path, { ignoredStatuses = null } = {}) {
@@ -779,6 +806,7 @@ async function applyKnockedOutStatusEffect(
   });
   await clearKnockedOutBlockedStatuses(actor);
   await removeEnmityInflictedByActor(actor);
+  await clearActorJobResources(actor);
   return result;
 }
 
@@ -838,6 +866,38 @@ function isSameStatusSourceActor(first, second) {
   const secondUuid = String(second.uuid ?? "").trim();
   if (firstUuid || secondUuid) return firstUuid && firstUuid === secondUuid;
   return first.id && first.id === second.id;
+}
+
+function getCurrentCombatTurn(combat = game.combat) {
+  if (!combat?.started) return null;
+  return {
+    combatId: String(combat.id ?? combat.uuid ?? ""),
+    round: Number(combat.round ?? 0),
+    turn: Number(combat.turn ?? -1),
+  };
+}
+
+export async function markPetrifiedAppliedThisTurn(actor, combat = game.combat) {
+  const turn = getCurrentCombatTurn(combat);
+  if (!turn) return;
+  await actor.setFlag("ffxiv", PETRIFIED_APPLIED_TURN_FLAG, turn);
+}
+
+async function unsetPetrifiedAppliedTurn(actor) {
+  if (actor?.getFlag?.("ffxiv", PETRIFIED_APPLIED_TURN_FLAG) === undefined)
+    return;
+  await actor.unsetFlag("ffxiv", PETRIFIED_APPLIED_TURN_FLAG);
+}
+
+export function wasPetrifiedAppliedThisTurn(actor, combat = game.combat) {
+  const appliedTurn = actor?.getFlag?.("ffxiv", PETRIFIED_APPLIED_TURN_FLAG);
+  const currentTurn = getCurrentCombatTurn(combat);
+  if (!appliedTurn || !currentTurn) return false;
+  return (
+    String(appliedTurn.combatId ?? "") === currentTurn.combatId &&
+    Number(appliedTurn.round) === currentTurn.round &&
+    Number(appliedTurn.turn) === currentTurn.turn
+  );
 }
 
 export async function applyStatusEffectChange(
@@ -925,6 +985,10 @@ export async function applyStatusEffectChange(
     render: false,
     ffxivSuppressStatusText,
   });
+  if (normalizedStatusId === "petrified") {
+    if (isActive) await markPetrifiedAppliedThisTurn(actor);
+    else await unsetPetrifiedAppliedTurn(actor);
+  }
   if (isActive && origin) {
     await setNonStackableStatusOrigin(actor, normalizedStatusId, origin);
   }

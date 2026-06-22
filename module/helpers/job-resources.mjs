@@ -30,34 +30,65 @@ export function findActorTrait(actor, name) {
 export function findActorJobResource(actor, name) {
   const key = normalizeJobResourceName(name);
   if (!actor || !key) return null;
-  const keys = new Set([
-    key,
-    ...getJobResourceAliases(key),
-  ]);
   return actor.items?.find((item) => {
-    if (item?.type !== "trait") return false;
-    if (!keys.has(normalizeJobResourceName(item.name))) return false;
     const max = Number.parseInt(item.system?.job_resources_max, 10);
-    return Number.isFinite(max) && max > 0;
+    if (!Number.isFinite(max) || max <= 0) return false;
+    const keys = getItemJobResourceKeys(item);
+    return keys.has(key);
   }) ?? null;
 }
 
-function getJobResourceAliases(key) {
-  const aliases = {
-    chakra: ["deep_meditation"],
-    beast_chakra: ["enhanced_perfect_balance"],
-    nadi: ["solar_and_lunar_mastery"],
-  };
-  return aliases[key] ?? [];
+function getItemJobResourceKeys(item) {
+  const keys = new Set([normalizeJobResourceName(item?.name)]);
+  const data = foundry.utils.getProperty(item, "flags.ffxiv.jobResource") ?? {};
+  for (const value of [
+    data.name,
+    data.key,
+    data.resource,
+    item?.system?.job_resource_name,
+  ]) {
+    const key = normalizeJobResourceName(value);
+    if (key) keys.add(key);
+  }
+  for (const value of [
+    ...toArray(data.names),
+    ...toArray(data.keys),
+    ...toArray(data.resources),
+  ]) {
+    const key = normalizeJobResourceName(value);
+    if (key) keys.add(key);
+  }
+  return keys;
 }
 
-export function getJobResourceCount(item) {
+function toArray(value) {
+  if (Array.isArray(value)) return value;
+  return value === undefined || value === null || value === "" ? [] : [value];
+}
+
+export function getItemJobResourceName(item) {
+  const data = foundry.utils.getProperty(item, "flags.ffxiv.jobResource") ?? {};
+  return String(
+    data.label ??
+    data.name ??
+    data.resource ??
+    item?.system?.job_resource_name ??
+    item?.name ??
+    "",
+  ).trim();
+}
+
+export function getNormalizedJobResourceStatus(item) {
   const max = Math.max(Number.parseInt(item?.system?.job_resources_max, 10) || 0, 0);
   const status = Array.isArray(item?.system?.job_resource_status)
     ? item.system.job_resource_status.slice(0, max)
     : [];
   while (status.length < max) status.push(false);
-  return status.filter(Boolean).length;
+  return status;
+}
+
+export function getJobResourceCount(item) {
+  return getNormalizedJobResourceStatus(item).filter(Boolean).length;
 }
 
 export function getActorJobResourceCount(actor, name) {
@@ -117,4 +148,29 @@ export async function fillActorJobResource(actor, name, options = {}) {
 export function hasActorJobResource(actor, name, amount = 1) {
   const count = getActorJobResourceCount(actor, name);
   return count >= Math.max(Number.parseInt(amount, 10) || 0, 0);
+}
+
+export async function clearActorJobResources(actor, options = {}) {
+  if (!actor?.items?.size) return;
+
+  const updates = [];
+  for (const item of actor.items) {
+    const max = Math.max(Number.parseInt(item.system?.job_resources_max, 10) || 0, 0);
+    if (max <= 0) continue;
+    const current = Array.isArray(item.system?.job_resource_status)
+      ? item.system.job_resource_status.slice(0, max)
+      : [];
+    while (current.length < max) current.push(false);
+    if (!current.some(Boolean)) continue;
+    updates.push({
+      _id: item.id,
+      "system.job_resource_status": new Array(max).fill(false),
+    });
+  }
+
+  if (updates.length) {
+    await actor.updateEmbeddedDocuments("Item", updates, {
+      render: options.render ?? false,
+    });
+  }
 }

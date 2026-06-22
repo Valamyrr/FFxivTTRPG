@@ -1,0 +1,33 @@
+<hr>
+<div class="status-effects-editor summon-actors-editor summon-actors-dropzone">
+  <div class="status-effects-header">
+    <label class="resource-label">{{ localize "FFXIV.Abilities.Summons" }}</label>
+  </div>
+  <ol class="job-ability-list">
+    {{#unless system.summon_actors.length}}
+      <li class="job-ability-empty">{{ localize "FFXIV.Abilities.DropSummons" }}</li>
+    {{/unless}}
+    {{#each system.summon_actors as |summon index| }}
+      <li class="job-ability-row summon-actor-edit" data-index="{{index}}">
+        <span class="job-ability-name">{{summon.name}}</span>
+        <span class="job-ability-type">{{summon.typeLabel}}</span>
+        <button type="button"
+                class="move-summon-actor-up"
+                data-index="{{index}}"
+                aria-label="Move Up"
+                {{#if @first}}disabled{{/if}}>▲</button>
+        <button type="button"
+                class="move-summon-actor-down"
+                data-index="{{index}}"
+                aria-label="Move Down"
+                {{#if @last}}disabled{{/if}}>▼</button>
+        <button type="button"
+                class="remove-summon-actor"
+                data-index="{{index}}"
+                aria-label="{{localize 'FFXIV.Item.Delete'}}">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </li>
+    {{/each}}
+  </ol>
+</div>
