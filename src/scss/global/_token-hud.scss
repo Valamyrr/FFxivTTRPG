@@ -28,3 +28,160 @@
 #token-hud .ffxiv-hud-secondary-row .attribute input {
   font-size: var(--font-size-20);
 }
+
+/* HUD Resources - HP/MP above hotbar */
+#ffxiv-hud-health,
+#ffxiv-hud-mana,
+#ffxiv-hud-status-effects {
+  position: fixed;
+  z-index: 59;
+  pointer-events: none;
+}
+
+#ffxiv-hud-health .hud-health-gauge,
+#ffxiv-hud-mana .hud-mana-gauge {
+  padding: 4px 8px;
+  border: 1px solid rgba(225, 214, 169, 0.58);
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, rgba(42, 42, 38, 0.72), rgba(9, 10, 10, 0.82));
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.86),
+    0 3px 10px rgba(0, 0, 0, 0.54),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(2px);
+}
+
+#ffxiv-hud-status-effects .hud-status-effects {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  overflow: hidden;
+}
+
+#ffxiv-hud-status-effects .hud-status-effect-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#ffxiv-hud-status-effects .hud-status-effect {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(230, 222, 180, 0.42);
+  border-radius: 4px;
+  box-sizing: border-box;
+  background: rgba(8, 10, 10, 0.74);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.62);
+  line-height: 0;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+#ffxiv-hud-status-effects .hud-status-effect-beneficial {
+  border-color: rgba(122, 205, 139, 0.74);
+}
+
+#ffxiv-hud-status-effects .hud-status-effect-negative {
+  border-color: rgba(213, 91, 91, 0.76);
+}
+
+#ffxiv-hud-status-effects .hud-status-effect img {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+#ffxiv-hud-status-effects .hud-status-effect-stack {
+  position: absolute;
+  right: -4px;
+  bottom: -5px;
+  min-width: 14px;
+  padding: 0 3px;
+  border: 1px solid rgba(0, 0, 0, 0.72);
+  border-radius: 7px;
+  background: rgba(24, 20, 12, 0.92);
+  color: #fff4c9;
+  font: 700 10px/13px "Roboto", sans-serif;
+  text-align: center;
+  text-shadow: 0 1px 2px #000;
+}
+
+#ffxiv-hud-health .ffxiv-gauge,
+#ffxiv-hud-mana .ffxiv-gauge {
+  grid-template-columns: 28px 1fr;
+  gap: 5px;
+}
+
+#ffxiv-hud-health .ffxiv-gauge .gauge-label,
+#ffxiv-hud-mana .ffxiv-gauge .gauge-label {
+  font-size: 12px;
+}
+
+#ffxiv-hud-health .ffxiv-gauge .gauge-track,
+#ffxiv-hud-mana .ffxiv-gauge .gauge-track {
+  height: 18px;
+  border-color: rgba(216, 188, 112, 0.6);
+}
+
+#ffxiv-hud-health .gauge-values,
+#ffxiv-hud-mana .gauge-values {
+  font-size: 13px;
+  padding-right: 6px;
+  justify-content: center;
+  gap: 2px;
+}
+
+#ffxiv-hud-health .health-value-current,
+#ffxiv-hud-health .health-value-max,
+#ffxiv-hud-mana .mana-value-current,
+#ffxiv-hud-mana .mana-value-max {
+  min-width: 40px;
+  text-align: center;
+}
+
+#ffxiv-hud-health .barrier-overlay {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0%;
+  width: 0%;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #fff4b8 0%, #ffd84d 45%, #c98d13 100%);
+  box-shadow: inset 0 0 0 1px rgba(98, 67, 0, 0.5), inset 0 -1px 0 rgba(86, 56, 0, 0.45);
+  z-index: 0;
+}
+
+#ffxiv-hud-health .barrier-overflow {
+  position: absolute;
+  top: 0px;
+  left: 0%;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(180deg, #fff4b8 0%, #ffd84d 45%, #c98d13 100%);
+  box-shadow: inset 0 0 0 1px rgba(98, 67, 0, 0.45);
+  border-radius: 2px;
+  opacity: 0.98;
+  z-index: 0;
+}

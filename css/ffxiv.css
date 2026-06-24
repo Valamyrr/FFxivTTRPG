@@ -65,15 +65,165 @@ input:disabled {
   font-size: var(--font-size-20);
 }
 
+/* HUD Resources - HP/MP above hotbar */
+#ffxiv-hud-health,
+#ffxiv-hud-mana,
+#ffxiv-hud-status-effects {
+  position: fixed;
+  z-index: 59;
+  pointer-events: none;
+}
+
+#ffxiv-hud-health .hud-health-gauge,
+#ffxiv-hud-mana .hud-mana-gauge {
+  padding: 4px 8px;
+  border: 1px solid rgba(225, 214, 169, 0.58);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0) 38%), linear-gradient(180deg, rgba(42, 42, 38, 0.72), rgba(9, 10, 10, 0.82));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.86), 0 3px 10px rgba(0, 0, 0, 0.54), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(2px);
+}
+
+#ffxiv-hud-status-effects .hud-status-effects {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  overflow: hidden;
+}
+
+#ffxiv-hud-status-effects .hud-status-effect-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#ffxiv-hud-status-effects .hud-status-effect {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(230, 222, 180, 0.42);
+  border-radius: 4px;
+  box-sizing: border-box;
+  background: rgba(8, 10, 10, 0.74);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.62);
+  line-height: 0;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+#ffxiv-hud-status-effects .hud-status-effect-beneficial {
+  border-color: rgba(122, 205, 139, 0.74);
+}
+
+#ffxiv-hud-status-effects .hud-status-effect-negative {
+  border-color: rgba(213, 91, 91, 0.76);
+}
+
+#ffxiv-hud-status-effects .hud-status-effect img {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+#ffxiv-hud-status-effects .hud-status-effect-stack {
+  position: absolute;
+  right: -4px;
+  bottom: -5px;
+  min-width: 14px;
+  padding: 0 3px;
+  border: 1px solid rgba(0, 0, 0, 0.72);
+  border-radius: 7px;
+  background: rgba(24, 20, 12, 0.92);
+  color: #fff4c9;
+  font: 700 10px/13px "Roboto", sans-serif;
+  text-align: center;
+  text-shadow: 0 1px 2px #000;
+}
+
+#ffxiv-hud-health .ffxiv-gauge,
+#ffxiv-hud-mana .ffxiv-gauge {
+  grid-template-columns: 28px 1fr;
+  gap: 5px;
+}
+
+#ffxiv-hud-health .ffxiv-gauge .gauge-label,
+#ffxiv-hud-mana .ffxiv-gauge .gauge-label {
+  font-size: 12px;
+}
+
+#ffxiv-hud-health .ffxiv-gauge .gauge-track,
+#ffxiv-hud-mana .ffxiv-gauge .gauge-track {
+  height: 18px;
+  border-color: rgba(216, 188, 112, 0.6);
+}
+
+#ffxiv-hud-health .gauge-values,
+#ffxiv-hud-mana .gauge-values {
+  font-size: 13px;
+  padding-right: 6px;
+  justify-content: center;
+  gap: 2px;
+}
+
+#ffxiv-hud-health .health-value-current,
+#ffxiv-hud-health .health-value-max,
+#ffxiv-hud-mana .mana-value-current,
+#ffxiv-hud-mana .mana-value-max {
+  min-width: 40px;
+  text-align: center;
+}
+
+#ffxiv-hud-health .barrier-overlay {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0%;
+  width: 0%;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #fff4b8 0%, #ffd84d 45%, #c98d13 100%);
+  box-shadow: inset 0 0 0 1px rgba(98, 67, 0, 0.5), inset 0 -1px 0 rgba(86, 56, 0, 0.45);
+  z-index: 0;
+}
+
+#ffxiv-hud-health .barrier-overflow {
+  position: absolute;
+  top: 0px;
+  left: 0%;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(180deg, #fff4b8 0%, #ffd84d 45%, #c98d13 100%);
+  box-shadow: inset 0 0 0 1px rgba(98, 67, 0, 0.45);
+  border-radius: 2px;
+  opacity: 0.98;
+  z-index: 0;
+}
+
 #hotbar,
 .hotbar.ffxiv-hotbar {
   --ffxiv-hotbar-size: 38px;
   --ffxiv-hotbar-gap: 3px;
   --ffxiv-hotbar-control-size: 22px;
-  --ffxiv-hotbar-side-width: 28px;
+  --ffxiv-hotbar-side-width: 54px;
   --ffxiv-hotbar-row-width: 514px;
   --ffxiv-hotbar-row-padding: 9px 3px 2px 20px;
-  --ffxiv-hotbar-shell-width: 592px;
+  --ffxiv-hotbar-shell-width: 644px;
   position: fixed;
   left: var(--ffxiv-hotbar-left, 50%);
   bottom: var(--ffxiv-hotbar-bottom, 12px);
@@ -103,6 +253,16 @@ input:disabled {
 #hotbar.min {
   height: auto;
   transform: translateX(-50%);
+}
+
+#hotbar:not(.ffxiv-hotbar-ready) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#hotbar.faded-ui.ffxiv-hotbar-hover {
+  opacity: 1;
+  transition: opacity var(--ui-fade-duration), transform 250ms ease;
 }
 
 #hotbar::before,
@@ -387,12 +547,31 @@ input:disabled {
 }
 
 #hotbar #ffxiv-hotbar-actor-controls {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: center;
-  justify-self: center;
-  position: static !important;
-  width: var(--ffxiv-hotbar-side-width);
+  width: auto;
+  min-width: 0;
+  max-width: calc(var(--ffxiv-hotbar-side-width) * 2 + 4px);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2px;
+  height: auto;
+  flex: 0 0 auto;
+  align-content: flex-end;
+  justify-content: center;
+}
+
+#hotbar #ffxiv-hotbar-actor-controls button {
+  flex: 0 0 auto;
+  width: var(--ffxiv-hotbar-control-size);
+  height: var(--ffxiv-hotbar-control-size);
+}
+
+#hotbar #hotbar-page-controls #ffxiv-hotbar-size-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  height: auto;
 }
 
 #hotbar #hotbar-controls-right {
@@ -400,14 +579,37 @@ input:disabled {
   grid-row: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   justify-self: center;
-  width: var(--ffxiv-hotbar-side-width);
-  min-width: var(--ffxiv-hotbar-side-width);
+  align-self: end;
+  width: calc(var(--ffxiv-hotbar-control-size) * 2 + 2px);
+  min-width: 0;
+  max-width: calc(var(--ffxiv-hotbar-side-width) * 2 + 4px);
   position: static !important;
   z-index: 1;
+  align-content: center;
+  margin-bottom: 8px;
+}
+
+#hotbar #hotbar-controls-right .ffxiv-hotbar-grid-controls {
+  display: grid;
+  grid-template-columns: repeat(2, var(--ffxiv-hotbar-control-size));
+  grid-template-rows: repeat(2, var(--ffxiv-hotbar-control-size));
+  gap: 2px;
+  justify-content: center;
+  align-content: end;
+  align-self: flex-end;
+  width: calc(var(--ffxiv-hotbar-control-size) * 2 + 2px);
+  overflow: visible;
+}
+
+#hotbar #hotbar-controls-right .ffxiv-hotbar-grid-controls button,
+#hotbar #hotbar-controls-right .ffxiv-hotbar-grid-controls a.control {
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 #hotbar #hotbar-controls-right #hotbar-controls-left {
@@ -421,9 +623,8 @@ input:disabled {
   visibility: hidden;
 }
 
-#hotbar #hotbar-controls-right > div.flexcol,
-#hotbar #hotbar-page-controls {
-  justify-content: center;
+#hotbar #hotbar-controls-right > div.flexcol {
+  justify-content: flex-end;
   gap: 2px;
 }
 
@@ -434,8 +635,51 @@ input:disabled {
   justify-self: center;
   position: static !important;
   height: auto;
-  width: var(--ffxiv-hotbar-side-width);
+  width: calc(var(--ffxiv-hotbar-control-size) * 2 + 2px);
+  min-width: 0;
+  max-width: calc(var(--ffxiv-hotbar-side-width) * 2 + 4px);
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-content: center;
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+
+#hotbar #hotbar-page-controls button,
+#hotbar nav#hotbar-page-controls button {
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#hotbar #hotbar-page-controls .ffxiv-hotbar-grid-controls {
+  display: grid;
+  grid-template-columns: repeat(2, var(--ffxiv-hotbar-control-size));
+  grid-template-rows: repeat(2, var(--ffxiv-hotbar-control-size));
+  gap: 2px;
+  justify-content: center;
+  align-content: center;
+  width: calc(var(--ffxiv-hotbar-control-size) * 2 + 2px);
+  overflow: visible;
+}
+
+#hotbar #hotbar-page-controls .ffxiv-hotbar-import-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--ffxiv-hotbar-control-size);
+  min-width: var(--ffxiv-hotbar-control-size);
+  height: var(--ffxiv-hotbar-control-size);
+  align-self: center;
+  margin-bottom: 2px;
+}
+
+#hotbar #hotbar-page-controls button {
+  flex: 0 0 auto;
+  width: var(--ffxiv-hotbar-control-size);
+  height: var(--ffxiv-hotbar-control-size);
 }
 
 #hotbar #hotbar-page-controls .hotbar-page-control {
@@ -479,15 +723,24 @@ input:disabled {
   display: none;
 }
 
+#hotbar #hotbar-page-controls button,
+#hotbar #hotbar-page-controls .hotbar-page-control,
+#hotbar #hotbar-page-controls .ffxiv-hotbar-import-button {
+  height: var(--ffxiv-hotbar-control-size) !important;
+  min-height: var(--ffxiv-hotbar-control-size) !important;
+  max-height: var(--ffxiv-hotbar-control-size) !important;
+  line-height: calc(var(--ffxiv-hotbar-control-size) - 2px) !important;
+}
+
 @media (max-width: 900px) {
   #hotbar,
   .hotbar.ffxiv-hotbar {
     --ffxiv-hotbar-size: 32px;
     --ffxiv-hotbar-gap: 3px;
     --ffxiv-hotbar-control-size: 20px;
-    --ffxiv-hotbar-side-width: 26px;
+    --ffxiv-hotbar-side-width: 50px;
     --ffxiv-hotbar-row-width: 442px;
-    --ffxiv-hotbar-shell-width: 514px;
+    --ffxiv-hotbar-shell-width: 562px;
     bottom: 8px;
     padding: 5px;
   }
@@ -498,10 +751,10 @@ input:disabled {
     --ffxiv-hotbar-size: 28px;
     --ffxiv-hotbar-gap: 2px;
     --ffxiv-hotbar-control-size: 18px;
-    --ffxiv-hotbar-side-width: 22px;
+    --ffxiv-hotbar-side-width: 46px;
     --ffxiv-hotbar-row-width: 377px;
     --ffxiv-hotbar-row-padding: 8px 2px 2px 17px;
-    --ffxiv-hotbar-shell-width: 437px;
+    --ffxiv-hotbar-shell-width: 485px;
     max-width: calc(100vw - 16px);
     padding: 4px;
     gap: 3px;
@@ -534,10 +787,10 @@ input:disabled {
   .hotbar.ffxiv-hotbar {
     --ffxiv-hotbar-size: 24px;
     --ffxiv-hotbar-control-size: 16px;
-    --ffxiv-hotbar-side-width: 20px;
+    --ffxiv-hotbar-side-width: 42px;
     --ffxiv-hotbar-row-width: 329px;
     --ffxiv-hotbar-row-padding: 8px 2px 2px 16px;
-    --ffxiv-hotbar-shell-width: 385px;
+    --ffxiv-hotbar-shell-width: 429px;
   }
   #hotbar button,
   #hotbar .hotbar-controls button,
@@ -1767,24 +2020,39 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   vertical-align: top;
 }
 .ffxiv .limit-break-gauge {
-  margin: 0 0 12px;
-  padding: 8px 10px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
 }
 .ffxiv .limit-break-gauge-title {
   color: #fff3c4;
   font-family: "Cinzel", "Roboto", serif;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.06em;
   line-height: 1;
-  margin: 0 0 4px 14px;
+  margin: 0;
+  position: absolute;
+  left: -34px;
+  top: 10px;
+  transform: translateY(-50%);
   text-shadow: 0 0 3px #ff7900, 0 0 6px #ff3c00, 1px 1px 0 #2a0800;
   text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
 }
 .ffxiv .limit-break-gauge-row {
   display: grid;
-  gap: 10px;
+  gap: 3px;
+  padding-top: 4px;
   grid-template-columns: repeat(var(--limit-break-segments, 3), minmax(0, 1fr));
+  flex: 1;
+  align-items: center;
+  justify-content: center;
 }
 .ffxiv .limit-break-segment {
   appearance: none;
@@ -1792,8 +2060,9 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   border: 0;
   clip-path: polygon(7% 0, 96% 0, 100% 35%, 94% 100%, 4% 100%, 0 62%);
   cursor: pointer;
-  height: 18px;
   margin: 0;
+  min-height: 20px;
+  height: 20px;
   overflow: hidden;
   padding: 0;
   position: relative;
@@ -1825,7 +2094,6 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv .limit-break-controls button {
   align-items: center;
   display: inline-flex;
-  height: 24px;
   justify-content: center;
   line-height: 1;
   margin: 0;
@@ -1856,7 +2124,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   max-width: 100%;
   display: flex;
   justify-content: center;
-  padding: 6px 8px;
+  padding: 0;
   box-sizing: border-box;
   pointer-events: auto;
 }
@@ -1864,8 +2132,13 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   width: 100%;
   background: transparent;
   margin: 0;
-  padding: 6px 12px;
-  display: block;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ffxiv .limit-break-hud .limit-break-gauge-title {
+  margin: 0;
 }
 .ffxiv.item .item-locked-field {
   display: inline-block;

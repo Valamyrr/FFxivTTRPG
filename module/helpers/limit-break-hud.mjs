@@ -156,8 +156,9 @@ function getHotbarBounds() {
       const left = Math.min(...rects.map((r) => r.left));
       const right = Math.max(...rects.map((r) => r.right));
       const top = Math.min(...rects.map((r) => r.top));
+      const bottom = Math.max(...rects.map((r) => r.bottom));
       const width = right - left;
-      if (width > 0) return { left, top, width };
+      if (width > 0) return { left, top, bottom, width };
     }
   }
 
@@ -167,6 +168,7 @@ function getHotbarBounds() {
   return {
     left: rect.left + rect.width * 0.1,
     top: rect.top,
+    bottom: rect.bottom,
     width: rect.width * 0.8,
   };
 }
@@ -182,9 +184,11 @@ export function positionLimitBreakHud() {
   }
 
   hud.hidden = false;
-  const height = hud.offsetHeight || 42;
+  const height = hud.offsetHeight || 32;
+
+  // Position bars to align with hotbar slots
   hud.style.left = `${Math.round(bounds.left)}px`;
-  hud.style.top = `${Math.max(0, Math.round(bounds.top - height - 8))}px`;
+  hud.style.top = `${Math.round(bounds.bottom + 8)}px`;
   hud.style.width = `${Math.round(bounds.width)}px`;
 }
 

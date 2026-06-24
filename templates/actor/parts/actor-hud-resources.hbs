@@ -1,0 +1,49 @@
+{{#if hudResources.enabled}}
+  <div class="hud-health-gauge" data-hud-health>
+    <div class="ffxiv-gauge health-gauge">
+      <div class="gauge-label">{{ localize "FFXIV.Health.abbrv" }}</div>
+      <div class="health-border gauge-track">
+        <div class="health-bar gauge-fill" style="width: {{hudResources.healthPercent}}%;"></div>
+        <div class="barrier-overlay" style="left: {{hudResources.barrierStartPercentage}}%; width: {{hudResources.barrierInsidePercentage}}%;"></div>
+        <div class="barrier-overflow" style="width: {{hudResources.barrierOverflowPercent}}%;"></div>
+        <div class="gauge-values">
+          <span class="health-value-current">{{hudResources.health.value}}</span>
+          <span class="gauge-divider">/</span>
+          <span class="health-value-max">{{hudResources.health.max}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{#if hudResources.statusEffects.length}}
+  <div class="hud-status-effects" data-hud-status-effects>
+    <ol class="hud-status-effect-list">
+      {{#each hudResources.statusEffects as |effect|}}
+        <li class="hud-status-effect hud-status-effect-{{effect.type}} hud-status-effect-{{effect.id}}"
+            data-status-id="{{effect.id}}"
+            data-tooltip="{{effect.name}}"
+            aria-label="{{effect.name}}">
+          <img src="{{effect.icon}}" alt="{{effect.name}}" />
+          {{#if effect.stackLabel}}
+            <span class="hud-status-effect-stack">{{effect.stackLabel}}</span>
+          {{/if}}
+        </li>
+      {{/each}}
+    </ol>
+  </div>
+  {{/if}}
+  {{#if hudResources.showMana}}
+  <div class="hud-mana-gauge" data-hud-mana>
+    <div class="ffxiv-gauge mana-gauge">
+      <div class="gauge-label">{{ localize "FFXIV.Mana.abbrv" }}</div>
+      <div class="mana-bar gauge-track">
+        <div class="mana-fill gauge-fill" style="width: {{hudResources.manaPercent}}%;"></div>
+        <div class="gauge-values">
+          <span class="mana-value-current">{{hudResources.mana.value}}</span>
+          <span class="gauge-divider">/</span>
+          <span class="mana-value-max">{{hudResources.mana.max}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{/if}}
+{{/if}}

@@ -151,29 +151,44 @@
   }
 
   .limit-break-gauge {
-    margin: 0 0 12px;
-    padding: 8px 10px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
   }
 
   .limit-break-gauge-title {
     color: #fff3c4;
     font-family: "Cinzel", "Roboto", serif;
-    font-size: 15px;
+    font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.06em;
     line-height: 1;
-    margin: 0 0 4px 14px;
+    margin: 0;
+    position: absolute;
+    left: -34px;
+    top: 10px;
+    transform: translateY(-50%);
     text-shadow:
       0 0 3px #ff7900,
       0 0 6px #ff3c00,
       1px 1px 0 #2a0800;
     text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
   }
 
   .limit-break-gauge-row {
     display: grid;
-    gap: 10px;
+    gap: 3px;
+    padding-top: 4px;
     grid-template-columns: repeat(var(--limit-break-segments, 3), minmax(0, 1fr));
+    flex: 1;
+    align-items: center;
+    justify-content: center;
   }
 
   .limit-break-segment {
@@ -184,8 +199,9 @@
     border: 0;
     clip-path: polygon(7% 0, 96% 0, 100% 35%, 94% 100%, 4% 100%, 0 62%);
     cursor: pointer;
-    height: 18px;
     margin: 0;
+    min-height: 20px;
+    height: 20px;
     overflow: hidden;
     padding: 0;
     position: relative;
@@ -224,7 +240,6 @@
   .limit-break-controls button {
     align-items: center;
     display: inline-flex;
-    height: 24px;
     justify-content: center;
     line-height: 1;
     margin: 0;
@@ -259,7 +274,7 @@
       max-width: 100%;
       display: flex;
       justify-content: center;
-      padding: 6px 8px;
+      padding: 0;
       box-sizing: border-box;
       pointer-events: auto;
     }
@@ -268,8 +283,14 @@
       width: 100%;
       background: transparent;
       margin: 0;
-      padding: 6px 12px;
-      display: block;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .limit-break-gauge-title {
+      margin: 0;
     }
   }
 

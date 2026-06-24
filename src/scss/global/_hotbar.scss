@@ -3,10 +3,10 @@
   --ffxiv-hotbar-size: 38px;
   --ffxiv-hotbar-gap: 3px;
   --ffxiv-hotbar-control-size: 22px;
-  --ffxiv-hotbar-side-width: 28px;
+  --ffxiv-hotbar-side-width: 54px;
   --ffxiv-hotbar-row-width: 514px;
   --ffxiv-hotbar-row-padding: 9px 3px 2px 20px;
-  --ffxiv-hotbar-shell-width: 592px;
+  --ffxiv-hotbar-shell-width: 644px;
 
   position: fixed;
   left: var(--ffxiv-hotbar-left, 50%);
@@ -42,6 +42,16 @@
 #hotbar.min {
   height: auto;
   transform: translateX(-50%);
+}
+
+#hotbar:not(.ffxiv-hotbar-ready) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#hotbar.faded-ui.ffxiv-hotbar-hover {
+  opacity: 1;
+  transition: opacity var(--ui-fade-duration), transform 250ms ease;
 }
 
 #hotbar::before,
@@ -345,12 +355,31 @@
 }
 
 #hotbar #ffxiv-hotbar-actor-controls {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: center;
-  justify-self: center;
-  position: static !important;
-  width: var(--ffxiv-hotbar-side-width);
+  width: auto;
+  min-width: 0;
+  max-width: calc(var(--ffxiv-hotbar-side-width) * 2 + 4px);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2px;
+  height: auto;
+  flex: 0 0 auto;
+  align-content: flex-end;
+  justify-content: center;
+}
+
+#hotbar #ffxiv-hotbar-actor-controls button {
+  flex: 0 0 auto;
+  width: var(--ffxiv-hotbar-control-size);
+  height: var(--ffxiv-hotbar-control-size);
+}
+
+#hotbar #hotbar-page-controls #ffxiv-hotbar-size-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  height: auto;
 }
 
 #hotbar #hotbar-controls-right {
@@ -358,14 +387,37 @@
   grid-row: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   justify-self: center;
-  width: var(--ffxiv-hotbar-side-width);
-  min-width: var(--ffxiv-hotbar-side-width);
+  align-self: end;
+  width: calc(var(--ffxiv-hotbar-control-size) * 2 + 2px);
+  min-width: 0;
+  max-width: calc(var(--ffxiv-hotbar-side-width) * 2 + 4px);
   position: static !important;
   z-index: 1;
+  align-content: center;
+  margin-bottom: 8px;
+}
+
+#hotbar #hotbar-controls-right .ffxiv-hotbar-grid-controls {
+  display: grid;
+  grid-template-columns: repeat(2, var(--ffxiv-hotbar-control-size));
+  grid-template-rows: repeat(2, var(--ffxiv-hotbar-control-size));
+  gap: 2px;
+  justify-content: center;
+  align-content: end;
+  align-self: flex-end;
+  width: calc(var(--ffxiv-hotbar-control-size) * 2 + 2px);
+  overflow: visible;
+}
+
+#hotbar #hotbar-controls-right .ffxiv-hotbar-grid-controls button,
+#hotbar #hotbar-controls-right .ffxiv-hotbar-grid-controls a.control {
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 #hotbar #hotbar-controls-right #hotbar-controls-left {
@@ -379,9 +431,8 @@
   visibility: hidden;
 }
 
-#hotbar #hotbar-controls-right > div.flexcol,
-#hotbar #hotbar-page-controls {
-  justify-content: center;
+#hotbar #hotbar-controls-right > div.flexcol {
+  justify-content: flex-end;
   gap: 2px;
 }
 
@@ -392,8 +443,51 @@
   justify-self: center;
   position: static !important;
   height: auto;
-  width: var(--ffxiv-hotbar-side-width);
+  width: calc(var(--ffxiv-hotbar-control-size) * 2 + 2px);
+  min-width: 0;
+  max-width: calc(var(--ffxiv-hotbar-side-width) * 2 + 4px);
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-content: center;
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+
+#hotbar #hotbar-page-controls button,
+#hotbar nav#hotbar-page-controls button {
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#hotbar #hotbar-page-controls .ffxiv-hotbar-grid-controls {
+  display: grid;
+  grid-template-columns: repeat(2, var(--ffxiv-hotbar-control-size));
+  grid-template-rows: repeat(2, var(--ffxiv-hotbar-control-size));
+  gap: 2px;
+  justify-content: center;
+  align-content: center;
+  width: calc(var(--ffxiv-hotbar-control-size) * 2 + 2px);
+  overflow: visible;
+}
+
+#hotbar #hotbar-page-controls .ffxiv-hotbar-import-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--ffxiv-hotbar-control-size);
+  min-width: var(--ffxiv-hotbar-control-size);
+  height: var(--ffxiv-hotbar-control-size);
+  align-self: center;
+  margin-bottom: 2px;
+}
+
+#hotbar #hotbar-page-controls button {
+  flex: 0 0 auto;
+  width: var(--ffxiv-hotbar-control-size);
+  height: var(--ffxiv-hotbar-control-size);
 }
 
 #hotbar #hotbar-page-controls .hotbar-page-control {
@@ -439,15 +533,24 @@
   display: none;
 }
 
+#hotbar #hotbar-page-controls button,
+#hotbar #hotbar-page-controls .hotbar-page-control,
+#hotbar #hotbar-page-controls .ffxiv-hotbar-import-button {
+  height: var(--ffxiv-hotbar-control-size) !important;
+  min-height: var(--ffxiv-hotbar-control-size) !important;
+  max-height: var(--ffxiv-hotbar-control-size) !important;
+  line-height: calc(var(--ffxiv-hotbar-control-size) - 2px) !important;
+}
+
 @media (max-width: 900px) {
   #hotbar,
   .hotbar.ffxiv-hotbar {
     --ffxiv-hotbar-size: 32px;
     --ffxiv-hotbar-gap: 3px;
     --ffxiv-hotbar-control-size: 20px;
-    --ffxiv-hotbar-side-width: 26px;
+    --ffxiv-hotbar-side-width: 50px;
     --ffxiv-hotbar-row-width: 442px;
-    --ffxiv-hotbar-shell-width: 514px;
+    --ffxiv-hotbar-shell-width: 562px;
 
     bottom: 8px;
     padding: 5px;
@@ -460,10 +563,10 @@
     --ffxiv-hotbar-size: 28px;
     --ffxiv-hotbar-gap: 2px;
     --ffxiv-hotbar-control-size: 18px;
-    --ffxiv-hotbar-side-width: 22px;
+    --ffxiv-hotbar-side-width: 46px;
     --ffxiv-hotbar-row-width: 377px;
     --ffxiv-hotbar-row-padding: 8px 2px 2px 17px;
-    --ffxiv-hotbar-shell-width: 437px;
+    --ffxiv-hotbar-shell-width: 485px;
 
     max-width: calc(100vw - 16px);
     padding: 4px;
@@ -501,10 +604,10 @@
   .hotbar.ffxiv-hotbar {
     --ffxiv-hotbar-size: 24px;
     --ffxiv-hotbar-control-size: 16px;
-    --ffxiv-hotbar-side-width: 20px;
+    --ffxiv-hotbar-side-width: 42px;
     --ffxiv-hotbar-row-width: 329px;
     --ffxiv-hotbar-row-padding: 8px 2px 2px 16px;
-    --ffxiv-hotbar-shell-width: 385px;
+    --ffxiv-hotbar-shell-width: 429px;
   }
 
   #hotbar button,
