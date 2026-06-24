@@ -29,6 +29,7 @@
 /* Global styles */
 @include meta.load-css("global/window");
 @include meta.load-css("global/token-hud");
+@include meta.load-css("global/hotbar");
 @include meta.load-css("global/combat");
 @include meta.load-css("global/settings");
 @include meta.load-css("global/grid");

@@ -56,6 +56,7 @@ import {
   createSummonTokenFromRequest,
   FFXIV_SUMMON_SOCKET_TYPE,
 } from "./helpers/summons.mjs";
+import { initHotbar, registerHotbarKeybindings } from "./helpers/hotbar.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -64,6 +65,7 @@ import {
 Hooks.once("init", function () {
   registerDataModels();
   SettingsHelpers.initSettings();
+  registerHotbarKeybindings();
   // Add utility classes to the global game object so that they're more easily
   // accessible in global contexts.
   game.ffxivttrpg = {
@@ -719,6 +721,7 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 /* -------------------------------------------- */
 
 Hooks.once("ready", function () {
+  initHotbar();
   initLimitBreakHud();
   configureCombatTrackedResource().catch((error) => {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);
@@ -742,20 +745,6 @@ Hooks.once("ready", function () {
   });
   syncEliteFoeEffects().catch((error) => {
     debugError("FFXIV | Failed to sync elite foe effects:", error);
-  });
-
-  // Wait to register hotbar drop hook on ready so that modules could register earlier if they want to
-  Hooks.on("hotbarDrop", (bar, data, slot) => {
-    if (!isFFXIVItemHotbarDrop(data)) return;
-    createItemMacro(data, slot);
-    return false;
-  });
-
-  Hooks.on("deleteItem", (item, _options, userId) => {
-    if (game.user.id !== userId) return;
-    deletePairedItemMacros(item).catch((error) => {
-      debugError("FFXIV | Failed to delete paired item macro:", error);
-    });
   });
 
   // Color Scheme to use with css variables
@@ -3131,96 +3120,6 @@ function applyFFXIVChatTheme(element) {
 
   const theme = getFFXIVTheme();
   chatElement.classList.add("chat-ffxiv", `${theme}_theme`);
-}
-
-function isFFXIVItemHotbarDrop(data) {
-  if (data?.type !== "Item") return false;
-  return Boolean(data.uuid || (data.actorId && data.itemId));
-}
-
-async function createItemMacro(data, slot) {
-  if (data.type !== "Item") return;
-
-  const uuid =
-    data.uuid ||
-    (data.actorId && data.itemId
-      ? `Actor.${data.actorId}.Item.${data.itemId}`
-      : null);
-  if (!uuid) return;
-
-  const item = await fromUuid(uuid);
-  if (!item)
-    return ui.notifications.warn(
-      game.i18n.localize("FFXIV.Notifications.MacroItemMissing"),
-    );
-  const folder = await getPlayerMacroFolder(item);
-
-  const command = `const item = await fromUuid("${uuid}");
-if (!item) return ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.MacroItemMissing"));
-return item.roll?.();`;
-
-  let macro = game.macros.find(
-    (m) =>
-      m.name === item.name &&
-      m.command === command &&
-      m.folder?.id === folder?.id,
-  );
-  if (!macro) {
-    macro = await Macro.create({
-      name: item.name,
-      type: "script",
-      img: item.img,
-      command,
-      folder: folder?.id,
-      flags: { ffxiv: { itemUuid: uuid } },
-    });
-  }
-
-  game.user.assignHotbarMacro(macro, slot);
-  return false;
-}
-
-async function deletePairedItemMacros(item) {
-  if (item?.type !== "ability") return;
-  if (item.parent?.documentName !== "Actor") return;
-
-  const uuid = String(item.uuid ?? "").trim();
-  if (!uuid) return;
-
-  const macros = game.macros.filter(
-    (macro) => String(macro.getFlag("ffxiv", "itemUuid") ?? "") === uuid,
-  );
-  if (!macros.length) return;
-
-  for (const macro of macros) {
-    await macro.delete();
-  }
-}
-
-async function getPlayerMacroFolder(item) {
-  const parentFolder = await getOrCreateMacroFolder("Player Macros");
-  const actorName =
-    item.parent?.documentName === "Actor"
-      ? item.parent.name
-      : game.user.character?.name || game.user.name;
-  return getOrCreateMacroFolder(actorName, parentFolder);
-}
-
-async function getOrCreateMacroFolder(name, parent = null) {
-  const parentId = parent?.id ?? null;
-  const existing = game.folders.find(
-    (folder) =>
-      folder.type === "Macro" &&
-      folder.name === name &&
-      (folder.folder?.id ?? folder.parent ?? null) === parentId,
-  );
-  if (existing) return existing;
-
-  return Folder.create({
-    name,
-    type: "Macro",
-    folder: parentId,
-  });
 }
 
 /* -------------------------------------------- */
