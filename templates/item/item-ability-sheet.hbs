@@ -218,11 +218,12 @@
             </select>
           </div>
         </div>
-        <div class="resource flex-group-center">
+        <div class="resource flex-group-center combo-resource">
           <label for="system.combo" class="resource-label">{{ localize "FFXIV.Abilities.Combo" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <input name="system.combo" type="text" value="{{item.system.combo}}" />
           </div>
+          {{> "systems/ffxiv/templates/item/parts/combo-chain.hbs" combo=item.system.combo current=item.name}}
         </div>
         <div class="resource flex-group-center">
           <label for="system.hpcost" class="resource-label">{{ localize "FFXIV.Abilities.HPCost" }}</label>
@@ -300,32 +301,30 @@
               <input name="system.origin" type="text" value="{{item.system.origin}}" />
             </div>
           </div>
-          {{#if (hasContent item.system.origin) }}
-            <div class="resource flex-group-center">
-              <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
-              <div class="resource-content flexrow flex-center flex-between">
-                <input name="system.marker_trigger"
-                       type="text"
-                       value="{{item.system.marker_trigger}}" />
-              </div>
+          <div class="resource flex-group-center">
+            <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="system.marker_trigger"
+                     type="text"
+                     value="{{item.system.marker_trigger}}" />
             </div>
-            <div class="resource flex-group-center">
-              <label for="system.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
-              <div class="resource-content flexrow flex-center flex-between">
-                <input name="system.marker_area"
-                       type="text"
-                       value="{{item.system.marker_area}}" />
-              </div>
+          </div>
+          <div class="resource flex-group-center">
+            <label for="system.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="system.marker_area"
+                     type="text"
+                     value="{{item.system.marker_area}}" />
             </div>
-            <div class="resource flex-group-center">
-              <label for="system.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
-              <div class="resource-content flexrow flex-center flex-between">
-                <input name="system.marker_effect"
-                       type="text"
-                       value="{{item.system.marker_effect}}" />
-              </div>
+          </div>
+          <div class="resource flex-group-center">
+            <label for="system.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="system.marker_effect"
+                     type="text"
+                     value="{{item.system.marker_effect}}" />
             </div>
-          {{/if}}
+          </div>
         </div>
       {{/if}}
       <hr>

@@ -444,10 +444,17 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return;
     }
 
-    const display = document.createElement(control instanceof HTMLTextAreaElement ? "div" : "span");
+    let display;
+    if (control.name === "system.combo") {
+      const resource = control.closest(".combo-resource");
+      const preview = resource?.querySelector(":scope > .combo-chain");
+      display = preview?.cloneNode(true);
+      preview?.remove();
+    }
+    display ??= document.createElement(control instanceof HTMLTextAreaElement ? "div" : "span");
     display.classList.add("item-locked-field");
     if (control instanceof HTMLTextAreaElement) display.classList.add("item-locked-field-block");
-    display.textContent = this._getLockedItemFieldText(control);
+    if (!display.textContent?.trim()) display.textContent = this._getLockedItemFieldText(control);
     control.replaceWith(display);
   }
 
@@ -489,6 +496,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "system.direct_formula",
         "system.direct_formula_attribute",
         "system.direct_hit",
+        "system.combo",
         "system.alternate_formula",
         "system.alternate_formula_attribute",
         "system.alternate_formula_critical",

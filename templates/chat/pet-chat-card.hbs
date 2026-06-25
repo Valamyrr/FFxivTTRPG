@@ -43,9 +43,7 @@
         </div>
       {{/if}}
       {{#if pet.system.pet_ability.combo }}
-        <div class="detail">
-          <strong>{{ localize "FFXIV.Abilities.Combo" }}:</strong> {{pet.system.pet_ability.combo}}
-        </div>
+        {{> "systems/ffxiv/templates/item/parts/combo-chain.hbs" combo=pet.system.pet_ability.combo current=pet.name showLabel=true}}
       {{/if}}
       {{#if pet.system.pet_ability.condition }}
         <div class="effect">

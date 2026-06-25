@@ -175,11 +175,12 @@
                    value="{{item.system.direct_formula}}" />
           </div>
         </div>
-        <div class="resource flex-group-center">
+        <div class="resource flex-group-center combo-resource">
           <label for="system.combo" class="resource-label">{{ localize "FFXIV.Abilities.Combo" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
             <input name="system.combo" type="text" value="{{item.system.combo}}" />
           </div>
+          {{> "systems/ffxiv/templates/item/parts/combo-chain.hbs" combo=item.system.combo current=item.name}}
         </div>
       </div>
       <div class="resources grid grid-3col">

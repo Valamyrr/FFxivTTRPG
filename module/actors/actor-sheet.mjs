@@ -1258,6 +1258,62 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
   }
 
+  _getComboSource(combo) {
+    return String(combo ?? "")
+      .trim()
+      .replace(/^\((.*)\)$/u, "$1")
+      .trim();
+  }
+
+  _normalizeComboTargetName(name) {
+    return String(name ?? "").trim().toLowerCase();
+  }
+
+  _sortItemsByComboLinks(items) {
+    const ordered = items.slice();
+    const byName = new Map();
+    for (const item of ordered) {
+      item.comboBranch = false;
+      item.comboSource = false;
+      item.comboTarget = false;
+      byName.set(this._normalizeComboTargetName(item.name), item);
+    }
+
+    const targetsBySource = new Map();
+    const incomingTargets = new Set();
+    for (const item of ordered) {
+      const source = byName.get(
+        this._normalizeComboTargetName(this._getComboSource(item.system?.combo)),
+      );
+      if (!source) continue;
+      item.comboTarget = true;
+      incomingTargets.add(item._id);
+      source.comboSource = true;
+      const targets = targetsBySource.get(source._id) ?? [];
+      targets.push(item);
+      targetsBySource.set(source._id, targets);
+    }
+
+    for (const targets of targetsBySource.values()) {
+      for (const target of targets.slice(0, -1)) target.comboBranch = true;
+    }
+
+    const placed = new Set();
+    const result = [];
+    const addWithTargets = (item) => {
+      if (!item || placed.has(item._id)) return;
+      placed.add(item._id);
+      result.push(item);
+      for (const target of targetsBySource.get(item._id) ?? []) addWithTargets(target);
+    };
+
+    for (const item of ordered) {
+      if (!incomingTargets.has(item._id)) addWithTargets(item);
+    }
+    for (const item of ordered) addWithTargets(item);
+    return result;
+  }
+
   /**
    * Organize and classify Items for Actor sheets.
    *
@@ -1308,20 +1364,26 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     context.consumables = consumables;
-    context.primary_abilities = this._sortItemsByAbilityOrder(
-      primary_abilities,
-      context.system.ability_order,
-      "primary_ability",
+    context.primary_abilities = this._sortItemsByComboLinks(
+      this._sortItemsByAbilityOrder(
+        primary_abilities,
+        context.system.ability_order,
+        "primary_ability",
+      ),
     );
-    context.secondary_abilities = this._sortItemsByAbilityOrder(
-      secondary_abilities,
-      context.system.ability_order,
-      "secondary_ability",
+    context.secondary_abilities = this._sortItemsByComboLinks(
+      this._sortItemsByAbilityOrder(
+        secondary_abilities,
+        context.system.ability_order,
+        "secondary_ability",
+      ),
     );
-    context.instant_abilities = this._sortItemsByAbilityOrder(
-      instant_abilities,
-      context.system.ability_order,
-      "instant_ability",
+    context.instant_abilities = this._sortItemsByComboLinks(
+      this._sortItemsByAbilityOrder(
+        instant_abilities,
+        context.system.ability_order,
+        "instant_ability",
+      ),
     );
     context.limit_break = limit_break;
     context.traits = this._sortItemsByAbilityOrder(
@@ -2501,8 +2563,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     [abilityOrder[abilityType][index], abilityOrder[abilityType][newIndex]] =
       [abilityOrder[abilityType][newIndex], abilityOrder[abilityType][index]];
+    this._captureSheetScroll();
     await actor.update({ "system.ability_order": abilityOrder }, { render: false });
     await this._renderWithoutEnrichment();
+    this._restoreSheetScroll();
   }
 
 

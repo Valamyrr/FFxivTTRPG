@@ -51,7 +51,7 @@
     {{#if (eq currentAbilityTab 'primary')}}
     <section class="sub-tab-content active" data-tab="primary">
       {{#each primary_abilities }}
-        <div class="ability-container">
+        <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
           <div class="move-buttons">
             {{#unless @first}}
@@ -82,7 +82,7 @@
 {{#if (eq currentAbilityTab 'secondary')}}
 <section class="sub-tab-content active" data-tab="secondary">
   {{#each secondary_abilities }}
-    <div class="ability-container">
+    <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
       <div class="move-buttons">
         {{#unless @first}}
@@ -113,7 +113,7 @@
 {{#if (eq currentAbilityTab 'instant')}}
 <section class="sub-tab-content active" data-tab="instant">
   {{#each instant_abilities }}
-    <div class="ability-container">
+    <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
       <div class="move-buttons">
         {{#unless @first}}

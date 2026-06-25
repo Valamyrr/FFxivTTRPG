@@ -437,6 +437,19 @@ function isBakedActionTag(tag) {
   );
 }
 
+function normalizeComboStep(step) {
+  return String(step ?? "")
+    .trim()
+    .replace(/^\((.*)\)$/u, "$1")
+    .trim();
+}
+
+function normalizeComboName(name) {
+  return String(name ?? "")
+    .trim()
+    .toLowerCase();
+}
+
 Handlebars.registerHelper("actionTags", function (type, tags) {
   const effectiveType =
     type === "ability" ? getAbilitySubtype({ type, system: { tags } }) : type;
@@ -445,6 +458,23 @@ Handlebars.registerHelper("actionTags", function (type, tags) {
     ? tags.filter((tag) => !isBakedActionTag(tag))
     : [];
   return bakedTag ? [bakedTag, ...customTags] : customTags;
+});
+
+Handlebars.registerHelper("comboChain", function (combo, currentName) {
+  const source = normalizeComboStep(combo);
+  const steps = source ? [source] : [];
+  const current = normalizeComboStep(currentName);
+  if (
+    current &&
+    !steps.some((step) => normalizeComboName(step) === normalizeComboName(current))
+  ) {
+    steps.push(current);
+  }
+
+  return steps.map((name) => ({
+    name,
+    current: current && normalizeComboName(name) === normalizeComboName(current),
+  }));
 });
 
 Handlebars.registerHelper("customActionTags", function (tags) {
@@ -1629,6 +1659,17 @@ const ACTION_FORMULA_TYPES = new Set([
   "augment",
   "minion",
 ]);
+const COMBO_MIGRATION_TYPES = new Set([
+  "ability",
+  "primary_ability",
+  "secondary_ability",
+  "instant_ability",
+]);
+const LEGACY_COMBO_MIGRATION_FLAGS = [
+  "flags.ffxiv.comboFromMigration20",
+  "flags.ffxiv.comboFromMigration22",
+];
+const COMBO_MIGRATION_FLAG = "flags.ffxiv.comboFromMigration22";
 const HP_COST_MIGRATION_TYPES = new Set([
   "ability",
   "primary_ability",
@@ -1639,7 +1680,7 @@ const HP_COST_MIGRATION_TYPES = new Set([
   "augment",
   "minion",
 ]);
-const ITEM_DATA_MIGRATION_VERSION = "19";
+const ITEM_DATA_MIGRATION_VERSION = "22";
 function getMigratableItemCompendiumPacks() {
   return game.packs.filter(
     (pack) => pack.documentName === "Item" && !pack.locked,
@@ -2041,6 +2082,21 @@ async function _migrateItemDataStructureInternal({ force = false } = {}) {
       abilityTypeStats,
     );
 
+    if (migrationVersion <= 21) {
+      reportPhase("FFXIV.Notifications.ItemMigrationPhaseComboStart");
+      showMigrationProgress(
+        99,
+        "FFXIV.Notifications.ItemMigrationPhaseComboStart",
+      );
+      const comboStats = await migrateLegacyComboFields();
+      reportPhase("FFXIV.Notifications.ItemMigrationPhaseComboDone", comboStats);
+      showMigrationProgress(
+        99,
+        "FFXIV.Notifications.ItemMigrationPhaseComboDone",
+        comboStats,
+      );
+    }
+
     await game.settings.set(
       "ffxiv",
       "itemMigrationVersion",
@@ -2075,6 +2131,211 @@ function normalizeHpCostValue(raw) {
   const parsed = Number.parseInt(raw, 10);
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
+}
+
+function splitLegacyComboTargets(combo) {
+  return String(combo ?? "")
+    .split(/\s+or\s+/i)
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function hasLegacyComboMigrationFlag(item) {
+  return LEGACY_COMBO_MIGRATION_FLAGS.some((flag) =>
+    foundry.utils.getProperty(item, flag),
+  );
+}
+
+function addLegacyComboLinksFromItems(items, comboLinks) {
+  const entries = Array.from(items ?? [])
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => COMBO_MIGRATION_TYPES.has(item?.type));
+  const byName = new Map();
+  for (const entry of entries) {
+    const name = normalizeComboName(entry.item.name);
+    if (name && !byName.has(name)) byName.set(name, entry);
+  }
+
+  for (const sourceEntry of entries) {
+    const source = sourceEntry.item;
+    if (hasLegacyComboMigrationFlag(source)) continue;
+    const targets = splitLegacyComboTargets(source.system?.combo);
+    if (!targets.length) continue;
+    const targetEntries = targets
+      .map((name) => byName.get(normalizeComboName(name)))
+      .filter(Boolean);
+    if (targetEntries.length !== targets.length) continue;
+    if (
+      targetEntries.some((targetEntry) => targetEntry.index <= sourceEntry.index)
+    )
+      continue;
+    const sourceName = String(source.name ?? "").trim();
+    if (!sourceName) continue;
+    const sourceKey = normalizeComboName(sourceName);
+    if (!comboLinks.has(sourceKey)) {
+      comboLinks.set(sourceKey, { sourceName, targets: new Set() });
+    }
+    const entry = comboLinks.get(sourceKey);
+    for (const target of targets) entry.targets.add(target);
+  }
+}
+
+function addLegacyComboLinksFromGrantItems(itemLike, comboLinks) {
+  if (!["job", "augment"].includes(itemLike?.type)) return;
+  const rawGrants = Array.isArray(itemLike.system?.ability_grants)
+    ? itemLike.system.ability_grants
+    : Object.values(itemLike.system?.ability_grants || {});
+  const grantItems = rawGrants
+    .map((grant) => grant?.item)
+    .filter((item) => item && typeof item === "object");
+  addLegacyComboLinksFromItems(grantItems, comboLinks);
+}
+
+function getItemSourceId(item, index = null) {
+  return item.id ?? item._id ?? (index === null ? null : `__combo_${index}`);
+}
+
+function getLegacyComboMigrationUpdates(items, comboLinks = null) {
+  const entries = Array.from(items ?? [])
+    .map((item, index) => ({ item, id: getItemSourceId(item, index), index }))
+    .filter(({ item }) => COMBO_MIGRATION_TYPES.has(item?.type));
+  const byName = new Map();
+  for (const entry of entries) {
+    const { item } = entry;
+    const name = normalizeComboName(item.name);
+    if (name && !byName.has(name)) byName.set(name, entry);
+  }
+
+  const updatesById = new Map();
+  const ensureUpdate = (item) => {
+    const entry = entries.find(({ item: entryItem }) => entryItem === item);
+    const id = entry?.id;
+    if (!id) return null;
+    if (!updatesById.has(id)) updatesById.set(id, { _id: id });
+    return updatesById.get(id);
+  };
+
+  for (const sourceEntry of entries) {
+    const { item: source, id: sourceId, index: sourceIndex } = sourceEntry;
+    if (hasLegacyComboMigrationFlag(source)) continue;
+    if (comboLinks && !comboLinks.has(normalizeComboName(source.name))) continue;
+    const combo = String(source.system?.combo ?? "").trim();
+    if (!combo) continue;
+
+    const targetNames = splitLegacyComboTargets(combo);
+    const targetEntries = targetNames
+      .map((name) => byName.get(normalizeComboName(name)))
+      .filter((target) => {
+        if (!target) return false;
+        return target.id !== sourceId && target.index > sourceIndex;
+      });
+    if (targetEntries.length !== targetNames.length) continue;
+    const targets = targetEntries.map(({ item }) => item);
+
+    const sourceUpdate = ensureUpdate(source);
+    if (sourceUpdate) {
+      sourceUpdate["system.combo"] = "";
+      sourceUpdate[COMBO_MIGRATION_FLAG] = true;
+    }
+    for (const target of targets) {
+      const targetUpdate = ensureUpdate(target);
+      if (targetUpdate) {
+        targetUpdate["system.combo"] = source.name;
+        targetUpdate[COMBO_MIGRATION_FLAG] = true;
+      }
+    }
+  }
+
+  if (comboLinks) {
+    for (const { sourceName, targets } of comboLinks.values()) {
+      for (const targetName of targets) {
+        const target = byName.get(normalizeComboName(targetName));
+        if (!target) continue;
+        const targetUpdate = ensureUpdate(target.item);
+        if (!targetUpdate) continue;
+        targetUpdate["system.combo"] = sourceName;
+        targetUpdate[COMBO_MIGRATION_FLAG] = true;
+      }
+    }
+  }
+
+  return Array.from(updatesById.values()).filter((update) =>
+    Object.keys(update).some((key) => key !== "_id"),
+  );
+}
+
+function migrateLegacyComboItemSources(itemSources, comboLinks = null) {
+  const items = Array.isArray(itemSources)
+    ? foundry.utils.deepClone(itemSources)
+    : [];
+  const updates = getLegacyComboMigrationUpdates(items, comboLinks);
+  if (!updates.length) return { items, changed: 0 };
+
+  const updatesById = new Map(updates.map((update) => [update._id, update]));
+  let changed = 0;
+  for (const [index, item] of items.entries()) {
+    const update = updatesById.get(getItemSourceId(item, index));
+    if (!update) continue;
+    for (const [path, value] of Object.entries(update)) {
+      if (path === "_id") continue;
+      foundry.utils.setProperty(item, path, value);
+    }
+    changed += 1;
+  }
+
+  return { items, changed };
+}
+
+function getLegacyComboGrantPatch(itemLike, comboLinks = null) {
+  if (!["job", "augment"].includes(itemLike?.type)) return null;
+  const rawGrants = Array.isArray(itemLike.system?.ability_grants)
+    ? itemLike.system.ability_grants
+    : Object.values(itemLike.system?.ability_grants || {});
+  if (!rawGrants.length) return null;
+
+  const nextGrants = foundry.utils.deepClone(rawGrants);
+  const grantItems = nextGrants
+    .map((grant) => grant?.item)
+    .filter((item) => item && typeof item === "object");
+  const migrated = migrateLegacyComboItemSources(grantItems, comboLinks);
+  if (!migrated.changed) return null;
+
+  let itemIndex = 0;
+  for (const grant of nextGrants) {
+    if (!grant?.item || typeof grant.item !== "object") continue;
+    grant.item = migrated.items[itemIndex];
+    itemIndex += 1;
+  }
+
+  return { "system.ability_grants": nextGrants };
+}
+
+async function collectLegacyComboLinks() {
+  const comboLinks = new Map();
+  addLegacyComboLinksFromItems(game.items, comboLinks);
+  for (const item of game.items) addLegacyComboLinksFromGrantItems(item, comboLinks);
+
+  return comboLinks;
+}
+
+async function migrateLegacyComboFields() {
+  let updatedWorldItems = 0;
+  const comboLinks = await collectLegacyComboLinks();
+
+  const worldUpdates = getLegacyComboMigrationUpdates(game.items, comboLinks);
+  for (const item of game.items) {
+    const patch = getLegacyComboGrantPatch(item, comboLinks);
+    if (!patch) continue;
+    worldUpdates.push({ _id: item.id, ...patch });
+  }
+  if (worldUpdates.length) {
+    await Item.updateDocuments(worldUpdates, { render: false });
+    updatedWorldItems = worldUpdates.length;
+  }
+
+  return {
+    updatedWorldItems,
+  };
 }
 
 async function migrateAbilityHpCosts() {

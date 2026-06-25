@@ -308,6 +308,10 @@
       white-space: pre-wrap;
     }
 
+    .combo-chain.item-locked-field {
+      display: inline-flex;
+    }
+
     .sheet-header h1.charname .item-locked-field {
       color: var(--text-color-input);
       font-family: "Roboto", sans-serif;

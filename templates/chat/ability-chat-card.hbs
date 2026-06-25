@@ -67,9 +67,7 @@
           </div>
         {{/if}}
         {{#if item.system.combo }}
-          <div class="detail">
-            <strong>{{ localize "FFXIV.Abilities.Combo" }}:</strong> {{item.system.combo}}
-          </div>
+          {{> "systems/ffxiv/templates/item/parts/combo-chain.hbs" combo=item.system.combo current=item.name showLabel=true}}
         {{/if}}
         {{#if item.system.condition }}
           <div class="effect">

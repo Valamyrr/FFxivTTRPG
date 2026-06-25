@@ -295,32 +295,30 @@
             <input name="system.origin" type="text" value="{{item.system.origin}}" />
           </div>
         </div>
-        {{#if (hasContent item.system.origin) }}
-          <div class="resource flex-group-center">
-            <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.marker_trigger"
-                     type="text"
-                     value="{{item.system.marker_trigger}}" />
-            </div>
+        <div class="resource flex-group-center">
+          <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.marker_trigger"
+                   type="text"
+                   value="{{item.system.marker_trigger}}" />
           </div>
-          <div class="resource flex-group-center">
-            <label for="system.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.marker_area"
-                     type="text"
-                     value="{{item.system.marker_area}}" />
-            </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.marker_area"
+                   type="text"
+                   value="{{item.system.marker_area}}" />
           </div>
-          <div class="resource flex-group-center">
-            <label for="system.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.marker_effect"
-                     type="text"
-                     value="{{item.system.marker_effect}}" />
-            </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="system.marker_effect"
+                   type="text"
+                   value="{{item.system.marker_effect}}" />
           </div>
-        {{/if}}
+        </div>
       </div>
     </div>
     <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>

@@ -26,6 +26,58 @@
   font-display: swap;
 }
 
+.combo-chain {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-start;
+  line-height: 1.25;
+}
+
+.combo-chain-steps {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.combo-step {
+  border: 1px solid rgba(216, 188, 112, 0.45);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
+  display: inline-flex;
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 2px 6px;
+}
+
+.combo-current {
+  border-color: rgba(225, 190, 95, 0.85);
+  background: rgba(225, 190, 95, 0.18);
+  color: var(--text-color-strong, inherit);
+}
+
+.combo-arrow {
+  color: #d7b765;
+  display: inline-flex;
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.resource.flex-group-center > .combo-chain {
+  margin-top: 4px;
+  width: 100%;
+}
+
+.resource.combo-resource {
+  grid-column: 1 / -1;
+}
+
 /* Global styles */
 @include meta.load-css("global/window");
 @include meta.load-css("global/token-hud");
