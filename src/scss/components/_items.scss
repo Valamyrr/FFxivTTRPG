@@ -295,6 +295,455 @@
   }
 
   &.item {
+    &.item-modern-sheet {
+      position: relative;
+    }
+
+    &.item-modern-sheet .item-edit-toggle {
+      align-items: center;
+      align-self: flex-end;
+      border: 1px solid rgba(216, 188, 112, 0.58);
+      border-radius: 5px;
+      background: rgba(12, 12, 12, 0.92);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
+      display: flex;
+      height: 34px;
+      justify-content: center;
+      line-height: 1;
+      margin-bottom: -44px;
+      margin-left: auto;
+      margin-right: 12px;
+      margin-top: 10px;
+      padding: 0;
+      position: sticky;
+      right: 12px;
+      top: 10px;
+      width: 34px;
+      z-index: 20;
+    }
+
+    &.item-modern-sheet .item-edit-toggle.active {
+      border-color: rgba(225, 190, 95, 0.9);
+      background: rgba(49, 44, 28, 0.96);
+      box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.12), 0 2px 8px rgba(0, 0, 0, 0.42);
+    }
+
+    &:has(.ability-sheet-tabs) {
+      min-width: 720px;
+    }
+
+    &:has(.ability-sheet-tabs) .window-content,
+    &:has(.ability-sheet-tabs) .sheet-body {
+      overflow-x: hidden;
+    }
+
+    &:has(.ability-sheet-tabs) .sheet-body {
+      box-sizing: border-box;
+      max-width: 100%;
+      padding-top: 0;
+    }
+
+    &:has(.ability-sheet-tabs) .sheet-body > .tab,
+    &:has(.ability-sheet-tabs) .ability-sheet-card {
+      box-sizing: border-box;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+    }
+
+    &:has(.ability-sheet-tabs) .sheet-header {
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 10px;
+      margin: 4px 0 6px;
+      min-height: 46px;
+      overflow: visible;
+    }
+
+    &:has(.ability-sheet-tabs) .sheet-header .profile-img {
+      border: 1px solid rgba(225, 190, 95, 0.65);
+      border-radius: 5px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      flex: 0 0 42px;
+      height: 42px;
+      margin-right: 0;
+      object-fit: cover;
+      width: 42px;
+    }
+
+    &:has(.ability-sheet-tabs) .sheet-header .header-fields {
+      align-items: center;
+      display: flex;
+      flex: 0 1 min(30em, calc(100% - 52px));
+      gap: 8px;
+      min-width: 0;
+    }
+
+    &:has(.ability-sheet-tabs) .sheet-header h1.charname {
+      flex: 1 1 18em;
+      line-height: 1.1;
+      margin: 0;
+      min-width: 0;
+      width: auto;
+    }
+
+    &:has(.ability-sheet-tabs) .sheet-header h1.charname input,
+    &:has(.ability-sheet-tabs) .sheet-header h1.charname .item-locked-field {
+      height: 38px;
+      line-height: 38px;
+    }
+
+    &:has(.ability-sheet-tabs) .sheet-header .item-delete {
+      flex: 0 0 34px;
+      height: 34px;
+      margin: 0;
+      padding: 0;
+      width: 34px;
+    }
+
+    &:has(.ability-sheet-tabs) > hr {
+      margin: 0 0 6px;
+    }
+
+    .ability-sheet-tabs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(7.5em, 1fr));
+      gap: 6px;
+      margin: 0 0 10px;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .ability-sheet-tabs .item {
+      align-items: center;
+      border: 1px solid rgba(216, 188, 112, 0.45);
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.16);
+      display: inline-flex;
+      gap: 5px;
+      justify-content: center;
+      line-height: 1.2;
+      min-height: 30px;
+      min-width: 0;
+      padding: 5px 7px;
+      text-align: center;
+    }
+
+    .ability-sheet-tabs .item.active {
+      border-color: rgba(225, 190, 95, 0.85);
+      background: rgba(225, 190, 95, 0.16);
+      color: var(--text-color-strong, var(--text-color));
+      text-shadow: 0 0 5px var(--text-shadow-color);
+    }
+
+    .ability-sheet-tabs .item i {
+      flex: 0 0 auto;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .ability-sheet-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ability-sheet-card input:not([type="checkbox"]):not([type="radio"]),
+    .ability-sheet-card select,
+    .ability-sheet-card textarea,
+    .ability-sheet-card .ffxiv-text-center,
+    .ability-sheet-card .item-locked-field {
+      text-align: left;
+    }
+
+    .ability-sheet-card > hr {
+      display: none;
+    }
+
+    .ability-sheet-panel,
+    .summon-actors-editor {
+      border: 1px solid rgba(216, 188, 112, 0.35);
+      border-radius: 7px;
+      background: rgba(0, 0, 0, 0.12);
+      box-sizing: border-box;
+      box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.05);
+      margin-inline: auto;
+      padding: 10px;
+      width: calc(100% - 10px);
+    }
+
+    .ability-panel-header,
+    .status-effects-header {
+      align-items: center;
+      border-bottom: 1px solid rgba(216, 188, 112, 0.28);
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+      margin: 0 0 9px;
+      padding-bottom: 6px;
+    }
+
+    .ability-panel-header h2 {
+      border: 0;
+      color: var(--text-color);
+      font-family: "Roboto", sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .ability-panel-header button,
+    .status-effects-header button {
+      align-items: center;
+      display: inline-flex;
+      flex: 0 0 28px;
+      height: 26px;
+      justify-content: center;
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+      width: 28px;
+    }
+
+    .ability-form-grid {
+      display: grid;
+      gap: 9px;
+    }
+
+    .ability-form-grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ability-form-grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .ability-form-span,
+    .ability-target-field,
+    .ability-range-field {
+      grid-column: span 2;
+    }
+
+    .ability-form-grid .resource {
+      align-items: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 0;
+      min-width: 0;
+      text-align: left;
+    }
+
+    .ability-form-grid .resource-label {
+      align-items: center;
+      display: flex;
+      justify-content: flex-start;
+      min-height: 18px;
+      text-align: left;
+    }
+
+    .ability-form-grid .resource-content {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .ability-form-grid input,
+    .ability-form-grid select,
+    .ability-form-grid textarea {
+      border: 1px solid rgba(216, 188, 112, 0.22);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.16);
+      box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.03);
+      min-height: 30px;
+      min-width: 0;
+      padding: 4px 8px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .ability-form-grid textarea {
+      min-height: 74px;
+      resize: vertical;
+    }
+
+    .ability-info-grid .ability-target-field,
+    .ability-info-grid .ability-range-field,
+    .ability-info-grid .ability-combo-field {
+      grid-column: auto;
+    }
+
+    .ability-info-grid .ability-combo-preview {
+      display: flex;
+      grid-column: 1 / -1;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .ability-info-grid .ability-combo-preview:empty {
+      display: none;
+    }
+
+    .ability-info-grid .ability-combo-preview .combo-chain {
+      justify-content: center;
+      margin-top: 4px;
+    }
+
+    .ability-formula-row {
+      align-items: stretch;
+      display: inline-flex;
+      gap: 0;
+      justify-content: flex-start;
+      max-width: 100%;
+      width: auto;
+    }
+
+    .ability-formula-row .ffxiv-hidden {
+      display: none;
+    }
+
+    .ability-formula-row input,
+    .ability-formula-row select,
+    .ability-formula-row .item-locked-field {
+      flex: 0 1 auto;
+      width: auto;
+    }
+
+    .ability-formula-row input,
+    .ability-formula-row .item-locked-field:first-child {
+      flex-basis: 7.5em;
+      min-width: 7.5em;
+      text-align: right;
+    }
+
+    .ability-formula-row select,
+    .ability-formula-row .item-locked-field + .item-locked-field {
+      flex-basis: 11em;
+      min-width: 11em;
+      text-align: left;
+    }
+
+    .ability-formula-row input:not(:last-child),
+    .ability-formula-row .item-locked-field:first-child:not(:last-child) {
+      border-bottom-right-radius: 0;
+      border-right: 0;
+      border-top-right-radius: 0;
+    }
+
+    .ability-formula-row select,
+    .ability-formula-row .item-locked-field + .item-locked-field {
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
+    }
+
+    .ability-tags-editor .tag-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(12em, max-content));
+      gap: 6px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .ability-tags-editor .tag-list li {
+      align-items: center;
+      display: grid;
+      grid-template-columns: minmax(11em, 1fr) 28px;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .ability-tags-editor .tag-list li:first-child {
+      grid-template-columns: minmax(11em, 1fr);
+    }
+
+    .ability-tags-editor select {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .ability-tags-editor .remove-tag {
+      align-items: center;
+      display: inline-flex;
+      height: 26px;
+      justify-content: center;
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+      width: 28px;
+    }
+
+    .status-effects-editor {
+      border: 1px solid rgba(216, 188, 112, 0.35);
+      border-radius: 7px;
+      background: rgba(0, 0, 0, 0.12);
+      box-sizing: border-box;
+      box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.05);
+      margin-inline: auto;
+      padding: 10px;
+      width: calc(100% - 10px);
+    }
+
+    .status-effects-editor + hr {
+      display: none;
+    }
+
+    .status-effects-editor + hr + .status-effects-editor {
+      margin-top: 10px;
+    }
+
+    .status-effects-editor + .status-effects-editor {
+      margin-top: 10px;
+    }
+
+    .status-effect-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .status-effect-list li {
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.1);
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      padding: 6px;
+    }
+
+    .status-effect-list select,
+    .status-effect-list input {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .ability-effect-name {
+      align-items: center;
+      display: flex;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .ability-effect-name img {
+      border: 1px solid rgba(216, 188, 112, 0.35);
+      border-radius: 4px;
+      height: 24px;
+      object-fit: cover;
+      width: 24px;
+    }
+
+    .ability-effect-name span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .item-locked-field {
       display: inline-block;
       width: 100%;
@@ -355,6 +804,26 @@
         border-radius: 4px;
         background: rgba(0, 0, 0, 0.08);
       }
+    }
+
+    &.item-locked .ability-panel-header .add-tag {
+      display: none;
+    }
+
+    &.item-locked .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
+      grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em;
+    }
+
+    &.item-locked .ability-linked-effect-list li {
+      grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;
+    }
+
+    &.item-locked .ability-linked-effect-list .ability-linked-effect-automation {
+      grid-template-columns: minmax(10em, 1fr) 8.75em auto;
+    }
+
+    &.item-locked .ability-automation-edit-list li {
+      display: block;
     }
 
     .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
@@ -494,6 +963,57 @@
 
     .ability-automation-fields .ability-automation-checkbox input {
       width: auto;
+    }
+
+    @media (max-width: 620px) {
+      .ability-sheet-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .ability-form-grid-2,
+      .ability-form-grid-3 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ability-form-span,
+      .ability-target-field,
+      .ability-range-field {
+        grid-column: auto;
+      }
+
+      .ability-formula-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li,
+      .ability-linked-effect-list li,
+      .ability-linked-effect-list .ability-linked-effect-automation,
+      .ability-automation-fields {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ability-automation-edit-list li {
+        grid-template-columns: minmax(0, 1fr) 34px;
+      }
+    }
+
+    &.blue_theme {
+      .ability-sheet-tabs .item,
+      .ability-sheet-panel,
+      .summon-actors-editor,
+      .status-effects-editor {
+        border-color: rgba(154, 198, 255, 0.45);
+      }
+
+      .ability-sheet-tabs .item.active {
+        border-color: rgba(190, 221, 255, 0.82);
+        background: rgba(78, 139, 221, 0.22);
+      }
+
+      .ability-panel-header,
+      .status-effects-header {
+        border-bottom-color: rgba(154, 198, 255, 0.3);
+      }
     }
 
     .job-tabs {

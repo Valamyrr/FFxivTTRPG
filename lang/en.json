@@ -299,6 +299,7 @@
       "JobResource": "Job Resource",
       "JobResourceMax": "Resource Boxes",
       "BaseFormula": "Base Effect Formula",
+      "AdditionalFormula": "Additional Formula",
       "AlternateFormula": "Alternate Formula",
       "DirectFormula": "Direct Hit Formula",
       "HitFormula": "Hit Formula",

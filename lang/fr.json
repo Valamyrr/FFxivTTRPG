@@ -299,6 +299,7 @@
       "JobResource": "Ressource de Job",
       "JobResourceMax": "Nombre de cases pour cette Ressource",
       "BaseFormula": "Formule de l'Effet de Base",
+      "AdditionalFormula": "Formule Additionnelle",
       "AlternateFormula": "Formule Alternative",
       "DirectFormula": "Formule d'Attaque Directe",
       "HitFormula": "Formule d'Attaque",

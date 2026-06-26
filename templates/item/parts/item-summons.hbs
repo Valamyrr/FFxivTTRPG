@@ -1,8 +1,14 @@
 <hr>
-<div class="status-effects-editor summon-actors-editor summon-actors-dropzone">
-  <div class="status-effects-header">
-    <label class="resource-label">{{ localize "FFXIV.Abilities.Summons" }}</label>
-  </div>
+<div class="{{#if abilityPanel}}ability-sheet-panel{{else}}status-effects-editor{{/if}} summon-actors-editor summon-actors-dropzone">
+  {{#if abilityPanel}}
+    <header class="ability-panel-header">
+      <h2>{{ localize "FFXIV.Abilities.Summons" }}</h2>
+    </header>
+  {{else}}
+    <div class="status-effects-header">
+      <label class="resource-label">{{ localize "FFXIV.Abilities.Summons" }}</label>
+    </div>
+  {{/if}}
   <ol class="job-ability-list">
     {{#unless system.summon_actors.length}}
       <li class="job-ability-empty">{{ localize "FFXIV.Abilities.DropSummons" }}</li>

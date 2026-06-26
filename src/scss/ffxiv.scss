@@ -31,7 +31,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   gap: 4px;
-  justify-content: flex-start;
+  justify-content: center;
   line-height: 1.25;
 }
 
@@ -40,6 +40,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   gap: 4px;
+  justify-content: center;
   min-width: 0;
 }
 

@@ -37,6 +37,15 @@ const EDIT_MODE_ITEM_TYPES = new Set([
   "title",
 ]);
 
+const ABILITY_SHEET_TYPES = new Set([
+  "ability",
+  "primary_ability",
+  "secondary_ability",
+  "instant_ability",
+]);
+
+const ABILITY_SHEET_MIN_WIDTH = 720;
+
 /**
  * ApplicationV2 implementation of the FFXIV item sheet.
  * @extends {ItemSheetV2}
@@ -49,6 +58,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   constructor(...args) {
     super(...args);
     this.options.window ??= {};
+    this.options.position ??= {};
+    const defaultWidth = this.constructor.DEFAULT_OPTIONS.position.width;
+    if (
+      ABILITY_SHEET_TYPES.has(this.item.type) &&
+      (!Number.isFinite(this.options.position.width) ||
+        this.options.position.width === defaultWidth)
+    ) {
+      this.options.position.width = ABILITY_SHEET_MIN_WIDTH;
+    }
     this.options.window.resizable = !this._isLimitedDisplayMode();
     this.itemEditMode = false;
     this._expandedEffectRequirements = new Set();
@@ -354,6 +372,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this._activateJobGrantReorder();
     this._activateSummonDropZone();
     this._activateFormulaFieldVisibility();
+    this._activateAutomationExpansionTracking();
     this._applyItemEditMode();
     this._restoreSheetScroll();
   }
@@ -401,8 +420,50 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     event.stopPropagation();
 
     if (!EDIT_MODE_ITEM_TYPES.has(this.item.type) || !this.document.isOwner) return;
+    this._captureSheetScroll();
+    this._captureAutomationExpansion();
     this.itemEditMode = !this.itemEditMode;
     this.render({ force: true });
+  }
+
+  _captureAutomationExpansion() {
+    const capture = (selector, target) => {
+      target.clear();
+      this.element
+        .querySelectorAll(selector)
+        .forEach((entry) => {
+          if (!entry.open) return;
+          const index = Number(entry.dataset.index);
+          if (Number.isInteger(index)) target.add(index);
+        });
+    };
+
+    capture(".effect-requirement-entry", this._expandedEffectRequirements);
+    capture(".effect-rule-entry", this._expandedEffectRules);
+  }
+
+  _activateAutomationExpansionTracking() {
+    const track = (entry, target) => {
+      const index = Number(entry.dataset.index);
+      if (!Number.isInteger(index)) return;
+      if (entry.open) target.add(index);
+      else target.delete(index);
+    };
+
+    this.element
+      .querySelectorAll(".effect-requirement-entry")
+      .forEach((entry) => {
+        entry.addEventListener("toggle", () =>
+          track(entry, this._expandedEffectRequirements),
+        );
+      });
+    this.element
+      .querySelectorAll(".effect-rule-entry")
+      .forEach((entry) => {
+        entry.addEventListener("toggle", () =>
+          track(entry, this._expandedEffectRules),
+        );
+      });
   }
 
   _applyItemEditMode() {
@@ -443,6 +504,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       control.disabled = true;
       return;
     }
+    if (control instanceof HTMLSelectElement && control.closest(".ability-formula-row") && !control.value) {
+      control.remove();
+      return;
+    }
 
     let display;
     if (control.name === "system.combo") {
@@ -461,7 +526,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _getLockedItemFieldText(control) {
     if (control instanceof HTMLSelectElement) {
       const values = Array.from(control.selectedOptions)
-        .map((option) => option.textContent?.trim().replace(/\s+/g, " "))
+        .map((option) => {
+          const text = option.textContent?.trim().replace(/\s+/g, " ");
+          return control.closest(".ability-formula-row")
+            ? text?.replace(/^\+\s+/, "+")
+            : text;
+        })
         .filter(Boolean);
       return values.join(", ") || game.i18n.localize("FFXIV.None");
     }
@@ -2163,21 +2233,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           target.style.display = hasText(input.value) ? "" : "none";
         });
 
-      const directHitInput = this.element.querySelector(
-        'input[name="system.direct_hit"]',
-      );
-      const gate = this.element.querySelector("[data-direct-hit-gate]");
-      if (gate && directHitInput) {
-        gate.style.display = hasText(directHitInput.value) ? "" : "none";
-      }
     };
 
     this._formulaVisibilityController?.abort();
     this._formulaVisibilityController = new AbortController();
     const { signal } = this._formulaVisibilityController;
-    const formulaInputs = this.element.querySelectorAll(
-      '[data-formula-source], input[name="system.direct_hit"]',
-    );
+    const formulaInputs = this.element.querySelectorAll("[data-formula-source]");
     formulaInputs.forEach((input) =>
       input.addEventListener("input", updateVisibility, { signal }),
     );
@@ -2275,6 +2336,17 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   setPosition(position = {}) {
+    if (
+      ABILITY_SHEET_TYPES.has(this.item.type) &&
+      Number.isFinite(position.width)
+    ) {
+      const viewportWidth = Math.max(320, window.innerWidth - 24);
+      position.width = Math.max(
+        Math.min(ABILITY_SHEET_MIN_WIDTH, viewportWidth),
+        position.width,
+      );
+    }
+
     if (this._isLimitedDisplayMode()) {
       const defaultWidth =
         Number(this.constructor.DEFAULT_OPTIONS?.position?.width) || 520;
