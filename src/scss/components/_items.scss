@@ -636,6 +636,25 @@
       border-top-left-radius: 0;
     }
 
+    &.item-locked .ability-formula-row .item-locked-field {
+      flex: 0 0 auto;
+      min-width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      text-align: left;
+      width: auto;
+    }
+
+    &.item-locked .ability-formula-row .item-locked-field:first-child {
+      flex-basis: auto;
+      min-width: 0;
+    }
+
+    &.item-locked .ability-formula-row .item-locked-field + .item-locked-field {
+      flex-basis: auto;
+      min-width: 0;
+    }
+
     .ability-tags-editor .tag-list {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(12em, max-content));
