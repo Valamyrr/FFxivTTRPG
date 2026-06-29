@@ -92,8 +92,8 @@
                 <li>
                   <select class="ffxiv-text-center select-tags"
                           data-index="{{entry.index}}">
-                    {{#each ../config.tags_abilities as |t| }}
-                      <option value="{{t.label}}" {{#if (eqTag t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
+                    {{#each entry.options as |t| }}
+                      <option value="{{t.label}}" {{#if t.selected}}selected{{/if}} {{#if t.disabled}}disabled{{/if}}>{{ localize t.label }}
                       </option>
                     {{/each}}
                   </select>

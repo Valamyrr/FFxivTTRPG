@@ -18,7 +18,7 @@
       <div class="ability-right">
         <div class="ability-tags">
           {{#each (actionTags type system.tags) as |tag| }}
-            <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+            <span class="tag">{{localize tag}}</span>
           {{/each}}
           {{#if system.job_resources_max}}
             <div class="ability-limitations">

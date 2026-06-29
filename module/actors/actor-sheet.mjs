@@ -1299,19 +1299,40 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     const placed = new Set();
-    const result = [];
-    const addWithTargets = (item) => {
+    const groups = [];
+    const addWithTargets = (item, group) => {
       if (!item || placed.has(item._id)) return;
       placed.add(item._id);
-      result.push(item);
-      for (const target of targetsBySource.get(item._id) ?? []) addWithTargets(target);
+      group.push(item);
+      for (const target of targetsBySource.get(item._id) ?? []) {
+        addWithTargets(target, group);
+      }
     };
 
     for (const item of ordered) {
-      if (!incomingTargets.has(item._id)) addWithTargets(item);
+      if (incomingTargets.has(item._id) || placed.has(item._id)) continue;
+      const group = [];
+      addWithTargets(item, group);
+      if (group.length) groups.push(group);
     }
-    for (const item of ordered) addWithTargets(item);
-    return result;
+    for (const item of ordered) {
+      if (placed.has(item._id)) continue;
+      const group = [];
+      addWithTargets(item, group);
+      if (group.length) groups.push(group);
+    }
+
+    groups.forEach((group, groupIndex) => {
+      const groupId = group[0]?._id;
+      group.forEach((item, itemIndex) => {
+        item.comboGroupId = groupId;
+        item.showMoveControls = itemIndex === 0;
+        item.canMoveGroupUp = itemIndex === 0 && groupIndex > 0;
+        item.canMoveGroupDown =
+          itemIndex === 0 && groupIndex < groups.length - 1;
+      });
+    });
+    return groups.flat();
   }
 
   /**
@@ -2539,13 +2560,13 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (abilityOrder.constructor.name == "Array") abilityOrder = {} //Before 1.4, there was an issue with template.json creating arrays instead of objects
     if (!abilityOrder[abilityType]) abilityOrder[abilityType] = [];
 
-    const allAbilities = actor.items
+    const allAbilityItems = actor.items
       .filter(i => {
         if (abilityType === "minion") return i.type === "minion";
         if (abilityType === "trait") return i.type === "trait";
         return getAbilitySubtype(i) === abilityType;
-      })
-      .map(i => i.id);
+      });
+    const allAbilities = allAbilityItems.map(i => i.id);
 
     abilityOrder[abilityType] = abilityOrder[abilityType].filter(id => allAbilities.includes(id)); //redefinition to avoid issues with deleted abilities
 
@@ -2555,14 +2576,43 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
     });
 
-    const index = abilityOrder[abilityType].indexOf(itemId);
-    if (index === -1) return; // Fail if item not found
-
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= abilityOrder[abilityType].length) return; //fail if out of bounds
-
-    [abilityOrder[abilityType][index], abilityOrder[abilityType][newIndex]] =
-      [abilityOrder[abilityType][newIndex], abilityOrder[abilityType][index]];
+    if (abilityType === "trait" || abilityType === "minion") {
+      const index = abilityOrder[abilityType].indexOf(itemId);
+      if (index === -1) return;
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= abilityOrder[abilityType].length) return;
+      [abilityOrder[abilityType][index], abilityOrder[abilityType][newIndex]] =
+        [abilityOrder[abilityType][newIndex], abilityOrder[abilityType][index]];
+    } else {
+      const byId = new Map(allAbilityItems.map(item => [item.id, item]));
+      const orderedItems = abilityOrder[abilityType].map(id => byId.get(id)).filter(Boolean);
+      const groupedItems = this._sortItemsByComboLinks(
+        orderedItems.map(item => ({
+          _id: item.id,
+          name: item.name,
+          system: { combo: item.system?.combo },
+        })),
+      );
+      const groups = [];
+      for (const item of groupedItems) {
+        const current = groups.at(-1);
+        if (!current || current.id !== item.comboGroupId) {
+          groups.push({ id: item.comboGroupId, items: [item._id] });
+        } else {
+          current.items.push(item._id);
+        }
+      }
+      const groupIndex = groups.findIndex(group => group.items.includes(itemId));
+      const newGroupIndex = groupIndex + direction;
+      if (
+        groupIndex < 0 ||
+        newGroupIndex < 0 ||
+        newGroupIndex >= groups.length
+      ) return;
+      [groups[groupIndex], groups[newGroupIndex]] =
+        [groups[newGroupIndex], groups[groupIndex]];
+      abilityOrder[abilityType] = groups.flatMap(group => group.items);
+    }
     this._captureSheetScroll();
     await actor.update({ "system.ability_order": abilityOrder }, { render: false });
     await this._renderWithoutEnrichment();

@@ -28,10 +28,18 @@ const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
 
 const EDIT_MODE_ITEM_TYPES = new Set([
+  "item",
   "ability",
   "primary_ability",
   "secondary_ability",
   "instant_ability",
+  "consumable",
+  "currency",
+  "gear",
+  "augment",
+  "minion",
+  "pet",
+  "job",
   "trait",
   "limit_break",
   "title",
@@ -189,7 +197,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.effectRequirementEntries = this._getEffectRequirementEntries(itemData.system);
     context.effectRuleEntries = this._getEffectRuleEntries(itemData.system);
     context.cssClass = this._getSheetClasses().join(" ");
-    context.editable = this.document.isOwner;
+    context.editable = this.document.isOwner && !this._isCompendiumLocked();
     context.itemEditMode = this._isItemEditMode();
     const actionType =
       this.item.type === "ability"
@@ -412,18 +420,27 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _isItemEditMode() {
+    if (this._isCompendiumLocked()) return false;
+    if (this._isLimitedDisplayMode()) return true;
     return !EDIT_MODE_ITEM_TYPES.has(this.item.type) || (this.document.isOwner && this.itemEditMode);
   }
 
-  _toggleItemEditMode(event) {
+  _isCompendiumLocked() {
+    if (!this.document.pack) return false;
+    const pack = game.packs.get(this.document.pack);
+    return Boolean(pack?.locked);
+  }
+
+  async _toggleItemEditMode(event) {
     event.preventDefault();
     event.stopPropagation();
 
-    if (!EDIT_MODE_ITEM_TYPES.has(this.item.type) || !this.document.isOwner) return;
+    if (!EDIT_MODE_ITEM_TYPES.has(this.item.type) || !this.document.isOwner || this._isCompendiumLocked()) return;
     this._captureSheetScroll();
     this._captureAutomationExpansion();
+    await this._saveProseMirrorEditors();
     this.itemEditMode = !this.itemEditMode;
-    this.render({ force: true });
+    await this.render({ force: true });
   }
 
   _captureAutomationExpansion() {
@@ -471,6 +488,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const editing = this._isItemEditMode();
     this.element.classList.toggle("item-editing", editing);
     this.element.classList.toggle("item-locked", !editing);
+    this.element.classList.toggle("item-compendium-locked", this._isCompendiumLocked());
     const sheet = this.element.querySelector(".item-modern-sheet") ?? this.element.querySelector(".window-content") ?? this.element;
 
     const toggle = sheet.querySelector(".item-edit-toggle");
@@ -520,7 +538,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     display.classList.add("item-locked-field");
     if (control instanceof HTMLTextAreaElement) display.classList.add("item-locked-field-block");
     if (!display.textContent?.trim()) display.textContent = this._getLockedItemFieldText(control);
+    if (this._isEmptyLockedItemField(display.textContent)) {
+      display.classList.add("item-locked-field-empty");
+    }
     control.replaceWith(display);
+  }
+
+  _isEmptyLockedItemField(value) {
+    const text = String(value ?? "").trim();
+    return !text || text === game.i18n.localize("FFXIV.None") || text === "None";
   }
 
   _getLockedItemFieldText(control) {
@@ -546,7 +572,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onChangeForm(formConfig, event) {
     if (!formConfig.submitOnChange)
       return super._onChangeForm(formConfig, event);
-    if (!this.isEditable) return;
+    if (!this.isEditable || this._isCompendiumLocked()) return;
     if (!this._isItemEditMode()) return;
     if (!event.target?.name) return;
 
@@ -687,9 +713,51 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         );
       });
     };
-    return (Array.isArray(tags) ? tags : [])
+    const itemTags = Array.isArray(tags) ? tags : [];
+    return itemTags
       .map((tag, index) => ({ tag, index }))
-      .filter(({ tag }) => !isBakedTag(tag));
+      .filter(({ tag }) => !isBakedTag(tag))
+      .map((entry) => ({
+        ...entry,
+        options: Object.values(this._getTagPool()).map((option) => {
+          const optionKey = this._getTagComparisonKey(option?.label);
+          return {
+            ...option,
+            disabled: itemTags.some(
+              (tag, index) =>
+                index !== entry.index &&
+                this._getTagComparisonKey(tag) === optionKey,
+            ),
+            selected:
+              this._getTagComparisonKey(entry.tag) === optionKey,
+          };
+        }),
+      }));
+  }
+
+  _getTagPool() {
+    const configMap = {
+      ability: "tags_abilities",
+      primary_ability: "tags_abilities",
+      secondary_ability: "tags_abilities",
+      instant_ability: "tags_abilities",
+      limit_break: "tags_abilities",
+      pet: "tags_abilities",
+      trait: "tags_traits",
+      consumable: "tags_consumables",
+    };
+    return CONFIG.FFXIV[configMap[this.item.type]] || {};
+  }
+
+  _getTagComparisonKey(tag) {
+    const value = String(tag ?? "").trim();
+    const localized = game.i18n.localize(value);
+    return String(localized || value)
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/\p{Diacritic}/gu, "")
+      .replace(/[^\p{Letter}\p{Number}]/gu, "");
   }
 
   async _enforceAbilitySubtypeTag() {
@@ -1555,7 +1623,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     html.off(".ffxivItemSheet");
 
     // Everything below here is only needed if the sheet is editable
-    if (!this.document.isOwner) return;
+    if (!this.document.isOwner || this._isCompendiumLocked()) return;
 
     html.on(
       "click.ffxivItemSheet",
@@ -1594,10 +1662,22 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         event.currentTarget.dataset.index ??
           $(event.currentTarget).closest("li").index(),
       );
-      const value = $(event.currentTarget).val(); // Get the selected value
-      const tags = this.item.system.tags || [];
-      tags[index] = value; // Update the correct index in the array
-      this.item.update({ "system.tags": tags }); // Update the item with the new tags array
+      const value = $(event.currentTarget).val();
+      const tags = Array.isArray(this.item.system.tags)
+        ? [...this.item.system.tags]
+        : [];
+      const valueKey = this._getTagComparisonKey(value);
+      const isDuplicate = tags.some(
+        (tag, tagIndex) =>
+          tagIndex !== index &&
+          this._getTagComparisonKey(tag) === valueKey,
+      );
+      if (isDuplicate) {
+        event.currentTarget.value = tags[index] ?? "";
+        return;
+      }
+      tags[index] = value;
+      this.item.update({ "system.tags": tags });
     });
     html.on("change.ffxivItemSheet", ".select-subtype-tag", (event) => {
       const value = $(event.currentTarget).val();
@@ -1621,22 +1701,21 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       this.render(); // Re-render to show the updated fields
     });
     html.on("click.ffxivItemSheet", ".add-tag", () => {
-      const tags = this.item.system.tags || [];
+      const tags = Array.isArray(this.item.system.tags)
+        ? [...this.item.system.tags]
+        : [];
 
-      const configMap = {
-        ability: "tags_abilities",
-        primary_ability: "tags_abilities",
-        secondary_ability: "tags_abilities",
-        instant_ability: "tags_abilities",
-        limit_break: "tags_abilities",
-        trait: "tags_traits",
-        consumable: "tags_consumables",
-      };
-
-      const configKey = configMap[this.item.type];
-      const tagPool = CONFIG.FFXIV[configKey] || {};
-      const defaultTag = Object.values(tagPool)[0]?.label || "";
-      debugLog(defaultTag + " : " + tags);
+      const tagPool = this._getTagPool();
+      const existingTags = new Set(
+        tags.map((tag) => this._getTagComparisonKey(tag)),
+      );
+      const defaultTag =
+        Object.values(tagPool)
+          .map((tag) => tag?.label)
+          .find(
+            (tag) =>
+              tag && !existingTags.has(this._getTagComparisonKey(tag)),
+          ) ?? "";
       if (defaultTag) {
         tags.push(defaultTag);
         this.item.update({ "system.tags": tags });
@@ -2168,6 +2247,32 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       .forEach((div) => this._activateEditor?.(div));
   }
 
+  async _saveProseMirrorEditors() {
+    const editors = Array.from(this.element?.querySelectorAll("prose-mirror") ?? []);
+    const updateData = {};
+
+    for (const editor of editors) {
+      const field = editor.getAttribute("name");
+      if (!field) continue;
+
+      if (typeof editor.save === "function") {
+        await editor.save();
+      } else if (typeof editor._save === "function") {
+        await editor._save();
+      }
+
+      const value = editor.value;
+      if (value === undefined) continue;
+      if (foundry.utils.getProperty(this.item, field) !== value) {
+        updateData[field] = value;
+      }
+    }
+
+    if (Object.keys(updateData).length) {
+      await this.item.update(updateData, { render: false });
+    }
+  }
+
   _captureSheetScroll() {
     const root = this.element;
     if (!root) return;
@@ -2363,7 +2468,11 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _activateJobDropZone() {
     this._jobDropController?.abort();
-    if (!["job", "augment"].includes(this.item.type) || !this.document.isOwner)
+    if (
+      !["job", "augment"].includes(this.item.type) ||
+      !this.document.isOwner ||
+      !this._isItemEditMode()
+    )
       return;
 
     const dropZoneSelector =
@@ -2411,7 +2520,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _activateJobGrantReorder() {
     this._jobGrantReorderController?.abort();
-    if (this.item.type !== "job" || !this.document.isOwner) return;
+    if (this.item.type !== "job" || !this.document.isOwner || !this._isItemEditMode()) return;
 
     const list = this.element.querySelector(".job-progression-tab .job-ability-list");
     if (!list) return;

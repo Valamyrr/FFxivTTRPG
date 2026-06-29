@@ -53,8 +53,9 @@
       {{#each primary_abilities }}
         <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-          <div class="move-buttons">
-            {{#unless @first}}
+          {{#if showMoveControls}}
+          <div class="move-buttons combo-move-buttons">
+            {{#if canMoveGroupUp}}
             <button type="button"
                     class="move-up"
                     data-item-id="{{_id}}"
@@ -62,8 +63,8 @@
                     aria-label="{{localize 'FFXIV.MoveUp'}}">
               <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
             </button>
-          {{/unless}}
-          {{#unless @last}}
+          {{/if}}
+          {{#if canMoveGroupDown}}
           <button type="button"
                   class="move-down"
                   data-item-id="{{_id}}"
@@ -71,8 +72,9 @@
                   aria-label="{{localize 'FFXIV.MoveDown'}}">
             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
           </button>
-        {{/unless}}
+        {{/if}}
       </div>
+      {{/if}}
     </div>
   {{else}}
     <div class="abilities-empty-hint">{{ localize "FFXIV.Job.DropAbilities" }}</div>
@@ -84,8 +86,9 @@
   {{#each secondary_abilities }}
     <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-      <div class="move-buttons">
-        {{#unless @first}}
+      {{#if showMoveControls}}
+      <div class="move-buttons combo-move-buttons">
+        {{#if canMoveGroupUp}}
         <button type="button"
                 class="move-up"
                 data-item-id="{{_id}}"
@@ -93,8 +96,8 @@
                 aria-label="{{localize 'FFXIV.MoveUp'}}">
           <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
         </button>
-      {{/unless}}
-      {{#unless @last}}
+      {{/if}}
+      {{#if canMoveGroupDown}}
       <button type="button"
               class="move-down"
               data-item-id="{{_id}}"
@@ -102,8 +105,9 @@
               aria-label="{{localize 'FFXIV.MoveDown'}}">
         <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
       </button>
-    {{/unless}}
+    {{/if}}
   </div>
+  {{/if}}
 </div>
 {{else}}
   <div class="abilities-empty-hint">{{ localize "FFXIV.Job.DropAbilities" }}</div>
@@ -115,8 +119,9 @@
   {{#each instant_abilities }}
     <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-      <div class="move-buttons">
-        {{#unless @first}}
+      {{#if showMoveControls}}
+      <div class="move-buttons combo-move-buttons">
+        {{#if canMoveGroupUp}}
         <button type="button"
                 class="move-up"
                 data-item-id="{{_id}}"
@@ -124,8 +129,8 @@
                 aria-label="{{localize 'FFXIV.MoveUp'}}">
           <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
         </button>
-      {{/unless}}
-      {{#unless @last}}
+      {{/if}}
+      {{#if canMoveGroupDown}}
       <button type="button"
               class="move-down"
               data-item-id="{{_id}}"
@@ -133,8 +138,9 @@
               aria-label="{{localize 'FFXIV.MoveDown'}}">
         <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
       </button>
-    {{/unless}}
+    {{/if}}
   </div>
+  {{/if}}
 </div>
 {{else}}
   <div class="abilities-empty-hint">{{ localize "FFXIV.Job.DropAbilities" }}</div>

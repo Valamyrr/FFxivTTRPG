@@ -1,12 +1,37 @@
 @mixin styles {
-  &.actor.character .actor-player-abilities .abilities-tab-content.modern-panel {
+  &.actor.npc .actor-player-abilities.modern-panel {
+    background: linear-gradient(180deg, rgba(27, 27, 27, 0.96) 0%, rgba(14, 14, 14, 0.96) 100%);
+    border-color: rgba(216, 188, 112, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.1);
+    padding: 8px;
+  }
+
+  &.actor.npc.blue_theme .actor-player-abilities.modern-panel {
+    background: linear-gradient(180deg, rgba(21, 46, 92, 0.88) 0%, rgba(27, 57, 110, 0.88) 100%);
+    border-color: rgba(154, 198, 255, 0.52);
+  }
+
+  &.actor.npc .actor-player-abilities .npc-create-item {
+    border: 1px solid rgba(216, 188, 112, 0.55);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
+    color: var(--text-color-strong);
+  }
+
+  &.actor.npc.blue_theme .actor-player-abilities .npc-create-item {
+    border-color: rgba(160, 206, 255, 0.62);
+    background: linear-gradient(180deg, rgba(43, 100, 188, 0.88) 0%, rgba(27, 73, 143, 0.9) 100%);
+    color: #d7ebff;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .abilities-tab-content.modern-panel {
     padding: 8px;
     background: linear-gradient(180deg, rgba(27, 27, 27, 0.96) 0%, rgba(14, 14, 14, 0.96) 100%);
     border-color: rgba(216, 188, 112, 0.55);
     box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.1);
   }
 
-  &.actor.character .actor-player-abilities .ability-full-tabs {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 5px;
@@ -16,7 +41,7 @@
     filter: none;
   }
 
-  &.actor.character .actor-player-abilities .ability-full-tabs .sub-tab {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs .sub-tab {
     align-items: center;
     box-sizing: border-box;
     clip-path: none;
@@ -40,23 +65,23 @@
     text-align: center;
   }
 
-  &.actor.character .actor-player-abilities .ability-full-tabs .sub-tab i {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs .sub-tab i {
     font-size: 0.85em;
     line-height: 1;
   }
 
-  &.actor.character .actor-player-abilities .ability-full-tabs .sub-tab.active {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs .sub-tab.active {
     border-color: rgba(225, 190, 95, 0.9);
     background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
     box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.15), 0 0 3px rgba(0, 0, 0, 0.55);
     color: #f4d77e;
   }
 
-  &.actor.character .actor-player-abilities .ability-full-tabs .chip {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs .chip {
     display: none;
   }
 
-  &.actor.character .actor-player-abilities .sub-tab-content {
+  &.actor:is(.character, .npc) .actor-player-abilities .sub-tab-content {
     border: 1px solid var(--border-color-2);
     border-radius: 9px;
     border-color: rgba(216, 188, 112, 0.45);
@@ -64,23 +89,23 @@
     padding: 6px;
   }
 
-  &.actor.character .actor-player-abilities .ability-container {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container {
     align-items: stretch;
     gap: 6px;
     margin-bottom: 8px;
     position: relative;
   }
 
-  &.actor.character .actor-player-abilities .ability-container:last-child {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container:last-child {
     margin-bottom: 0;
   }
 
-  &.actor.character .actor-player-abilities .ability-container.combo-target {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target {
     padding-left: 20px;
   }
 
-  &.actor.character .actor-player-abilities .ability-container.combo-source::before,
-  &.actor.character .actor-player-abilities .ability-container.combo-target::before {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source::before,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target::before {
     border-left: 3px solid rgba(216, 188, 112, 0.72);
     content: "";
     left: 7px;
@@ -89,8 +114,8 @@
     z-index: 0;
   }
 
-  &.actor.character .actor-player-abilities .ability-container.combo-source::after,
-  &.actor.character .actor-player-abilities .ability-container.combo-target::after {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source::after,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target::after {
     border-top: 3px solid rgba(216, 188, 112, 0.72);
     content: "";
     left: 7px;
@@ -100,28 +125,28 @@
     z-index: 0;
   }
 
-  &.actor.character .actor-player-abilities .ability-container.combo-source::before {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source::before {
     bottom: -4px;
     top: 50%;
   }
 
-  &.actor.character .actor-player-abilities .ability-container.combo-source::after {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source::after {
     content: none;
   }
 
-  &.actor.character .actor-player-abilities .ability-container.combo-target::before {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target::before {
     height: calc(50% + 4px);
     top: -4px;
   }
 
-  &.actor.character .actor-player-abilities .ability-container.combo-source.combo-target::before,
-  &.actor.character .actor-player-abilities .ability-container.combo-target.combo-branch::before {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source.combo-target::before,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target.combo-branch::before {
     bottom: -4px;
     height: auto;
     top: -4px;
   }
 
-  &.actor.character .actor-player-abilities .ability-card {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-card {
     border: 1px solid rgba(216, 188, 112, 0.55);
     border-radius: 8px;
     background: linear-gradient(180deg, rgba(27, 27, 27, 0.96) 0%, rgba(14, 14, 14, 0.96) 100%);
@@ -131,7 +156,7 @@
     z-index: 1;
   }
 
-  &.actor.character .actor-player-abilities .ability-card-info {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-card-info {
     display: grid;
     grid-template-columns: 46px minmax(0, 1fr);
     gap: 7px;
@@ -142,23 +167,23 @@
       linear-gradient(180deg, rgba(38, 36, 29, 0.97) 0%, rgba(18, 18, 18, 0.96) 100%);
   }
 
-  &.actor.character .actor-player-abilities .ability-icon-wrapper {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-icon-wrapper {
     float: none;
     height: 42px;
     margin: 0;
     width: 42px;
   }
 
-  &.actor.character .actor-player-abilities .ability-icon {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-icon {
     width: 42px;
     height: 42px;
-    border: 1px solid rgba(225, 190, 95, 0.65);
+    border: 0;
     border-radius: 5px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
     object-fit: cover;
   }
 
-  &.actor.character .actor-player-abilities .ability-header {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-header {
     align-items: flex-start;
     border-bottom: 1px solid rgba(216, 188, 112, 0.42);
     box-shadow: none;
@@ -171,7 +196,7 @@
     width: 100%;
   }
 
-  &.actor.character .actor-player-abilities .ability-name {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-name {
     display: block;
     flex: 1 1 auto;
     font-size: 1.16em;
@@ -180,7 +205,7 @@
     min-width: 0;
   }
 
-  &.actor.character .actor-player-abilities .ability-right {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-right {
     align-items: flex-end;
     display: inline-flex;
     flex: 0 0 auto;
@@ -190,7 +215,7 @@
     max-width: 48%;
   }
 
-  &.actor.character .actor-player-abilities .ability-tags {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-tags {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
@@ -199,7 +224,7 @@
     text-align: right;
   }
 
-  &.actor.character .actor-player-abilities .ability-tags .tag {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-tags .tag {
     border: 1px solid rgba(225, 190, 95, 0.38);
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.2);
@@ -211,7 +236,7 @@
     padding: 3px 6px;
   }
 
-  &.actor.character .actor-player-abilities .ability-limitations {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations {
     align-items: center;
     display: inline-flex;
     gap: 3px;
@@ -219,7 +244,7 @@
     padding-bottom: 1px;
   }
 
-  &.actor.character .actor-player-abilities .ability-limitations .limitation-wrapper {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations .limitation-wrapper {
     align-items: center;
     display: inline-flex;
     height: 16px;
@@ -228,7 +253,7 @@
     width: 16px;
   }
 
-  &.actor.character .actor-player-abilities .ability-limitations input[type="checkbox"] {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"] {
     appearance: none !important;
     cursor: pointer !important;
     height: 16px !important;
@@ -241,7 +266,7 @@
     z-index: 1 !important;
   }
 
-  &.actor.character .actor-player-abilities .ability-limitations .checkmark {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations .checkmark {
     align-items: center;
     background: rgba(8, 8, 8, 0.74);
     border: 1px solid rgba(225, 190, 95, 0.42);
@@ -259,13 +284,13 @@
     width: 16px !important;
   }
 
-  &.actor.character .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark {
     background: linear-gradient(180deg, #f7d979 0%, #c18427 100%) !important;
     border-color: rgba(255, 232, 153, 0.82) !important;
     box-shadow: inset 0 0 0 1px rgba(255, 249, 207, 0.26), 0 0 5px rgba(202, 137, 39, 0.42);
   }
 
-  &.actor.character .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark::after {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark::after {
     background: rgba(39, 24, 6, 0.88);
     border-radius: 999px;
     content: "";
@@ -273,12 +298,12 @@
     width: 6px;
   }
 
-  &.actor.character .actor-player-abilities .ability-limitations input[type="checkbox"].active + .checkmark,
-  &.actor.character .actor-player-abilities .ability-limitations input[type="checkbox"].active:checked + .checkmark {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"].active + .checkmark,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"].active:checked + .checkmark {
     border-color: rgba(255, 107, 42, 0.9) !important;
   }
 
-  &.actor.character .actor-player-abilities .ability-details {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-details {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
@@ -288,7 +313,7 @@
     padding: 5px 0 2px 2px;
   }
 
-  &.actor.character .actor-player-abilities .detail {
+  &.actor:is(.character, .npc) .actor-player-abilities .detail {
     align-items: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 5px;
@@ -303,28 +328,28 @@
     text-align: center;
   }
 
-  &.actor.character .actor-player-abilities .combo-chain {
+  &.actor:is(.character, .npc) .actor-player-abilities .combo-chain {
     display: none;
   }
 
-  &.actor.character .actor-player-abilities .ability-effects,
-  &.actor.character .actor-player-abilities .ability-description {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-effects,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-description {
     padding: 6px 8px;
   }
 
-  &.actor.character .actor-player-abilities .ability-effects {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-effects {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  &.actor.character .actor-player-abilities .effect {
+  &.actor:is(.character, .npc) .actor-player-abilities .effect {
     margin-bottom: 0.35em;
   }
 
-  &.actor.character .actor-player-abilities .effect:last-child {
+  &.actor:is(.character, .npc) .actor-player-abilities .effect:last-child {
     margin-bottom: 0;
   }
 
-  &.actor.character .actor-player-abilities .ability-roll-button {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-roll-button {
     min-height: 28px;
     background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
     color: var(--text-color-strong);
@@ -333,11 +358,11 @@
     text-transform: uppercase;
   }
 
-  &.actor.character .actor-player-abilities .move-buttons {
+  &.actor:is(.character, .npc) .actor-player-abilities .move-buttons {
     gap: 5px;
   }
 
-  &.actor.character .actor-player-abilities .move-buttons button {
+  &.actor:is(.character, .npc) .actor-player-abilities .move-buttons button {
     border-color: rgba(216, 188, 112, 0.55);
     border-radius: 6px;
     background: linear-gradient(180deg, rgba(53, 53, 53, 0.9) 0%, rgba(30, 30, 30, 0.92) 100%);
@@ -345,12 +370,12 @@
     margin: 0;
   }
 
-  &.actor.character .actor-player-abilities .move-buttons button:hover {
+  &.actor:is(.character, .npc) .actor-player-abilities .move-buttons button:hover {
     border-color: rgba(225, 190, 95, 0.9);
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.55);
   }
 
-  &.actor.character .actor-player-abilities .abilities-empty-hint {
+  &.actor:is(.character, .npc) .actor-player-abilities .abilities-empty-hint {
     border: 1px dashed var(--border-color-2);
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.16);
@@ -362,69 +387,69 @@
     text-align: center;
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .abilities-tab-content.modern-panel {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .abilities-tab-content.modern-panel {
     background: linear-gradient(180deg, rgba(21, 46, 92, 0.88) 0%, rgba(27, 57, 110, 0.88) 100%);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-full-tabs .sub-tab {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-full-tabs .sub-tab {
     border-color: rgba(160, 206, 255, 0.62);
     background: linear-gradient(180deg, rgba(33, 78, 152, 0.75) 0%, rgba(20, 52, 111, 0.78) 100%);
     color: #dff0ff;
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-full-tabs .sub-tab.active {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-full-tabs .sub-tab.active {
     background: linear-gradient(180deg, rgba(62, 127, 216, 0.8) 0%, rgba(38, 94, 176, 0.84) 100%);
     box-shadow: inset 0 0 0 1px rgba(208, 232, 255, 0.22);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .sub-tab-content {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .sub-tab-content {
     border-color: rgba(154, 198, 255, 0.52);
     background: linear-gradient(180deg, rgba(15, 43, 101, 0.72) 0%, rgba(9, 30, 74, 0.78) 100%);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-card {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-card {
     border-color: rgba(156, 199, 255, 0.48);
     background: linear-gradient(180deg, rgba(28, 62, 126, 0.86) 0%, rgba(17, 43, 95, 0.9) 100%);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-card-info {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-card-info {
     background:
       linear-gradient(90deg, rgba(180, 218, 255, 0.14) 0%, rgba(180, 218, 255, 0.05) 42%, rgba(0, 0, 0, 0) 100%),
       linear-gradient(180deg, rgba(61, 125, 217, 0.78) 0%, rgba(46, 101, 188, 0.8) 60%, rgba(32, 79, 154, 0.86) 100%);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-header {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-header {
     border-bottom-color: rgba(190, 221, 255, 0.6);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-tags .tag {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-tags .tag {
     border-color: rgba(190, 221, 255, 0.32);
     color: #d7ebff;
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-limitations .checkmark {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-limitations .checkmark {
     border-color: rgba(160, 206, 255, 0.44);
     background: rgba(6, 22, 56, 0.78);
     box-shadow: inset 0 0 0 1px rgba(208, 232, 255, 0.09), 0 1px 2px rgba(0, 13, 38, 0.35);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark {
     background: linear-gradient(180deg, #b9dcff 0%, #4a8ed8 100%) !important;
     border-color: rgba(202, 232, 255, 0.86) !important;
     box-shadow: inset 0 0 0 1px rgba(239, 249, 255, 0.25), 0 0 5px rgba(89, 156, 222, 0.42);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark::after {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark::after {
     background: rgba(6, 25, 64, 0.88);
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .ability-roll-button,
-  &.actor.character.blue_theme .actor-player-abilities .move-buttons button {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-roll-button,
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .move-buttons button {
     background: linear-gradient(180deg, rgba(43, 100, 188, 0.88) 0%, rgba(27, 73, 143, 0.9) 100%);
     color: #d7ebff;
   }
 
-  &.actor.character.blue_theme .actor-player-abilities .abilities-empty-hint {
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .abilities-empty-hint {
     border-color: rgba(154, 198, 255, 0.58);
     background: rgba(10, 29, 70, 0.58);
     color: #d4e9ff;

@@ -1,4 +1,8 @@
 import { renderLimitBreakHud } from "./limit-break-hud.mjs";
+import {
+  TARGET_CLEAR_SETTING,
+  TARGET_CLEAR_TIMINGS,
+} from "./target-selection.mjs";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 function toggleCompactDirectories(enabled) {
@@ -498,6 +502,27 @@ export class SettingsHelpers {
       config: true,
       default: true,
       type: Boolean,
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", TARGET_CLEAR_SETTING, {
+      name: game.i18n.localize("FFXIV.Settings.TargetClearTiming"),
+      hint: game.i18n.localize("FFXIV.Settings.TargetClearTimingHint"),
+      scope: "client",
+      config: true,
+      default: TARGET_CLEAR_TIMINGS.TURN_END,
+      type: String,
+      choices: {
+        [TARGET_CLEAR_TIMINGS.ABILITY]: game.i18n.localize(
+          "FFXIV.Settings.TargetClearTimingAbility",
+        ),
+        [TARGET_CLEAR_TIMINGS.TURN_END]: game.i18n.localize(
+          "FFXIV.Settings.TargetClearTimingTurnEnd",
+        ),
+        [TARGET_CLEAR_TIMINGS.NEVER]: game.i18n.localize(
+          "FFXIV.Settings.TargetClearTimingNever",
+        ),
+      },
       requiresReload: false,
     });
 

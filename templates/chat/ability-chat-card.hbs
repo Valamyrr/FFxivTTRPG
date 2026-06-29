@@ -10,7 +10,7 @@
       <div class="item-dialog-right">
         <div class="item-dialog-tags">
           {{#each (actionTags item.type item.system.tags) as |tag| }}
-            <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+            <span class="tag">{{localize tag}}</span>
           {{/each}}
         </div>
       </div>

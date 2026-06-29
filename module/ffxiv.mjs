@@ -6168,6 +6168,13 @@ async function prepareLinkedActiveEffectStatusRules(actor, effectDocs) {
     if (statuses.some((statusId) => isEliteFoeBlockedStatus(actor, statusId)))
       continue;
 
+    if (
+      statuses.includes("dot") &&
+      isThunderSpellEffect(doc) &&
+      hasThunderSpellDotFromSource(actor, getLinkedEffectSourceActorUuid(doc))
+    )
+      continue;
+
     if (statuses.length === 1 && statuses[0] === "weakness") {
       if (hasStatus(actor, "brink_death")) {
         setLinkedEffectDocStatus(doc, "comatose");
@@ -6228,6 +6235,38 @@ function getLinkedEffectDocStatuses(doc) {
   return sanitizeEffectStatuses(doc?.statuses ?? []);
 }
 
+function isThunderSpellEffect(effect) {
+  if (foundry.utils.getProperty(effect, "flags.ffxiv.thunderSpell") === true)
+    return true;
+  const origin = String(effect?.origin ?? "").trim();
+  const source = origin ? fromUuidSync(origin) : null;
+  return source?.type === "ability" &&
+    Array.from(source.system?.tags ?? []).some((tag) =>
+      FFXIVItem._tagMatches(tag, ["FFXIV.Tags.ThunderSpell"]),
+    );
+}
+
+function getLinkedEffectSourceActorUuid(effect) {
+  const flagged = String(
+    foundry.utils.getProperty(effect, "flags.ffxiv.linkedSourceActorUuid") ?? "",
+  ).trim();
+  if (flagged) return flagged;
+  const origin = String(effect?.origin ?? "").trim();
+  const source = origin ? fromUuidSync(origin) : null;
+  return source?.parent?.documentName === "Actor" ? source.parent.uuid : null;
+}
+
+function hasThunderSpellDotFromSource(actor, sourceActorUuid) {
+  if (!sourceActorUuid) return false;
+  return Array.from(actor?.effects ?? []).some((effect) =>
+    !effect.disabled &&
+    effect.statuses instanceof Set &&
+    effect.statuses.has("dot") &&
+    isThunderSpellEffect(effect) &&
+    getLinkedEffectSourceActorUuid(effect) === sourceActorUuid,
+  );
+}
+
 function isLinkedEffectDocAdditiveStackable(doc) {
   return getLinkedEffectDocStatuses(doc).some((statusId) =>
     isAdditiveStackableStatusEffect(statusId),
@@ -6253,6 +6292,12 @@ function canLinkedEffectDocApplyToActor(actor, doc) {
   )
     return false;
   if (statuses.some((statusId) => isEliteFoeBlockedStatus(actor, statusId)))
+    return false;
+  if (
+    statuses.includes("dot") &&
+    isThunderSpellEffect(doc) &&
+    hasThunderSpellDotFromSource(actor, getLinkedEffectSourceActorUuid(doc))
+  )
     return false;
   if (
     statuses.includes("stun") &&
@@ -6635,6 +6680,10 @@ function sanitizeEffectStatuses(statuses) {
 function buildLinkedActiveEffectDocs(item, effects, options = {}) {
   const autoApply = options.autoApply === true;
   const sourceItemUuid = item.uuid;
+  const thunderSpell = item.type === "ability" &&
+    Array.from(item.system?.tags ?? []).some((tag) =>
+      FFXIVItem._tagMatches(tag, ["FFXIV.Tags.ThunderSpell"]),
+    );
   return effects.flatMap((effect) => {
     const sourceData = effect.toObject();
     const statuses = sanitizeEffectStatuses(
@@ -6659,7 +6708,10 @@ function buildLinkedActiveEffectDocs(item, effects, options = {}) {
           linkedSourceEffectId: effect.id,
           linkedSourceItemId: item.id,
           linkedSourceItemUuid: sourceItemUuid,
+          linkedSourceActorUuid:
+            item.parent?.documentName === "Actor" ? item.parent.uuid : null,
           linkedAutoApply: autoApply,
+          thunderSpell,
         },
       });
       return doc;

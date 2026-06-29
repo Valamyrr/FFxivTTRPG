@@ -37,6 +37,10 @@ import {
   createSummonTokenFromRequest,
   FFXIV_SUMMON_SOCKET_TYPE,
 } from "../helpers/summons.mjs";
+import {
+  clearUserTargetsForTiming,
+  TARGET_CLEAR_TIMINGS,
+} from "../helpers/target-selection.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
   "consumable",
@@ -129,6 +133,7 @@ export class FFXIVItem extends Item {
     this._normalizeShopTierOnUpdate(changed);
     this._normalizeStackConfigOnUpdate(changed);
     this._normalizeAbilitySubtypeOnUpdate(changed);
+    this._normalizeTagsOnUpdate(changed);
     if (this.type !== "job") return result;
 
     const jobName =
@@ -213,6 +218,28 @@ export class FFXIVItem extends Item {
       "system.tags",
       ensureAbilitySubtypeTags(incomingTags, "primary_ability"),
     );
+  }
+
+  _normalizeTagsOnUpdate(changed) {
+    if (!foundry.utils.hasProperty(changed, "system.tags")) return;
+    const tags = foundry.utils.getProperty(changed, "system.tags");
+    if (!Array.isArray(tags)) return;
+
+    const seen = new Set();
+    const normalizedTags = tags.filter((tag) => {
+      const value = String(tag ?? "").trim();
+      const localized = game.i18n.localize(value);
+      const key = String(localized || value)
+        .trim()
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/\p{Diacritic}/gu, "")
+        .replace(/[^\p{Letter}\p{Number}]/gu, "");
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    foundry.utils.setProperty(changed, "system.tags", normalizedTags);
   }
 
   _normalizeStackConfigOnCreate(data) {
@@ -1000,7 +1027,10 @@ export class FFXIVItem extends Item {
     const checkResult = this._shouldAutoCheckBeforeBase()
       ? await this._rollHit({ auto: true, deferHitThresholdRules: true })
       : null;
-    if (checkResult?.interrupted) return;
+    if (checkResult?.interrupted) {
+      this._clearTargetsAfterAbilityUse();
+      return;
+    }
 
     await this._rollBase({
       critical: checkResult?.isCritical ?? false,
@@ -1016,6 +1046,15 @@ export class FFXIVItem extends Item {
     await this._summonActorsIfNeeded();
 
     await this._consumeFromInventoryIfNeeded();
+    this._clearTargetsAfterAbilityUse();
+  }
+
+  _clearTargetsAfterAbilityUse() {
+    if (
+      this.type !== "ability" &&
+      !ABILITY_SUBTYPE_TYPES.includes(this.type)
+    ) return;
+    clearUserTargetsForTiming(TARGET_CLEAR_TIMINGS.ABILITY);
   }
 
   _canUseAbility() {
@@ -1319,48 +1358,67 @@ export class FFXIVItem extends Item {
 
   async _confirmTargetSelection() {
     const target = this._getNormalizedTargetText();
-    const targetCount = game.user.targets?.size ?? 0;
-    let message = "";
+    if (
+      !this._requiresSelectedTarget(target) ||
+      (game.user.targets?.size ?? 0) > 0
+    ) return true;
 
-    if (this._requiresSelectedTarget(target) && targetCount === 0) {
-      message = game.i18n.format("FFXIV.Notifications.NoTargetWithKeybind", {
+    const getContent = () => {
+      const targets = Array.from(game.user.targets ?? []);
+      const message = game.i18n.format("FFXIV.Notifications.NoTargetWithKeybind", {
         singleKeybind: this._getTargetKeybindText("target", "T"),
         multipleKeybind: this._getMultipleTargetKeybindText(),
       });
-    } else if (target === "single" && targetCount > 1) {
-      message = game.i18n.format("FFXIV.Notifications.SingleTargetMultipleSelected", {
-        singleKeybind: this._getTargetKeybindText("target", "T"),
-      });
+      const [warning, ...instructions] = message.split("\n");
+      const targetContent = targets.length
+        ? `<p>${game.i18n.localize("FFXIV.Notifications.SelectedTargets")}</p><ul>${targets
+          .map((token) => `<li>${foundry.utils.escapeHTML(token.name)}</li>`)
+          .join("")}</ul>`
+        : `<p style="text-align: center;">${warning}</p>`;
+      return `${targetContent}<p>${instructions.join("<br>")}</p>`;
+    };
+
+    const updateContent = () => {
+      const contentElement = document
+        .getElementById("ffxiv-target-warning-dialog")
+        ?.querySelector(".ffxiv-target-warning-content");
+      if (contentElement) contentElement.innerHTML = getContent();
+    };
+    const targetTokenHook = Hooks.on("targetToken", (user) => {
+      if (user.id === game.user.id) updateContent();
+    });
+
+    try {
+      return await foundry.applications.api.DialogV2.wait({
+        id: "ffxiv-target-warning-dialog",
+        window: {
+          title: game.i18n.localize("FFXIV.Notifications.TargetWarningTitle"),
+        },
+        content: `<div class="ffxiv-target-warning-content">${getContent()}</div>`,
+        buttons: [
+          {
+            label: game.i18n.localize("FFXIV.Dialogs.OK"),
+            action: "ok",
+            type: "submit",
+            callback: () => true,
+          },
+          {
+            label: game.i18n.localize("FFXIV.Dialogs.Cancel"),
+            action: "cancel",
+            type: "cancel",
+            callback: () => false,
+          },
+        ],
+        render: (_event, dialog) => {
+          dialog.element.querySelector("[autofocus]")?.removeAttribute("autofocus");
+          if (dialog.element.contains(document.activeElement)) {
+            document.activeElement.blur();
+          }
+        },
+      }).catch(() => false);
+    } finally {
+      Hooks.off("targetToken", targetTokenHook);
     }
-
-    if (!message) return true;
-
-    const [warning, ...instructions] = message.split("\n");
-    const instructionContent = instructions.length
-      ? `<p>${instructions.join("<br>")}</p>`
-      : "";
-
-    return foundry.applications.api.DialogV2.wait({
-      id: "ffxiv-target-warning-dialog",
-      window: {
-        title: game.i18n.localize("FFXIV.Notifications.TargetWarningTitle"),
-      },
-      content: `<p style="text-align: center;">${warning}</p>${instructionContent}`,
-      buttons: [
-        {
-          label: game.i18n.localize("FFXIV.Dialogs.OK"),
-          action: "ok",
-          type: "submit",
-          callback: () => true,
-        },
-        {
-          label: game.i18n.localize("FFXIV.Dialogs.Cancel"),
-          action: "cancel",
-          type: "cancel",
-          callback: () => false,
-        },
-      ],
-    }).catch(() => false);
   }
 
   _getNormalizedTargetText() {

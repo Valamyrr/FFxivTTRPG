@@ -1,6 +1,7 @@
 @use "sass:meta";
 @use "components/effects";
 @use "components/abilities";
+@use "components/chat";
 @use "components/forms";
 @use "components/items";
 @use "components/resource";
@@ -100,3 +101,4 @@
 
 @include meta.load-css("components/editor");
 @include meta.load-css("global/utilities");
+@include chat.styles;

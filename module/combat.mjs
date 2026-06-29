@@ -2,6 +2,7 @@ import {
   applyStatusEffectChange,
   canActorRecover,
   getHighestStatusStackCount,
+  getStatusStackTotal,
   hasStatus,
   wasPetrifiedAppliedThisTurn,
 } from "./helpers/status-effects.mjs";
@@ -11,6 +12,10 @@ import {
   normalizeJobResourceName,
   setActorJobResourceCount,
 } from "./helpers/job-resources.mjs";
+import {
+  clearUserTargetsForTiming,
+  TARGET_CLEAR_TIMINGS,
+} from "./helpers/target-selection.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
 
@@ -155,6 +160,7 @@ export class FFXIVCombat extends Combat {
   async _onEndTurn(combatant, context) {
     return this._withActorSheetScroll(async () => {
       await super._onEndTurn(combatant, context);
+      clearUserTargetsForTiming(TARGET_CLEAR_TIMINGS.TURN_END);
       const actor = combatant?.actor;
       if (!actor) return;
       await this._applyTurnEndJobAutomation(actor);
@@ -330,7 +336,7 @@ export class FFXIVCombat extends Combat {
     const healthCap = Number.isFinite(maxHealth) && maxHealth > 0
       ? maxHealth
       : Number.POSITIVE_INFINITY;
-    const dotDamage = getHighestStatusStackCount(actor, "dot");
+    const dotDamage = getStatusStackTotal(actor, "dot");
     const revivifyHealing = getHighestStatusStackCount(actor, "revivify");
     const availableRevivifyHealing = canActorRecover(actor)
       ? revivifyHealing

@@ -17,12 +17,15 @@
          title="{{item.name}}"  alt="" width="32" height="32" />
     <div class="header-fields">
       <h1 class="charname">
-        {{#if itemEditMode }}
-          <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
-        {{else}}
-          {{item.name}}
-        {{/if}}
+        <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
       </h1>
+      {{#if itemEditMode }}
+        <button type="button"
+                class="item-delete"
+                aria-label="{{localize 'FFXIV.Item.Delete'}}">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      {{/if}}
     </div>
   </header>
   <section class="sheet-body">
@@ -80,11 +83,20 @@
         </ul>
       </div>
       <hr>
-      {{#if itemEditMode }}
-        <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
-      {{else}}
-        <div class="profile-paragraph-block">{{{enrichedDescription}}}</div>
-      {{/if}}
+      <section class="item-modern-panel item-description-panel">
+        <header class="ability-panel-header">
+          <h2>{{ localize "FFXIV.Item.Description" }}</h2>
+        </header>
+        {{#if itemEditMode }}
+          <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
+        {{else}}
+          {{#if (hasContent enrichedDescription) }}
+            <div class="profile-paragraph-block item-description-readonly">{{{enrichedDescription}}}</div>
+          {{else}}
+            <span class="item-locked-field item-locked-field-empty">{{localize "FFXIV.None"}}</span>
+          {{/if}}
+        {{/if}}
+      </section>
     </div>
   </section>
 </div>
