@@ -528,8 +528,8 @@ function getDocumentFromActorHotbarEntry(entry, slotId, actor, hotbar) {
   return (
     getItemFromHotbarEntry(entry) ??
     getActorItemFromHotbarEntry(entry, actor) ??
-    (typeof entry === "string" ? getItemForImportedSlot(slotId, actor) : null) ??
-    getMacroForSlotFromHotbar(slotId, hotbar)
+    getMacroForSlotFromHotbar(slotId, hotbar) ??
+    (typeof entry === "string" ? getItemForImportedSlot(slotId, actor) : null)
   );
 }
 
@@ -552,6 +552,7 @@ function getDocumentForSlot(
   const documentEntry =
     getDocumentFromHotbarEntry(entry) ??
     getActorItemFromHotbarEntry(entry, document) ??
+    getMacroForSlotFromHotbar(slot, hotbar) ??
     (typeof entry === "string" ? getItemForImportedSlot(slot, document) : null);
   return documentEntry;
 }
@@ -747,19 +748,24 @@ function showHotbarContextMenu(event, slot, hotbarDocument, forceFlag) {
 
   if (macro?.isOwner) {
     menu.append(
-      createHotbarContextButton("MACRO.Edit", "", () =>
-        renderMacroSheet(macro),
-        "Edit",
-      ),
+      createHotbarContextButton("MACRO.Edit", "", () => {
+        const currentSlotDocument = getDocumentForSlot(slotId, hotbarDocument, forceFlag);
+        const currentMacro =
+          currentSlotDocument?.documentName === "Macro"
+            ? currentSlotDocument
+            : getMacroForSlot(slotId, hotbarDocument, forceFlag);
+        if (currentMacro?.isOwner) renderMacroSheet(currentMacro);
+      }),
     );
   }
 
   if (item) {
     menu.append(
-      createHotbarContextButton("DOCUMENT.View", "", () =>
-        renderDocumentSheet(item),
-        "View",
-      ),
+      createHotbarContextButton("SHEET.View", "", () => {
+        const currentSlotDocument = getDocumentForSlot(slotId, hotbarDocument, forceFlag);
+        const currentItem = currentSlotDocument?.documentName === "Item" ? currentSlotDocument : null;
+        if (currentItem) renderDocumentSheet(currentItem);
+      }, "View"),
     );
   }
 
@@ -771,9 +777,17 @@ function showHotbarContextMenu(event, slot, hotbarDocument, forceFlag) {
 
   if (macro?.isOwner) {
     menu.append(
-      createHotbarContextButton("MACRO.Delete", "delete", () =>
-        macro.deleteDialog(),
-      ),
+      createHotbarContextButton("MACRO.Delete", "delete", async () => {
+        const currentSlotDocument = getDocumentForSlot(slotId, hotbarDocument, forceFlag);
+        const currentMacro =
+          currentSlotDocument?.documentName === "Macro"
+            ? currentSlotDocument
+            : getMacroForSlot(slotId, hotbarDocument, forceFlag);
+        if (currentMacro?.isOwner) {
+          await currentMacro.deleteDialog();
+          await assignMacroToSlot(slotId, null, hotbarDocument, forceFlag);
+        }
+      }),
     );
   }
 

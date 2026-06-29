@@ -58,6 +58,7 @@ import {
   FFXIV_SUMMON_SOCKET_TYPE,
 } from "./helpers/summons.mjs";
 import { initHotbar, registerHotbarKeybindings } from "./helpers/hotbar.mjs";
+import { emitToActiveGM, getActiveGM } from "./helpers/socket.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -4856,7 +4857,7 @@ async function requestMarkerTileCreation(tileData) {
       tileData,
     });
 
-  const gm = game.users.find((user) => user.active && user.isGM);
+  const gm = getActiveGM();
   if (!gm) {
     ui.notifications.error(
       game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoGM"),
@@ -4864,7 +4865,7 @@ async function requestMarkerTileCreation(tileData) {
     return null;
   }
 
-  game.socket.emit("system.ffxiv", {
+  emitToActiveGM({
     type: FFXIV_MARKER_SOCKET_TYPE,
     userName: game.user.name,
     gmUserId: gm.id,
@@ -6846,7 +6847,7 @@ Hooks.on("ready", function () {
     game.socket.on("system.ffxiv", async (params) => {
       debugLog("get socket");
       const { type, data, userName, gmUserId } = params;
-      if (gmUserId && gmUserId !== game.user.id) return;
+      if (!gmUserId || gmUserId !== game.user.id) return;
       const actors = await resolveSocketActors(data);
       switch (type) {
         case FFXIV_MARKER_SOCKET_TYPE:
@@ -6865,20 +6866,35 @@ Hooks.on("ready", function () {
           break;
         case "applyEffect": {
           debugLog("status socket");
-          const effects = (
-            Array.isArray(data.effects)
-              ? data.effects
-              : [{ effect: data.effect, active: data.active }]
-          )
+          const normalizeEffects = (entries) => (Array.isArray(entries) ? entries : [])
             .map((entry) => ({
               ...entry,
               statusId: String(entry?.statusId ?? entry?.effect?.id ?? "").trim(),
             }))
             .filter((entry) => entry.statusId);
-          if (!actors.length || !effects.length) return;
+          const applications = [];
+          if (Array.isArray(data.applications)) {
+            for (const application of data.applications) {
+              const actor = await resolveActorFromReference(
+                application.actorRef ?? application.actorUuid ?? application.actorId,
+              );
+              const effects = normalizeEffects(application.effects);
+              if (actor && effects.length) applications.push({ actor, effects });
+            }
+          } else {
+            const effects = normalizeEffects(
+              Array.isArray(data.effects)
+                ? data.effects
+                : [{ effect: data.effect, active: data.active }],
+            );
+            for (const actor of actors) {
+              if (effects.length) applications.push({ actor, effects });
+            }
+          }
+          if (!applications.length) return;
           const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
           if (autoApply) {
-            for (const actor of actors) {
+            for (const { actor, effects } of applications) {
               for (const entry of effects) {
                 const applied = await applyStatusEntryToActor(actor, entry);
                 if (applied) {
@@ -6894,9 +6910,10 @@ Hooks.on("ready", function () {
             break;
           }
 
-          const effectList = effects
-            .map((entry) => getStatusLabelById(entry.statusId))
-            .join(", ");
+          const effectList = Array.from(new Set(
+            applications.flatMap(({ effects }) =>
+              effects.map((entry) => getStatusLabelById(entry.statusId))),
+          )).join(", ");
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-apply-effect",
             window: {
@@ -6905,14 +6922,19 @@ Hooks.on("ready", function () {
               ),
             },
             content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest", { playerName: userName, effect: effectList })}</p>
-                <ul>${actors.map((a) => `<li>${a.name}</li>`).join("")}</ul>`,
+                <ul>${applications.map(({ actor, effects }) => {
+                  const labels = effects
+                    .map((entry) => getStatusLabelById(entry.statusId))
+                    .join(", ");
+                  return `<li>${actor.name}: ${labels}</li>`;
+                }).join("")}</ul>`,
             buttons: [
               {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
                 callback: async () => {
-                  for (const actor of actors) {
+                  for (const { actor, effects } of applications) {
                     for (const entry of effects) {
                       const applied = await applyStatusEntryToActor(actor, entry);
                       if (applied) {
@@ -7034,20 +7056,44 @@ Hooks.on("ready", function () {
           break;
         }
         case "applyLinkedEffects": {
-          const effectDocs = Array.isArray(data.effectDocs) ? data.effectDocs : [];
-          const removeSourceIds = Array.isArray(data.removeSourceIds) ? data.removeSourceIds : [];
-          const removeAllFromSource = data.removeAllFromSource === true;
-          const includeAutoApply = data.includeAutoApply === true;
-          const sourceItemUuid = String(data.sourceItemUuid ?? "").trim();
-          if (!actors.length || (!effectDocs.length && !removeSourceIds.length && !removeAllFromSource)) return;
-          const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
-          if (autoApply) {
-            for (const actor of actors) {
-              if (effectDocs.length) await applyLinkedEffectsToActor(actor, effectDocs);
-              if (removeSourceIds.length || removeAllFromSource) {
-                await removeLinkedEffectsFromActor(actor, sourceItemUuid, removeSourceIds, { includeAutoApply });
+          const applications = [];
+          const requests = Array.isArray(data.applications)
+            ? data.applications
+            : actors.map((actor) => ({ ...data, actorRef: getActorReference(actor) }));
+          for (const request of requests) {
+            const actor = await resolveActorFromReference(
+              request.actorRef ?? request.actorUuid ?? request.actorId,
+            );
+            const effectDocs = Array.isArray(request.effectDocs) ? request.effectDocs : [];
+            const removeSourceIds = Array.isArray(request.removeSourceIds) ? request.removeSourceIds : [];
+            const removeAllFromSource = request.removeAllFromSource === true;
+            if (!actor || (!effectDocs.length && !removeSourceIds.length && !removeAllFromSource)) continue;
+            applications.push({
+              actor,
+              effectDocs,
+              removeSourceIds,
+              removeAllFromSource,
+              includeAutoApply: request.includeAutoApply === true,
+              sourceItemUuid: String(request.sourceItemUuid ?? "").trim(),
+            });
+          }
+          if (!applications.length) return;
+          const applyApplications = async () => {
+            for (const application of applications) {
+              await applyLinkedEffectsToActor(application.actor, application.effectDocs);
+              if (application.removeSourceIds.length || application.removeAllFromSource) {
+                await removeLinkedEffectsFromActor(
+                  application.actor,
+                  application.sourceItemUuid,
+                  application.removeSourceIds,
+                  { includeAutoApply: application.includeAutoApply },
+                );
               }
             }
+          };
+          const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
+          if (autoApply) {
+            await applyApplications();
             break;
           }
 
@@ -7057,20 +7103,13 @@ Hooks.on("ready", function () {
               title: game.i18n.localize("FFXIV.Notifications.StatusChangeRequest"),
             },
             content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest", { playerName: userName, effect: game.i18n.localize("FFXIV.Abilities.LinkedActiveEffects") })}</p>
-                <ul>${actors.map((a) => `<li>${a.name}</li>`).join("")}</ul>`,
+                <ul>${applications.map(({ actor }) => `<li>${actor.name}</li>`).join("")}</ul>`,
             buttons: [
               {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
-                callback: async () => {
-                  for (const actor of actors) {
-                    await applyLinkedEffectsToActor(actor, effectDocs);
-                    if (removeSourceIds.length || removeAllFromSource) {
-                      await removeLinkedEffectsFromActor(actor, sourceItemUuid, removeSourceIds, { includeAutoApply });
-                    }
-                  }
-                },
+                callback: applyApplications,
               },
               {
                 label: game.i18n.localize("FFXIV.Sockets.Decline"),
@@ -7144,16 +7183,16 @@ Hooks.on("createChatMessage", async (message, _options, userId) => {
     .filter(Boolean);
   if (!effectDocs.length && !removeSourceIds.length) return;
 
-  await message.setFlag("ffxiv", "selfAutoLinkedEffectsApplied", true);
   if (sourceActor.testUserPermission(game.user, "OWNER")) {
     await applyLinkedEffectsToActor(sourceActor, effectDocs);
     if (removeSourceIds.length) {
       await removeLinkedEffectsFromActor(sourceActor, item.uuid, removeSourceIds, { includeAutoApply: true });
     }
+    await message.setFlag("ffxiv", "selfAutoLinkedEffectsApplied", true);
     return;
   }
 
-  game.socket.emit("system.ffxiv", {
+  const sent = emitToActiveGM({
     type: "applyLinkedEffects",
     data: {
       actorIds: [sourceActor.id],
@@ -7165,6 +7204,9 @@ Hooks.on("createChatMessage", async (message, _options, userId) => {
     },
     userName: game.user.name,
   });
+  if (sent) {
+    await message.setFlag("ffxiv", "selfAutoLinkedEffectsApplied", true);
+  }
 });
 
 Hooks.on("canvasReady", () => {
@@ -7335,7 +7377,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     }
     if (actorsNeedingGM.length > 0) {
       debugLog("Send socket to GM, heal", heal);
-      game.socket.emit("system.ffxiv", {
+      const sent = emitToActiveGM({
         type: "applyHeal",
         data: {
           actorIds: actorsNeedingGM.map(({ actor }) => actor.id),
@@ -7345,9 +7387,11 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
         },
         userName: game.user.name,
       });
-      ui.notifications.info(
-        game.i18n.localize("FFXIV.Notifications.SendSocket"),
-      );
+      if (sent) {
+        ui.notifications.info(
+          game.i18n.localize("FFXIV.Notifications.SendSocket"),
+        );
+      }
     }
 
     await markApplyToChatCard({
@@ -7396,7 +7440,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     }
     if (actorsNeedingGM.length > 0) {
       debugLog("Send socket to GM, damage", damage);
-      game.socket.emit("system.ffxiv", {
+      const sent = emitToActiveGM({
         type: "applyDamage",
         data: {
           actorIds: actorsNeedingGM.map(({ actor }) => actor.id),
@@ -7410,9 +7454,11 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
         },
         userName: game.user.name,
       });
-      ui.notifications.info(
-        game.i18n.localize("FFXIV.Notifications.SendSocket"),
-      );
+      if (sent) {
+        ui.notifications.info(
+          game.i18n.localize("FFXIV.Notifications.SendSocket"),
+        );
+      }
     }
 
     await markApplyToChatCard({
@@ -7455,6 +7501,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
         return;
       }
 
+      const socketApplications = [];
       for (const application of applications) {
         const actor = await resolveActorFromReference(application.actorId);
         if (!actor) continue;
@@ -7472,15 +7519,19 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
           }
           continue;
         }
-        game.socket.emit("system.ffxiv", {
+        socketApplications.push({
+          actorId: actor.id,
+          actorRef: getActorReference(actor),
+          effects: application.entries,
+        });
+      }
+      if (socketApplications.length) {
+        const sent = emitToActiveGM({
           type: "applyEffect",
-          data: {
-            actorIds: [actor.id],
-            actorRefs: [getActorReference(actor)],
-            effects: application.entries,
-          },
+          data: { applications: socketApplications },
           userName: game.user.name,
         });
+        if (!sent) return;
       }
 
       setApplyStatusButtonState(button, false);
@@ -7506,6 +7557,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
         ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
       );
     const applications = [];
+    const socketApplications = [];
     let sentSocketRequest = false;
 
     const applyEntries = async (actor, entries) => {
@@ -7514,17 +7566,11 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       if (!actorRef) return;
 
       if (!actor.testUserPermission(game.user, "OWNER")) {
-        game.socket.emit("system.ffxiv", {
-          type: "applyEffect",
-          data: {
-            actorIds: [actor.id],
-            actorRefs: [actorRef],
-            effects: entries,
-          },
-          userName: game.user.name,
+        socketApplications.push({
+          actorId: actor.id,
+          actorRef,
+          effects: entries,
         });
-        applications.push({ actorId: actorRef, entries });
-        sentSocketRequest = true;
         return;
       }
 
@@ -7549,6 +7595,22 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       debugLog("Apply status effects", targetEntries);
       for (const token of targets) {
         await applyEntries(token.actor, targetEntries);
+      }
+    }
+
+    if (socketApplications.length) {
+      sentSocketRequest = emitToActiveGM({
+        type: "applyEffect",
+        data: { applications: socketApplications },
+        userName: game.user.name,
+      });
+      if (sentSocketRequest) {
+        for (const application of socketApplications) {
+          applications.push({
+            actorId: application.actorRef,
+            entries: application.effects,
+          });
+        }
       }
     }
 
@@ -7631,19 +7693,22 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
         }
       }
 
-      for (const actor of actorsNeedingGM) {
-        game.socket.emit("system.ffxiv", {
+      if (actorsNeedingGM.length) {
+        const sent = emitToActiveGM({
           type: "applyLinkedEffects",
           data: {
-            actorIds: [actor.id],
-            actorRefs: [getActorReference(actor)],
-            effectDocs: [],
-            removeSourceIds: sourceEffectIds,
-            removeAllFromSource: sourceEffectIds.length === 0,
-            sourceItemUuid,
+            applications: actorsNeedingGM.map((actor) => ({
+              actorId: actor.id,
+              actorRef: getActorReference(actor),
+              effectDocs: [],
+              removeSourceIds: sourceEffectIds,
+              removeAllFromSource: sourceEffectIds.length === 0,
+              sourceItemUuid,
+            })),
           },
           userName: game.user.name,
         });
+        if (!sent) return;
       }
 
       setApplyActiveEffectsButtonState(button, false);
@@ -7723,6 +7788,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     }
 
     if (actorsNeedingGM.length > 0) {
+      const socketApplications = [];
       for (const { actor, effects } of actorsNeedingGM) {
         const effectDocs = buildDocs(effects);
         const removeSourceIds = buildRemoveSourceIds(effects);
@@ -7735,17 +7801,28 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
         ) {
           affectedActorIds.push(actorRef);
         }
-        game.socket.emit("system.ffxiv", {
+        socketApplications.push({
+          actorId: actor.id,
+          actorRef: getActorReference(actor),
+          effectDocs,
+          removeSourceIds,
+          sourceItemUuid: item.uuid,
+        });
+      }
+      if (socketApplications.length) {
+        const sent = emitToActiveGM({
           type: "applyLinkedEffects",
-          data: {
-            actorIds: [actor.id],
-            actorRefs: [getActorReference(actor)],
-            effectDocs,
-            removeSourceIds,
-            sourceItemUuid: item.uuid,
-          },
+          data: { applications: socketApplications },
           userName: game.user.name,
         });
+        if (!sent) {
+          const pendingRefs = new Set(
+            socketApplications.map((application) => application.actorRef),
+          );
+          for (let index = affectedActorIds.length - 1; index >= 0; index--) {
+            if (pendingRefs.has(affectedActorIds[index])) affectedActorIds.splice(index, 1);
+          }
+        }
       }
     }
 

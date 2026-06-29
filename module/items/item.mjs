@@ -41,6 +41,7 @@ import {
   clearUserTargetsForTiming,
   TARGET_CLEAR_TIMINGS,
 } from "../helpers/target-selection.mjs";
+import { emitToActiveGM, getActiveGM } from "../helpers/socket.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
   "consumable",
@@ -1113,12 +1114,12 @@ export class FFXIVItem extends Item {
     if (game.user?.isGM) {
       await game.settings.set("ffxiv", "limitBreakValue", value - 1);
     } else {
-      const gm = game.users.find((user) => user.isGM && user.active);
+      const gm = getActiveGM();
       if (!gm) {
         ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakNoGM"));
         return false;
       }
-      game.socket.emit("system.ffxiv", {
+      emitToActiveGM({
         type: "limitBreakSpend",
         data: {
           actorId: this.parent?.id ?? null,
@@ -1260,7 +1261,7 @@ export class FFXIVItem extends Item {
         return;
       }
 
-      const gm = game.users.find((user) => user.active && user.isGM);
+      const gm = getActiveGM();
       if (!gm) {
         ui.notifications.warn(
           game.i18n.localize("FFXIV.Notifications.SummonNoGM"),
@@ -1268,7 +1269,7 @@ export class FFXIVItem extends Item {
         return;
       }
 
-      game.socket.emit("system.ffxiv", {
+      emitToActiveGM({
         type: FFXIV_SUMMON_SOCKET_TYPE,
         userName: game.user.name,
         gmUserId: gm.id,
@@ -2715,6 +2716,20 @@ export class FFXIVItem extends Item {
 
     const selfEntries = statusEntries.filter((entry) => entry.applyTo === "self");
     const targetEntries = statusEntries.filter((entry) => entry.applyTo !== "self");
+    const socketApplications = [];
+    const sendSocketApplications = () => {
+      if (!socketApplications.length) return;
+      const sent = emitToActiveGM({
+        type: "applyEffect",
+        data: { applications: socketApplications },
+        userName: game.user.name,
+      });
+      if (sent) {
+        ui.notifications.info(
+          game.i18n.localize("FFXIV.Notifications.SendSocket"),
+        );
+      }
+    };
 
     if (selfEntries.length && this.parent?.documentName === "Actor") {
       if (this.parent.testUserPermission(game.user, "OWNER")) {
@@ -2730,27 +2745,22 @@ export class FFXIVItem extends Item {
           }
         }
       } else {
-        game.socket.emit("system.ffxiv", {
-          type: "applyEffect",
-          data: {
-            actorIds: [this.parent.id],
-            actorRefs: [
-              String(this.parent.uuid ?? this.parent.id ?? "").trim(),
-            ].filter(Boolean),
-            effects: selfEntries,
-          },
-          userName: game.user.name,
+        socketApplications.push({
+          actorId: this.parent.id,
+          actorRef: String(this.parent.uuid ?? this.parent.id ?? "").trim(),
+          effects: selfEntries,
         });
-        ui.notifications.info(
-          game.i18n.localize("FFXIV.Notifications.SendSocket"),
-        );
       }
     }
 
-    if (!targetEntries.length) return;
+    if (!targetEntries.length) {
+      sendSocketApplications();
+      return;
+    }
 
     const targets = Array.from(game.user.targets ?? []);
     if (targets.length === 0) {
+      sendSocketApplications();
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
       return;
     }
@@ -2779,21 +2789,15 @@ export class FFXIVItem extends Item {
     }
 
     if (actorsNeedingGM.length > 0) {
-      game.socket.emit("system.ffxiv", {
-        type: "applyEffect",
-        data: {
-          actorIds: actorsNeedingGM.map((actor) => actor.id),
-          actorRefs: actorsNeedingGM
-            .map((actor) => String(actor?.uuid ?? actor?.id ?? "").trim())
-            .filter(Boolean),
+      for (const actor of actorsNeedingGM) {
+        socketApplications.push({
+          actorId: actor.id,
+          actorRef: String(actor?.uuid ?? actor?.id ?? "").trim(),
           effects: targetEntries,
-        },
-        userName: game.user.name,
-      });
-      ui.notifications.info(
-        game.i18n.localize("FFXIV.Notifications.SendSocket"),
-      );
+        });
+      }
     }
+    sendSocketApplications();
   }
 
   async _applyStatusEntryToActor(actor, entry) {
