@@ -5919,40 +5919,9 @@ async function applyStatusEntryToActor(actor, entry) {
         ffxivSuppressStatusText: true,
       });
     }
-    if (result === false) return false;
-    try {
-      const label = getStatusLabelById(statusId);
-      const speaker = ChatMessage.getSpeaker({ actor });
-      const actionText = isActive
-        ? game.i18n.format("FFXIV.Notifications.EffectApplied", { effect: label, actor: actor.name })
-        : game.i18n.format("FFXIV.Notifications.EffectRemoved", { effect: label, actor: actor.name });
-      const stackText = isActive && stacks > 1 ? ` (${stacks} stacks)` : isActive && !isAdditiveStackableStatusEffect && stacks > 0 ? ` (stacks: ${stacks})` : "";
-      await ChatMessage.create({
-        user: game.user.id,
-        speaker,
-        content: `<div class=\"ffxiv-status-log\">${actionText}${stackText}</div>`,
-      });
-    } catch (err) {
-      debugError("Failed to create status chat log:", err);
-    }
-    return true;
+    return result !== false;
   }
   const result = await applyStatusEffectChange(actor, statusId, isActive, { origin, ffxivSuppressStatusText: true });
-  if (result === false) return false;
-  try {
-    const label = getStatusLabelById(statusId);
-    const speaker = ChatMessage.getSpeaker({ actor });
-    const actionText = isActive
-      ? game.i18n.format("FFXIV.Notifications.EffectApplied", { effect: label, actor: actor.name })
-      : game.i18n.format("FFXIV.Notifications.EffectRemoved", { effect: label, actor: actor.name });
-    await ChatMessage.create({
-      user: game.user.id,
-      speaker,
-      content: `<div class=\"ffxiv-status-log\">${actionText}</div>`,
-    });
-  } catch (err) {
-    debugError("Failed to create status chat log:", err);
-  }
   return result !== false;
 }
 
@@ -6608,14 +6577,11 @@ function setApplyActiveEffectsButtonState(button, applied, options = {}) {
 
 function setApplyStatusButtonState(button, applied, options = {}) {
   if (!(button instanceof HTMLButtonElement)) return;
-  const applyLabel = game.i18n.localize("FFXIV.Abilities.StatusEffect");
-  const undoLabel = game.i18n.localize("FFXIV.Abilities.UndoStatusEffects");
   if (!applied) {
     button.dataset.ffxivStatusState = "apply";
     delete button.dataset.appliedActorIds;
     delete button.dataset.appliedStatusEntries;
     delete button.dataset.appliedStatusApplications;
-    button.textContent = applyLabel;
     return;
   }
 
@@ -6646,7 +6612,6 @@ function setApplyStatusButtonState(button, applied, options = {}) {
   button.dataset.appliedActorIds = JSON.stringify(actorIds);
   button.dataset.appliedStatusEntries = JSON.stringify(statusEntries);
   button.dataset.appliedStatusApplications = JSON.stringify(applications);
-  button.textContent = undoLabel;
 }
 
 function getLinkedEffectApplyTo(effect) {
@@ -7469,7 +7434,60 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     });
   });
 
-  jqueryhtml.find(".ffxiv-apply-status").on("click", async (ev) => {
+jqueryhtml.find(".ffxiv-undo-status-effect").on("click", async (ev) => {
+  ev.stopPropagation();
+  const button = ev.currentTarget;
+  const undoData = button.closest('.fxiv-status-effect-applied')?.dataset?.undoStatus;
+  const undoId = button.closest('.fxiv-status-effect-applied')?.dataset?.undoId;
+  if (!undoData || !undoId) return;
+  
+  try {
+    const data = JSON.parse(undoData);
+    const actor = await resolveActorFromReference(data.actorId);
+    if (!actor) return;
+    
+    const entry = {
+      statusId: data.statusId,
+      active: false,
+      stacks: data.stacks,
+      sourceUuid: data.sourceUuid,
+      applyTo: data.applyTo,
+      allSources: true,
+    };
+    
+    const applied = await applyStatusEntryToActor(actor, entry);
+    if (applied) {
+      const chatCard = button.closest('.chat-message');
+      if (chatCard) {
+        const message = game.messages.get(chatCard.dataset.messageId);
+        if (message) {
+          const effectLabel = data.stacks > 1 ? `${getStatusLabelById(data.statusId)} (${data.stacks})` : getStatusLabelById(data.statusId);
+          const removedText = `<div class="effect fxiv-status-effect-applied"><span class="fxiv-status-effect-text"><strong>${effectLabel}</strong> removed from ${actor.name}.</span></div>`;
+          
+          // Use the unique ID to find and replace in message content
+          const regex = new RegExp(`<div[^>]*data-undo-id="${undoId}"[^>]*>.*?</div>`, 's');
+          const newContent = message.content.replace(regex, removedText);
+          
+          await message.update({
+            content: newContent
+          });
+        }
+      } else {
+        const effectLabel = data.stacks > 1 ? `${getStatusLabelById(data.statusId)} (${data.stacks})` : getStatusLabelById(data.statusId);
+        ui.notifications.info(
+          game.i18n.format("FFXIV.Notifications.EffectRemoved", {
+            effect: effectLabel,
+            actor: actor.name,
+          }),
+        );
+      }
+    }
+  } catch (err) {
+    console.error("Failed to undo status effect:", err);
+  }
+});
+
+jqueryhtml.find(".ffxiv-apply-status").on("click", async (ev) => {
     const button =
       ev.currentTarget instanceof HTMLButtonElement ? ev.currentTarget : null;
     const currentState = String(button?.dataset?.ffxivStatusState || "apply");
@@ -7502,6 +7520,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       }
 
       const socketApplications = [];
+      const appliedEffects = [];
       for (const application of applications) {
         const actor = await resolveActorFromReference(application.actorId);
         if (!actor) continue;
@@ -7509,12 +7528,20 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
           for (const entry of application.entries) {
             const applied = await applyStatusEntryToActor(actor, entry);
             if (applied) {
-              ui.notifications.info(
-                game.i18n.format(getStatusEntryNotificationKey(entry), {
-                  effect: getStatusLabelById(entry.statusId),
-                  actor: actor.name,
-                }),
-              );
+              const stacks = entry?.stacks ? Number.parseInt(entry.stacks, 10) : 1;
+              const effectLabel = stacks > 1 ? `${getStatusLabelById(entry.statusId)} (${stacks})` : getStatusLabelById(entry.statusId);
+              const key = getStatusEntryNotificationKey(entry);
+              const isRemoved = key.includes('Removed');
+              appliedEffects.push({
+                effect: effectLabel,
+                actor: actor.name,
+                isRemoved,
+                statusId: entry.statusId,
+                actorId: actor.uuid,
+                sourceUuid: entry.sourceUuid,
+                stacks: stacks,
+                applyTo: entry.applyTo,
+              });
             }
           }
           continue;
@@ -7525,6 +7552,58 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
           effects: application.entries,
         });
       }
+      
+      if (appliedEffects.length) {
+        const chatCard = button.closest('.chat-message');
+        if (chatCard) {
+          const message = game.messages.get(chatCard.dataset.messageId);
+          if (message) {
+            const messageId = message.id;
+            const effectText = appliedEffects
+              .map(({ effect, actor, isRemoved, statusId, actorId, sourceUuid, stacks, applyTo }, index) => 
+                `<div class="effect fxiv-status-effect-applied" data-undo-id="${messageId}-${index}" data-undo-status='{"statusId":"${statusId}","actorId":"${actorId}","sourceUuid":"${sourceUuid}","stacks":${stacks},"applyTo":"${applyTo}"}'>
+                  <span class="fxiv-status-effect-text"><strong>${effect}</strong> ${isRemoved ? 'removed from' : 'applied to'} ${actor}.</span>
+                  <button class="ffxiv-undo-status-effect">
+                    <i class="fas fa-undo"></i>
+                  </button>
+                </div>`
+              )
+              .join("");
+            
+            await message.update({
+              content: message.content + `<div class="item-dialog-effects fxiv-status-effects">${effectText}</div>`
+            });
+            
+            setTimeout(() => {
+              const scrollContainer = chatCard.closest('.chat-log') || 
+                                      chatCard.closest('#chat-log') ||
+                                      document.querySelector('.chat-log') ||
+                                      document.querySelector('#chat-log');
+              
+              if (scrollContainer) {
+                const previousScrollTop = scrollContainer.scrollTop;
+                const previousScrollHeight = scrollContainer.scrollHeight;
+                const wasNearBottom = previousScrollTop + scrollContainer.clientHeight >= previousScrollHeight - 10;
+                
+                if (wasNearBottom) {
+                  scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                }
+              }
+            }, 50);
+          }
+        } else {
+          for (const { effect, actor, isRemoved } of appliedEffects) {
+            const key = isRemoved ? "FFXIV.Notifications.EffectRemoved" : "FFXIV.Notifications.EffectApplied";
+            ui.notifications.info(
+              game.i18n.format(key, {
+                effect,
+                actor,
+              }),
+            );
+          }
+        }
+      }
+      
       if (socketApplications.length) {
         const sent = emitToActiveGM({
           type: "applyEffect",
@@ -7575,19 +7654,76 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       }
 
       let actorChanged = false;
+      const appliedEffects = [];
       for (const entry of entries) {
         const applied = await applyStatusEntryToActor(actor, entry);
         if (applied) {
           actorChanged = true;
-          ui.notifications.info(
-            game.i18n.format(getStatusEntryNotificationKey(entry), {
-              effect: getStatusLabelById(entry.statusId),
-              actor: actor.name,
-            }),
-          );
+          const stacks = entry?.stacks ? Number.parseInt(entry.stacks, 10) : 1;
+          const effectLabel = stacks > 1 ? `${getStatusLabelById(entry.statusId)} (${stacks})` : getStatusLabelById(entry.statusId);
+          appliedEffects.push({
+            effect: effectLabel,
+            actor: actor.name,
+            statusId: entry.statusId,
+            actorId: actor.uuid,
+            sourceUuid: entry.sourceUuid,
+            stacks: stacks,
+            applyTo: entry.applyTo,
+          });
         }
       }
-      if (actorChanged) applications.push({ actorId: actorRef, entries });
+      if (actorChanged) {
+        applications.push({ actorId: actorRef, entries });
+        if (appliedEffects.length) {
+          const chatCard = ev.currentTarget.closest('.chat-message');
+          if (chatCard) {
+            const message = game.messages.get(chatCard.dataset.messageId);
+            if (message) {
+              const messageId = message.id;
+              const effectText = appliedEffects
+                .map(({ effect, actor, statusId, actorId, sourceUuid, stacks, applyTo }, index) => 
+                  `<div class="effect fxiv-status-effect-applied" data-undo-id="${messageId}-${index}" data-undo-status='{"statusId":"${statusId}","actorId":"${actorId}","sourceUuid":"${sourceUuid}","stacks":${stacks},"applyTo":"${applyTo}"}'>
+                    <span class="fxiv-status-effect-text"><strong>${effect}</strong> applied to ${actor}.</span>
+                    <button class="ffxiv-undo-status-effect">
+                      <i class="fas fa-undo"></i>
+                    </button>
+                  </div>`
+                )
+                .join("");
+              
+              await message.update({
+                content: message.content + `<div class="item-dialog-effects fxiv-status-effects">${effectText}</div>`
+              });
+              
+              setTimeout(() => {
+                const scrollContainer = chatCard.closest('.chat-log') || 
+                                        chatCard.closest('#chat-log') ||
+                                        document.querySelector('.chat-log') ||
+                                        document.querySelector('#chat-log');
+                
+                if (scrollContainer) {
+                  const previousScrollTop = scrollContainer.scrollTop;
+                  const previousScrollHeight = scrollContainer.scrollHeight;
+                  const wasNearBottom = previousScrollTop + scrollContainer.clientHeight >= previousScrollHeight - 10;
+                  
+                  if (wasNearBottom) {
+                    scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                  }
+                }
+              }, 50);
+            }
+          } else {
+            for (const { effect, actor } of appliedEffects) {
+              ui.notifications.info(
+                game.i18n.format("FFXIV.Notifications.EffectApplied", {
+                  effect,
+                  actor,
+                }),
+              );
+            }
+          }
+        }
+      }
     };
 
     if (selfEntries.length) await applyEntries(sourceActor, selfEntries);

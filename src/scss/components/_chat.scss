@@ -219,4 +219,63 @@
     border-color: rgba(160, 206, 255, 0.5);
     background: rgba(9, 30, 74, 0.58);
   }
+
+  .fxiv-status-effects {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 7px 1px 2px;
+  }
+
+  .fxiv-status-effect-applied {
+    animation: fxiv-fade-in 0.3s ease-out;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    line-height: 1.25;
+    margin: 0;
+    padding: 3px 6px;
+    width: 100%;
+  }
+
+  .fxiv-status-effect-applied .fxiv-status-effect-text {
+    flex-grow: 1;
+  }
+
+  .fxiv-status-effect-applied .ffxiv-undo-status-effect {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.7em;
+    height: 16px;
+    margin-left: 8px;
+    max-width: 32px;
+    min-width: 16px;
+    opacity: 0.7;
+    padding: 0;
+    transition: opacity 0.2s;
+    width: 16px;
+  }
+
+  .fxiv-status-effect-applied .ffxiv-undo-status-effect:hover {
+    opacity: 1;
+  }
+
+  @keyframes fxiv-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
 }
