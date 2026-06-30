@@ -328,8 +328,12 @@
       box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.12), 0 2px 8px rgba(0, 0, 0, 0.42);
     }
 
-    &:has(.ability-sheet-tabs):not(.minion-mount-sheet) {
+    &:has(.ability-sheet-tabs):not(.minion-mount-sheet):not(.dialog) {
       min-width: 720px;
+    }
+
+    &:has(.consumable-item-sheet) {
+      min-width: 425px;
     }
 
     &.item-modern-sheet .window-content,
@@ -862,6 +866,10 @@
     .item-locked-field-empty {
       color: var(--text-color);
       opacity: 0.58;
+    }
+
+    &.item-modern-sheet .item-details-card:not(.ability-sheet-card) .resource.flex-group-center .item-locked-field {
+      text-align: center;
     }
 
     .item-locked-field-block {

@@ -483,6 +483,8 @@
       "Confirm": "Are you sure you want to complete this action?",
       "Cancel": "Cancel",
       "ItemDelete": "Are you sure you want to delete this item : {itemName}?",
+      "ReplaceJobTitle": "Assign Job?",
+      "ReplaceJobWarning": "Assign {job} to {actor}? This may replace the current job and update granted abilities or pets.",
       "RemoveExistingAbilitiesTitle": "Remove existing abilities or traits?",
       "RemoveExistingAbilitiesForJob": "{actor} has {count} existing manual ability or trait item(s). Remove them before adding entries from {job}?",
       "ResetLimitationsTitle": "Reset limitations",

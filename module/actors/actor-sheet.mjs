@@ -949,6 +949,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
       panel.innerHTML = await foundry.applications.handlebars.renderTemplate(template, context);
       this._activateProseMirrorEditors();
+      if (tab === "items") this._activateInventoryDragDrop();
+      if (tab === "settings") this._activateJobDropZone();
       this.activateListeners($(this.element));
       this._applyActorEditMode();
       if (tab === "abilities") this._applyStoredAbilityTab();
@@ -2201,7 +2203,6 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _activateJobDropZone() {
     this._jobDropController?.abort();
     if (this.actor.type !== "character" || !this.document.isOwner) return;
-    if (!this._isActorEditMode()) return;
 
     const dropZone = this.element.querySelector(".actor-job-slot");
     if (!dropZone) return;
@@ -2238,7 +2239,24 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
 
-    await this._replaceJob(item);
+    await this._confirmReplaceJob(item);
+  }
+
+  async _confirmReplaceJob(sourceItem) {
+    const existingJobs = this.actor.items.filter(item => item.type === "job");
+    const content = game.i18n.format("FFXIV.Dialogs.ReplaceJobWarning", {
+      actor: foundry.utils.escapeHTML(this.actor.name),
+      job: foundry.utils.escapeHTML(sourceItem.name),
+      count: existingJobs.length,
+    });
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: { title: game.i18n.localize("FFXIV.Dialogs.ReplaceJobTitle") },
+      content: `<p>${content}</p>`,
+      yes: { label: game.i18n.localize("FFXIV.Dialogs.Yes") },
+      no: { label: game.i18n.localize("FFXIV.Dialogs.No") },
+    });
+    if (!confirmed) return;
+    await this._replaceJob(sourceItem);
   }
 
   async _replaceJob(sourceItem) {
@@ -2691,20 +2709,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         return;
       }
 
-      if (item && this.actor.type === "character" && !this._isActorEditMode()) {
-        const inventoryTypes = CONFIG.FFXIV?.inventory_items || [];
-        if (inventoryTypes.includes(item.type) && !allowLockedAugmentDrop) return;
-      }
-
       const characterLocked = this.actor.type === "character" && !this._isActorEditMode();
       const sheetLocked = EDIT_MODE_ACTOR_TYPES.has(this.actor.type) && !this._isActorEditMode();
+      const inventoryTypes = CONFIG.FFXIV?.inventory_items || [];
+      const allowLockedInventoryDrop = characterLocked && inventoryTypes.includes(item?.type);
+
+      if (item && characterLocked && item.type !== "job" && !allowLockedInventoryDrop && !allowLockedAugmentDrop) return;
 
       if (this.actor.type === "character" && item?.documentName === "Item" && item.type === "job") {
-        if (characterLocked) {
-          this._notifyActorSheetLocked();
-          return;
-        }
-        await this._replaceJob(item);
+        await this._confirmReplaceJob(item);
         return;
       }
 
@@ -2735,7 +2748,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         return;
       }
 
-      if (sheetLocked && !allowLockedAugmentDrop) {
+      if (allowLockedInventoryDrop) {
+        await this._equipDroppedInventoryItem(item);
+        return;
+      }
+
+      if (sheetLocked && !allowLockedAugmentDrop && !allowLockedInventoryDrop) {
         this._notifyActorSheetLocked();
         return;
       }
@@ -2799,6 +2817,18 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     delete itemData._id;
     await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
     await this._refreshCompanionsPanel();
+    this._restoreSheetScroll();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+  }
+
+  async _equipDroppedInventoryItem(sourceItem) {
+    if (sourceItem?.parent?.id === this.actor.id) return;
+    this._captureSheetScroll();
+    const itemData = sourceItem.toObject();
+    delete itemData._id;
+    await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
+    this._enrichedCache = null;
+    await this.render({ force: true });
     this._restoreSheetScroll();
     this._playConfiguredSound("soundNotificationFFXIV_moveItem");
   }

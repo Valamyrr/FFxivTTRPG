@@ -483,6 +483,8 @@
       "Confirm": "Êtes-vous sûr de vouloir effectuer cette action ?",
       "Cancel": "Annuler",
       "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?",
+      "ReplaceJobTitle": "Assigner ce job ?",
+      "ReplaceJobWarning": "Assigner {job} à {actor} ? Cela peut remplacer le job actuel et mettre à jour les compétences ou familiers accordés.",
       "RemoveExistingAbilitiesTitle": "Retirer les compétences ou traits existants ?",
       "RemoveExistingAbilitiesForJob": "{actor} possède {count} compétence(s) ou trait(s) manuel(s). Les retirer avant d'ajouter les entrées de {job} ?",
       "ResetLimitationsTitle": "Réinitialiser les restrictions",
