@@ -1120,7 +1120,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _formatEffectDuration(duration) {
     if (!duration || typeof duration !== "object") return "";
-    for (const unit of ["turns", "rounds", "seconds"]) {
+    for (const unit of ["turns", "rounds"]) {
       const value = Number.parseInt(duration[unit], 10);
       if (!Number.isFinite(value) || value <= 0) continue;
       const label = value === 1 ? unit.slice(0, -1) : unit;
@@ -1148,6 +1148,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       allSources: entry?.allSources === true,
       stacks: this._normalizeStatusStacks(entry?.stacks),
       stackable: isStackableStatusEffect(entry?.id ?? ""),
+      duration: {
+        turns: this._normalizeStatusDuration(entry?.duration?.turns),
+        rounds: this._normalizeStatusDuration(entry?.duration?.rounds),
+      },
     }));
   }
 
@@ -1160,6 +1164,11 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _normalizeStatusStacks(value) {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  }
+
+  _normalizeStatusDuration(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : "";
   }
 
   _getCurrentStatusEffectEntries() {
@@ -1278,7 +1287,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return;
     }
 
-    if (["rounds", "turns", "seconds"].includes(field)) {
+    if (["rounds", "turns"].includes(field)) {
       rule.duration ??= {};
       const parsed = Number.parseInt(value, 10);
       if (Number.isFinite(parsed) && parsed > 0) {
@@ -1478,6 +1487,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       applyTo: "target",
       stacks: 1,
       stackable: false,
+      duration: {},
     };
     if (event.currentTarget.classList.contains("status-effect-id")) {
       entries[index].id = event.currentTarget.value;
@@ -1489,6 +1499,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       entries[index].applyMode = event.currentTarget.value === "auto" ? "auto" : "manual";
     } else if (event.currentTarget.classList.contains("status-effect-apply-to")) {
       entries[index].applyTo = this._normalizeStatusApplyTo(event.currentTarget.value);
+    } else if (event.currentTarget.classList.contains("status-effect-duration")) {
+      const field = String(event.currentTarget.dataset.field ?? "");
+      if (["turns", "rounds"].includes(field)) {
+        entries[index].duration ??= {};
+        const parsed = Number.parseInt(event.currentTarget.value, 10);
+        if (Number.isFinite(parsed) && parsed > 0) entries[index].duration[field] = parsed;
+        else delete entries[index].duration[field];
+        if (!Object.keys(entries[index].duration).length) delete entries[index].duration;
+      }
     } else {
       entries[index].action = event.currentTarget.value === "true";
     }
@@ -1522,6 +1541,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       applyTo: "target",
       stacks: 1,
       stackable: isStackableStatusEffect(defaultEffect),
+      duration: {},
     });
     this.item
       .update(

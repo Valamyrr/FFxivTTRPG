@@ -240,6 +240,8 @@
       "StatusAutoApply": "Auto",
       "StatusManualApply": "Manuel",
       "StatusStacks": "Cumuls",
+      "StatusDurationTurns": "Tours",
+      "StatusDurationRounds": "Rounds",
       "StatusAdd": "Ajouter",
       "StatusRemove": "Retirer",
       "UndoStatusEffects": "Annuler les effets de statut",

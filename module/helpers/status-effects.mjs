@@ -538,11 +538,34 @@ function getStatusStackSourceEffects(actor, statusId, origin = null, sourceEffec
   );
 }
 
+function prepareStatusEffectDuration(duration) {
+  if (!duration || typeof duration !== "object") return null;
+
+  const prepared = {};
+  for (const key of ["rounds", "turns"]) {
+    const value = Number(duration[key]);
+    if (Number.isFinite(value) && value > 0) prepared[key] = value;
+  }
+  if (!Object.keys(prepared).length) return null;
+
+  prepared.startTime = game.time?.worldTime ?? null;
+  const combat = game.combat;
+  if (combat?.started && combat.turns?.length) {
+    prepared.combat = combat.id;
+    prepared.startRound = combat.round ?? null;
+    prepared.startTurn = combat.turn ?? null;
+  } else {
+    prepared.startRound = null;
+    prepared.startTurn = null;
+  }
+  return prepared;
+}
+
 async function createStatusStack(
   actor,
   statusId,
   count = 1,
-  { overlay = false, origin = null, ffxivSuppressStatusText = false } = {},
+  { overlay = false, origin = null, duration = null, ffxivSuppressStatusText = false } = {},
 ) {
   const ActiveEffectClass = getDocumentClass("ActiveEffect");
   const effect = await ActiveEffectClass.fromStatusEffect(statusId, {
@@ -554,6 +577,8 @@ async function createStatusStack(
   });
   if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
+  const preparedDuration = prepareStatusEffectDuration(duration);
+  if (preparedDuration) effect.updateSource({ duration: preparedDuration });
   return ActiveEffectClass.create(effect.toObject(), {
     parent: actor,
     render: false,
@@ -565,7 +590,7 @@ async function collapseLegacyStatusStacks(
   actor,
   statusId,
   overrideCount,
-  { origin = null, ffxivSuppressStatusText = false } = {},
+  { origin = null, duration = null, ffxivSuppressStatusText = false } = {},
 ) {
   const existing = getStatusStackEffects(actor, statusId);
   if (!existing.length) return null;
@@ -581,6 +606,8 @@ async function collapseLegacyStatusStacks(
     [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]: targetCount,
   };
   if (origin) updateData.origin = origin;
+  const preparedDuration = prepareStatusEffectDuration(duration);
+  if (preparedDuration) updateData.duration = preparedDuration;
   await primary.update(updateData, { render: false });
 
   const sourceKey = getStatusStackSourceKey(primary, origin);
@@ -601,7 +628,7 @@ async function setStatusStackCount(
   actor,
   statusId,
   count,
-  { origin = null, sourceEffect = null, ffxivSuppressStatusText = false } = {},
+  { origin = null, sourceEffect = null, duration = null, ffxivSuppressStatusText = false } = {},
 ) {
   const normalizedCount = Number.parseInt(count, 10) || 0;
   const existing = getStatusStackSourceEffects(actor, statusId, origin, sourceEffect);
@@ -614,12 +641,13 @@ async function setStatusStackCount(
   }
 
   if (!existing.length) {
-    await createStatusStack(actor, statusId, normalizedCount, { origin, ffxivSuppressStatusText });
+    await createStatusStack(actor, statusId, normalizedCount, { origin, duration, ffxivSuppressStatusText });
     return true;
   }
 
   await collapseLegacyStatusStacks(actor, statusId, normalizedCount, {
     origin,
+    duration,
     ffxivSuppressStatusText,
   });
   return true;
@@ -629,7 +657,7 @@ export async function applyStatusEffectStackDelta(
   actor,
   statusId,
   delta,
-  { origin = null, sourceEffect = null, ffxivSuppressStatusText = false } = {},
+  { origin = null, sourceEffect = null, duration = null, ffxivSuppressStatusText = false } = {},
 ) {
   const amount = Number(delta) || 0;
   if (!actor || !statusId || !amount) return;
@@ -669,6 +697,7 @@ export async function applyStatusEffectStackDelta(
   return setStatusStackCount(actor, normalizedStatusId, nextCount, {
     origin,
     sourceEffect,
+    duration,
     ffxivSuppressStatusText,
   });
 }
@@ -677,7 +706,7 @@ export async function applyStatusEffectStackValue(
   actor,
   statusId,
   count,
-  { origin = null, sourceEffect = null, ffxivSuppressStatusText = false } = {},
+  { origin = null, sourceEffect = null, duration = null, ffxivSuppressStatusText = false } = {},
 ) {
   if (!actor || !statusId) return;
   const normalizedStatusId = String(statusId ?? "").trim();
@@ -706,6 +735,7 @@ export async function applyStatusEffectStackValue(
   return setStatusStackCount(actor, normalizedStatusId, normalizedCount, {
     origin,
     sourceEffect,
+    duration,
     ffxivSuppressStatusText,
   });
 }
@@ -722,10 +752,25 @@ async function setNonStackableStatusOrigin(actor, statusId, origin) {
   }
 }
 
+async function setNonStackableStatusDuration(actor, statusId, duration, origin = null) {
+  const preparedDuration = prepareStatusEffectDuration(duration);
+  if (!actor?.effects || !preparedDuration) return;
+
+  const effects = actor.effects.filter((effect) => {
+    const statuses = effect?.statuses;
+    if (!(statuses instanceof Set) || !statuses.has(statusId)) return false;
+    if (!origin) return true;
+    return effect.origin === origin;
+  });
+  for (const effect of effects) {
+    await effect.update({ duration: preparedDuration }, { render: false });
+  }
+}
+
 async function replaceNonStackableStatusEffect(
   actor,
   statusId,
-  { overlay = false, origin = null, ffxivSuppressStatusText = false } = {},
+  { overlay = false, origin = null, duration = null, ffxivSuppressStatusText = false } = {},
 ) {
   const existing = actor.effects.filter((effect) => {
     const statuses = effect?.statuses;
@@ -742,6 +787,8 @@ async function replaceNonStackableStatusEffect(
   });
   if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
+  const preparedDuration = prepareStatusEffectDuration(duration);
+  if (preparedDuration) effect.updateSource({ duration: preparedDuration });
   return ActiveEffectClass.create(effect.toObject(), {
     parent: actor,
     render: false,
@@ -904,7 +951,7 @@ export async function applyStatusEffectChange(
   actor,
   statusId,
   active,
-  { overlay = false, origin = null, ffxivSuppressStatusText = false } = {},
+  { overlay = false, origin = null, duration = null, ffxivSuppressStatusText = false } = {},
 ) {
   if (!actor || !statusId) return;
   const normalizedStatusId = String(statusId ?? "").trim();
@@ -943,6 +990,7 @@ export async function applyStatusEffectChange(
       return applyStatusEffectChange(actor, "brink_death", true, {
         overlay,
         origin,
+        duration,
         ffxivSuppressStatusText,
       });
     }
@@ -969,13 +1017,14 @@ export async function applyStatusEffectChange(
       actor,
       normalizedStatusId,
       isActive ? 1 : -1,
-      { origin, ffxivSuppressStatusText },
+      { origin, duration, ffxivSuppressStatusText },
     );
   }
   if (normalizedStatusId === "enmity" && isActive && origin) {
     return replaceNonStackableStatusEffect(actor, normalizedStatusId, {
       overlay,
       origin,
+      duration,
       ffxivSuppressStatusText,
     });
   }
@@ -991,6 +1040,9 @@ export async function applyStatusEffectChange(
   }
   if (isActive && origin) {
     await setNonStackableStatusOrigin(actor, normalizedStatusId, origin);
+  }
+  if (isActive) {
+    await setNonStackableStatusDuration(actor, normalizedStatusId, duration, origin);
   }
   if (isActive && normalizedStatusId === "stun") {
     await actor.setFlag("ffxiv", "stunnedInEncounter", true);

@@ -2678,6 +2678,7 @@ export class FFXIVItem extends Item {
           applyTo: this._normalizeStatusApplyTo(entry?.applyTo),
           allSources: entry?.allSources === true,
           stacks: Math.max(1, Number.parseInt(entry?.stacks, 10) || 1),
+          duration: entry?.duration,
         }))
         .filter((entry) => entry.id);
     }
@@ -2689,6 +2690,7 @@ export class FFXIVItem extends Item {
         applyMode: this.system.status_apply_mode === "auto" ? "auto" : "manual",
         applyTo: "target",
         stacks: 1,
+        duration: null,
       },
     ];
   }
@@ -2860,6 +2862,7 @@ export class FFXIVItem extends Item {
     if (!actor || !statusId) return;
     const stacks = Math.max(1, Number.parseInt(entry?.stacks, 10) || 1);
     const origin = String(entry?.sourceUuid ?? "").trim() || null;
+    const duration = entry?.duration ?? null;
 
     if (isStackableStatusEffect(statusId)) {
       let result;
@@ -2868,14 +2871,14 @@ export class FFXIVItem extends Item {
           actor,
           statusId,
           entry.active === false ? -stacks : stacks,
-          { origin },
+          { origin, duration },
         );
       } else {
         result = await applyStatusEffectStackValue(
           actor,
           statusId,
           entry.active === false ? 0 : stacks,
-          { origin },
+          { origin, duration },
         );
       }
       return result !== false;
@@ -2883,6 +2886,7 @@ export class FFXIVItem extends Item {
 
     const result = await applyStatusEffectChange(actor, statusId, entry.active !== false, {
       origin,
+      duration,
     });
     return result !== false;
   }
@@ -3561,7 +3565,7 @@ export class FFXIVItem extends Item {
     if (!duration || typeof duration !== "object") return null;
 
     const prepared = {};
-    for (const key of ["seconds", "rounds", "turns"]) {
+    for (const key of ["rounds", "turns"]) {
       const value = Number(duration[key]);
       if (Number.isFinite(value) && value > 0) prepared[key] = value;
     }

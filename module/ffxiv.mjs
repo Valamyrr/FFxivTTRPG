@@ -5921,6 +5921,7 @@ function normalizeStatusEntry(entry, fallbackSourceUuid = null) {
     applyTo: normalizeStatusEntryApplyTo(entry),
     stacks: normalizeStatusEntryStacks(entry),
     allSources: entry?.allSources === true,
+    duration: entry?.duration ?? null,
     sourceUuid:
       String(entry?.sourceUuid ?? fallbackSourceUuid ?? "").trim() || null,
   };
@@ -5932,6 +5933,7 @@ async function applyStatusEntryToActor(actor, entry) {
   const stacks = normalizeStatusEntryStacks(entry);
   const isActive = entry.active !== false;
   const origin = String(entry?.sourceUuid ?? "").trim() || null;
+  const duration = entry?.duration ?? null;
 
   if (!isActive && entry?.allSources === true) {
     return (await deleteActorStatuses(actor, [statusId])) > 0;
@@ -5941,16 +5943,17 @@ async function applyStatusEntryToActor(actor, entry) {
     let result;
     if (isAdditiveStackableStatusEffect(statusId)) {
       const delta = isActive ? stacks : -stacks;
-      result = await applyStatusEffectStackDelta(actor, statusId, delta, { origin, ffxivSuppressStatusText: true });
+      result = await applyStatusEffectStackDelta(actor, statusId, delta, { origin, duration, ffxivSuppressStatusText: true });
     } else {
       result = await applyStatusEffectStackValue(actor, statusId, isActive ? stacks : 0, {
         origin,
+        duration,
         ffxivSuppressStatusText: true,
       });
     }
     return result !== false;
   }
-  const result = await applyStatusEffectChange(actor, statusId, isActive, { origin, ffxivSuppressStatusText: true });
+  const result = await applyStatusEffectChange(actor, statusId, isActive, { origin, duration, ffxivSuppressStatusText: true });
   return result !== false;
 }
 

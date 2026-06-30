@@ -472,6 +472,26 @@
                   <option value="self" {{#if (eq entry.applyTo "self") }}selected{{/if}}>{{ localize "FFXIV.Abilities.ApplyToSelf" }}
                   </option>
                 </select>
+                <div class="status-effect-duration-fields">
+                  <label>
+                    <span>{{localize "FFXIV.Abilities.StatusDurationTurns"}}</span>
+                    <input class="ffxiv-text-center status-effect-duration"
+                           data-index="{{index}}"
+                           data-field="turns"
+                           type="number"
+                           min="1"
+                           value="{{entry.duration.turns}}" />
+                  </label>
+                  <label>
+                    <span>{{localize "FFXIV.Abilities.StatusDurationRounds"}}</span>
+                    <input class="ffxiv-text-center status-effect-duration"
+                           data-index="{{index}}"
+                           data-field="rounds"
+                           type="number"
+                           min="1"
+                           value="{{entry.duration.rounds}}" />
+                  </label>
+                </div>
                 {{#if ../itemEditMode}}
                   <button type="button" class="remove-status-effect" data-index="{{index}}">x</button>
                 {{/if}}

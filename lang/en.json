@@ -240,6 +240,8 @@
       "StatusAutoApply": "Auto",
       "StatusManualApply": "Manual",
       "StatusStacks": "Stacks",
+      "StatusDurationTurns": "Turns",
+      "StatusDurationRounds": "Rounds",
       "StatusAdd": "Add",
       "StatusRemove": "Remove",
       "UndoStatusEffects": "Undo Status Effects",

@@ -881,7 +881,7 @@ export class FFXIVCombat extends Combat {
       startRound: this.round ?? null,
       startTurn: this.turn ?? null,
     };
-    for (const key of ["seconds", "rounds", "turns"]) {
+    for (const key of ["rounds", "turns"]) {
       const value = Number(sourceDuration[key]);
       if (Number.isFinite(value) && value > 0) duration[key] = value;
     }

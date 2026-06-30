@@ -31,21 +31,22 @@
       {{/if}}
     </div>
   </header>
-  <nav class="sheet-tabs tabs item-sheet-tabs job-tabs" data-group="primary">
-    <a class="item" data-tab="description">
-      <i class="fa-solid fa-circle-info"></i>
-      {{ localize "FFXIV.Job.Overview" }}
-    </a>
-    <a class="item" data-tab="progression">
-      <i class="fa-solid fa-list-check"></i>
-      {{ localize "FFXIV.Abilities.Abilities" }}
-    </a>
-    <a class="item" data-tab="pets">
-      <i class="fa-solid fa-users"></i>
-      {{ localize "FFXIV.CharacterSheet.Pets" }}
-    </a>
-  </nav>
+  <hr>
   <section class="sheet-body">
+    <nav class="sheet-tabs tabs item-sheet-tabs" data-group="primary">
+      <a class="item" data-tab="description">
+        <i class="fa-solid fa-circle-info"></i>
+        {{ localize "FFXIV.Job.Overview" }}
+      </a>
+      <a class="item" data-tab="progression">
+        <i class="fa-solid fa-list-check"></i>
+        {{ localize "FFXIV.Abilities.Abilities" }}
+      </a>
+      <a class="item" data-tab="pets">
+        <i class="fa-solid fa-users"></i>
+        {{ localize "FFXIV.CharacterSheet.Pets" }}
+      </a>
+    </nav>
     <div class="tab" data-group="primary" data-tab="description">
       <div class="resources grid grid-2col job-overview-basics">
         <div class="resource flex-group-center">
