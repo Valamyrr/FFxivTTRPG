@@ -5,6 +5,16 @@
   font-family: $font-primary;
 }
 
+.window-app.ffxiv.ffxiv-window-dragging,
+.application.ffxiv.ffxiv-window-dragging {
+  contain: layout paint style;
+  will-change: transform;
+
+  .window-content {
+    pointer-events: none;
+  }
+}
+
 input:disabled {
   transition: none;
 }

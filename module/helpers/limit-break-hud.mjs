@@ -10,9 +10,19 @@ let resizeObserver = null;
 let mutationObserver = null;
 let currentObservedHotbar = null;
 let hotbarTransitionListener = null;
+let positionFrame = null;
+
+function queuePositionLimitBreakHud() {
+  if (positionFrame) return;
+  positionFrame = requestAnimationFrame(() => {
+    positionFrame = null;
+    positionLimitBreakHud();
+  });
+}
 
 function observeHotbar(hotbar) {
   if (!hotbar || typeof ResizeObserver === "undefined") return;
+  if (currentObservedHotbar === hotbar) return;
   if (currentObservedHotbar && currentObservedHotbar !== hotbar) {
     if (hotbarTransitionListener) {
       currentObservedHotbar.removeEventListener("transitionend", hotbarTransitionListener, true);
@@ -21,11 +31,11 @@ function observeHotbar(hotbar) {
   }
   resizeObserver?.disconnect();
   mutationObserver?.disconnect();
-  resizeObserver = new ResizeObserver(() => requestAnimationFrame(positionLimitBreakHud));
+  resizeObserver = new ResizeObserver(() => queuePositionLimitBreakHud());
   resizeObserver.observe(hotbar);
-  mutationObserver = new MutationObserver(() => requestAnimationFrame(positionLimitBreakHud));
+  mutationObserver = new MutationObserver(() => queuePositionLimitBreakHud());
   mutationObserver.observe(hotbar, { attributes: true, childList: true, subtree: true });
-  hotbarTransitionListener = () => requestAnimationFrame(positionLimitBreakHud);
+  hotbarTransitionListener = () => queuePositionLimitBreakHud();
   hotbar.addEventListener("transitionend", hotbarTransitionListener, true);
   currentObservedHotbar = hotbar;
 }
@@ -232,17 +242,17 @@ export async function renderLimitBreakHud() {
 
   root.innerHTML = `<div class="limit-break-hud"><div class="limit-break-hud-root">${await foundry.applications.handlebars.renderTemplate(TEMPLATE, context)}</div></div>`;
   positionLimitBreakHud();
-  requestAnimationFrame(positionLimitBreakHud);
+  queuePositionLimitBreakHud();
 }
 
 export function initLimitBreakHud() {
   Hooks.on("renderHotbar", () => {
-    requestAnimationFrame(positionLimitBreakHud);
+    queuePositionLimitBreakHud();
     const hotbar = getHotbarElement();
     observeHotbar(hotbar);
   });
   Hooks.on("canvasReady", () => renderLimitBreakHud());
-  window.addEventListener("resize", () => requestAnimationFrame(positionLimitBreakHud));
+  window.addEventListener("resize", () => queuePositionLimitBreakHud());
 
   const hotbar = getHotbarElement();
   observeHotbar(hotbar);

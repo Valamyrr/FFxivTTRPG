@@ -74,6 +74,28 @@ function getHotbarElement(app, html) {
   );
 }
 
+function actorUpdateAffectsHotbar(changes) {
+  const keys = Object.keys(foundry.utils.flattenObject(changes ?? {}));
+  if (!keys.length) return true;
+  return keys.some((key) => (
+    key === "name" ||
+    key === "img" ||
+    key.startsWith("flags.ffxiv.hotbar") ||
+    key.startsWith("system.ability_order")
+  ));
+}
+
+function itemUpdateAffectsHotbar(changes) {
+  const keys = Object.keys(foundry.utils.flattenObject(changes ?? {}));
+  if (!keys.length) return true;
+  return keys.some((key) => (
+    key === "name" ||
+    key === "img" ||
+    key === "type" ||
+    key.startsWith("system.tags")
+  ));
+}
+
 function getHotbarSlots(hotbar) {
   return Array.from(
     hotbar.querySelectorAll(
@@ -275,7 +297,9 @@ function observeHotbarCollisionMutations() {
 
   hotbarCollisionMutationObserver = new MutationObserver((mutations) => {
     const changedOutsideHotbar = mutations.some(
-      (mutation) => !mutation.target.closest?.("#hotbar"),
+      (mutation) =>
+        !mutation.target.closest?.("#hotbar") &&
+        !mutation.target.closest?.(".ffxiv-window-dragging"),
     );
     if (!changedOutsideHotbar) return;
     observeHotbarCollisions();
@@ -319,6 +343,23 @@ function getSelectedActor() {
 function getActiveHotbarActor() {
   const actor = getSelectedActor();
   return actor?.isOwner ? actor : null;
+}
+
+function isActiveHotbarActor(actor) {
+  const activeActor = getActiveHotbarActor();
+  return Boolean(
+    actor &&
+    activeActor &&
+    (
+      actor === activeActor ||
+      actor.uuid === activeActor.uuid ||
+      actor.id === activeActor.id
+    ),
+  );
+}
+
+function itemBelongsToActiveHotbarActor(item) {
+  return item?.parent?.documentName === "Actor" && isActiveHotbarActor(item.parent);
 }
 
 function getHotbarFlagDocument() {
@@ -1769,9 +1810,20 @@ export function initHotbar() {
     queueHotbarCollisionOffset();
   });
   Hooks.on("controlToken", () => renderFFXIVHotbar(ui.hotbar));
-  Hooks.on("updateActor", (actor) => {
+  Hooks.on("updateActor", (actor, changes) => {
     if (suppressHotbarRender) return;
-    if (actor === getActiveHotbarActor()) renderFFXIVHotbar(ui.hotbar);
+    if (!actorUpdateAffectsHotbar(changes)) return;
+    if (isActiveHotbarActor(actor)) renderFFXIVHotbar(ui.hotbar);
+  });
+  Hooks.on("createItem", (item) => {
+    if (itemBelongsToActiveHotbarActor(item)) renderFFXIVHotbar(ui.hotbar);
+  });
+  Hooks.on("updateItem", (item, changes) => {
+    if (!itemUpdateAffectsHotbar(changes)) return;
+    if (itemBelongsToActiveHotbarActor(item)) renderFFXIVHotbar(ui.hotbar);
+  });
+  Hooks.on("deleteItem", (item) => {
+    if (itemBelongsToActiveHotbarActor(item)) renderFFXIVHotbar(ui.hotbar);
   });
   Hooks.once("canvasReady", () => {
     renderFFXIVHotbar();

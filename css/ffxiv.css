@@ -76,6 +76,17 @@
   font-family: "Roboto", sans-serif;
 }
 
+.window-app.ffxiv.ffxiv-window-dragging,
+.application.ffxiv.ffxiv-window-dragging {
+  contain: layout paint style;
+  will-change: transform;
+}
+
+.window-app.ffxiv.ffxiv-window-dragging .window-content,
+.application.ffxiv.ffxiv-window-dragging .window-content {
+  pointer-events: none;
+}
+
 input:disabled {
   transition: none;
 }

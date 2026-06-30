@@ -753,6 +753,7 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 /* -------------------------------------------- */
 
 Hooks.once("ready", function () {
+  installSheetDragPerformanceClass();
   initHotbar();
   initLimitBreakHud();
   initHudResources();
@@ -808,6 +809,34 @@ Hooks.once("ready", function () {
     migrateActorCurrencyToFortune();
   }
 });
+
+function installSheetDragPerformanceClass() {
+  let draggedWindow = null;
+
+  const clear = () => {
+    draggedWindow?.classList.remove("ffxiv-window-dragging");
+    draggedWindow = null;
+  };
+
+  document.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    if (event.target?.closest?.("button, a, input, select, textarea")) return;
+
+    const header = event.target?.closest?.(
+      ".application.ffxiv .window-header, .window-app.ffxiv .window-header",
+    );
+    const app = header?.closest?.(".application.ffxiv, .window-app.ffxiv");
+    if (!app) return;
+
+    clear();
+    draggedWindow = app;
+    draggedWindow.classList.add("ffxiv-window-dragging");
+  }, true);
+
+  window.addEventListener("pointerup", clear, true);
+  window.addEventListener("pointercancel", clear, true);
+  window.addEventListener("blur", clear);
+}
 
 async function configureCombatTrackedResource() {
   if (!game.user.can("SETTINGS_MODIFY")) return;

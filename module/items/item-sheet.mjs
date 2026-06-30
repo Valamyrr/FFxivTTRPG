@@ -53,6 +53,20 @@ const ABILITY_SHEET_TYPES = new Set([
 ]);
 
 const ABILITY_SHEET_MIN_WIDTH = 720;
+const ITEM_ENRICHED_FIELDS = [
+  "base_effect",
+  "challenge",
+  "condition",
+  "description",
+  "direct_hit",
+  "marker_area",
+  "marker_effect",
+  "marker_trigger",
+  "range",
+  "target",
+  "traits",
+  "trigger",
+];
 
 /**
  * ApplicationV2 implementation of the FFXIV item sheet.
@@ -267,33 +281,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       );
     }
 
-    if (this.item.type === "job" || this.item.type === "augment") {
-      context.enrichedDescription = await this.constructor.enrichAllStrings(
-        context.system?.description ?? "",
-        this.item.getRollData(),
-        this.item,
-        this.document.isOwner,
-      );
-      context.enrichedTraits = await this.constructor.enrichAllStrings(
-        context.system?.traits ?? "",
-        this.item.getRollData(),
-        this.item,
-        this.document.isOwner,
-      );
-      context.enriched = {
-        description: context.enrichedDescription,
-        traits: context.enrichedTraits,
-      };
-    } else {
-      context.enriched = await this.constructor.enrichAllStrings(
-        context.system ?? {},
-        this.item.getRollData(),
-        this.item,
-        this.document.isOwner,
-      );
-      context.enrichedDescription = context.enriched?.description ?? "";
-      context.enrichedTraits = context.enriched?.traits ?? "";
-    }
+    context.enriched = await this.constructor.enrichStringFields(
+      context.system ?? {},
+      ITEM_ENRICHED_FIELDS,
+      this.item.getRollData(),
+      this.item,
+      this.document.isOwner,
+    );
+    context.enrichedDescription = context.enriched?.description ?? "";
+    context.enrichedTraits = context.enriched?.traits ?? "";
 
     context.settings = {
       jobsAbbrv: game.settings.get("ffxiv", "jobsAbbrv").split(","),
@@ -357,6 +353,20 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
 
     return target;
+  }
+
+  static async enrichStringFields(target, fields, rollData, relativeTo, secrets = true) {
+    const enriched = {};
+    for (const field of fields) {
+      const value = foundry.utils.getProperty(target, field);
+      if (typeof value !== "string") continue;
+      foundry.utils.setProperty(
+        enriched,
+        field,
+        await this.enrichAllStrings(value, rollData, relativeTo, secrets),
+      );
+    }
+    return enriched;
   }
 
   /* -------------------------------------------- */

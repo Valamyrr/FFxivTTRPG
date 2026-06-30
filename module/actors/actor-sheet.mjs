@@ -274,6 +274,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     for (const item of context.items || []) {
       item.enriched = await this._enrichItemForTabs(item, itemTabs, null, {
         abilityTypes,
+        rollData,
       });
     }
 
@@ -288,14 +289,17 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     for (const pet of context.pets || []) {
       const petDocument = game.actors.get(pet._id);
+      const petRollData = petDocument?.getRollData?.() ?? rollData;
       pet.enriched = await this.constructor.enrichStringFields(
         pet.system,
         ACTOR_ENRICHED_FIELDS.companions,
-        petDocument?.getRollData?.() ?? rollData,
+        petRollData,
         petDocument ?? this.actor,
       );
       for (const item of pet.items || []) {
-        item.enriched = await this._enrichItemForTabs(item, new Set(["abilities"]), petDocument ?? this.actor);
+        item.enriched = await this._enrichItemForTabs(item, new Set(["abilities"]), petDocument ?? this.actor, {
+          rollData: petRollData,
+        });
       }
     }
   }
@@ -323,7 +327,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     if (!fields.size) return {};
     const document = relativeTo?.items?.get?.(item._id) ?? this.actor.items.get(item._id) ?? relativeTo ?? this.actor;
-    return this.constructor.enrichStringFields(item.system, Array.from(fields), this.actor.getRollData(), document);
+    return this.constructor.enrichStringFields(item.system, Array.from(fields), options.rollData ?? this.actor.getRollData(), document);
   }
 
   _getNpcHeaderDisposition() {
@@ -801,15 +805,16 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     ) ?? false;
   }
 
-  _toggleActorEditMode(event) {
+  async _toggleActorEditMode(event) {
     event.preventDefault();
     event.stopPropagation();
 
     if (!EDIT_MODE_ACTOR_TYPES.has(this.actor.type) || !this.document.isOwner) return;
     if (!this._pendingSheetScrollPositions?.length) this._captureSheetScroll();
+    await this._saveProseMirrorEditors();
     this.actorEditMode = !this.actorEditMode;
     const skipEnrichment = this.actorEditMode || this.tabGroups?.primary !== "roleplay";
-    this.render({ force: true, ffxivSkipEnrichment: skipEnrichment });
+    await this.render({ force: true, ffxivSkipEnrichment: skipEnrichment });
     this._restoreSheetScroll();
   }
 
@@ -2136,6 +2141,32 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _activateProseMirrorEditors() {
     this.element.querySelectorAll(".editor-content[data-edit]").forEach(div => this._activateEditor?.(div));
+  }
+
+  async _saveProseMirrorEditors() {
+    const editors = Array.from(this.element?.querySelectorAll("prose-mirror") ?? []);
+    const updateData = {};
+
+    for (const editor of editors) {
+      const field = editor.getAttribute("name");
+      if (!field) continue;
+
+      if (typeof editor.save === "function") {
+        await editor.save();
+      } else if (typeof editor._save === "function") {
+        await editor._save();
+      }
+
+      const value = editor.value;
+      if (value === undefined) continue;
+      if (foundry.utils.getProperty(this.actor, field) !== value) {
+        updateData[field] = value;
+      }
+    }
+
+    if (Object.keys(updateData).length) {
+      await this.actor.update(updateData, { render: false });
+    }
   }
 
   _updateHeaderBanner(path) {

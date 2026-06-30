@@ -13,9 +13,28 @@ let resizeObserver = null;
 let mutationObserver = null;
 let currentObservedHotbar = null;
 let hotbarTransitionListener = null;
+let positionFrame = null;
+let renderFrame = null;
+
+function queuePositionHudResources() {
+  if (positionFrame) return;
+  positionFrame = requestAnimationFrame(() => {
+    positionFrame = null;
+    positionHudResources();
+  });
+}
+
+function queueRenderHudResources() {
+  if (renderFrame) return;
+  renderFrame = requestAnimationFrame(() => {
+    renderFrame = null;
+    renderHudResources();
+  });
+}
 
 function observeHotbar(hotbar) {
   if (!hotbar || typeof ResizeObserver === "undefined") return;
+  if (currentObservedHotbar === hotbar) return;
   if (currentObservedHotbar && currentObservedHotbar !== hotbar) {
     if (hotbarTransitionListener) {
       currentObservedHotbar.removeEventListener("transitionend", hotbarTransitionListener, true);
@@ -24,11 +43,11 @@ function observeHotbar(hotbar) {
   }
   resizeObserver?.disconnect();
   mutationObserver?.disconnect();
-  resizeObserver = new ResizeObserver(() => requestAnimationFrame(positionHudResources));
+  resizeObserver = new ResizeObserver(() => queuePositionHudResources());
   resizeObserver.observe(hotbar);
-  mutationObserver = new MutationObserver(() => requestAnimationFrame(positionHudResources));
+  mutationObserver = new MutationObserver(() => queuePositionHudResources());
   mutationObserver.observe(hotbar, { attributes: true, childList: true, subtree: true });
-  hotbarTransitionListener = () => requestAnimationFrame(positionHudResources);
+  hotbarTransitionListener = () => queuePositionHudResources();
   hotbar.addEventListener("transitionend", hotbarTransitionListener, true);
   currentObservedHotbar = hotbar;
 }
@@ -262,28 +281,40 @@ export async function renderHudResources() {
   }
 
   positionHudResources();
-  requestAnimationFrame(positionHudResources);
+  queuePositionHudResources();
 }
 
 export function initHudResources() {
   Hooks.on("renderHotbar", () => {
-    requestAnimationFrame(positionHudResources);
+    queuePositionHudResources();
     const hotbar = getHotbarElement();
     observeHotbar(hotbar);
   });
-  Hooks.on("controlToken", () => renderHudResources());
-  Hooks.on("canvasReady", () => renderHudResources());
-  Hooks.on("updateActor", () => renderHudResources());
+  Hooks.on("controlToken", () => queueRenderHudResources());
+  Hooks.on("canvasReady", () => queueRenderHudResources());
+  Hooks.on("updateActor", (actor, changes) => {
+    if (!isSelectedActor(actor)) return;
+    const keys = Object.keys(foundry.utils.flattenObject(changes ?? {}));
+    if (
+      keys.length &&
+      !keys.some((key) => (
+        key.startsWith("system.health.") ||
+        key.startsWith("system.barrier.") ||
+        key.startsWith("system.mana.")
+      ))
+    ) return;
+    queueRenderHudResources();
+  });
   Hooks.on("createActiveEffect", (effect) => {
-    if (isSelectedActor(effect.parent)) renderHudResources();
+    if (isSelectedActor(effect.parent)) queueRenderHudResources();
   });
   Hooks.on("updateActiveEffect", (effect) => {
-    if (isSelectedActor(effect.parent)) renderHudResources();
+    if (isSelectedActor(effect.parent)) queueRenderHudResources();
   });
   Hooks.on("deleteActiveEffect", (effect) => {
-    if (isSelectedActor(effect.parent)) renderHudResources();
+    if (isSelectedActor(effect.parent)) queueRenderHudResources();
   });
-  window.addEventListener("resize", () => requestAnimationFrame(positionHudResources));
+  window.addEventListener("resize", () => queuePositionHudResources());
 
   const hotbar = getHotbarElement();
   observeHotbar(hotbar);
