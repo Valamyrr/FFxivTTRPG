@@ -72,8 +72,8 @@
       "Roll": "Jet de dés !",
       "Show": "Afficher l'Objet",
       "Consume": "Consommer l'Objet",
-      "ShowModifiers": "Proposer de montrer les modificateurs avant les jets de dés ?",
-      "AltBanner": "Afficher la bannière alternative ?",
+      "ShowModifiers": "Proposer de montrer les modificateurs avant les jets de dés?",
+      "AltBanner": "Afficher la bannière alternative?",
       "Equip": "Équiper",
       "Unequip": "Déséquiper",
       "Companions": "Compagnons",
@@ -503,15 +503,15 @@
     },
     "Dialogs": {
       "DialogTitleConfirmation": "Cette action n'est pas réversible",
-      "Confirm": "Êtes-vous sûr de vouloir effectuer cette action ?",
+      "Confirm": "Êtes-vous sûr de vouloir effectuer cette action?",
       "Cancel": "Annuler",
-      "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName} ?",
-      "ReplaceJobTitle": "Assigner ce job ?",
-      "ReplaceJobWarning": "Assigner {job} à {actor} ? Cela peut remplacer le job actuel et mettre à jour les compétences ou familiers accordés.",
-      "RemoveExistingAbilitiesTitle": "Retirer les compétences ou traits existants ?",
-      "RemoveExistingAbilitiesForJob": "{actor} possède {count} compétence(s) ou trait(s) manuel(s). Les retirer avant d'ajouter les entrées de {job} ?",
+      "ItemDelete": "Êtes-vous sûr de vouloir supprimer cet objet : {itemName}?",
+      "ReplaceJobTitle": "Assigner ce job?",
+      "ReplaceJobWarning": "Assigner {job} à {actor}? Cela peut remplacer le job actuel et mettre à jour les compétences ou familiers accordés.",
+      "RemoveExistingAbilitiesTitle": "Retirer les compétences ou traits existants?",
+      "RemoveExistingAbilitiesForJob": "{actor} possède {count} compétence(s) ou trait(s) manuel(s). Les retirer avant d'ajouter les entrées de {job}?",
       "ResetLimitationsTitle": "Réinitialiser les restrictions",
-      "ResetLimitations": "Réinitialiser les restrictions de tous les acteurs ?",
+      "ResetLimitations": "Réinitialiser les restrictions de tous les acteurs?",
       "OK": "OK",
       "Yes": "Oui",
       "No": "Non"
@@ -630,6 +630,29 @@
     },
     "MarkerPlacement": {
       "Title": "Placement de FFXIV Marqueur",
+      "RegionTitle": "Placement de marqueur de région",
+      "ClassicTitle": "Placement de marqueur CLASSIC",
+      "RegionName": "Marqueur FFXIV",
+      "Clear": {
+        "Title": "Effacer les marqueurs FFXIV",
+        "ConfirmOne": "Supprimer le marqueur FFXIV de cette scène?",
+        "ConfirmMany": "Supprimer les {count} marqueurs FFXIV de cette scène?",
+        "None": "Il n’y a aucun marqueur FFXIV à effacer."
+      },
+      "Toolclip": {
+        "Heading": "Placement de marqueur FFXIV",
+        "Description": "Placez des marqueurs de rencontre FFXIV avec les régions ou le système de tuiles original.",
+        "Region": "Marqueur de région",
+        "Classic": "Marqueur CLASSIC"
+      },
+      "Custom": {
+        "Title": "Marqueurs personnalisés",
+        "New": "Nouveau marqueur personnalisé",
+        "Save": "Enregistrer le marqueur",
+        "Delete": "Supprimer le marqueur",
+        "NameTitle": "Nommer le marqueur personnalisé",
+        "DeleteConfirm": "Supprimer le marqueur personnalisé \"{name}\"?"
+      },
       "Instructions": {
         "ClickToPlace": "Déplacez l'aperçu, puis cliquez sur la scène pour placer le marqueur. Clic droit pour annuler.",
         "ClickToken": "Cliquez sur un token pour lier le marqueur ciblé. Clic droit pour annuler.",
@@ -638,6 +661,7 @@
       "Errors": {
         "NoScene": "Aucune scène active.",
         "TileFailed": "Échec de la création de la tuile. Voir la console pour les détails.",
+        "RegionFailed": "Échec de la création du marqueur de région. Voir la console pour les détails.",
         "EmptyShape": "Choisissez au moins une case de marqueur.",
         "NoGM": "Un MJ doit être connecté pour que les joueurs puissent placer des marqueurs."
       },
@@ -652,6 +676,8 @@
         "Knockback": "Repoussement",
         "Tankbuster": "Tank Buster",
         "Targeted": "Marqueur ciblé (lier à un token)",
+        "FollowRotation": "Suivre la rotation du token",
+        "Circle": "Forme circulaire",
         "Presets": "Préréglages rapides",
         "Preview": "Aperçu",
         "Enemy": "Ennemi",

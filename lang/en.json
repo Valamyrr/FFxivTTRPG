@@ -72,8 +72,8 @@
       "Roll": "ROLL!",
       "Show": "Show Item",
       "Consume": "Consume Item",
-      "ShowModifiers": "Ask to show modifiers when rolling ?",
-      "AltBanner": "Display alternative header ?",
+      "ShowModifiers": "Ask to show modifiers when rolling?",
+      "AltBanner": "Display alternative header?",
       "Equip": "Equip",
       "Unequip": "Unequip",
       "Companions": "Companions",
@@ -630,6 +630,29 @@
     },
     "MarkerPlacement": {
       "Title": "FFXIV Marker Placement",
+      "RegionTitle": "Region Marker Placement",
+      "ClassicTitle": "CLASSIC Marker Placement",
+      "RegionName": "FFXIV Marker",
+      "Clear": {
+        "Title": "Clear FFXIV Markers",
+        "ConfirmOne": "Delete the FFXIV marker in this scene?",
+        "ConfirmMany": "Delete all {count} FFXIV markers in this scene?",
+        "None": "There are no FFXIV markers to clear."
+      },
+      "Toolclip": {
+        "Heading": "FFXIV Marker Placement",
+        "Description": "Place FFXIV encounter markers using Regions or the original Tile workflow.",
+        "Region": "Region Marker",
+        "Classic": "CLASSIC Marker"
+      },
+      "Custom": {
+        "Title": "Custom Markers",
+        "New": "New Custom Marker",
+        "Save": "Save Marker",
+        "Delete": "Delete Marker",
+        "NameTitle": "Name Custom Marker",
+        "DeleteConfirm": "Delete the custom marker \"{name}\"?"
+      },
       "Instructions": {
         "ClickToPlace": "Move the preview, then click on the canvas to place the marker. Right-click to cancel.",
         "ClickToken": "Click a token to bind the targeted marker. Right-click to cancel.",
@@ -638,6 +661,7 @@
       "Errors": {
         "NoScene": "No active scene.",
         "TileFailed": "Failed to create tile. See console.",
+        "RegionFailed": "Failed to create region marker. See console.",
         "EmptyShape": "Choose at least one marker square.",
         "NoGM": "A GM must be connected to place markers for players."
       },
@@ -652,6 +676,8 @@
         "Knockback": "Knockback",
         "Tankbuster": "Tank Buster",
         "Targeted": "Targeted Marker (bind to token)",
+        "FollowRotation": "Follow Token Rotation",
+        "Circle": "Is Circle",
         "Presets": "Quick Presets",
         "Preview": "Preview",
         "Enemy": "Enemy",

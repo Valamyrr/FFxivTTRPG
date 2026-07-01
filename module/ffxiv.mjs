@@ -67,6 +67,12 @@ import { emitToActiveGM, getActiveGM } from "./helpers/socket.mjs";
 Hooks.once("init", function () {
   registerDataModels();
   SettingsHelpers.initSettings();
+  game.settings.register("ffxiv", "customMarkers", {
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {},
+  });
   registerHotbarKeybindings();
   // Add utility classes to the global game object so that they're more easily
   // accessible in global contexts.
@@ -4665,16 +4671,122 @@ function getHookHTMLElement(html, app) {
 }
 
 const FFXIV_MARKER_SOCKET_TYPE = "placeMarkerTile";
+const FFXIV_REGION_MARKER_OVERLAY = Symbol("ffxivRegionMarkerOverlay");
+const FFXIV_REGION_MARKER_MASK = Symbol("ffxivRegionMarkerMask");
 const markerDialogs = new WeakSet();
 
+Hooks.on("drawRegion", (region) => {
+  drawRegionMarkerOverlay(region);
+});
+
+Hooks.on("refreshRegion", (region) => {
+  drawRegionMarkerOverlay(region);
+});
+
+Hooks.on("destroyRegion", (region) => {
+  region[FFXIV_REGION_MARKER_OVERLAY]?.destroy();
+  region[FFXIV_REGION_MARKER_MASK]?.destroy();
+  delete region[FFXIV_REGION_MARKER_OVERLAY];
+  delete region[FFXIV_REGION_MARKER_MASK];
+});
+
+Hooks.on("preUpdateToken", (token, changes, options) => {
+  if (!("rotation" in changes)) return;
+  const hasFixedMarker = Array.from(token.attachments.regions).some((region) => {
+    const marker = region.getFlag("ffxiv", "markerPlacement");
+    return marker?.targeted && marker.followRotation === false;
+  });
+  if (hasFixedMarker) options.ffxivPriorRotation = token.rotation;
+});
+
+Hooks.on("updateToken", async (token, changes, options) => {
+  if (!("rotation" in changes) || !Number.isFinite(options.ffxivPriorRotation))
+    return;
+  const rotation = token.rotation - options.ffxivPriorRotation;
+  if (!rotation) return;
+  const pivot = token.getMovementOrigin(token._source);
+  const updates = [];
+  for (const region of token.attachments.regions) {
+    const marker = region.getFlag("ffxiv", "markerPlacement");
+    if (!marker?.targeted || marker.followRotation !== false) continue;
+    updates.push({
+      _id: region.id,
+      shapes: region.shapes.map((source) => {
+        const shape = source.clone();
+        shape.rotate(-rotation, { pivot });
+        return shape.toObject();
+      }),
+    });
+  }
+  if (updates.length)
+    await token.parent.updateEmbeddedDocuments("Region", updates);
+});
+
+Hooks.on("renderSceneControls", (app, html) => {
+  const element = getHookHTMLElement(html, app);
+  const button = element?.querySelector?.(
+    'button.tool[data-tool="ffxivRegionMarker"]',
+  );
+  if (!button || button.dataset.ffxivClassicMarkerBound) return;
+  button.dataset.ffxivClassicMarkerBound = "true";
+  button.addEventListener("contextmenu", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await openMarkerPlacementTool();
+  });
+});
+
 Hooks.on("getSceneControlButtons", (controls) => {
+  const regionMarkerTool = {
+    name: "ffxivRegionMarker",
+    title: game.i18n.localize("FFXIV.MarkerPlacement.RegionTitle"),
+    icon: "fa-solid fa-bullseye",
+    order: 1,
+    visible: game.user?.hasPermission("REGION_CREATE"),
+    button: true,
+    toolclip: {
+      heading: "FFXIV.MarkerPlacement.Toolclip.Heading",
+      items: [
+        { paragraph: "FFXIV.MarkerPlacement.Toolclip.Description" },
+        {
+          heading: "FFXIV.MarkerPlacement.Toolclip.Region",
+          reference: "CONTROLS.Click",
+        },
+        {
+          heading: "FFXIV.MarkerPlacement.Toolclip.Classic",
+          reference: "CONTROLS.RightClick",
+        },
+      ],
+    },
+    onChange: async (_event, active) => {
+      if (!active) return;
+      await openRegionMarkerPlacementTool();
+    },
+  };
+  const tools = {
+    ffxivRegionMarker: regionMarkerTool,
+    ffxivClearMarkers: {
+      name: "ffxivClearMarkers",
+      title: game.i18n.localize("FFXIV.MarkerPlacement.Clear.Title"),
+      icon: "fa-solid fa-trash",
+      order: 2,
+      visible: game.user?.isGM,
+      button: true,
+      onChange: async (_event, active) => {
+        if (!active) return;
+        await clearPlacedMarkers();
+      },
+    },
+  };
+
   if (game.user?.isGM) {
-    controls.ffxivLimitBreak = {
+    tools.ffxivLimitBreak = {
       name: "ffxivLimitBreak",
       title: game.i18n.localize("FFXIV.LimitBreak.Control"),
       icon: "fa-regular fa-swords",
-      order: (Number(controls.walls?.order) || 4) - 0.1,
+      order: 0,
       visible: true,
+      button: true,
       active: isLimitBreakActive(),
       onChange: async (_event, active) => {
         if (!active) return;
@@ -4683,36 +4795,48 @@ Hooks.on("getSceneControlButtons", (controls) => {
     };
   }
 
-  if (!controls.tiles?.tools) return;
-  controls.tiles.visible = true;
-
-  const markerTool = {
-    name: "ffxivMarker",
-    title: game.i18n.localize("FFXIV.MarkerPlacement.Title"),
-    icon: "fas fa-map-marker-alt",
-    visible: true,
-    button: true,
-    onChange: async (_event, active) => {
-      if (!active) return;
-      await openMarkerPlacementTool();
-    },
+  controls.ffxiv = {
+    name: "ffxiv",
+    title: "Final Fantasy XIV Tools",
+    icon: "ffxiv-control-icon",
+    order:
+      Number(controls.regions?.order ?? controls.region?.order ?? 5) + 0.1,
+    visible: Object.values(tools).some((tool) => tool.visible),
+    tools,
   };
-  controls.tiles.tools = insertSceneToolAfterSelect(
-    controls.tiles.tools,
-    "ffxivMarker",
-    markerTool,
-  );
 });
 
-function insertSceneToolAfterSelect(tools, toolKey, tool) {
-  const entries = Object.entries(tools).filter(([key]) => key !== toolKey);
-  const selectIndex = entries.findIndex(([key, value]) => {
-    const name = value?.name ?? key;
-    return name === "select" || name === "selectTile" || name === "tilesSelect";
+async function clearPlacedMarkers() {
+  const scene = canvas.scene;
+  if (!scene || !game.user?.isGM) return;
+  const regionIds = scene.regions
+    .filter((region) => region.getFlag("ffxiv", "markerPlacement"))
+    .map((region) => region.id);
+  const tileIds = scene.tiles
+    .filter((tile) => tile.getFlag("ffxiv", "markerPlacement"))
+    .map((tile) => tile.id);
+  if (!regionIds.length && !tileIds.length) {
+    ui.notifications.info(
+      game.i18n.localize("FFXIV.MarkerPlacement.Clear.None"),
+    );
+    return;
+  }
+
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    window: {
+      title: game.i18n.localize("FFXIV.MarkerPlacement.Clear.Title"),
+    },
+    content: `<p>${game.i18n.format(
+      regionIds.length + tileIds.length === 1
+        ? "FFXIV.MarkerPlacement.Clear.ConfirmOne"
+        : "FFXIV.MarkerPlacement.Clear.ConfirmMany",
+      { count: regionIds.length + tileIds.length },
+    )}</p>`,
   });
-  const insertIndex = selectIndex >= 0 ? selectIndex + 1 : entries.length;
-  entries.splice(insertIndex, 0, [toolKey, tool]);
-  return Object.fromEntries(entries);
+  if (!confirmed) return;
+  if (regionIds.length)
+    await scene.deleteEmbeddedDocuments("Region", regionIds);
+  if (tileIds.length) await scene.deleteEmbeddedDocuments("Tile", tileIds);
 }
 
 async function toggleLimitBreakGauge() {
@@ -4721,20 +4845,17 @@ async function toggleLimitBreakGauge() {
   if (isLimitBreakActive()) {
     await deactivateLimitBreakGauge();
     refreshSceneControls();
-    restoreDefaultSceneControl();
     return;
   }
 
   const max = await promptLimitBreakMax();
   if (!max) {
     refreshSceneControls();
-    restoreDefaultSceneControl();
     return;
   }
 
   await activateLimitBreakGauge(max);
   refreshSceneControls();
-  restoreDefaultSceneControl();
 }
 
 async function promptLimitBreakMax() {
@@ -4783,18 +4904,6 @@ async function promptLimitBreakMax() {
 
 function refreshSceneControls() {
   globalThis.ui?.controls?.render?.({ force: true });
-}
-
-function restoreDefaultSceneControl() {
-  const controls = globalThis.ui?.controls;
-  const fallback = controls?.controls?.tokens
-    ? "tokens"
-    : controls?.controls?.token
-      ? "token"
-      : controls?.controls?.tiles
-        ? "tiles"
-        : null;
-  if (fallback) controls.activate?.({ control: fallback });
 }
 
 async function openMarkerPlacementTool() {
@@ -4879,6 +4988,499 @@ async function openMarkerPlacementTool() {
   }
 }
 
+async function openRegionMarkerPlacementTool() {
+  if (!canvas.scene) {
+    ui.notifications.error(
+      game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"),
+    );
+    return;
+  }
+
+  const marker = await configureMarkerShape({ region: true });
+  if (!marker) return;
+  const bounds = getMarkerBounds(marker.state);
+  if (!bounds) {
+    ui.notifications.warn(
+      game.i18n.localize("FFXIV.MarkerPlacement.Errors.EmptyShape"),
+    );
+    return;
+  }
+
+  const gridSize = canvas.grid.size;
+  const widthCells = bounds.maxX - bounds.minX + 1;
+  const heightCells = bounds.maxY - bounds.minY + 1;
+  const centerX = Math.floor(widthCells / 2);
+  const centerY = Math.floor(heightCells / 2);
+  let placementShape;
+  if (marker.shape === "circle") {
+    placementShape = {
+      type: "circle",
+      x: 0,
+      y: 0,
+      radius: marker.radius * gridSize,
+      gridBased: false,
+    };
+  } else {
+    const baseOffset = canvas.grid.getOffset({ x: 0, y: 0 });
+    const offsets = [];
+    for (let y = bounds.minY; y <= bounds.maxY; y++) {
+      for (let x = bounds.minX; x <= bounds.maxX; x++) {
+        if (!marker.state[y][x]) continue;
+        offsets.push({
+          i: baseOffset.i + y - bounds.minY - centerY,
+          j: baseOffset.j + x - bounds.minX - centerX,
+        });
+      }
+    }
+    placementShape = {
+      type: "grid",
+      offsets,
+      origin: { x: 0, y: 0 },
+    };
+  }
+  const color =
+    marker.mode === "tankbuster"
+      ? "#b22222"
+      : marker.type === "enemy"
+        ? "#ffa500"
+        : "#66ffff";
+  const placementData = createMarkerRegionData({
+    marker,
+    color,
+    shape: placementShape,
+  });
+
+  try {
+    ui.notifications.info(
+      game.i18n.localize(
+        marker.targeted
+          ? "FFXIV.MarkerPlacement.Instructions.ClickToken"
+          : "FFXIV.MarkerPlacement.Instructions.ClickToPlace",
+      ),
+    );
+    const placement = await canvas.regions.placeRegion(placementData, {
+      create: false,
+      allowRotation: false,
+      attachToToken: marker.targeted,
+      preSkip: ({ event }) => (event.button === 1 ? false : undefined),
+    });
+    if (!placement) return;
+
+    const placedShape = placement.shapes[0];
+    let shapes;
+    if (marker.shape === "circle") {
+      shapes = [placedShape.toObject()];
+    } else {
+      const rectangles = decomposeMarkerRectangles(marker.state, bounds);
+      const originX = placedShape.origin.x - (centerX + 0.5) * gridSize;
+      const originY = placedShape.origin.y - (centerY + 0.5) * gridSize;
+      shapes = rectangles.map((rectangle) => ({
+        type: "rectangle",
+        x: originX + rectangle.x * gridSize,
+        y: originY + rectangle.y * gridSize,
+        width: rectangle.width * gridSize,
+        height: rectangle.height * gridSize,
+        gridBased: false,
+      }));
+    }
+    const regionData = createMarkerRegionData({
+      marker,
+      color,
+      shapes,
+      attachment: placement.attachment.token?.id ?? null,
+      levels: Array.from(placement.levels),
+      hidden: placement.hidden,
+    });
+    await canvas.scene.createEmbeddedDocuments("Region", [regionData], {
+      controlObject: true,
+    });
+  } catch (err) {
+    debugError("Region marker placement failed:", err);
+    ui.notifications.error(
+      game.i18n.localize("FFXIV.MarkerPlacement.Errors.RegionFailed"),
+    );
+  } finally {
+    ui.controls.activate?.({ control: "ffxiv" });
+  }
+}
+
+function createMarkerRegionData({
+  marker,
+  color,
+  shape,
+  shapes,
+  attachment = null,
+  levels = [canvas.level.id],
+  hidden = false,
+}) {
+  return {
+    name: game.i18n.localize("FFXIV.MarkerPlacement.RegionName"),
+    color,
+    shapes: shapes ?? [shape],
+    levels,
+    attachment: { token: attachment },
+    restriction: { enabled: false },
+    highlightMode: "shapes",
+    displayMeasurements: false,
+    visibility: CONST.REGION_VISIBILITY.ALWAYS,
+    hidden,
+    ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
+    flags: {
+      ffxiv: {
+        markerPlacement: {
+          mode: marker.mode,
+          targeted: marker.targeted,
+          followRotation: marker.followRotation,
+          opacity: marker.opacity,
+        },
+      },
+    },
+  };
+}
+
+function drawRegionMarkerOverlay(region) {
+  const marker = region.document.getFlag("ffxiv", "markerPlacement");
+  let overlay = region[FFXIV_REGION_MARKER_OVERLAY];
+  if (!marker) {
+    overlay?.destroy();
+    region[FFXIV_REGION_MARKER_MASK]?.destroy();
+    delete region[FFXIV_REGION_MARKER_OVERLAY];
+    delete region[FFXIV_REGION_MARKER_MASK];
+    return;
+  }
+
+  overlay ??= region.addChild(new PIXI.Graphics());
+  region[FFXIV_REGION_MARKER_OVERLAY] = overlay;
+  let mask = region[FFXIV_REGION_MARKER_MASK];
+  mask ??= region.addChild(new PIXI.Graphics());
+  region[FFXIV_REGION_MARKER_MASK] = mask;
+  drawRegionMarkerMask(mask, region.document.shapes);
+  overlay.mask = mask;
+  overlay.clear();
+  overlay.eventMode = "none";
+
+  const bounds = region.bounds;
+  if (!bounds.width || !bounds.height) return;
+  const alpha = Math.max(0.35, Number(marker.opacity) || 0.8);
+
+  for (const area of getRegionMarkerAreas(region.document.shapes, bounds)) {
+    const centerX = area.x + area.width / 2;
+    const centerY = area.y + area.height / 2;
+    const size = Math.min(canvas.grid.size, area.width, area.height);
+
+    if (marker.mode === "stack") {
+      const halfExtent = Math.min(
+        Math.min(area.width, area.height) / 2,
+        canvas.grid.size * 3,
+      );
+      const armLength = Math.max(0, halfExtent - canvas.grid.size / 2);
+      const chevronLength =
+        armLength > 0
+          ? Math.min(canvas.grid.size * 0.65, armLength * 0.55)
+          : canvas.grid.size * 0.4;
+      const step =
+        armLength > 0
+          ? Math.max(0, (armLength - chevronLength) / 3)
+          : chevronLength * 0.18;
+      const distance =
+        armLength > 0
+          ? halfExtent - chevronLength / 2
+          : chevronLength * 0.9;
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        drawRegionStackChevrons(
+          overlay,
+          centerX + dx * distance,
+          centerY + dy * distance,
+          -dx,
+          -dy,
+          chevronLength,
+          step,
+          alpha,
+        );
+      }
+    }
+
+    if (marker.mode === "knockback") {
+      drawRegionKnockbackPattern(
+        overlay,
+        centerX,
+        centerY,
+        Math.min(area.width, area.height) / 2,
+        canvas.grid.size,
+        alpha,
+      );
+    }
+
+    if (marker.mode === "tankbuster") {
+      drawTankbusterCautionRing(overlay, centerX, centerY, size, alpha);
+      drawTankbusterChevron(overlay, centerX, centerY - size * 1.05, size * 0.55);
+      drawTankbusterChevron(overlay, centerX, centerY - size * 0.45, size * 0.75);
+    }
+  }
+
+}
+
+function getRegionMarkerAreas(shapes, fallback) {
+  if (shapes.length === 1 && shapes[0].type === "circle") {
+    const shape = shapes[0];
+    return [{
+      x: shape.x - shape.radius,
+      y: shape.y - shape.radius,
+      width: shape.radius * 2,
+      height: shape.radius * 2,
+    }];
+  }
+
+  const rectangles = shapes
+    .filter((shape) => shape.type === "rectangle")
+    .map((shape) => ({
+      x: shape.x - shape.width * shape.anchorX,
+      y: shape.y - shape.height * shape.anchorY,
+      width: shape.width,
+      height: shape.height,
+    }));
+  if (rectangles.length) return mergeConnectedMarkerAreas(rectangles);
+
+  const gridShape = shapes.find((shape) => shape.type === "grid");
+  if (gridShape) {
+    const cells = gridShape.offsets.map((offset) => {
+      const center = canvas.grid.getCenterPoint(offset);
+      return {
+        x: center.x - canvas.grid.sizeX / 2,
+        y: center.y - canvas.grid.sizeY / 2,
+        width: canvas.grid.sizeX,
+        height: canvas.grid.sizeY,
+      };
+    });
+    return mergeConnectedMarkerAreas(cells);
+  }
+  return [fallback];
+}
+
+function mergeConnectedMarkerAreas(rectangles) {
+  const groups = rectangles.map((rectangle) => [rectangle]);
+  const overlaps = (a, b) => {
+    const overlapX =
+      Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+    const overlapY =
+      Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+    return (
+      (overlapX > 0 && overlapY >= 0) ||
+      (overlapY > 0 && overlapX >= 0)
+    );
+  };
+  for (let left = 0; left < groups.length; left++) {
+    for (let right = groups.length - 1; right > left; right--) {
+      if (!groups[left].some((a) => groups[right].some((b) => overlaps(a, b))))
+        continue;
+      groups[left].push(...groups[right]);
+      groups.splice(right, 1);
+      left = -1;
+      break;
+    }
+  }
+  return groups.map((group) => {
+    const minX = Math.min(...group.map((area) => area.x));
+    const minY = Math.min(...group.map((area) => area.y));
+    const maxX = Math.max(...group.map((area) => area.x + area.width));
+    const maxY = Math.max(...group.map((area) => area.y + area.height));
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  });
+}
+
+function drawRegionMarkerMask(graphics, shapes) {
+  graphics.clear();
+  graphics.beginFill(0xffffff);
+  for (const shape of shapes) {
+    if (shape.type === "rectangle") {
+      graphics.drawRect(
+        shape.x - shape.width * shape.anchorX,
+        shape.y - shape.height * shape.anchorY,
+        shape.width,
+        shape.height,
+      );
+    } else if (shape.type === "circle") {
+      graphics.drawCircle(shape.x, shape.y, shape.radius);
+    } else if (shape.type === "grid") {
+      const vertices = canvas.grid.getShape();
+      for (const offset of shape.offsets) {
+        const center = canvas.grid.getCenterPoint(offset);
+        graphics.drawPolygon(
+          vertices.flatMap((vertex) => [
+            center.x + vertex.x,
+            center.y + vertex.y,
+          ]),
+        );
+      }
+    }
+  }
+  graphics.endFill();
+}
+
+function drawRegionKnockbackPattern(
+  graphics,
+  x,
+  y,
+  halfExtent,
+  gridSize,
+  alpha,
+) {
+  const reach = Math.min(halfExtent * 0.82, gridSize * 3);
+  const ringCount = reach >= gridSize * 1.75 ? 3 : 2;
+  const innerRadius = Math.min(gridSize * 0.85, reach * 0.7);
+  const colors = [0xfff4bd, 0xffd166, 0xff5a36];
+  for (let ring = 0; ring < ringCount; ring++) {
+    const chevronCount = ring === 0 ? 8 : ringCount === 3 ? 12 : 10;
+    const radius =
+      innerRadius +
+      (ringCount === 1
+        ? 0
+        : (ring / (ringCount - 1)) * Math.max(0, reach - innerRadius));
+    for (let index = 0; index < chevronCount; index++) {
+      const angle = (index / chevronCount) * Math.PI * 2;
+      const ux = Math.cos(angle);
+      const uy = Math.sin(angle);
+      drawRegionChevron(
+        graphics,
+        x + ux * radius,
+        y + uy * radius,
+        ux,
+        uy,
+        gridSize * (ring === 0 ? 0.26 : ringCount === 3 ? 0.3 : 0.32),
+        colors[ring],
+        ring === 0 ? 1 : alpha,
+      );
+    }
+  }
+}
+
+function drawRegionStackChevrons(
+  graphics,
+  x,
+  y,
+  ux,
+  uy,
+  chevronLength,
+  step,
+  alpha,
+) {
+  const colors = [0xd9362b, 0xf06a2a, 0xffcf35, 0xffffff];
+  for (let index = 0; index < colors.length; index++) {
+    drawRegionChevron(
+      graphics,
+      x + ux * index * step,
+      y + uy * index * step,
+      ux,
+      uy,
+      chevronLength,
+      colors[index],
+      index === colors.length - 1 ? 1 : alpha,
+    );
+  }
+}
+
+function drawRegionChevron(graphics, x, y, ux, uy, size, color, alpha) {
+  const px = -uy;
+  const py = ux;
+  const tipX = x + ux * size * 0.5;
+  const tipY = y + uy * size * 0.5;
+  const backX = x - ux * size * 0.5;
+  const backY = y - uy * size * 0.5;
+  const notchX = x + ux * size * 0.12;
+  const notchY = y + uy * size * 0.12;
+  graphics.beginFill(color, alpha);
+  graphics.drawPolygon([
+    tipX,
+    tipY,
+    backX + px * size * 0.5,
+    backY + py * size * 0.5,
+    backX + px * size * 0.22,
+    backY + py * size * 0.22,
+    notchX,
+    notchY,
+    backX - px * size * 0.22,
+    backY - py * size * 0.22,
+    backX - px * size * 0.5,
+    backY - py * size * 0.5,
+  ]);
+  graphics.endFill();
+}
+
+function drawTankbusterCautionRing(graphics, x, y, size, alpha) {
+  const segments = 20;
+  for (const radius of [size * 0.65, size]) {
+    for (let index = 0; index < segments; index++) {
+      const start = (index / segments) * Math.PI * 2;
+      const end = ((index + 1) / segments) * Math.PI * 2;
+      graphics.lineStyle(size * 0.14, index % 2 ? 0x220000 : 0xff315f, alpha);
+      graphics.arc(x, y, radius, start, end);
+    }
+  }
+}
+
+function drawTankbusterChevron(graphics, x, y, size) {
+  const halfWidth = size * 0.65;
+  const thickness = size * 0.28;
+  graphics.lineStyle(Math.max(2, size * 0.1), 0xff315f, 1);
+  graphics.beginFill(0xf5f5f5, 1);
+  graphics.drawPolygon([
+    x - halfWidth,
+    y - thickness,
+    x,
+    y + halfWidth * 0.65,
+    x + halfWidth,
+    y - thickness,
+    x + halfWidth - thickness,
+    y - thickness * 2,
+    x,
+    y + halfWidth * 0.65 - thickness * 1.4,
+    x - halfWidth + thickness,
+    y - thickness * 2,
+  ]);
+  graphics.endFill();
+}
+
+function decomposeMarkerRectangles(state, bounds) {
+  const rows = state
+    .slice(bounds.minY, bounds.maxY + 1)
+    .map((row) => row.slice(bounds.minX, bounds.maxX + 1));
+  const rectangles = [];
+  const active = new Map();
+
+  for (let y = 0; y < rows.length; y++) {
+    const runs = [];
+    for (let x = 0; x < rows[y].length; ) {
+      if (!rows[y][x]) {
+        x++;
+        continue;
+      }
+      const start = x;
+      while (x < rows[y].length && rows[y][x]) x++;
+      runs.push({ x: start, width: x - start });
+    }
+
+    const next = new Map();
+    for (const run of runs) {
+      const key = `${run.x}:${run.width}`;
+      const rectangle = active.get(key) ?? { ...run, y, height: 0 };
+      rectangle.height++;
+      next.set(key, rectangle);
+    }
+    for (const [key, rectangle] of active) {
+      if (!next.has(key)) rectangles.push(rectangle);
+    }
+    active.clear();
+    for (const [key, rectangle] of next) active.set(key, rectangle);
+  }
+  rectangles.push(...active.values());
+  return rectangles;
+}
+
 async function requestMarkerTileCreation(tileData) {
   if (game.user.isGM)
     return createMarkerTileFromRequest({
@@ -4930,7 +5532,7 @@ async function createMarkerTile(sceneId, tileData) {
   return result[0] ?? null;
 }
 
-async function configureMarkerShape() {
+async function configureMarkerShape({ region = false } = {}) {
   const size = 15;
   const center = Math.floor(size / 2);
   const state = Array.from({ length: size }, () =>
@@ -4939,12 +5541,15 @@ async function configureMarkerShape() {
   for (let y = center - 2; y <= center + 2; y++) {
     for (let x = center - 2; x <= center + 2; x++) state[y][x] = true;
   }
+  const geometry = { shape: "grid", radius: null };
   let selection = {
     state,
     opacity: 0.8,
     type: "enemy",
     mode: "standard",
     targeted: false,
+    followRotation: true,
+    shape: "grid",
   };
   const wrapper = document.createElement("div");
   wrapper.innerHTML = `
@@ -4970,11 +5575,11 @@ async function configureMarkerShape() {
             <option value="allied">${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Ally")}</option>
           </select>
         </div>
-        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
+        ${region ? "" : `<div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
           <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Opacity")}</label>
           <input type="range" id="ffxiv-marker-opacity" min="0" max="100" value="80">
           <span id="ffxiv-marker-opacity-value">80%</span>
-        </div>
+        </div>`}
         <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
           <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Mode")}</label>
           <select id="ffxiv-marker-mode">
@@ -4984,10 +5589,27 @@ async function configureMarkerShape() {
             <option value="tankbuster">${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Tankbuster")}</option>
           </select>
         </div>
-        <label class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
-          <input type="checkbox" id="ffxiv-marker-targeted">
-          ${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Targeted")}
+        <label class="ffxiv-marker-checkbox">
+          <span class="ffxiv-marker-checkbox-control">
+            <input type="checkbox" id="ffxiv-marker-targeted">
+            <span class="checkmark"></span>
+          </span>
+          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Targeted")}</span>
         </label>
+        ${region ? `<label class="ffxiv-marker-checkbox">
+          <span class="ffxiv-marker-checkbox-control">
+            <input type="checkbox" id="ffxiv-marker-follow-rotation" checked disabled>
+            <span class="checkmark"></span>
+          </span>
+          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.FollowRotation")}</span>
+        </label>
+        <label class="ffxiv-marker-checkbox">
+          <span class="ffxiv-marker-checkbox-control">
+            <input type="checkbox" id="ffxiv-marker-circle">
+            <span class="checkmark"></span>
+          </span>
+          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Circle")}</span>
+        </label>` : ""}
         <div class="ffxiv-marker-grid" style="display: grid; grid-template-columns: repeat(${size}, 24px); flex: 0 0 auto;">
           ${state
       .flatMap((row, y) =>
@@ -5000,16 +5622,28 @@ async function configureMarkerShape() {
         </div>
       </div>
       <div class="ffxiv-marker-panel" style="display: flex; flex-direction: column; gap: 8px; flex: 0 0 260px;">
+        ${region ? `<strong>${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Title")}</strong>
+        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
+          <select id="ffxiv-marker-custom" style="min-width: 0; flex: 1;">
+            <option value="">${game.i18n.localize("FFXIV.MarkerPlacement.Custom.New")}</option>
+          </select>
+          <button type="button" id="ffxiv-marker-save" data-tooltip="${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Save")}">
+            <i class="fa-solid fa-floppy-disk"></i>
+          </button>
+          <button type="button" id="ffxiv-marker-delete" data-tooltip="${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Delete")}">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>` : ""}
         <strong>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Presets")}</strong>
 	        <div class="ffxiv-marker-presets" style="display: flex; flex-direction: column; gap: 8px;">
 	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
 	            <button type="button" data-span="1" data-mode="standard">Standard 3x3</button>
 	            <button type="button" data-span="2" data-mode="standard">Standard 5x5</button>
 	          </div>
-	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
+	          ${region ? "" : `<div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
 	            <button type="button" data-circle-span="2" data-mode="standard">Circle 5x5</button>
 	            <button type="button" data-circle-span="3" data-mode="standard">Circle 7x7</button>
-	          </div>
+	          </div>`}
 	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
 	            <button type="button" data-span="1" data-mode="stack">Stack 3x3</button>
 	            <button type="button" data-span="2" data-mode="stack">Stack 5x5</button>
@@ -5033,13 +5667,18 @@ async function configureMarkerShape() {
     null,
     state,
     center,
+    geometry,
     (selectionValue) => {
       selection = selectionValue;
     },
   );
   const confirmed = await foundry.applications.api.DialogV2.wait({
     window: {
-      title: game.i18n.localize("FFXIV.MarkerPlacement.Title"),
+      title: game.i18n.localize(
+        region
+          ? "FFXIV.MarkerPlacement.Title"
+          : "FFXIV.MarkerPlacement.ClassicTitle",
+      ),
       resizable: true,
     },
     position: { width: 760 },
@@ -5065,6 +5704,7 @@ async function configureMarkerShape() {
         html,
         state,
         center,
+        geometry,
         (selectionValue) => {
           selection = selectionValue;
         },
@@ -5081,6 +5721,7 @@ function initializeMarkerShapeDialog(
   html,
   state,
   center,
+  geometry,
   setSelection,
   dialogKey,
 ) {
@@ -5094,13 +5735,18 @@ function initializeMarkerShapeDialog(
   const opacityValue = element.querySelector("#ffxiv-marker-opacity-value");
   const mode = element.querySelector("#ffxiv-marker-mode");
   const targeted = element.querySelector("#ffxiv-marker-targeted");
+  const followRotation = element.querySelector(
+    "#ffxiv-marker-follow-rotation",
+  );
+  const circle = element.querySelector("#ffxiv-marker-circle");
+  const custom = element.querySelector("#ffxiv-marker-custom");
+  const saveCustom = element.querySelector("#ffxiv-marker-save");
+  const deleteCustom = element.querySelector("#ffxiv-marker-delete");
   const preview = element.querySelector("#ffxiv-marker-preview");
   const previewContainer = preview.closest(".ffxiv-marker-preview");
   if (
     !cells.length ||
     !type ||
-    !opacity ||
-    !opacityValue ||
     !mode ||
     !targeted ||
     !preview
@@ -5108,13 +5754,26 @@ function initializeMarkerShapeDialog(
     markerDialogs.delete(element);
     return false;
   }
+  const getOpacity = () => (opacity ? Number(opacity.value) / 100 : 0.8);
+  const updateGeometry = () => {
+    geometry.shape = circle?.checked ? "circle" : "grid";
+    const bounds = getMarkerBounds(state);
+    geometry.radius =
+      geometry.shape === "circle" && bounds
+        ? Math.max(bounds.maxX - bounds.minX + 1, bounds.maxY - bounds.minY + 1) / 2
+        : null;
+  };
   const updateSelection = () => {
+    updateGeometry();
     setSelection({
       state,
-      opacity: Number(opacity.value) / 100,
+      opacity: getOpacity(),
       type: type.value,
       mode: mode.value,
       targeted: targeted.checked,
+      followRotation: followRotation?.checked ?? true,
+      shape: geometry.shape,
+      radius: geometry.radius,
     });
   };
 
@@ -5136,10 +5795,13 @@ function initializeMarkerShapeDialog(
     const rendered = renderMarkerDataUrl(
       {
         state,
-        opacity: Number(opacity.value) / 100,
+        opacity: getOpacity(),
         type: type.value,
         mode: mode.value,
         targeted: targeted.checked,
+        followRotation: followRotation?.checked ?? true,
+        shape: geometry.shape,
+        radius: geometry.radius,
       },
       Math.max(24, Math.round(canvas.grid.size / 3)),
     );
@@ -5175,17 +5837,62 @@ function initializeMarkerShapeDialog(
     };
     image.src = rendered.src;
   };
+  const getCustomMarkers = () =>
+    foundry.utils.deepClone(game.settings.get("ffxiv", "customMarkers") ?? {});
+  const refreshCustomMarkers = (selected = "") => {
+    if (!custom) return;
+    const markers = getCustomMarkers();
+    custom.replaceChildren(
+      new Option(
+        game.i18n.localize("FFXIV.MarkerPlacement.Custom.New"),
+        "",
+      ),
+      ...Object.keys(markers)
+        .sort((a, b) => a.localeCompare(b))
+        .map((name) => new Option(name, name)),
+    );
+    custom.value = selected in markers ? selected : "";
+    deleteCustom.disabled = !custom.value;
+  };
+  const loadCustomMarker = (name) => {
+    const marker = getCustomMarkers()[name];
+    if (!marker) return;
+    for (let y = 0; y < state.length; y++) {
+      for (let x = 0; x < state[y].length; x++) {
+        state[y][x] = Boolean(marker.state?.[y]?.[x]);
+      }
+    }
+    type.value = marker.type === "allied" ? "allied" : "enemy";
+    mode.value = ["standard", "stack", "knockback", "tankbuster"].includes(
+      marker.mode,
+    )
+      ? marker.mode
+      : "standard";
+    targeted.checked = Boolean(marker.targeted);
+    if (followRotation) {
+      followRotation.checked = marker.followRotation !== false;
+      followRotation.disabled = !targeted.checked;
+    }
+    if (circle) circle.checked = Boolean(marker.circle);
+    type.disabled = mode.value === "tankbuster";
+    updateCells();
+    updatePreview();
+  };
   const configurePreset = (span, presetMode) => {
     for (const row of state) row.fill(false);
     for (let y = center - span; y <= center + span; y++) {
       for (let x = center - span; x <= center + span; x++) state[y][x] = true;
     }
     mode.value = presetMode;
+    if (custom) custom.value = "";
+    if (deleteCustom) deleteCustom.disabled = true;
     type.disabled = presetMode === "tankbuster";
     updateCells();
     updatePreview();
   };
   const configureCirclePreset = (span, presetMode) => {
+    geometry.shape = "circle";
+    geometry.radius = span + 0.5;
     for (const row of state) row.fill(false);
     if (span === 1) {
       state[center][center] = true;
@@ -5255,7 +5962,7 @@ function initializeMarkerShapeDialog(
         );
       });
     });
-  opacity.addEventListener("input", () => {
+  opacity?.addEventListener("input", () => {
     opacityValue.textContent = `${opacity.value}%`;
     updatePreview();
   });
@@ -5267,7 +5974,69 @@ function initializeMarkerShapeDialog(
     type.disabled = mode.value === "tankbuster";
     updatePreview();
   });
-  targeted.addEventListener("change", updatePreview);
+  targeted.addEventListener("change", () => {
+    if (followRotation) followRotation.disabled = !targeted.checked;
+    updatePreview();
+  });
+  followRotation?.addEventListener("change", updatePreview);
+  circle?.addEventListener("change", updatePreview);
+  custom?.addEventListener("change", () => {
+    deleteCustom.disabled = !custom.value;
+    if (custom.value) loadCustomMarker(custom.value);
+  });
+  saveCustom?.addEventListener("click", async (event) => {
+    event.preventDefault();
+    let name = custom.value;
+    if (!name) {
+      try {
+        name = await foundry.applications.api.DialogV2.prompt({
+          window: {
+            title: game.i18n.localize("FFXIV.MarkerPlacement.Custom.NameTitle"),
+          },
+          content: `<input type="text" name="name" required autofocus>`,
+          ok: {
+            label: game.i18n.localize("FFXIV.MarkerPlacement.Custom.Save"),
+            callback: (_event, button) =>
+              button.form.elements.name.value.trim(),
+          },
+        });
+      } catch {
+        return;
+      }
+      if (!name) return;
+    }
+    const markers = getCustomMarkers();
+    markers[name] = {
+      state: state.map((row) => Array.from(row, Boolean)),
+      type: type.value,
+      mode: mode.value,
+      targeted: targeted.checked,
+      followRotation: followRotation?.checked ?? true,
+      circle: Boolean(circle?.checked),
+    };
+    await game.settings.set("ffxiv", "customMarkers", markers);
+    refreshCustomMarkers(name);
+  });
+  deleteCustom?.addEventListener("click", async (event) => {
+    event.preventDefault();
+    const name = custom.value;
+    if (!name) return;
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: {
+        title: game.i18n.localize("FFXIV.MarkerPlacement.Custom.Delete"),
+      },
+      content: `<p>${game.i18n.format(
+        "FFXIV.MarkerPlacement.Custom.DeleteConfirm",
+        { name },
+      )}</p>`,
+    });
+    if (!confirmed) return;
+    const markers = getCustomMarkers();
+    delete markers[name];
+    await game.settings.set("ffxiv", "customMarkers", markers);
+    refreshCustomMarkers();
+  });
+  refreshCustomMarkers();
   updateCells();
   updatePreview();
   return true;
@@ -5315,6 +6084,39 @@ function renderMarkerDataUrl(marker, gridSize) {
   const cropped = marker.state
     .slice(bounds.minY, bounds.maxY + 1)
     .map((row) => row.slice(bounds.minX, bounds.maxX + 1));
+  if (marker.shape === "circle" && marker.radius) {
+    const diameter = marker.radius * 2;
+    const width = diameter * gridSize;
+    const height = width;
+    const canvasElement = document.createElement("canvas");
+    canvasElement.width = width;
+    canvasElement.height = height;
+    const ctx = canvasElement.getContext("2d");
+    const baseColor =
+      marker.mode === "tankbuster"
+        ? "firebrick"
+        : marker.type === "enemy"
+          ? "orange"
+          : "#66ffff";
+    ctx.globalAlpha = marker.opacity;
+    ctx.fillStyle = baseColor;
+    ctx.beginPath();
+    ctx.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2);
+    ctx.clip();
+    drawMarkerOverlays(ctx, cropped, gridSize, marker);
+    ctx.restore();
+    return {
+      src: canvasElement.toDataURL("image/webp"),
+      width,
+      height,
+      widthCells: diameter,
+      heightCells: diameter,
+    };
+  }
   const widthCells = cropped[0].length;
   const heightCells = cropped.length;
   const width = widthCells * gridSize;
@@ -5348,7 +6150,16 @@ function renderMarkerDataUrl(marker, gridSize) {
     }
   }
 
-  drawMarkerOverlays(ctx, cropped, width, height, gridSize, marker);
+  ctx.save();
+  ctx.beginPath();
+  for (let y = 0; y < heightCells; y++) {
+    for (let x = 0; x < widthCells; x++) {
+      if (cropped[y][x]) ctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
+    }
+  }
+  ctx.clip();
+  drawMarkerOverlays(ctx, cropped, gridSize, marker);
+  ctx.restore();
   return {
     src: canvasElement.toDataURL("image/webp"),
     width,
@@ -5390,108 +6201,259 @@ function drawMarkerCell(ctx, x, y, size, [top, left, right, bottom]) {
   ctx.closePath();
 }
 
-function drawMarkerOverlays(ctx, cropped, width, height, gridSize, marker) {
-  const widthCells = cropped[0].length;
-  const heightCells = cropped.length;
-  const centerX = Math.floor(widthCells / 2);
-  const centerY = Math.floor(heightCells / 2);
+function drawMarkerOverlays(ctx, cropped, gridSize, marker) {
+  for (const area of getMarkerComponentAreas(cropped, gridSize)) {
+    const cx = area.x + area.width / 2;
+    const cy = area.y + area.height / 2;
 
-  if (marker.mode === "stack") {
-    for (const { dx, dy } of [
-      { dx: 1, dy: 0 },
-      { dx: -1, dy: 0 },
-      { dx: 0, dy: 1 },
-      { dx: 0, dy: -1 },
-    ]) {
-      for (let step = 1; step <= 2; step++) {
-        const x = centerX + dx * step;
-        const y = centerY + dy * step;
-        if (!cropped[y]?.[x]) break;
-        drawMarkerArrow(
+    if (marker.mode === "stack") {
+      const halfExtent = Math.min(
+        Math.min(area.width, area.height) / 2,
+        gridSize * 3,
+      );
+      const armLength = Math.max(0, halfExtent - gridSize / 2);
+      const chevronLength =
+        armLength > 0
+          ? Math.min(gridSize * 0.65, armLength * 0.55)
+          : gridSize * 0.4;
+      const step =
+        armLength > 0
+          ? Math.max(0, (armLength - chevronLength) / 3)
+          : chevronLength * 0.18;
+      const distance =
+        armLength > 0
+          ? halfExtent - chevronLength / 2
+          : chevronLength * 0.9;
+      for (const { dx, dy } of [
+        { dx: 1, dy: 0 },
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: 0, dy: -1 },
+      ]) {
+        drawCanvasStackChevrons(
           ctx,
-          x * gridSize + gridSize / 2,
-          y * gridSize + gridSize / 2,
-          width / 2,
-          height / 2,
-          gridSize * 0.4,
-          "yellow",
-          step === 1 ? marker.opacity : marker.opacity * 0.5,
-          true,
+          cx + dx * distance,
+          cy + dy * distance,
+          -dx,
+          -dy,
+          chevronLength,
+          step,
+          marker.opacity,
         );
       }
     }
-  }
 
-  if (marker.mode === "knockback") {
-    for (let y = 0; y < heightCells; y++) {
-      for (let x = 0; x < widthCells; x++) {
-        if (!cropped[y][x] || (x === centerX && y === centerY)) continue;
-        drawMarkerArrow(
-          ctx,
-          x * gridSize + gridSize / 2,
-          y * gridSize + gridSize / 2,
-          width / 2,
-          height / 2,
-          gridSize * 0.6,
-          "#8b4513",
-          marker.opacity * 0.5,
-          false,
-        );
-      }
+    if (marker.mode === "knockback") {
+      drawCanvasKnockbackPattern(
+        ctx,
+        cx,
+        cy,
+        Math.min(area.width, area.height) / 2,
+        gridSize,
+        marker.opacity,
+      );
+    }
+
+    if (marker.mode === "tankbuster") {
+      drawCanvasTankbusterCautionRing(ctx, cx, cy, gridSize, marker.opacity);
+      drawCanvasTankbusterChevron(
+        ctx,
+        cx,
+        cy - gridSize * 1.05,
+        gridSize * 0.55,
+      );
+      drawCanvasTankbusterChevron(
+        ctx,
+        cx,
+        cy - gridSize * 0.45,
+        gridSize * 0.75,
+      );
     }
   }
 
-  if (marker.targeted && cropped[centerY - 1]?.[centerX]) {
-    const cx = centerX * gridSize + gridSize / 2;
-    const cy = (centerY - 1) * gridSize + gridSize / 2;
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = "red";
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - gridSize * 0.4);
-    ctx.lineTo(cx + gridSize * 0.2, cy);
-    ctx.lineTo(cx, cy + gridSize * 0.4);
-    ctx.lineTo(cx - gridSize * 0.2, cy);
-    ctx.closePath();
-    ctx.fill();
-    ctx.lineWidth = Math.max(2, gridSize * 0.03);
-    ctx.strokeStyle = "black";
-    ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function getMarkerComponentAreas(state, gridSize) {
+  const visited = state.map((row) => row.map(() => false));
+  const areas = [];
+  for (let startY = 0; startY < state.length; startY++) {
+    for (let startX = 0; startX < state[startY].length; startX++) {
+      if (!state[startY][startX] || visited[startY][startX]) continue;
+      const queue = [[startX, startY]];
+      visited[startY][startX] = true;
+      let minX = startX;
+      let minY = startY;
+      let maxX = startX;
+      let maxY = startY;
+      while (queue.length) {
+        const [x, y] = queue.pop();
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+        for (const [nextX, nextY] of [
+          [x + 1, y],
+          [x - 1, y],
+          [x, y + 1],
+          [x, y - 1],
+        ]) {
+          if (
+            !state[nextY]?.[nextX] ||
+            visited[nextY]?.[nextX]
+          )
+            continue;
+          visited[nextY][nextX] = true;
+          queue.push([nextX, nextY]);
+        }
+      }
+      areas.push({
+        x: minX * gridSize,
+        y: minY * gridSize,
+        width: (maxX - minX + 1) * gridSize,
+        height: (maxY - minY + 1) * gridSize,
+      });
+    }
+  }
+  return areas;
+}
+
+function drawCanvasKnockbackPattern(
+  ctx,
+  x,
+  y,
+  halfExtent,
+  gridSize,
+  alpha,
+) {
+  const reach = Math.min(halfExtent * 0.82, gridSize * 3);
+  const ringCount = reach >= gridSize * 1.75 ? 3 : 2;
+  const innerRadius = Math.min(gridSize * 0.85, reach * 0.7);
+  const colors = ["#fff4bd", "#ffd166", "#ff5a36"];
+  for (let ring = 0; ring < ringCount; ring++) {
+    const chevronCount = ring === 0 ? 8 : ringCount === 3 ? 12 : 10;
+    const radius =
+      innerRadius +
+      (ringCount === 1
+        ? 0
+        : (ring / (ringCount - 1)) * Math.max(0, reach - innerRadius));
+    for (let index = 0; index < chevronCount; index++) {
+      const angle = (index / chevronCount) * Math.PI * 2;
+      const ux = Math.cos(angle);
+      const uy = Math.sin(angle);
+      drawCanvasChevron(
+        ctx,
+        x + ux * radius,
+        y + uy * radius,
+        ux,
+        uy,
+        gridSize * (ring === 0 ? 0.26 : ringCount === 3 ? 0.3 : 0.32),
+        colors[ring],
+        ring === 0 ? 1 : alpha,
+      );
+    }
   }
   ctx.globalAlpha = 1;
 }
 
-function drawMarkerArrow(
-  ctx,
-  tileX,
-  tileY,
-  originX,
-  originY,
-  length,
-  color,
-  alpha,
-  inward,
-) {
-  const dx = inward ? originX - tileX : tileX - originX;
-  const dy = inward ? originY - tileY : tileY - originY;
-  const distance = Math.hypot(dx, dy);
-  if (!distance) return;
-  const ux = dx / distance;
-  const uy = dy / distance;
+function drawCanvasChevron(ctx, x, y, ux, uy, size, color, alpha) {
   const px = -uy;
   const py = ux;
-  const halfLength = length / 2;
-  const tipX = tileX + ux * halfLength;
-  const tipY = tileY + uy * halfLength;
-  const baseX = tileX - ux * halfLength;
-  const baseY = tileY - uy * halfLength;
+  const tipX = x + ux * size * 0.5;
+  const tipY = y + uy * size * 0.5;
+  const backX = x - ux * size * 0.5;
+  const backY = y - uy * size * 0.5;
+  const notchX = x + ux * size * 0.12;
+  const notchY = y + uy * size * 0.12;
   ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(baseX + px * length * 0.5, baseY + py * length * 0.5);
-  ctx.lineTo(baseX - px * length * 0.5, baseY - py * length * 0.5);
-  ctx.lineTo(tipX, tipY);
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(backX + px * size * 0.5, backY + py * size * 0.5);
+  ctx.lineTo(backX + px * size * 0.22, backY + py * size * 0.22);
+  ctx.lineTo(notchX, notchY);
+  ctx.lineTo(backX - px * size * 0.22, backY - py * size * 0.22);
+  ctx.lineTo(backX - px * size * 0.5, backY - py * size * 0.5);
   ctx.closePath();
   ctx.fill();
+}
+
+function drawCanvasStackChevrons(
+  ctx,
+  x,
+  y,
+  ux,
+  uy,
+  chevronLength,
+  step,
+  alpha,
+) {
+  const colors = ["#d9362b", "#f06a2a", "#ffcf35", "#ffffff"];
+  for (let index = 0; index < colors.length; index++) {
+    const cx = x + ux * index * step;
+    const cy = y + uy * index * step;
+    const length = chevronLength;
+    const px = -uy;
+    const py = ux;
+    const tipX = cx + ux * length * 0.5;
+    const tipY = cy + uy * length * 0.5;
+    const backX = cx - ux * length * 0.5;
+    const backY = cy - uy * length * 0.5;
+    const notchX = cx + ux * length * 0.12;
+    const notchY = cy + uy * length * 0.12;
+    ctx.globalAlpha = index === colors.length - 1 ? 1 : alpha;
+    ctx.fillStyle = colors[index];
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(backX + px * length * 0.5, backY + py * length * 0.5);
+    ctx.lineTo(backX + px * length * 0.22, backY + py * length * 0.22);
+    ctx.lineTo(notchX, notchY);
+    ctx.lineTo(backX - px * length * 0.22, backY - py * length * 0.22);
+    ctx.lineTo(backX - px * length * 0.5, backY - py * length * 0.5);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawCanvasTankbusterCautionRing(ctx, x, y, size, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = size * 0.14;
+  for (const radius of [size * 0.65, size]) {
+    ctx.strokeStyle = "#ff315f";
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "#220000";
+    ctx.setLineDash([size * 0.22, size * 0.22]);
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCanvasTankbusterChevron(ctx, x, y, size) {
+  const halfWidth = size * 0.65;
+  const thickness = size * 0.28;
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#f5f5f5";
+  ctx.strokeStyle = "#ff315f";
+  ctx.lineWidth = Math.max(2, size * 0.1);
+  ctx.beginPath();
+  ctx.moveTo(x - halfWidth, y - thickness);
+  ctx.lineTo(x, y + halfWidth * 0.65);
+  ctx.lineTo(x + halfWidth, y - thickness);
+  ctx.lineTo(x + halfWidth - thickness, y - thickness * 2);
+  ctx.lineTo(x, y + halfWidth * 0.65 - thickness * 1.4);
+  ctx.lineTo(x - halfWidth + thickness, y - thickness * 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 async function previewMarkerPlacement(rendered) {
