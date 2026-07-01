@@ -328,11 +328,12 @@
       box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.12), 0 2px 8px rgba(0, 0, 0, 0.42);
     }
 
-    &:has(.ability-sheet-tabs):not(.minion-mount-sheet):not(.dialog) {
+    &:has(.ability-sheet-tabs):not(:has(.minion-mount-sheet)):not(:has(.dialog)) {
       min-width: 720px;
     }
 
-    &:has(.consumable-item-sheet) {
+    &:has(.consumable-item-sheet),
+    &:has(.minion-mount-sheet) {
       min-width: 425px;
     }
 
@@ -484,6 +485,25 @@
       max-width: 100%;
       min-width: 0;
       overflow-x: hidden;
+    }
+
+    &.minion-mount-sheet .sheet-header {
+      max-width: 100%;
+      min-width: 0;
+      width: 100%;
+    }
+
+    &.minion-mount-sheet .sheet-header .header-fields {
+      flex: 1 1 auto;
+      max-width: calc(100% - 52px);
+    }
+
+    &.minion-mount-sheet .ability-form-grid-2 {
+      grid-template-columns: repeat(auto-fit, minmax(min(14em, 100%), 1fr));
+    }
+
+    &.minion-mount-sheet .item-shop-tier-content:has(.item-shop-tier-custom) {
+      grid-template-columns: repeat(auto-fit, minmax(min(8em, 100%), 1fr));
     }
 
     .ability-sheet-card input:not([type="checkbox"]):not([type="radio"]),
@@ -913,12 +933,23 @@
       width: 100%;
     }
 
+    &.minion-mount-sheet .ability-sheet-panel,
+    &.minion-mount-sheet .item-details-card {
+      margin-inline: 0;
+      width: 100%;
+    }
+
     &.minion-mount-sheet .minion-details-summary {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       margin: 0;
       padding: 0 5px;
+    }
+
+    &.minion-mount-sheet .minion-meta-pill {
+      max-width: 100%;
+      overflow-wrap: anywhere;
     }
 
     &.minion-mount-sheet .minion-details-editor {
@@ -1060,28 +1091,28 @@
       overflow-wrap: break-word;
     }
 
-    .ability-automation-entry summary {
+    .ability-automation-entry > summary {
       display: flex;
       gap: 4px;
       align-items: baseline;
       cursor: pointer;
     }
 
-    .ability-automation-entry summary::marker {
+    .ability-automation-entry > summary::marker {
       content: "";
     }
 
-    .ability-automation-entry summary::-webkit-details-marker {
+    .ability-automation-entry > summary::-webkit-details-marker {
       display: none;
     }
 
-    .ability-automation-entry summary::before {
+    .ability-automation-entry > summary::before {
       content: "\25B8";
       flex: 0 0 auto;
       color: var(--text-color);
     }
 
-    .ability-automation-entry[open] summary::before {
+    .ability-automation-entry[open] > summary::before {
       content: "\25BE";
     }
 
@@ -1120,15 +1151,61 @@
     }
 
     .ability-automation-fields label {
-      display: grid;
-      grid-template-columns: minmax(5.5em, 0.8fr) minmax(0, 1.2fr);
-      gap: 4px;
-      align-items: center;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: stretch;
       margin: 0;
     }
 
     .ability-automation-fields label span {
       font-size: 12px;
+    }
+
+    .automation-help {
+      display: inline-block;
+      position: relative;
+      vertical-align: text-bottom;
+      z-index: 2;
+    }
+
+    .automation-help[open] {
+      z-index: 3;
+    }
+
+    .automation-help summary {
+      align-items: center;
+      background: rgba(8, 8, 8, 0.74);
+      border: 1px solid rgba(225, 190, 95, 0.42);
+      border-radius: 50%;
+      box-sizing: border-box;
+      color: var(--text-color);
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 10px;
+      height: 14px;
+      justify-content: center;
+      line-height: 1;
+      list-style: none;
+      width: 14px;
+    }
+
+    .automation-help summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .automation-help > span {
+      background: rgba(12, 12, 12, 0.96);
+      border: 1px solid rgba(225, 190, 95, 0.42);
+      border-radius: 4px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+      color: var(--text-color);
+      left: 18px;
+      line-height: 1.35;
+      padding: 6px 8px;
+      position: absolute;
+      top: -4px;
+      width: 220px;
     }
 
     .ability-automation-fields input,
@@ -1152,12 +1229,64 @@
 
     .ability-automation-fields .ability-automation-checkbox {
       display: flex;
-      gap: 4px;
+      flex-direction: row;
+      gap: 8px;
       align-items: center;
+      min-height: 26px;
     }
 
-    .ability-automation-fields .ability-automation-checkbox input {
-      width: auto;
+    .ability-automation-checkbox > span {
+      font-size: 12px;
+    }
+
+    .ability-automation-checkbox-control {
+      align-items: center;
+      display: inline-flex;
+      height: 16px;
+      justify-content: center;
+      position: relative;
+      width: 16px;
+    }
+
+    .ability-automation-fields .ability-automation-checkbox input[type="checkbox"] {
+      appearance: none !important;
+      cursor: pointer !important;
+      height: 16px !important;
+      left: 0 !important;
+      margin: 0 !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      top: 0 !important;
+      width: 16px !important;
+      z-index: 1 !important;
+    }
+
+    .ability-automation-checkbox .checkmark {
+      align-items: center;
+      background: rgba(8, 8, 8, 0.74);
+      border: 1px solid rgba(225, 190, 95, 0.42);
+      border-radius: 4px;
+      box-shadow: inset 0 0 0 1px rgba(255, 236, 174, 0.07), 0 1px 2px rgba(0, 0, 0, 0.32);
+      box-sizing: border-box;
+      display: inline-flex;
+      height: 16px;
+      justify-content: center;
+      pointer-events: none;
+      width: 16px;
+    }
+
+    .ability-automation-checkbox input[type="checkbox"]:checked + .checkmark {
+      background: linear-gradient(180deg, #f7d979 0%, #c18427 100%);
+      border-color: rgba(255, 232, 153, 0.82);
+      box-shadow: inset 0 0 0 1px rgba(255, 249, 207, 0.26), 0 0 5px rgba(202, 137, 39, 0.42);
+    }
+
+    .ability-automation-checkbox input[type="checkbox"]:checked + .checkmark::after {
+      background: rgba(39, 24, 6, 0.88);
+      border-radius: 999px;
+      content: "";
+      height: 6px;
+      width: 6px;
     }
 
     @media (max-width: 620px) {

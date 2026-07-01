@@ -27,6 +27,7 @@ export const preloadHandlebarsTemplates = async function () {
     "systems/ffxiv/templates/actor/parts/tabs.hbs",
     // Item partials
     "systems/ffxiv/templates/item/parts/box.hbs",
+    "systems/ffxiv/templates/item/parts/automation-help.hbs",
     "systems/ffxiv/templates/item/parts/combo-chain.hbs",
     "systems/ffxiv/templates/item/parts/item-effects.hbs",
     "systems/ffxiv/templates/item/parts/item-summons.hbs",

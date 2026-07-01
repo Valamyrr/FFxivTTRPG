@@ -572,7 +572,7 @@
                   </summary>
                   <div class="ability-automation-fields">
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationName"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationName"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationNameHelp"}}</span>
                       <input class="effect-requirement-field"
                              data-index="{{index}}"
                              data-field="name"
@@ -580,7 +580,7 @@
                              value="{{entry.name}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationMode"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationMode"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationModeHelp"}}</span>
                       <select class="effect-requirement-field"
                               data-index="{{index}}"
                               data-field="mode">
@@ -589,7 +589,7 @@
                       </select>
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationBypass"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationBypass"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationBypassHelp"}}</span>
                       <input class="effect-requirement-field"
                              data-index="{{index}}"
                              data-field="bypass"
@@ -597,7 +597,7 @@
                              value="{{entry.bypassText}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationSpentResource"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationSpentResource"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceHelp"}}</span>
                       <input class="effect-requirement-field"
                              data-index="{{index}}"
                              data-field="resourceSpent"
@@ -605,7 +605,7 @@
                              value="{{entry.resourceSpent}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMin"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMin"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceMinHelp"}}</span>
                       <input class="effect-requirement-field"
                              data-index="{{index}}"
                              data-field="resourceSpentMin"
@@ -613,21 +613,24 @@
                              value="{{entry.resourceSpentMin}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMax"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMax"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceMaxHelp"}}</span>
                       <input class="effect-requirement-field"
                              data-index="{{index}}"
                              data-field="resourceSpentMax"
                              type="number"
                              value="{{entry.resourceSpentMax}}" />
                     </label>
-                    <label class="ability-automation-checkbox">
-                      <input class="effect-requirement-field"
-                             data-index="{{index}}"
-                             data-field="consume"
-                             type="checkbox"
-                             {{#if entry.consume}}checked{{/if}} />
-                      <span>{{localize "FFXIV.Abilities.AutomationConsume"}}</span>
-                    </label>
+                    <div class="ability-automation-checkbox">
+                      <span>{{localize "FFXIV.Abilities.AutomationConsume"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationConsumeHelp"}}</span>
+                      <span class="ability-automation-checkbox-control">
+                        <input class="effect-requirement-field"
+                               data-index="{{index}}"
+                               data-field="consume"
+                               type="checkbox"
+                               {{#if entry.consume}}checked{{/if}} />
+                        <span class="checkmark"></span>
+                      </span>
+                    </div>
                   </div>
                 </details>
                 {{#if ../itemEditMode}}
@@ -658,7 +661,7 @@
                   </summary>
                   <div class="ability-automation-fields">
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationTrigger"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationTrigger"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationTriggerHelp"}}</span>
                       <select class="effect-rule-field"
                               data-index="{{index}}"
                               data-field="trigger">
@@ -668,7 +671,7 @@
                       </select>
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationAction"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationAction"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationActionHelp"}}</span>
                       <select class="effect-rule-field"
                               data-index="{{index}}"
                               data-field="action">
@@ -680,7 +683,7 @@
                     </label>
                     {{#if entry.isResource}}
                       <label>
-                        <span>{{localize "FFXIV.Abilities.AutomationOperation"}}</span>
+                        <span>{{localize "FFXIV.Abilities.AutomationOperation"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationOperationHelp"}}</span>
                         <select class="effect-rule-field"
                                 data-index="{{index}}"
                                 data-field="operation">
@@ -692,7 +695,7 @@
                         </select>
                       </label>
                       <label>
-                        <span>{{localize "FFXIV.Abilities.AutomationResourceName"}}</span>
+                        <span>{{localize "FFXIV.Abilities.AutomationResourceName"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationResourceNameHelp"}}</span>
                         <input class="effect-rule-field"
                                data-index="{{index}}"
                                data-field="resource"
@@ -700,7 +703,7 @@
                                value="{{entry.resource}}" />
                       </label>
                       <label>
-                        <span>{{localize "FFXIV.Abilities.AutomationAmount"}}</span>
+                        <span>{{localize "FFXIV.Abilities.AutomationAmount"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationAmountHelp"}}</span>
                         <input class="effect-rule-field"
                                data-index="{{index}}"
                                data-field="amount"
@@ -708,7 +711,7 @@
                                value="{{entry.amount}}" />
                       </label>
                       <label>
-                        <span>{{localize "FFXIV.Abilities.AutomationMinimum"}}</span>
+                        <span>{{localize "FFXIV.Abilities.AutomationMinimum"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationMinimumHelp"}}</span>
                         <input class="effect-rule-field"
                                data-index="{{index}}"
                                data-field="min"
@@ -716,7 +719,7 @@
                                value="{{entry.min}}" />
                       </label>
                       <label>
-                        <span>{{localize "FFXIV.Abilities.AutomationSpentResource"}}</span>
+                        <span>{{localize "FFXIV.Abilities.AutomationSpentResource"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceHelp"}}</span>
                         <input class="effect-rule-field"
                                data-index="{{index}}"
                                data-field="spentResource"
@@ -725,7 +728,7 @@
                       </label>
                     {{/if}}
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationThreshold"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationThreshold"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationThresholdHelp"}}</span>
                       <input class="effect-rule-field"
                              data-index="{{index}}"
                              data-field="threshold"
@@ -733,7 +736,7 @@
                              value="{{entry.threshold}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationName"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationName"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationNameHelp"}}</span>
                       <input class="effect-rule-field"
                              data-index="{{index}}"
                              data-field="name"
@@ -741,7 +744,7 @@
                              value="{{entry.name}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationIconOverride"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationIconOverride"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationIconOverrideHelp"}}</span>
                       <div class="ability-automation-file">
                         <input class="effect-rule-field"
                                data-index="{{index}}"
@@ -757,7 +760,7 @@
                       </div>
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationRemoveFirst"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationRemoveFirst"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationRemoveFirstHelp"}}</span>
                       <input class="effect-rule-field"
                              data-index="{{index}}"
                              data-field="remove"
@@ -765,7 +768,7 @@
                              value="{{entry.removeText}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationRequires"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationRequires"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationRequiresHelp"}}</span>
                       <input class="effect-rule-field"
                              data-index="{{index}}"
                              data-field="requires"
@@ -773,7 +776,7 @@
                              value="{{entry.requiresText}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationSpentResource"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationSpentResource"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceHelp"}}</span>
                       <input class="effect-rule-field"
                              data-index="{{index}}"
                              data-field="requiresResourceSpent"
@@ -781,7 +784,7 @@
                              value="{{entry.requiresResourceSpent}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMin"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMin"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceMinHelp"}}</span>
                       <input class="effect-rule-field"
                              data-index="{{index}}"
                              data-field="requiresResourceSpentMin"
@@ -789,7 +792,7 @@
                              value="{{entry.requiresResourceSpentMin}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMax"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMax"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceMaxHelp"}}</span>
                       <input class="effect-rule-field"
                              data-index="{{index}}"
                              data-field="requiresResourceSpentMax"
@@ -797,7 +800,7 @@
                              value="{{entry.requiresResourceSpentMax}}" />
                     </label>
                     <label>
-                      <span>{{localize "FFXIV.Abilities.AutomationForbids"}}</span>
+                      <span>{{localize "FFXIV.Abilities.AutomationForbids"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationForbidsHelp"}}</span>
                       <input class="effect-rule-field"
                              data-index="{{index}}"
                              data-field="forbids"
@@ -806,7 +809,7 @@
                     </label>
                     {{#if entry.isToggle}}
                       <label>
-                        <span>{{localize "FFXIV.Abilities.AutomationToggle1"}}</span>
+                        <span>{{localize "FFXIV.Abilities.AutomationToggle1"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationToggle1Help"}}</span>
                         <input class="effect-rule-field"
                                data-index="{{index}}"
                                data-field="toggle1Name"
@@ -814,7 +817,7 @@
                                value="{{entry.toggle1Name}}" />
                       </label>
                       <label>
-                        <span>{{localize "FFXIV.Abilities.AutomationToggle2"}}</span>
+                        <span>{{localize "FFXIV.Abilities.AutomationToggle2"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationToggle2Help"}}</span>
                         <input class="effect-rule-field"
                                data-index="{{index}}"
                                data-field="toggle2Name"

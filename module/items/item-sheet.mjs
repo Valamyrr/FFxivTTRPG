@@ -52,7 +52,7 @@ const ABILITY_SHEET_TYPES = new Set([
   "instant_ability",
 ]);
 
-const ABILITY_SHEET_MIN_WIDTH = 720;
+const ABILITY_SHEET_MIN_WIDTH = 760;
 const ITEM_ENRICHED_FIELDS = [
   "base_effect",
   "challenge",
@@ -391,6 +391,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this._activateSummonDropZone();
     this._activateFormulaFieldVisibility();
     this._activateAutomationExpansionTracking();
+    this._activateAutomationHelp();
     this._applyItemEditMode();
     this._restoreSheetScroll();
   }
@@ -490,6 +491,16 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         entry.addEventListener("toggle", () =>
           track(entry, this._expandedEffectRules),
         );
+      });
+  }
+
+  _activateAutomationHelp() {
+    this.element
+      .querySelectorAll(".automation-help")
+      .forEach((help) => {
+        help.addEventListener("mouseleave", () => {
+          help.open = false;
+        });
       });
   }
 
