@@ -962,13 +962,15 @@ export class FFXIVItem extends Item {
   async roll() {
     this._ffxivJobResourceCostResult = {};
     if (!(await this._confirmTargetSelection())) return;
-    if (!this._canUseAbility()) return;
-    if (!this._canUseLimitBreak()) return;
-    if (!(await this._consumeJobResourceCostsIfNeeded())) return;
-    if (!(await this._spendMPCostIfNeeded())) return;
-    if (!(await this._spendHPCostIfNeeded())) return;
-    if (!(await this._consumeLimitationIfNeeded())) return;
-    if (!(await this._consumeLimitBreakIfNeeded())) return;
+    if (!this._canUseAbility()) return this._playErrorSound();
+    if (!this._canUseLimitBreak()) return this._playErrorSound();
+    if (!(await this._consumeJobResourceCostsIfNeeded())) {
+      return this._playErrorSound();
+    }
+    if (!(await this._spendMPCostIfNeeded())) return this._playErrorSound();
+    if (!(await this._spendHPCostIfNeeded())) return this._playErrorSound();
+    if (!(await this._consumeLimitationIfNeeded())) return this._playErrorSound();
+    if (!(await this._consumeLimitBreakIfNeeded())) return this._playErrorSound();
     await this._clearVolatileJobResourcesIfNeeded();
     if (getAbilitySubtype(this) === "limit_break") playLimitBreakActivatedSound();
     await this._removeTranscendentStatus();
@@ -1048,6 +1050,24 @@ export class FFXIVItem extends Item {
 
     await this._consumeFromInventoryIfNeeded();
     this._clearTargetsAfterAbilityUse();
+  }
+
+  _playErrorSound() {
+    const configured = game.settings.get(
+      "ffxiv",
+      "soundNotificationFFXIV_error",
+    );
+    const src = configured || "systems/ffxiv/assets/sfx/ffxiv-error.ogg";
+    foundry.audio.AudioHelper.play(
+      {
+        src,
+        channel: "interface",
+        volume: 0.8,
+        autoplay: true,
+        loop: false,
+      },
+      false,
+    );
   }
 
   _clearTargetsAfterAbilityUse() {

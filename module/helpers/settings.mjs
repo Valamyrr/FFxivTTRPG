@@ -48,6 +48,7 @@ const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_limitBreakCharged: "systems/ffxiv/assets/sfx/ffxiv-limit-break-charged.ogg",
   soundNotificationFFXIV_limitBreakActivated: "systems/ffxiv/assets/sfx/ffxiv-limit-break-activated.ogg",
   soundNotificationFFXIV_enmity: "systems/ffxiv/assets/sfx/ffxiv-aggro.ogg",
+  soundNotificationFFXIV_error: "systems/ffxiv/assets/sfx/ffxiv-error.ogg",
 };
 
 function isDefaultPlaceholderValue(value, placeholder) {
@@ -224,6 +225,7 @@ class FFXIVSoundSettingsMenu extends FFXIVSettingsSubmenu {
     "soundNotificationFFXIV_limitBreakCharged",
     "soundNotificationFFXIV_limitBreakActivated",
     "soundNotificationFFXIV_enmity",
+    "soundNotificationFFXIV_error",
   ];
   static placeholders = DEFAULT_SOUNDS;
 }
@@ -721,6 +723,16 @@ export class SettingsHelpers {
     });
     game.settings.register("ffxiv", "soundNotificationFFXIV_enmity", {
       name: "FFXIV.Settings.soundNotificationFFXIV_enmity",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
+      scope: "world",
+      config: false,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media",
+    });
+    game.settings.register("ffxiv", "soundNotificationFFXIV_error", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_error",
       hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
       config: false,
