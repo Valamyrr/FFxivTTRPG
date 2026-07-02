@@ -288,6 +288,17 @@ class FFXIVCustomTagsSettingsMenu extends FFXIVSettingsSubmenu {
   };
 }
 
+class FFXIVHotbarSettingsMenu extends FFXIVSettingsSubmenu {
+  static menuId = "hotbar-settings";
+  static titleKey = "FFXIV.Settings.HotbarSettingsMenu";
+  static settingKeys = [
+    "defaultHotbarRowsUser",
+    "defaultHotbarRowsCharacter",
+    "defaultHotbarRowsNpc",
+    "defaultHotbarRowsPet",
+  ];
+}
+
 class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(
   ApplicationV2,
 ) {
@@ -368,6 +379,29 @@ export class SettingsHelpers {
       requiresReload: false,
     });
 
+    for (const [type, defaultRows] of Object.entries({
+      User: 1,
+      Character: 3,
+      Npc: 1,
+      Pet: 1,
+    })) {
+      game.settings.register("ffxiv", `defaultHotbarRows${type}`, {
+        name: game.i18n.localize(`FFXIV.Settings.DefaultHotbarRows${type}`),
+        hint: game.i18n.localize("FFXIV.Settings.DefaultHotbarRowsHint"),
+        scope: "world",
+        config: false,
+        default: defaultRows,
+        type: Number,
+        range: {
+          min: 1,
+          max: 5,
+          step: 1,
+        },
+        onChange: () => ui.hotbar?.render(true),
+        requiresReload: false,
+      });
+    }
+
     game.settings.registerMenu("ffxiv", "soundSettingsMenu", {
       name: game.i18n.localize("FFXIV.Settings.SoundSettingsMenu"),
       label: game.i18n.localize("FFXIV.Settings.OpenSettingsMenu"),
@@ -401,6 +435,15 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.CustomTagsSettingsMenuHint"),
       icon: "fas fa-tags",
       type: FFXIVCustomTagsSettingsMenu,
+      restricted: true,
+    });
+
+    game.settings.registerMenu("ffxiv", "hotbarSettingsMenu", {
+      name: game.i18n.localize("FFXIV.Settings.HotbarSettingsMenu"),
+      label: game.i18n.localize("FFXIV.Settings.OpenSettingsMenu"),
+      hint: game.i18n.localize("FFXIV.Settings.HotbarSettingsMenuHint"),
+      icon: "fas fa-table-cells",
+      type: FFXIVHotbarSettingsMenu,
       restricted: true,
     });
 

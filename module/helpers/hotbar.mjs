@@ -367,8 +367,7 @@ function getHotbarFlagDocument() {
 }
 
 function getHotbarSettingsDocument() {
-  const actor = getActiveHotbarActor();
-  return actor?.type === "character" ? actor : game.user;
+  return getActiveHotbarActor() ?? game.user;
 }
 
 function getHotbarFlagKey(document = getHotbarFlagDocument()) {
@@ -378,7 +377,17 @@ function getHotbarFlagKey(document = getHotbarFlagDocument()) {
 function getVisibleHotbarsCount() {
   const document = getHotbarSettingsDocument();
   const settings = document.getFlag("ffxiv", "hotbarSettings") ?? {};
-  return settings.visibleHotbars ?? 3;
+  const actorType = getActiveHotbarActor()?.type;
+  const settingType = {
+    character: "Character",
+    npc: "Npc",
+    pet: "Pet",
+  }[actorType] ?? "User";
+  const defaultVisibleHotbars = game.settings.get(
+    "ffxiv",
+    `defaultHotbarRows${settingType}`,
+  );
+  return settings.visibleHotbars ?? defaultVisibleHotbars;
 }
 
 async function setVisibleHotbarsCount(count) {
@@ -881,7 +890,8 @@ function getFirstOpenImportSlot(occupied, page = null) {
     for (const keyIndex of HOTBAR_KEYS.keys()) {
       const slot = getSlotForPageKey(currentPage, keyIndex);
       const storageKey = getHotbarFlagStorageKey(slot);
-      if (!occupied.has(storageKey)) return { slot, storageKey };
+      if (!occupied.has(storageKey))
+        return { slot, storageKey, page: currentPage };
     }
   }
   return null;
@@ -891,6 +901,7 @@ function buildImportedActorHotbar(items) {
   const hotbar = {};
   const occupied = new Set();
   const pending = [];
+  let requiredRows = 1;
 
   const placeItem = (item, page = null) => {
     const slot = getFirstOpenImportSlot(occupied, page);
@@ -898,6 +909,7 @@ function buildImportedActorHotbar(items) {
 
     occupied.add(slot.storageKey);
     hotbar[slot.storageKey] = getItemHotbarEntry(item);
+    requiredRows = Math.max(requiredRows, slot.page);
     return true;
   };
 
@@ -910,7 +922,7 @@ function buildImportedActorHotbar(items) {
     placeItem(item);
   }
 
-  return hotbar;
+  return { hotbar, requiredRows };
 }
 
 async function importSelectedActorHotbar(actor = getActiveHotbarActor()) {
@@ -926,7 +938,8 @@ async function importSelectedActorHotbar(actor = getActiveHotbarActor()) {
     return 0;
   }
 
-  Object.assign(hotbar, buildImportedActorHotbar(items));
+  const importedHotbar = buildImportedActorHotbar(items);
+  Object.assign(hotbar, importedHotbar.hotbar);
   const imported = Object.keys(hotbar).length;
 
   if (!imported) {
@@ -935,6 +948,9 @@ async function importSelectedActorHotbar(actor = getActiveHotbarActor()) {
   }
 
   await setHotbarFlag(hotbar, actor, "hotbar");
+  if (importedHotbar.requiredRows > getVisibleHotbarsCount()) {
+    await setVisibleHotbarsCount(importedHotbar.requiredRows);
+  }
   return imported;
 }
 
