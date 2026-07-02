@@ -16,6 +16,7 @@ import {
   clearUserTargetsForTiming,
   TARGET_CLEAR_TIMINGS,
 } from "./helpers/target-selection.mjs";
+import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
 
@@ -716,6 +717,7 @@ export class FFXIVCombat extends Combat {
   }
 
   _getJobAutomationRules(item, flag) {
+    if (!isCombatAutomationEnabled()) return [];
     const data = foundry.utils.getProperty(item, `flags.ffxiv.${flag}`);
     const entries = Array.isArray(data)
       ? data

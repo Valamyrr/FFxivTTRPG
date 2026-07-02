@@ -79,6 +79,41 @@ Hooks.once("init", function () {
   game.ffxivttrpg = {
     FFXIVActor,
     FFXIVItem,
+    placeMarker: (marker) => openRegionMarkerPlacementTool(marker),
+    initializeMarkerEditor: (element, marker, setMarker, signal) => {
+      const size = 15;
+      const state = Array.from({ length: size }, (_, y) =>
+        Array.from({ length: size }, (_, x) => Boolean(marker?.state?.[y]?.[x])),
+      );
+      const geometry = {
+        shape: marker?.shape === "circle" ? "circle" : "grid",
+        radius: marker?.radius ?? null,
+      };
+      initializeMarkerShapeDialog(
+        element,
+        { options: { signal } },
+        state,
+        Math.floor(size / 2),
+        geometry,
+        setMarker,
+      );
+    },
+    renderMarkerPreview: (canvasElement, marker) => {
+      if (!canvasElement || !marker) return;
+      const rendered = renderMarkerDataUrl(
+        marker,
+        Math.max(24, Math.round(canvas.grid.size / 3)),
+      );
+      if (!rendered) return;
+      canvasElement.width = rendered.width;
+      canvasElement.height = rendered.height;
+      const context = canvasElement.getContext("2d");
+      const image = new Image();
+      image.addEventListener("load", () => context.drawImage(image, 0, 0), {
+        once: true,
+      });
+      image.src = rendered.src;
+    },
     runItemMigration: async (force = false) =>
       migrateItemDataStructure({ force }),
     applyGlobalArtworkRotationLock: async () =>
@@ -4906,7 +4941,7 @@ function refreshSceneControls() {
   globalThis.ui?.controls?.render?.({ force: true });
 }
 
-async function openMarkerPlacementTool() {
+async function openMarkerPlacementTool(assignedMarker = null) {
   if (!canvas.scene) {
     ui.notifications.error(
       game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"),
@@ -4914,7 +4949,7 @@ async function openMarkerPlacementTool() {
     return;
   }
 
-  const marker = await configureMarkerShape();
+  const marker = assignedMarker ?? (await configureMarkerShape());
   if (!marker) return;
 
   const gridSize = canvas.grid.size;
@@ -4988,22 +5023,22 @@ async function openMarkerPlacementTool() {
   }
 }
 
-async function openRegionMarkerPlacementTool() {
+async function openRegionMarkerPlacementTool(assignedMarker = null) {
   if (!canvas.scene) {
     ui.notifications.error(
       game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"),
     );
-    return;
+    return false;
   }
 
-  const marker = await configureMarkerShape({ region: true });
-  if (!marker) return;
+  const marker = assignedMarker ?? (await configureMarkerShape({ region: true }));
+  if (!marker) return false;
   const bounds = getMarkerBounds(marker.state);
   if (!bounds) {
     ui.notifications.warn(
       game.i18n.localize("FFXIV.MarkerPlacement.Errors.EmptyShape"),
     );
-    return;
+    return false;
   }
 
   const gridSize = canvas.grid.size;
@@ -5058,13 +5093,51 @@ async function openRegionMarkerPlacementTool() {
           : "FFXIV.MarkerPlacement.Instructions.ClickToPlace",
       ),
     );
-    const placement = await canvas.regions.placeRegion(placementData, {
+    const placementPromise = canvas.regions.placeRegion(placementData, {
       create: false,
       allowRotation: false,
       attachToToken: marker.targeted,
-      preSkip: ({ event }) => (event.button === 1 ? false : undefined),
+      preSkip: ({ event }) => (event.button !== 0 ? false : undefined),
     });
-    if (!placement) return;
+    const stage = canvas.stage;
+    let rightPress = null;
+    const onPointerDown = (event) => {
+      if (event.button !== 2) return;
+      rightPress = {
+        x: event.global.x,
+        y: event.global.y,
+        time: performance.now(),
+        moved: false,
+      };
+    };
+    const onPointerMove = (event) => {
+      if (!rightPress) return;
+      if (Math.hypot(event.global.x - rightPress.x, event.global.y - rightPress.y) > 5) {
+        rightPress.moved = true;
+      }
+    };
+    const onPointerUp = (event) => {
+      if (event.button !== 2 || !rightPress) return;
+      const press = rightPress;
+      rightPress = null;
+      if (!press.moved && performance.now() - press.time <= 350) {
+        canvas.regions._cancelPlacement();
+      }
+    };
+    stage.on("pointerdown", onPointerDown);
+    stage.on("pointermove", onPointerMove);
+    stage.on("pointerup", onPointerUp);
+    stage.on("pointerupoutside", onPointerUp);
+    let placement;
+    try {
+      placement = await placementPromise;
+    } finally {
+      stage.off("pointerdown", onPointerDown);
+      stage.off("pointermove", onPointerMove);
+      stage.off("pointerup", onPointerUp);
+      stage.off("pointerupoutside", onPointerUp);
+    }
+    if (!placement) return false;
 
     const placedShape = placement.shapes[0];
     let shapes;
@@ -5094,11 +5167,13 @@ async function openRegionMarkerPlacementTool() {
     await canvas.scene.createEmbeddedDocuments("Region", [regionData], {
       controlObject: true,
     });
+    return true;
   } catch (err) {
     debugError("Region marker placement failed:", err);
     ui.notifications.error(
       game.i18n.localize("FFXIV.MarkerPlacement.Errors.RegionFailed"),
     );
+    return false;
   } finally {
     ui.controls.activate?.({ control: "ffxiv" });
   }
@@ -5966,20 +6041,29 @@ function initializeMarkerShapeDialog(
     opacityValue.textContent = `${opacity.value}%`;
     updatePreview();
   });
-  type.addEventListener("change", () => {
+  type.addEventListener("change", (event) => {
+    event.stopPropagation();
     updateCells();
     updatePreview();
   });
-  mode.addEventListener("change", () => {
+  mode.addEventListener("change", (event) => {
+    event.stopPropagation();
     type.disabled = mode.value === "tankbuster";
     updatePreview();
   });
-  targeted.addEventListener("change", () => {
+  targeted.addEventListener("change", (event) => {
+    event.stopPropagation();
     if (followRotation) followRotation.disabled = !targeted.checked;
     updatePreview();
   });
-  followRotation?.addEventListener("change", updatePreview);
-  circle?.addEventListener("change", updatePreview);
+  followRotation?.addEventListener("change", (event) => {
+    event.stopPropagation();
+    updatePreview();
+  });
+  circle?.addEventListener("change", (event) => {
+    event.stopPropagation();
+    updatePreview();
+  });
   custom?.addEventListener("change", () => {
     deleteCustom.disabled = !custom.value;
     if (custom.value) loadCustomMarker(custom.value);

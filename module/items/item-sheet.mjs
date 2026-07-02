@@ -225,6 +225,32 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       );
     }
     context.hasMarkerTag = this._hasMarkerTag(itemData.system.tags);
+    const markers =
+      Array.isArray(itemData.system.markers) && itemData.system.markers.length
+        ? itemData.system.markers
+        : itemData.system.marker
+          ? [itemData.system.marker]
+          : [];
+    context.markerEntries = markers.map((marker, index) => ({
+      index,
+      number: index + 1,
+      marker: {
+        type: marker.type === "allied" ? "allied" : "enemy",
+        mode: ["standard", "stack", "knockback", "tankbuster"].includes(marker.mode)
+          ? marker.mode
+          : "standard",
+        targeted: Boolean(marker.targeted),
+        followRotation: marker.followRotation !== false,
+        circle: marker.shape === "circle",
+      },
+      cells: Array.from({ length: 15 }, (_, y) =>
+        Array.from({ length: 15 }, (_, x) => ({
+          x,
+          y,
+          selected: Boolean(marker.state?.[y]?.[x]),
+        })),
+      ).flat(),
+    }));
     context.hasCheck = this._hasCheck(itemData.system.check);
     if (Object.hasOwn(context.system, "shop_tier")) {
       const normalizedShopTier = normalizeShopTier(
@@ -1663,6 +1689,42 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   activateListeners(html) {
     html.off(".ffxivItemSheet");
 
+    const storedMarkers =
+      Array.isArray(this.item.system.markers) && this.item.system.markers.length
+        ? foundry.utils.deepClone(this.item.system.markers)
+        : this.item.system.marker
+          ? [foundry.utils.deepClone(this.item.system.marker)]
+          : [];
+    const markerEditors = html[0]?.querySelectorAll(".ability-marker-editor") ?? [];
+    if (markerEditors.length && this._isItemEditMode() && this.document.isOwner) {
+      for (const markerEditor of markerEditors) {
+        const index = Number(markerEditor.dataset.index);
+        game.ffxivttrpg.initializeMarkerEditor(
+          markerEditor,
+          storedMarkers[index],
+          (marker) => {
+            storedMarkers[index] = foundry.utils.deepClone(marker);
+            return this.item.update(
+              {
+                "system.markers": foundry.utils.deepClone(storedMarkers),
+                "system.marker": null,
+              },
+              { render: false },
+            );
+          },
+          this._eventAbortController?.signal,
+        );
+      }
+    } else {
+      html[0]?.querySelectorAll(".ability-marker-read-preview").forEach((preview) => {
+        const index = Number(preview.dataset.index);
+        game.ffxivttrpg.renderMarkerPreview(
+          preview.querySelector("canvas"),
+          storedMarkers[index],
+        );
+      });
+    }
+
     // Everything below here is only needed if the sheet is editable
     if (!this.document.isOwner || this._isCompendiumLocked()) return;
 
@@ -1671,8 +1733,59 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ".item-edit-toggle",
       this._toggleItemEditMode.bind(this),
     );
-
     if (!this._isItemEditMode()) return;
+
+    html.on("click.ffxivItemSheet", ".add-ability-marker", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+      this._captureSheetScroll();
+      const size = 15;
+      const center = Math.floor(size / 2);
+      const state = Array.from({ length: size }, (_, y) =>
+        Array.from(
+          { length: size },
+          (_, x) =>
+            x >= center - 1 &&
+            x <= center + 1 &&
+            y >= center - 1 &&
+            y <= center + 1,
+        ),
+      );
+      const markers = foundry.utils.deepClone(storedMarkers);
+      markers.push({
+        state,
+        opacity: 0.8,
+        type: "enemy",
+        mode: "standard",
+        targeted: false,
+        followRotation: true,
+        shape: "grid",
+        radius: null,
+      });
+      this.item
+        .update(
+          { "system.markers": markers, "system.marker": null },
+          { render: false },
+        )
+        .then(() => this.render({ force: true }))
+        .catch((err) => ui.notifications.error(err, { console: true }));
+    });
+    html.on("click.ffxivItemSheet", ".remove-ability-marker", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+      this._captureSheetScroll();
+      const markers = foundry.utils.deepClone(storedMarkers);
+      markers.splice(Number(event.currentTarget.dataset.index), 1);
+      this.item
+        .update(
+          { "system.markers": markers, "system.marker": null },
+          { render: false },
+        )
+        .then(() => this.render({ force: true }))
+        .catch((err) => ui.notifications.error(err, { console: true }));
+    });
 
     // hidden here instead of css to prevent non-editable display of edit button
     html

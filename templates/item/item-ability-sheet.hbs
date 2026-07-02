@@ -415,6 +415,65 @@
                        value="{{item.system.marker_effect}}" />
               </div>
             </div>
+            {{#if itemEditMode}}
+            <div class="ability-marker-list-heading ability-form-span">
+              <h3>{{ localize "FFXIV.Abilities.AssignedMarkers" }}</h3>
+              <button type="button" class="add-ability-marker">+</button>
+            </div>
+            {{#each markerEntries as |entry index|}}
+            <div class="ability-marker-editor ffxiv-marker-config ability-form-span" data-index="{{index}}">
+              <div class="ability-marker-entry-heading">
+                <h3>{{ localize "FFXIV.Abilities.Marker" }} {{entry.number}}</h3>
+                <button type="button" class="remove-ability-marker" data-index="{{index}}">x</button>
+              </div>
+              <div class="ability-marker-controls">
+                <label><span>{{ localize "FFXIV.MarkerPlacement.Dialog.Source" }}</span>
+                  <select id="ffxiv-marker-type">
+                    <option value="enemy" {{#if (eq entry.marker.type "enemy")}}selected{{/if}}>{{ localize "FFXIV.MarkerPlacement.Dialog.Enemy" }}</option>
+                    <option value="allied" {{#if (eq entry.marker.type "allied")}}selected{{/if}}>{{ localize "FFXIV.MarkerPlacement.Dialog.Ally" }}</option>
+                  </select>
+                </label>
+                <label><span>{{ localize "FFXIV.MarkerPlacement.Dialog.Mode" }}</span>
+                  <select id="ffxiv-marker-mode">
+                    <option value="standard" {{#if (eq entry.marker.mode "standard")}}selected{{/if}}>{{ localize "FFXIV.MarkerPlacement.Dialog.Standard" }}</option>
+                    <option value="stack" {{#if (eq entry.marker.mode "stack")}}selected{{/if}}>{{ localize "FFXIV.MarkerPlacement.Dialog.Stack" }}</option>
+                    <option value="knockback" {{#if (eq entry.marker.mode "knockback")}}selected{{/if}}>{{ localize "FFXIV.MarkerPlacement.Dialog.Knockback" }}</option>
+                    <option value="tankbuster" {{#if (eq entry.marker.mode "tankbuster")}}selected{{/if}}>{{ localize "FFXIV.MarkerPlacement.Dialog.Tankbuster" }}</option>
+                  </select>
+                </label>
+                <label class="ffxiv-marker-checkbox">
+                  <span class="ffxiv-marker-checkbox-control"><input type="checkbox" id="ffxiv-marker-targeted" {{checked entry.marker.targeted}}><span class="checkmark"></span></span>
+                  <span>{{ localize "FFXIV.MarkerPlacement.Dialog.Targeted" }}</span>
+                </label>
+                <label class="ffxiv-marker-checkbox">
+                  <span class="ffxiv-marker-checkbox-control"><input type="checkbox" id="ffxiv-marker-follow-rotation" {{checked entry.marker.followRotation}}><span class="checkmark"></span></span>
+                  <span>{{ localize "FFXIV.MarkerPlacement.Dialog.FollowRotation" }}</span>
+                </label>
+                <label class="ffxiv-marker-checkbox">
+                  <span class="ffxiv-marker-checkbox-control"><input type="checkbox" id="ffxiv-marker-circle" {{checked entry.marker.circle}}><span class="checkmark"></span></span>
+                  <span>{{ localize "FFXIV.MarkerPlacement.Dialog.Circle" }}</span>
+                </label>
+              </div>
+              <div class="ability-marker-workspace">
+                <div class="ffxiv-marker-grid">
+                  {{#each entry.cells}}
+                  <button type="button" class="ffxiv-marker-cell {{#if selected}}selected {{../marker.type}}{{/if}}" data-x="{{x}}" data-y="{{y}}"></button>
+                  {{/each}}
+                </div>
+                <div class="ffxiv-marker-preview"><canvas id="ffxiv-marker-preview"></canvas></div>
+              </div>
+            </div>
+            {{/each}}
+            {{else}}
+            <div class="ability-marker-read-list ability-form-span">
+            {{#each markerEntries as |entry index|}}
+              <div class="ability-marker-read-preview" data-index="{{index}}">
+                <h3>{{ localize "FFXIV.Abilities.Marker" }} {{entry.number}}</h3>
+                <div class="ability-marker-read-canvas"><canvas></canvas></div>
+              </div>
+            {{/each}}
+            </div>
+            {{/if}}
           </div>
         </section>
       </div>

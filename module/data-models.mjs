@@ -83,6 +83,10 @@ function buildAbilityFields() {
       blank: true,
       initial: "",
     }),
+    marker: new fields.ObjectField({ required: false, nullable: true }),
+    markers: new fields.ArrayField(
+      new fields.AnyField({ required: false }),
+    ),
     limitations: new fields.StringField({
       required: false,
       blank: true,

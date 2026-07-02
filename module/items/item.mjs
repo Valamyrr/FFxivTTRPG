@@ -41,6 +41,7 @@ import {
   clearUserTargetsForTiming,
   TARGET_CLEAR_TIMINGS,
 } from "../helpers/target-selection.mjs";
+import { isAbilityAutomationEnabled } from "../helpers/automation.mjs";
 import { emitToActiveGM, getActiveGM } from "../helpers/socket.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
@@ -1049,6 +1050,14 @@ export class FFXIVItem extends Item {
     await this._summonActorsIfNeeded();
 
     await this._consumeFromInventoryIfNeeded();
+    const markers = Array.isArray(this.system.markers) && this.system.markers.length
+      ? this.system.markers
+      : this.system.marker
+        ? [this.system.marker]
+        : [];
+    for (const marker of markers) {
+      await game.ffxivttrpg.placeMarker(foundry.utils.deepClone(marker));
+    }
     this._clearTargetsAfterAbilityUse();
   }
 
@@ -2912,6 +2921,7 @@ export class FFXIVItem extends Item {
   }
 
   _getEffectRules() {
+    if (!isAbilityAutomationEnabled()) return [];
     const entries = Array.isArray(this.system.effect_rules)
       ? this.system.effect_rules
       : [];
@@ -2970,6 +2980,7 @@ export class FFXIVItem extends Item {
   }
 
   _getEffectRequirements() {
+    if (!isAbilityAutomationEnabled()) return [];
     const entries = Array.isArray(this.system.effect_requirements)
       ? this.system.effect_requirements
       : [];
@@ -3173,7 +3184,12 @@ export class FFXIVItem extends Item {
 
   async _applyCriticalJobResourceAutomation(isCritical) {
     const actor = this.parent;
-    if (!isCritical || actor?.documentName !== "Actor") return;
+    if (
+      !isAbilityAutomationEnabled() ||
+      !isCritical ||
+      actor?.documentName !== "Actor"
+    )
+      return;
 
     for (const trait of actor.items ?? []) {
       if (trait?.type !== "trait") continue;

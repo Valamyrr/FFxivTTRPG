@@ -3,6 +3,10 @@ import {
   TARGET_CLEAR_SETTING,
   TARGET_CLEAR_TIMINGS,
 } from "./target-selection.mjs";
+import {
+  AUTOMATION_LEVEL_SETTING,
+  AUTOMATION_LEVELS,
+} from "./automation.mjs";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 function toggleCompactDirectories(enabled) {
@@ -523,6 +527,27 @@ export class SettingsHelpers {
         ),
         [TARGET_CLEAR_TIMINGS.NEVER]: game.i18n.localize(
           "FFXIV.Settings.TargetClearTimingNever",
+        ),
+      },
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", AUTOMATION_LEVEL_SETTING, {
+      name: game.i18n.localize("FFXIV.Settings.AutomationLevel"),
+      hint: game.i18n.localize("FFXIV.Settings.AutomationLevelHint"),
+      scope: "world",
+      config: true,
+      default: AUTOMATION_LEVELS.FULL,
+      type: String,
+      choices: {
+        [AUTOMATION_LEVELS.DISABLED]: game.i18n.localize(
+          "FFXIV.Settings.AutomationLevelDisabled",
+        ),
+        [AUTOMATION_LEVELS.ABILITY]: game.i18n.localize(
+          "FFXIV.Settings.AutomationLevelAbility",
+        ),
+        [AUTOMATION_LEVELS.FULL]: game.i18n.localize(
+          "FFXIV.Settings.AutomationLevelFull",
         ),
       },
       requiresReload: false,

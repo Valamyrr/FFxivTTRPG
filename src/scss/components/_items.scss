@@ -1116,6 +1116,169 @@
       content: "\25BE";
     }
 
+    .ability-marker-editor {
+      border-top: 1px solid rgba(216, 188, 112, 0.22);
+      margin-top: 8px;
+      padding-top: 10px;
+    }
+
+    .ability-marker-list-heading,
+    .ability-marker-entry-heading {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .ability-marker-list-heading {
+      border-top: 1px solid rgba(216, 188, 112, 0.22);
+      margin-top: 8px;
+      padding-top: 10px;
+    }
+
+    .ability-marker-list-heading h3,
+    .ability-marker-entry-heading h3 {
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .ability-marker-list-heading button,
+    .ability-marker-entry-heading button {
+      flex: 0 0 28px;
+      height: 28px;
+      line-height: 1;
+      margin: 0;
+      min-height: 28px;
+      padding: 0;
+      width: 28px;
+    }
+
+    .ability-marker-entry-heading {
+      margin-bottom: 8px;
+    }
+
+    .ability-marker-entry-heading .remove-ability-marker {
+      color: #ff3b30;
+    }
+
+    .ability-marker-controls {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(2, minmax(0, 280px));
+      margin-bottom: 10px;
+    }
+
+    .ability-marker-controls label {
+      align-items: center;
+      display: flex;
+      gap: 6px;
+      margin: 0;
+      min-width: 0;
+    }
+
+    .ability-marker-controls label > span {
+      flex: 0 0 auto;
+    }
+
+    .ability-marker-controls select {
+      flex: 0 1 180px;
+      height: 30px;
+      max-width: 180px;
+      min-height: 30px;
+      padding: 4px 8px;
+      width: 180px;
+    }
+
+    .ability-marker-editor .ability-marker-controls .ffxiv-marker-checkbox input {
+      appearance: none;
+      box-shadow: none;
+      height: 16px;
+      inset: 0;
+      margin: 0;
+      min-height: 16px;
+      opacity: 0;
+      padding: 0;
+      position: absolute;
+      width: 16px;
+    }
+
+    .ability-marker-workspace {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+    }
+
+    .ability-marker-editor .ffxiv-marker-grid {
+      display: grid;
+      flex: 0 0 auto;
+      grid-template-columns: repeat(15, 18px);
+    }
+
+    .ability-marker-editor .ffxiv-marker-cell {
+      appearance: none;
+      background: #222;
+      border: 1px solid #888;
+      border-radius: 0;
+      box-shadow: none;
+      flex: none;
+      font-size: 0;
+      height: 18px;
+      line-height: 0;
+      margin: 0;
+      min-height: 0;
+      min-width: 0;
+      padding: 0;
+      width: 18px;
+    }
+
+    .ability-marker-editor .ffxiv-marker-cell.selected.enemy {
+      background: orange;
+    }
+
+    .ability-marker-editor .ffxiv-marker-cell.selected.allied {
+      background: #66ffff;
+    }
+
+    .ability-marker-editor .ffxiv-marker-preview canvas {
+      display: block;
+    }
+
+    .ability-marker-read-list {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      margin-top: 8px;
+    }
+
+    .ability-marker-read-preview {
+      background: rgba(0, 0, 0, 0.14);
+      border: 1px solid rgba(216, 188, 112, 0.22);
+      border-radius: 4px;
+      overflow: hidden;
+      padding: 8px;
+    }
+
+    .ability-marker-read-preview h3 {
+      border-bottom: 1px solid rgba(216, 188, 112, 0.18);
+      font-size: 13px;
+      margin: 0 0 8px;
+      padding-bottom: 5px;
+      text-align: center;
+    }
+
+    .ability-marker-read-canvas {
+      align-items: center;
+      display: flex;
+      height: 110px;
+      justify-content: center;
+    }
+
+    .ability-marker-read-preview canvas {
+      height: auto;
+      max-height: 100px;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
     .remove-status-effect,
     .remove-effect-requirement,
     .remove-effect-rule,
