@@ -1,13 +1,27 @@
+@use "../utils/typography" as *;
+
 .window-app,
 .application.ffxiv {
   font-family: $font-primary;
 }
 
-.rollable {
-  &:hover,
-  &:focus {
-    color: #000;
-    text-shadow: 0 0 10px red;
-    cursor: pointer;
+.window-app.ffxiv.ffxiv-window-dragging,
+.application.ffxiv.ffxiv-window-dragging {
+  contain: layout paint style;
+  will-change: transform;
+
+  .window-content {
+    pointer-events: none;
   }
+}
+
+input:disabled {
+  transition: none;
+}
+
+.rollable:hover,
+.rollable:focus {
+  color: #000;
+  text-shadow: 0 0 10px red;
+  cursor: pointer;
 }

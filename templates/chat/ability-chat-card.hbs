@@ -1,6 +1,8 @@
 <div class="item-card"
      data-item-id="{{item._id}}"
-     data-actor-id="{{item.parent._id}}">
+     data-item-uuid="{{item.uuid}}"
+     data-actor-id="{{item.parent._id}}"
+     data-actor-uuid="{{item.parent.uuid}}">
   <div class="item-card-info">
     <img src="{{item.img}}" alt="{{item.name}}" class="item-dialog-icon" width="48" height="48">
     <div class="item-dialog-header">
@@ -8,7 +10,7 @@
       <div class="item-dialog-right">
         <div class="item-dialog-tags">
           {{#each (actionTags item.type item.system.tags) as |tag| }}
-            <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+            <span class="tag">{{localize tag}}</span>
           {{/each}}
         </div>
       </div>
@@ -65,9 +67,7 @@
           </div>
         {{/if}}
         {{#if item.system.combo }}
-          <div class="detail">
-            <strong>{{ localize "FFXIV.Abilities.Combo" }}:</strong> {{item.system.combo}}
-          </div>
+          {{> "systems/ffxiv/templates/item/parts/combo-chain.hbs" combo=item.system.combo current=item.name showLabel=true}}
         {{/if}}
         {{#if item.system.condition }}
           <div class="effect">

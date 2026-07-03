@@ -1,132 +1,207 @@
-.item-form {
-  font-family: $font-primary;
-}
+@use "../utils/colors" as *;
+@use "../utils/typography" as *;
 
-.sheet-header {
-  flex: 0 auto;
-  overflow: hidden;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  margin-bottom: 10px;
-
-  .profile-img {
-    flex: 0 0 100px;
-    height: 100px;
-    margin-right: 10px;
+@mixin styles {
+  .item-form {
+    font-family: $font-primary;
   }
 
-  .header-fields {
-    flex: 1;
-  }
+  .sheet-header {
+    flex: 0 auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
 
-  h1.charname {
-    height: 50px;
-    padding: 0px;
-    margin: 5px 0;
-    border-bottom: 0;
+    .profile-img {
+      flex: 0 0 100px;
+      height: 100px;
+      margin-right: 10px;
+    }
 
-    input {
-      width: 100%;
-      height: 100%;
-      margin: 0;
+    .header-fields {
+      flex: 1;
+    }
+
+    h1.charname {
+      padding: 0px;
+      margin: 5px 0;
+      border-bottom: 0;
+
+      input {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
     }
   }
-}
 
-.sheet-tabs {
-  flex: 0;
-}
-
-.sheet-body,
-.sheet-body .tab,
-.sheet-body .tab .editor {
-  height: 100%;
-}
-
-.sheet-body prose-mirror {
-  display: block;
-  flex: 1 1 100%;
-  width: 100%;
-  min-height: 180px;
-  border: solid 1px var(--color-border-light-tertiary);
-  border-radius: 5px;
-  color: var(--text-color);
-
-  .editor-content {
-    min-height: 150px;
-    padding: 10px;
-  }
-}
-
-.sheet-body .editor.prosemirror {
-  display: flex;
-  flex-direction: column;
-  min-height: 180px;
-  color: var(--text-color);
-
-  &.sized {
-    flex: 1;
-    overflow: hidden;
+  .sheet-tabs {
+    flex: 0;
   }
 
-  menu {
-    flex: 0 0 auto;
+  &.actor.npc nav.npc-sheet-tabs {
+    display: grid;
+    filter: none;
+    gap: 5px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 8px 8px 0;
   }
 
-  .editor-container {
-    flex: 1 1 auto;
-    min-height: 150px;
-    overflow: hidden auto;
+  &.actor.npc nav.npc-sheet-tabs .sub-tab {
+    align-items: center;
+    border: 1px solid rgba(216, 188, 112, 0.55);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(53, 53, 53, 0.9) 0%, rgba(30, 30, 30, 0.92) 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.1);
+    box-sizing: border-box;
+    clip-path: none;
+    display: inline-flex;
+    flex: none !important;
+    font-size: 14px;
+    font-weight: 700;
+    gap: 5px;
+    height: auto;
+    justify-content: center;
+    line-height: 1.2;
+    margin: 0;
+    min-height: 34px;
+    min-width: 0;
+    padding: 5px 20px !important;
+    width: 100% !important;
+  }
+
+  &.actor.npc nav.npc-sheet-tabs .sub-tab.active {
+    border-color: rgba(225, 190, 95, 0.9);
+    background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.15), 0 0 3px rgba(0, 0, 0, 0.55);
+    color: #f4d77e;
+  }
+
+  &.actor.npc nav.npc-sheet-tabs .sub-tab i {
+    font-size: 0.85em;
+    line-height: 1;
+  }
+
+  &.actor.npc nav.npc-sheet-tabs .chip {
+    display: none;
+  }
+
+  &.actor.npc .sheet-body {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     scrollbar-gutter: stable;
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--color-border-light-tertiary);
-    border-radius: 0 0 5px 5px;
+    scrollbar-width: thin;
   }
 
-  .editor-content {
-    position: unset;
+  &.actor.npc .sheet-body > .actor-abilities {
+    flex: none;
+    max-height: none;
+    overflow: visible;
+  }
+
+  &.actor.npc.blue_theme nav.npc-sheet-tabs .sub-tab {
+    border-color: rgba(160, 206, 255, 0.62);
+    background: linear-gradient(180deg, rgba(33, 78, 152, 0.75) 0%, rgba(20, 52, 111, 0.78) 100%);
+    color: #dff0ff;
+  }
+
+  &.actor.npc.blue_theme nav.npc-sheet-tabs .sub-tab.active {
+    background: linear-gradient(180deg, rgba(62, 127, 216, 0.8) 0%, rgba(38, 94, 176, 0.84) 100%);
+    box-shadow: inset 0 0 0 1px rgba(208, 232, 255, 0.22);
+  }
+
+  &.actor.npc .npc-create-item {
+    display: block;
+    margin: 8px 8px 12px auto;
+    min-height: 30px;
+    padding: 0;
+    width: 34px;
+  }
+
+  &.actor.npc .sheet-npc-header .charname h1 input {
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(216, 188, 112, 0.55);
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.05);
+    box-sizing: border-box;
+    height: 1.15em;
+    min-height: 1.15em;
+    padding: 0 8px;
+  }
+
+  .sheet-body .editor {
+    height: 100%;
+    min-height: 280px;
+    border: solid 1px var(--color-border-light-tertiary);
+    border-radius: 5px;
+  }
+
+  .sheet-body prose-mirror {
+    display: block;
+    flex: 1 1 100%;
+    width: 100%;
+    min-height: 180px;
+    border: solid 1px var(--color-border-light-tertiary);
+    border-radius: 5px;
+    color: var(--text-color);
+  }
+
+  .sheet-body .editor.prosemirror {
+    display: flex;
+    flex-direction: column;
+    min-height: 180px;
+    color: var(--text-color);
+
+    &.sized {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    menu {
+      flex: 0 0 auto;
+    }
+
+    .editor-container {
+      flex: 1 1 auto;
+      min-height: 150px;
+      overflow: hidden auto;
+      scrollbar-gutter: stable;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 0 0 5px 5px;
+    }
+  }
+
+  .sheet-body prose-mirror .editor-content {
     min-height: 150px;
     padding: 10px;
-    color: var(--text-color);
-    background: transparent;
-    outline: none;
   }
 
-  &.sized .editor-content {
-    min-height: 180px;
-  }
-}
+  .sheet-body .editor.prosemirror {
+    .editor-content {
+      position: unset;
+      min-height: 150px;
+      padding: 10px;
+      color: var(--text-color);
+      background: transparent;
+      outline: none;
+    }
 
-.popout-editor-window,
-.popout-editor-window .sheet-body,
-.popout-editor-window textarea {
-  height: 100%;
-}
-
-.popout-editor-window textarea {
-  width: 100%;
-  min-height: 230px;
-  resize: vertical;
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--color-border-light-tertiary);
-  border-radius: 4px;
-  color: var(--text-color-input);
-  padding: 8px;
-}
-
-.popout-editor-window button[type="submit"] {
-  margin-top: 8px;
-  width: 100%;
-}
-
-.tox {
-  .tox-editor-container {
-    background: $c-white;
+    &.sized .editor-content {
+      min-height: 180px;
+    }
   }
 
-  .tox-edit-area {
-    padding: 0 8px;
+  .tox {
+    .tox-editor-container {
+      background: $c-white;
+    }
+
+    .tox-edit-area {
+      padding: 0 8px;
+    }
   }
 }

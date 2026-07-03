@@ -1,19 +1,32 @@
 <div class="{{cssClass}} item-modern-sheet">
+  {{#if editable }}
+  <button type="button"
+          class="actor-edit-toggle item-edit-toggle {{#if itemEditMode }}active{{/if }}"
+          aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet' }}"
+          aria-pressed="{{#if itemEditMode }}true{{else }}false{{/if }}"
+          title="{{#if itemEditMode }}{{localize 'FFXIV.CharacterSheet.LockSheet' }}{{else }}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+    <i class="fa-solid {{#if itemEditMode }}fa-lock-open{{else }}fa-lock{{/if }}"></i>
+  </button>
+  {{/if}}
   <header class="sheet-header">
     <img class="profile-img"
          src="{{item.img}}"
+         {{#if itemEditMode }}
          data-edit="img"
+         {{/if}}
          title="{{item.name}}"  alt="" width="32" height="32" />
     <div class="header-fields">
       <h1 class="charname">
         <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
       </h1>
+      {{#if itemEditMode }}
+        <button type="button"
+                class="item-delete"
+                aria-label="{{localize 'FFXIV.Item.Delete'}}">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      {{/if}}
     </div>
-    <button type="button"
-            class="item-delete"
-            aria-label="{{localize 'FFXIV.Item.Delete'}}">
-      <i class="fa-solid fa-trash-can"></i>
-    </button>
   </header>
   <hr>
   {{! Sheet Body }}
@@ -46,17 +59,29 @@
         </div>
         <div class="resource flex-group-center">
           <label for="system.shop_tier" class="resource-label">{{ localize "FFXIV.Item.ShopTier" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <select class="ffxiv-text-center" name="system.shop_tier">
-              <option value="">{{ localize "FFXIV.None" }}</option>
-              {{#each this.config.shop_tiers as |tier| }}
-                <option value="{{tier.value}}"
-                        {{#if (eq tier.value ../system.shop_tier) }}
-                        selected
-                        {{/if}}>{{ localize tier.label }}
-                </option>
-              {{/each}}
-            </select>
+          <div class="resource-content item-shop-tier-content">
+            {{#if (and (eq system.shop_tier "custom") (not itemEditMode))}}
+              <span class="item-locked-field">{{system.shop_tier_custom}}</span>
+            {{else}}
+              <select class="ffxiv-text-center" name="system.shop_tier">
+                <option value="">{{ localize "FFXIV.None" }}</option>
+                {{#each this.config.shop_tiers as |tier| }}
+                  <option value="{{tier.value}}"
+                          {{#if (eq tier.value ../system.shop_tier) }}
+                          selected
+                          {{/if}}>{{ localize tier.label }}
+                  </option>
+                {{/each}}
+              </select>
+              {{#if (eq system.shop_tier "custom")}}
+                <input class="item-shop-tier-custom"
+                       name="system.shop_tier_custom"
+                       type="text"
+                       aria-label="{{localize 'FFXIV.ShopTier.CustomLabel'}}"
+                       placeholder="{{localize 'FFXIV.ShopTier.CustomLabel'}}"
+                       value="{{system.shop_tier_custom}}" />
+              {{/if}}
+            {{/if}}
           </div>
         </div>
         <div class="resource flex-group-center">
@@ -74,16 +99,6 @@
             </select>
           </div>
         </div>
-        {{#if (eq system.shop_tier "custom") }}
-          <div class="resource flex-group-center">
-            <label for="system.shop_tier_custom" class="resource-label">{{ localize "FFXIV.ShopTier.CustomLabel" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <input name="system.shop_tier_custom"
-                     type="text"
-                     value="{{system.shop_tier_custom}}" />
-            </div>
-          </div>
-        {{/if}}
       </div>
       <hr>
       <div class="resources grid grid-1col">

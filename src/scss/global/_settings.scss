@@ -1,0 +1,67 @@
+.ffxiv-settings-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 12px;
+}
+
+.ffxiv-settings-submenu .settings-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ffxiv-settings-submenu .setting-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 45%);
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  padding-bottom: 10px;
+}
+
+.ffxiv-settings-submenu .setting-info label {
+  display: block;
+  font-weight: 700;
+}
+
+.ffxiv-settings-submenu .hint {
+  margin: 4px 0 0;
+  color: var(--text-color);
+  opacity: 0.75;
+  font-size: 12px;
+}
+
+.ffxiv-settings-submenu .setting-control {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.ffxiv-settings-submenu .setting-control input[type="text"],
+.ffxiv-settings-submenu .setting-control input[type="number"] {
+  width: 100%;
+}
+
+.ffxiv-settings-submenu .setting-control input::placeholder {
+  color: var(--placeholder-color, #8d8d8d);
+  font-style: italic;
+  opacity: 0.68;
+}
+
+.ffxiv-settings-submenu .ffxiv-file-picker {
+  flex: 0 0 32px;
+  width: 32px;
+  min-height: 28px;
+  padding: 0;
+}
+
+.ffxiv-settings-submenu .form-footer {
+  display: flex;
+  justify-content: flex-end;
+}

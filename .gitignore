@@ -1,5 +1,7 @@
-/.vscode
+/.vscode/*
+!/.vscode/settings.json
 /node_modules
 .htmlhintrc
 package-lock.json
 system.zip
+*.map

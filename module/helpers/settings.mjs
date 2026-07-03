@@ -1,4 +1,65 @@
+import { renderLimitBreakHud } from "./limit-break-hud.mjs";
+import {
+  TARGET_CLEAR_SETTING,
+  TARGET_CLEAR_TIMINGS,
+} from "./target-selection.mjs";
+import {
+  AUTOMATION_LEVEL_SETTING,
+  AUTOMATION_LEVELS,
+} from "./automation.mjs";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+function toggleCompactDirectories(enabled) {
+  document.body?.classList.toggle("ffxiv-compact-directories", enabled);
+}
+
+function refreshCompactDirectoryTabs() {
+  const tabs = [
+    ui.actors,
+    ui.items,
+    ui.compendium,
+    ui.sidebar?.tabs?.actors,
+    ui.sidebar?.tabs?.items,
+    ui.sidebar?.tabs?.compendium,
+  ];
+
+  for (const tab of new Set(tabs.filter(Boolean))) {
+    if (!tab.rendered) continue;
+    tab.render({ force: true });
+  }
+}
+
+function refreshLimitBreakHud() {
+  renderLimitBreakHud();
+  globalThis.ui?.controls?.render?.({ force: true });
+}
+
+function clampLimitBreakValue() {
+  if (!game.user?.isGM) return;
+  const max = Math.max(1, Number(game.settings.get("ffxiv", "limitBreakMax")) || 3);
+  const value = Math.max(0, Math.min(max, Number(game.settings.get("ffxiv", "limitBreakValue")) || 0));
+  if (value !== game.settings.get("ffxiv", "limitBreakValue")) {
+    game.settings.set("ffxiv", "limitBreakValue", value);
+  }
+}
+
+const DEFAULT_SOUNDS = {
+  soundNotificationFFXIV_deleteItem: "systems/ffxiv/assets/sfx/ffxiv-close-window.ogg",
+  soundNotificationFFXIV_moveItem: "systems/ffxiv/assets/sfx/ffxiv-obtain-item.ogg",
+  soundNotificationFFXIV_enterChat: "systems/ffxiv/assets/sfx/ffxiv-full-party.ogg",
+  soundNotificationFFXIV_openSheet: "systems/ffxiv/assets/sfx/ffxiv-switch-target.ogg",
+  soundNotificationFFXIV_closeSheet: "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
+  soundNotificationFFXIV_limitBreakCharged: "systems/ffxiv/assets/sfx/ffxiv-limit-break-charged.ogg",
+  soundNotificationFFXIV_limitBreakActivated: "systems/ffxiv/assets/sfx/ffxiv-limit-break-activated.ogg",
+  soundNotificationFFXIV_enmity: "systems/ffxiv/assets/sfx/ffxiv-aggro.ogg",
+  soundNotificationFFXIV_error: "systems/ffxiv/assets/sfx/ffxiv-error.ogg",
+};
+
+function isDefaultPlaceholderValue(value, placeholder) {
+  if (!placeholder || typeof value !== "string") return false;
+  if (value === placeholder) return true;
+  return placeholder.endsWith(".ogg") && value === placeholder.replace(/\.ogg$/, ".mp3");
+}
 
 class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
@@ -33,11 +94,14 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
       const config = game.settings.settings.get(`ffxiv.${key}`);
       const value = game.settings.get("ffxiv", key);
       const type = config?.type;
+      const placeholder = placeholders[key] ?? "";
+      const displayValue =
+        type === String && isDefaultPlaceholderValue(value, placeholder) ? "" : value;
       return {
         key,
         name: this._localize(config?.name ?? key),
         hint: this._localize(config?.hint ?? ""),
-        value,
+        value: displayValue,
         disabled: config?.scope === "world" && !game.user.isGM,
         isBoolean: type === Boolean,
         isNumber: type === Number,
@@ -49,7 +113,7 @@ class FFXIVSettingsSubmenu extends HandlebarsApplicationMixin(ApplicationV2) {
         hasMin: config?.range?.min !== undefined,
         hasMax: config?.range?.max !== undefined,
         hasStep: config?.range?.step !== undefined,
-        placeholder: placeholders[key] ?? "",
+        placeholder,
       };
     });
     return context;
@@ -162,7 +226,12 @@ class FFXIVSoundSettingsMenu extends FFXIVSettingsSubmenu {
     "soundNotificationFFXIV_enterChat",
     "soundNotificationFFXIV_openSheet",
     "soundNotificationFFXIV_closeSheet",
+    "soundNotificationFFXIV_limitBreakCharged",
+    "soundNotificationFFXIV_limitBreakActivated",
+    "soundNotificationFFXIV_enmity",
+    "soundNotificationFFXIV_error",
   ];
+  static placeholders = DEFAULT_SOUNDS;
 }
 
 class FFXIVIconSettingsMenu extends FFXIVSettingsSubmenu {
@@ -217,6 +286,17 @@ class FFXIVCustomTagsSettingsMenu extends FFXIVSettingsSubmenu {
     customTraitTags: "Passive, Stance, Combo",
     customConsumableTags: "Elixir, Tonic, Field Kit",
   };
+}
+
+class FFXIVHotbarSettingsMenu extends FFXIVSettingsSubmenu {
+  static menuId = "hotbar-settings";
+  static titleKey = "FFXIV.Settings.HotbarSettingsMenu";
+  static settingKeys = [
+    "defaultHotbarRowsUser",
+    "defaultHotbarRowsCharacter",
+    "defaultHotbarRowsNpc",
+    "defaultHotbarRowsPet",
+  ];
 }
 
 class FFXIVMigrationToolsMenu extends HandlebarsApplicationMixin(
@@ -299,6 +379,29 @@ export class SettingsHelpers {
       requiresReload: false,
     });
 
+    for (const [type, defaultRows] of Object.entries({
+      User: 1,
+      Character: 3,
+      Npc: 1,
+      Pet: 1,
+    })) {
+      game.settings.register("ffxiv", `defaultHotbarRows${type}`, {
+        name: game.i18n.localize(`FFXIV.Settings.DefaultHotbarRows${type}`),
+        hint: game.i18n.localize("FFXIV.Settings.DefaultHotbarRowsHint"),
+        scope: "world",
+        config: false,
+        default: defaultRows,
+        type: Number,
+        range: {
+          min: 1,
+          max: 5,
+          step: 1,
+        },
+        onChange: () => ui.hotbar?.render(true),
+        requiresReload: false,
+      });
+    }
+
     game.settings.registerMenu("ffxiv", "soundSettingsMenu", {
       name: game.i18n.localize("FFXIV.Settings.SoundSettingsMenu"),
       label: game.i18n.localize("FFXIV.Settings.OpenSettingsMenu"),
@@ -332,6 +435,15 @@ export class SettingsHelpers {
       hint: game.i18n.localize("FFXIV.Settings.CustomTagsSettingsMenuHint"),
       icon: "fas fa-tags",
       type: FFXIVCustomTagsSettingsMenu,
+      restricted: true,
+    });
+
+    game.settings.registerMenu("ffxiv", "hotbarSettingsMenu", {
+      name: game.i18n.localize("FFXIV.Settings.HotbarSettingsMenu"),
+      label: game.i18n.localize("FFXIV.Settings.OpenSettingsMenu"),
+      hint: game.i18n.localize("FFXIV.Settings.HotbarSettingsMenuHint"),
+      icon: "fas fa-table-cells",
+      type: FFXIVHotbarSettingsMenu,
       restricted: true,
     });
 
@@ -414,6 +526,24 @@ export class SettingsHelpers {
       requiresReload: true,
     });
 
+    game.settings.register("ffxiv", "compactDirectories", {
+      name: game.i18n.localize("FFXIV.Settings.CompactDirectories"),
+      hint: game.i18n.localize("FFXIV.Settings.CompactDirectoriesHint"),
+      scope: "client",
+      config: true,
+      default: true,
+      type: Boolean,
+      onChange: (value) => {
+        toggleCompactDirectories(value);
+        refreshCompactDirectoryTabs();
+      },
+      requiresReload: false,
+    });
+    toggleCompactDirectories(game.settings.get("ffxiv", "compactDirectories"));
+    Hooks.once("ready", () =>
+      toggleCompactDirectories(game.settings.get("ffxiv", "compactDirectories")),
+    );
+
     game.settings.register("ffxiv", "autoRollDirectHitDamage", {
       name: game.i18n.localize("FFXIV.Settings.AutoRollDirectHitDamage"),
       hint: game.i18n.localize("FFXIV.Settings.AutoRollDirectHitDamageHint"),
@@ -421,6 +551,111 @@ export class SettingsHelpers {
       config: true,
       default: true,
       type: Boolean,
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", TARGET_CLEAR_SETTING, {
+      name: game.i18n.localize("FFXIV.Settings.TargetClearTiming"),
+      hint: game.i18n.localize("FFXIV.Settings.TargetClearTimingHint"),
+      scope: "client",
+      config: true,
+      default: TARGET_CLEAR_TIMINGS.TURN_END,
+      type: String,
+      choices: {
+        [TARGET_CLEAR_TIMINGS.ABILITY]: game.i18n.localize(
+          "FFXIV.Settings.TargetClearTimingAbility",
+        ),
+        [TARGET_CLEAR_TIMINGS.TURN_END]: game.i18n.localize(
+          "FFXIV.Settings.TargetClearTimingTurnEnd",
+        ),
+        [TARGET_CLEAR_TIMINGS.NEVER]: game.i18n.localize(
+          "FFXIV.Settings.TargetClearTimingNever",
+        ),
+      },
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", AUTOMATION_LEVEL_SETTING, {
+      name: game.i18n.localize("FFXIV.Settings.AutomationLevel"),
+      hint: game.i18n.localize("FFXIV.Settings.AutomationLevelHint"),
+      scope: "world",
+      config: true,
+      default: AUTOMATION_LEVELS.FULL,
+      type: String,
+      choices: {
+        [AUTOMATION_LEVELS.DISABLED]: game.i18n.localize(
+          "FFXIV.Settings.AutomationLevelDisabled",
+        ),
+        [AUTOMATION_LEVELS.ABILITY]: game.i18n.localize(
+          "FFXIV.Settings.AutomationLevelAbility",
+        ),
+        [AUTOMATION_LEVELS.FULL]: game.i18n.localize(
+          "FFXIV.Settings.AutomationLevelFull",
+        ),
+      },
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "floatingDamageNumbers", {
+      name: game.i18n.localize("FFXIV.Settings.FloatingDamageNumbers"),
+      hint: game.i18n.localize("FFXIV.Settings.FloatingDamageNumbersHint"),
+      scope: "world",
+      config: true,
+      default: true,
+      type: Boolean,
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "autoApplySocketRequests", {
+      name: game.i18n.localize("FFXIV.Settings.AutoApplySocketRequests"),
+      hint: game.i18n.localize("FFXIV.Settings.AutoApplySocketRequestsHint"),
+      scope: "world",
+      config: true,
+      default: false,
+      type: Boolean,
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "limitBreakActive", {
+      name: game.i18n.localize("FFXIV.Settings.LimitBreakActive"),
+      hint: game.i18n.localize("FFXIV.Settings.LimitBreakActiveHint"),
+      scope: "world",
+      config: false,
+      default: false,
+      type: Boolean,
+      onChange: () => {
+        refreshLimitBreakHud();
+      },
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "limitBreakMax", {
+      name: game.i18n.localize("FFXIV.Settings.LimitBreakMax"),
+      hint: game.i18n.localize("FFXIV.Settings.LimitBreakMaxHint"),
+      scope: "world",
+      config: false,
+      default: 3,
+      type: Number,
+      range: {
+        min: 1,
+        max: 10,
+        step: 1,
+      },
+      onChange: () => {
+        clampLimitBreakValue();
+        refreshLimitBreakHud();
+      },
+      requiresReload: false,
+    });
+
+    game.settings.register("ffxiv", "limitBreakValue", {
+      name: game.i18n.localize("FFXIV.Settings.LimitBreakValue"),
+      hint: game.i18n.localize("FFXIV.Settings.LimitBreakValueHint"),
+      scope: "world",
+      config: false,
+      default: 3,
+      type: Number,
+      onChange: refreshLimitBreakHud,
       requiresReload: false,
     });
 
@@ -489,7 +724,7 @@ export class SettingsHelpers {
       hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
+      default: "",
       type: String,
       requiresReload: false,
       filePicker: "media",
@@ -499,7 +734,7 @@ export class SettingsHelpers {
       hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
+      default: "",
       type: String,
       requiresReload: false,
       filePicker: "media",
@@ -509,7 +744,7 @@ export class SettingsHelpers {
       hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/sfx/ffxiv-full-party.mp3",
+      default: "",
       type: String,
       requiresReload: false,
       filePicker: "media",
@@ -519,7 +754,7 @@ export class SettingsHelpers {
       hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
+      default: "",
       type: String,
       requiresReload: false,
       filePicker: "media",
@@ -529,7 +764,47 @@ export class SettingsHelpers {
       hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
       scope: "world",
       config: false,
-      default: "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media",
+    });
+    game.settings.register("ffxiv", "soundNotificationFFXIV_limitBreakCharged", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_limitBreakCharged",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
+      scope: "world",
+      config: false,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media",
+    });
+    game.settings.register("ffxiv", "soundNotificationFFXIV_limitBreakActivated", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_limitBreakActivated",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
+      scope: "world",
+      config: false,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media",
+    });
+    game.settings.register("ffxiv", "soundNotificationFFXIV_enmity", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_enmity",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
+      scope: "world",
+      config: false,
+      default: "",
+      type: String,
+      requiresReload: false,
+      filePicker: "media",
+    });
+    game.settings.register("ffxiv", "soundNotificationFFXIV_error", {
+      name: "FFXIV.Settings.soundNotificationFFXIV_error",
+      hint: "FFXIV.Settings.soundNotificationFFXIV_Hint",
+      scope: "world",
+      config: false,
+      default: "",
       type: String,
       requiresReload: false,
       filePicker: "media",

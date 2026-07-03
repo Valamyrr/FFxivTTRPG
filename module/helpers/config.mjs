@@ -1,12 +1,12 @@
 import { getShopTierChoices } from "./shop-tier.mjs";
 
-export const FF_XIV = {};
+export const FFXIV = {};
 
 /**
  * The set of Ability Scores used within the system.
  * @type {Object}
  */
-FF_XIV.attributes = {
+FFXIV.attributes = {
   Strength: {
     value: "Strength",
     label: "FFXIV.Attributes.Strength.long",
@@ -41,7 +41,7 @@ FF_XIV.attributes = {
   },
 };
 
-FF_XIV.characteristics = {
+FFXIV.characteristics = {
   Health: {
     label: "FFXIV.Health.long",
   },
@@ -56,7 +56,7 @@ FF_XIV.characteristics = {
   },
 };
 
-FF_XIV.attributesAbbreviations = {
+FFXIV.attributesAbbreviations = {
   Strength: {
     value: "str",
     label: "FFXIV.CharacterSheet.Attributes.Strength.abbrv",
@@ -79,13 +79,13 @@ FF_XIV.attributesAbbreviations = {
   },
 };
 
-FF_XIV.gear_categories = {
+FFXIV.gear_categories = {
   Arms: { label: "FFXIV.GearCategories.Arms" },
   Armor: { label: "FFXIV.GearCategories.Armor" },
   Accessories: { label: "FFXIV.GearCategories.Accessories" },
 };
 
-FF_XIV.gear_subcategories = {
+FFXIV.gear_subcategories = {
   Arms: {
     category: "Arms",
     label: "FFXIV.GearCategories.Arms",
@@ -112,7 +112,7 @@ FF_XIV.gear_subcategories = {
   },
 };
 
-FF_XIV.roles = {
+FFXIV.roles = {
   tank: {
     value: "tank",
     label: "FFXIV.Roles.Tank",
@@ -127,11 +127,11 @@ FF_XIV.roles = {
   },
 };
 
-FF_XIV.inventory_items = ["consumable", "gear"];
+FFXIV.inventory_items = ["consumable", "gear"];
 
-FF_XIV.minion_types = ["FFXIV.Tags.Minion", "FFXIV.Tags.Mount"];
+FFXIV.minion_types = ["FFXIV.Tags.Minion", "FFXIV.Tags.Mount"];
 
-FF_XIV.rarities = {
+FFXIV.rarities = {
   basic: { value: "basic", label: "FFXIV.Rarities.Basic" },
   green: { value: "green", label: "FFXIV.Rarities.Green" },
   aetherial: { value: "aetherial", label: "FFXIV.Rarities.Aetherial" },
@@ -140,7 +140,7 @@ FF_XIV.rarities = {
   unique: { value: "unique", label: "FFXIV.Rarities.Unique" },
 };
 
-FF_XIV.formula_attributes = {
+FFXIV.formula_attributes = {
   str: { value: "str", label: "FFXIV.Attributes.Strength.long" },
   dex: { value: "dex", label: "FFXIV.Attributes.Dexterity.long" },
   vit: { value: "vit", label: "FFXIV.Attributes.Vitality.long" },
@@ -148,7 +148,7 @@ FF_XIV.formula_attributes = {
   mnd: { value: "mnd", label: "FFXIV.Attributes.Mind.long" },
 };
 
-FF_XIV.base_tags_abilities = [
+FFXIV.base_tags_abilities = [
   "FFXIV.Tags.Physical",
   "FFXIV.Tags.Ranged",
   "FFXIV.Tags.Magic",
@@ -172,14 +172,14 @@ FF_XIV.base_tags_abilities = [
   "FFXIV.Tags.MobileMarker",
 ];
 
-FF_XIV.base_tags_traits = [
+FFXIV.base_tags_traits = [
   "FFXIV.Tags.Trait",
   "FFXIV.Tags.Enhancement",
   "FFXIV.Tags.JobResource",
   "FFXIV.Tags.Machine",
 ];
 
-FF_XIV.base_tags_consumables = [
+FFXIV.base_tags_consumables = [
   "FFXIV.Tags.Primary",
   "FFXIV.Tags.Secondary",
   "FFXIV.Tags.Instant",
@@ -196,4 +196,4 @@ FF_XIV.base_tags_consumables = [
   "FFXIV.Tags.IceAspected",
 ];
 
-FF_XIV.shop_tiers = getShopTierChoices();
+FFXIV.shop_tiers = getShopTierChoices();

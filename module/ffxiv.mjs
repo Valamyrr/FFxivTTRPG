@@ -1,6 +1,6 @@
 // Import document classes.
 import { FFXIVActor } from "./actors/actor.mjs";
-import { FFXIVCombat } from "./combat.mjs";
+import { FFXIVCombat, getTurnStep } from "./combat.mjs";
 import { FFXIVItem } from "./items/item.mjs";
 import { registerDataModels } from "./data-models.mjs";
 // Import sheet classes.
@@ -8,16 +8,36 @@ import { FFXIVActorSheet } from "./actors/actor-sheet.mjs";
 import { FFXIVItemSheet } from "./items/item-sheet.mjs";
 // Import helper/utility classes and constants.
 import { preloadHandlebarsTemplates } from "./helpers/templates.mjs";
-import { FF_XIV } from "./helpers/config.mjs";
+import { FFXIV } from "./helpers/config.mjs";
 import { debugError, debugLog } from "./helpers/debug.mjs";
+import {
+  activateLimitBreakGauge,
+  deactivateLimitBreakGauge,
+  getLimitBreakMax,
+  getLimitBreakValue,
+  initLimitBreakHud,
+  isLimitBreakActive,
+} from "./helpers/limit-break-hud.mjs";
+import { initHudResources } from "./helpers/hud-resources.mjs";
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
 import {
   applyStatusEffectChange,
   applyStatusEffectStackDelta,
+  applyStatusEffectStackValue,
+  getActorDrainValue,
   getStatusStackCount,
+  getStatusStackValue,
+  hasStatus,
+  isEliteFoeBlockedStatus,
+  isNegativeStatusEffect,
+  isAdditiveStackableStatusEffect,
   isStackableStatusEffect,
+  markPetrifiedAppliedThisTurn,
   migrateLegacyStatusStackEffects,
+  recoverActorHealth,
+  recoverActorMana,
+  removeEnmityInflictedByActor,
   updateStatusEffects,
 } from "./helpers/status-effects.mjs";
 import { registerEscapeHandler } from "./helpers/escape.mjs";
@@ -32,6 +52,13 @@ import {
   canonicalizeBakedTag,
   canonicalizeBakedTags,
 } from "./helpers/ability-subtype.mjs";
+import { clearActorJobResources } from "./helpers/job-resources.mjs";
+import {
+  createSummonTokenFromRequest,
+  FFXIV_SUMMON_SOCKET_TYPE,
+} from "./helpers/summons.mjs";
+import { initHotbar, registerHotbarKeybindings } from "./helpers/hotbar.mjs";
+import { emitToActiveGM, getActiveGM } from "./helpers/socket.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -40,11 +67,53 @@ import {
 Hooks.once("init", function () {
   registerDataModels();
   SettingsHelpers.initSettings();
+  game.settings.register("ffxiv", "customMarkers", {
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {},
+  });
+  registerHotbarKeybindings();
   // Add utility classes to the global game object so that they're more easily
   // accessible in global contexts.
   game.ffxivttrpg = {
     FFXIVActor,
     FFXIVItem,
+    placeMarker: (marker) => openRegionMarkerPlacementTool(marker),
+    initializeMarkerEditor: (element, marker, setMarker, signal) => {
+      const size = 15;
+      const state = Array.from({ length: size }, (_, y) =>
+        Array.from({ length: size }, (_, x) => Boolean(marker?.state?.[y]?.[x])),
+      );
+      const geometry = {
+        shape: marker?.shape === "circle" ? "circle" : "grid",
+        radius: marker?.radius ?? null,
+      };
+      initializeMarkerShapeDialog(
+        element,
+        { options: { signal } },
+        state,
+        Math.floor(size / 2),
+        geometry,
+        setMarker,
+      );
+    },
+    renderMarkerPreview: (canvasElement, marker) => {
+      if (!canvasElement || !marker) return;
+      const rendered = renderMarkerDataUrl(
+        marker,
+        Math.max(24, Math.round(canvas.grid.size / 3)),
+      );
+      if (!rendered) return;
+      canvasElement.width = rendered.width;
+      canvasElement.height = rendered.height;
+      const context = canvasElement.getContext("2d");
+      const image = new Image();
+      image.addEventListener("load", () => context.drawImage(image, 0, 0), {
+        once: true,
+      });
+      image.src = rendered.src;
+    },
     runItemMigration: async (force = false) =>
       migrateItemDataStructure({ force }),
     applyGlobalArtworkRotationLock: async () =>
@@ -52,7 +121,7 @@ Hooks.once("init", function () {
   };
 
   // Add custom constants for configuration.
-  CONFIG.FF_XIV = FF_XIV;
+  CONFIG.FFXIV = FFXIV;
 
   // Define custom Document classes
   CONFIG.Actor.documentClass = FFXIVActor;
@@ -111,6 +180,132 @@ Hooks.once("init", function () {
 
   // Preload Handlebars templates.
   return preloadHandlebarsTemplates();
+});
+
+Hooks.on("preCreateActiveEffect", (effect) => {
+  const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
+  if (!actor) return;
+  applyLinkedTraitDataToActiveEffectSource(effect, actor);
+  const statuses = Array.from(effect.statuses ?? effect._source?.statuses ?? []);
+  if (
+    hasStatus(actor, "knocked_out") &&
+    statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+  )
+    return false;
+  if (
+    hasStatus(actor, "comatose") &&
+    statuses.some((statusId) => !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+  )
+    return false;
+  if (
+    hasStatus(actor, "transcendent") &&
+    statuses.some((statusId) => isNegativeStatusEffect(statusId))
+  )
+    return false;
+  if (statuses.some((statusId) => isEliteFoeBlockedStatus(actor, statusId)))
+    return false;
+});
+
+Hooks.on("preUpdateActiveEffect", (effect, changes, options) => {
+  if (options?.ffxivSyncEliteFoeEffect) return;
+  if (effect?.parent?.documentName !== "Actor") return;
+  if (
+    foundry.utils.hasProperty(changes, "statuses")
+  ) {
+    const statuses = Array.from(changes.statuses ?? []);
+    if (
+      hasStatus(effect.parent, "knocked_out") &&
+      statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+    )
+      return false;
+    if (
+      hasStatus(effect.parent, "comatose") &&
+      statuses.some((statusId) => !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+    )
+      return false;
+    if (
+      hasStatus(effect.parent, "transcendent") &&
+      statuses.some((statusId) => isNegativeStatusEffect(statusId))
+    )
+      return false;
+    if (statuses.some((statusId) => isEliteFoeBlockedStatus(effect.parent, statusId)))
+      return false;
+  }
+  if (effect.getFlag("ffxiv", ELITE_FOE_EFFECT_FLAG) !== true) return;
+  if (foundry.utils.hasProperty(changes, "disabled") && changes.disabled === true)
+    return false;
+});
+
+Hooks.on("preDeleteActiveEffect", (effect, options) => {
+  if (options?.ffxivSyncEliteFoeEffect) return;
+  if (effect?.parent?.documentName !== "Actor") return;
+  if (effect.getFlag("ffxiv", ELITE_FOE_EFFECT_FLAG) === true)
+    return false;
+});
+
+Hooks.on("updateActiveEffect", (effect, _changes, options) => {
+  if (options?.ffxivSyncEliteFoeEffect) return;
+  if (effect?.parent?.documentName !== "Actor") return;
+  if (effect.getFlag("ffxiv", ELITE_FOE_EFFECT_FLAG) !== true) return;
+  syncEliteFoeEffect(effect.parent).catch((error) => {
+    debugError("FFXIV | Failed to sync elite foe effect:", error);
+  });
+});
+
+function applyLinkedTraitDataToActiveEffectSource(effect, actor = null) {
+  const parent = actor ?? (effect?.parent?.documentName === "Actor" ? effect.parent : null);
+  const trait = parent?.findTraitLinkedToActiveEffect?.(effect);
+  if (!trait) return;
+
+  const updates = {
+    "flags.ffxiv.linkedTraitId": trait.id,
+    "flags.ffxiv.linkedTraitUuid": trait.uuid,
+    "flags.ffxiv.linkedTraitName": trait.name,
+  };
+  const traitDescription = String(trait.system?.description ?? "").trim();
+  const effectDescription = String(effect.description ?? effect._source?.description ?? "").trim();
+  if (traitDescription && !effectDescription) updates.description = traitDescription;
+  effect.updateSource(updates);
+}
+
+Hooks.on("createActor", (actor) => {
+  syncEliteFoeEffect(actor).catch((error) => {
+    debugError("FFXIV | Failed to sync elite foe effect:", error);
+  });
+});
+
+Hooks.on("updateActor", (actor, changes, options) => {
+  if (foundry.utils.hasProperty(changes, "system.elite_foe")) {
+    syncEliteFoeEffect(actor).catch((error) => {
+      debugError("FFXIV | Failed to sync elite foe effect:", error);
+    });
+  }
+
+  if (options?.ffxivSkipKnockedOutSync) return;
+  if (!foundry.utils.hasProperty(changes, "system.health.value")) return;
+  const health = Number(actor.system?.health?.value ?? 0);
+  if (health > 0 || hasStatus(actor, "knocked_out")) return;
+  applyStatusEffectChange(actor, "knocked_out", true).catch((error) => {
+    debugError("FFXIV | Failed to apply knocked out status:", error);
+  });
+});
+
+Hooks.on("updateCombatant", (combatant, changes, options) => {
+  if (options?.ffxivSyncKnockedOut) return;
+  if (!foundry.utils.hasProperty(changes, "defeated")) return;
+  syncCombatantKnockedOutStatus(combatant).catch((error) => {
+    debugError("FFXIV | Failed to sync defeated status:", error);
+  });
+});
+
+Hooks.on("combat-tracker-dock-init", (api) => {
+  installCarouselCombatTrackerStepIndicators(api);
+});
+
+Hooks.on("renderCombatTracker", (app, html) => {
+  renderCombatStepIndicators(app, html);
+  renderCombatTrackerStatusStacks(app, html);
+  renderCombatTrackerOrderControls(app, html);
 });
 
 /* -------------------------------------------- */
@@ -284,6 +479,19 @@ function isBakedActionTag(tag) {
   );
 }
 
+function normalizeComboStep(step) {
+  return String(step ?? "")
+    .trim()
+    .replace(/^\((.*)\)$/u, "$1")
+    .trim();
+}
+
+function normalizeComboName(name) {
+  return String(name ?? "")
+    .trim()
+    .toLowerCase();
+}
+
 Handlebars.registerHelper("actionTags", function (type, tags) {
   const effectiveType =
     type === "ability" ? getAbilitySubtype({ type, system: { tags } }) : type;
@@ -294,14 +502,39 @@ Handlebars.registerHelper("actionTags", function (type, tags) {
   return bakedTag ? [bakedTag, ...customTags] : customTags;
 });
 
+Handlebars.registerHelper("comboChain", function (combo, currentName) {
+  const source = normalizeComboStep(combo);
+  const steps = source ? [source] : [];
+  const current = normalizeComboStep(currentName);
+  if (
+    current &&
+    !steps.some((step) => normalizeComboName(step) === normalizeComboName(current))
+  ) {
+    steps.push(current);
+  }
+
+  return steps.map((name) => ({
+    name,
+    current: current && normalizeComboName(name) === normalizeComboName(current),
+  }));
+});
+
 Handlebars.registerHelper("customActionTags", function (tags) {
   return Array.isArray(tags)
-    ? tags.filter((tag) => !isBakedActionTag(tag))
+    ? tags.filter((tag) => tag && !isBakedActionTag(tag))
     : [];
 });
 
 Handlebars.registerHelper("hasCustomActionTags", function (tags) {
-  return Array.isArray(tags) && tags.some((tag) => !isBakedActionTag(tag));
+  return Array.isArray(tags) && tags.some((tag) => tag && !isBakedActionTag(tag));
+});
+
+Handlebars.registerHelper("traitCardTags", function (system) {
+  const tags = Handlebars.helpers.customActionTags(system?.tags);
+  if (Number(system?.job_resources_max ?? 0) > 0) {
+    tags.push("FFXIV.Abilities.JobResource");
+  }
+  return tags;
 });
 
 Handlebars.registerHelper("bakedActionTag", function (type) {
@@ -361,22 +594,31 @@ function getCharacterTabIcon(settingKey) {
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_moveItem:
-    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.ogg",
   soundNotificationFFXIV_enterChat:
-    "systems/ffxiv/assets/sfx/ffxiv-full-party.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-full-party.ogg",
   soundNotificationFFXIV_openSheet:
-    "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-switch-target.ogg",
   soundNotificationFFXIV_closeSheet:
-    "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
+  soundNotificationFFXIV_enmity:
+    "systems/ffxiv/assets/sfx/ffxiv-aggro.ogg",
 };
 const FFXIV_BARRIER_OVERLAY_KEY = "ffxivBarrierOverlay";
 const FFXIV_MANA_OVERLAY_KEY = "ffxivManaOverlay";
+const FFXIV_HEALTH_OVERLAY_KEY = "ffxivHealthOverlay";
 
 function playConfiguredSound(setting) {
-  const src = game.settings.get("ffxiv", setting) || DEFAULT_SOUNDS[setting];
+  const configured = game.settings.get("ffxiv", setting);
+  const fallback = DEFAULT_SOUNDS[setting] || "";
+  const src =
+    configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")
+      ? fallback
+      : configured || fallback;
   if (!game.settings.get("ffxiv", "soundNotificationFFXIV") || !src) return;
   foundry.audio.AudioHelper.play({
     src,
+    channel: "interface",
     volume: 1,
     autoplay: true,
     loop: false,
@@ -412,6 +654,11 @@ Handlebars.registerHelper("characterTabs", function (settings) {
     icon: getCharacterTabIcon("imgTabCompanions"),
   });
   items.push({
+    tab: "effects",
+    label: game.i18n.localize("FFXIV.CharacterSheet.Effects"),
+    icon: "systems/ffxiv/assets/tab-icons/active-help.webp",
+  });
+  items.push({
     tab: "settings",
     label: game.i18n.localize("FFXIV.CharacterSheet.Config"),
     icon: getCharacterTabIcon("imgTabSettings"),
@@ -437,12 +684,12 @@ Handlebars.registerHelper("reverse", function (array) {
   return array.slice().reverse(); // Reverse a copy of the array
 });
 Handlebars.registerHelper("labelize", function (category, value) {
-  const configCategory = FF_XIV[category];
+  const configCategory = FFXIV[category];
   const configValue = configCategory ? configCategory[value] : null;
   return configValue ? configValue.label : value;
 });
 Handlebars.registerHelper("delabelize", function (category, label) {
-  const configCategory = FF_XIV[category];
+  const configCategory = FFXIV[category];
   if (!configCategory) return "";
   for (const key in configCategory) {
     if (configCategory[key].label === label) {
@@ -455,7 +702,7 @@ Handlebars.registerHelper("delabelize", function (category, label) {
 Handlebars.registerHelper("buildInventoryGrid", function (items, gridSize) {
   const grid = new Array(gridSize).fill(null); // Create an array of size gridSize filled with null
   items.forEach((item) => {
-    if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1) {
+    if (CONFIG.FFXIV.inventory_items.indexOf(item.type) > -1) {
       //Check item is inventoriable
       const pos = item.system.position;
       if (pos >= 1 && pos <= gridSize) {
@@ -503,7 +750,7 @@ Handlebars.registerHelper("getActor", function (actorId) {
 });
 
 Handlebars.registerHelper("gearBonuses", function (items) {
-  const gearLabels = Object.values(CONFIG.FF_XIV.gear_subcategories).map(
+  const gearLabels = Object.values(CONFIG.FFXIV.gear_subcategories).map(
     (g) => g.label,
   );
   const getGearPosition = (category) => {
@@ -522,8 +769,8 @@ Handlebars.registerHelper("getAttributeBonus", function (gearItems, attrKey) {
   if (!gearItems || gearItems.length === 0) return []; // Prevent errors
   const modifiersList = Object.assign(
     {},
-    CONFIG.FF_XIV.attributes,
-    CONFIG.FF_XIV.characteristics,
+    CONFIG.FFXIV.attributes,
+    CONFIG.FFXIV.characteristics,
   );
   return gearItems.map((item) => {
     const modifierEntry = item.system?.modifiers?.find(
@@ -534,7 +781,7 @@ Handlebars.registerHelper("getAttributeBonus", function (gearItems, attrKey) {
 });
 Handlebars.registerHelper("attributeList", function () {
   return Object.keys(
-    Object.assign({}, CONFIG.FF_XIV.attributes, CONFIG.FF_XIV.characteristics),
+    Object.assign({}, CONFIG.FFXIV.attributes, CONFIG.FFXIV.characteristics),
   );
 });
 Handlebars.registerHelper("hasItemType", function (items, type) {
@@ -547,6 +794,15 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 /* -------------------------------------------- */
 
 Hooks.once("ready", function () {
+  installSheetDragPerformanceClass();
+  initHotbar();
+  initLimitBreakHud();
+  initHudResources();
+  configureCombatTrackedResource().catch((error) => {
+    debugError("FFXIV | Failed to configure combat tracked resource:", error);
+  });
+  installCarouselCombatTrackerStepIndicators();
+  installTokenBarColors();
   installTokenBarrierOverlay();
   installTokenStatusStackCounterOverlay();
   refreshAllTokenStatusStackCounters().catch((error) => {
@@ -555,16 +811,15 @@ Hooks.once("ready", function () {
   installItemDirectoryCompatibilityPatch();
   installItemCreateTypeFilter();
   installStackableStatusEffectHudBehavior();
+  installAbilityLinkedEffectScopeSync();
+  installActorSheetActiveEffectRefresh();
+  installActiveEffectStatusDuplicateControls();
   installGlobalArtworkRotationLock();
   applyGlobalArtworkRotationLock().catch((error) => {
     debugError("FFXIV | Failed to apply global artwork rotation lock:", error);
   });
-
-  // Wait to register hotbar drop hook on ready so that modules could register earlier if they want to
-  Hooks.on("hotbarDrop", (bar, data, slot) => {
-    if (!isFFXIVItemHotbarDrop(data)) return;
-    createItemMacro(data, slot);
-    return false;
+  syncEliteFoeEffects().catch((error) => {
+    debugError("FFXIV | Failed to sync elite foe effects:", error);
   });
 
   // Color Scheme to use with css variables
@@ -584,6 +839,9 @@ Hooks.once("ready", function () {
   }
 
   if (game.user.isGM) {
+    migrateAscendentStatusIdToTranscendent().catch((error) => {
+      debugError("FFXIV | Failed to migrate ascendent status id:", error);
+    });
     migrateLegacyStatusStackEffects().catch((error) => {
       debugError("FFXIV | Failed to migrate legacy status stacks:", error);
     });
@@ -592,6 +850,344 @@ Hooks.once("ready", function () {
     migrateActorCurrencyToFortune();
   }
 });
+
+function installSheetDragPerformanceClass() {
+  let draggedWindow = null;
+
+  const clear = () => {
+    draggedWindow?.classList.remove("ffxiv-window-dragging");
+    draggedWindow = null;
+  };
+
+  document.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    if (event.target?.closest?.("button, a, input, select, textarea")) return;
+
+    const header = event.target?.closest?.(
+      ".application.ffxiv .window-header, .window-app.ffxiv .window-header",
+    );
+    const app = header?.closest?.(".application.ffxiv, .window-app.ffxiv");
+    if (!app) return;
+
+    clear();
+    draggedWindow = app;
+    draggedWindow.classList.add("ffxiv-window-dragging");
+  }, true);
+
+  window.addEventListener("pointerup", clear, true);
+  window.addEventListener("pointercancel", clear, true);
+  window.addEventListener("blur", clear);
+}
+
+async function configureCombatTrackedResource() {
+  if (!game.user.can("SETTINGS_MODIFY")) return;
+
+  const key = foundry.documents.Combat.CONFIG_SETTING;
+  const settings = game.settings.get("core", key);
+  if (settings.resource && settings.resource !== "health") return;
+
+  await game.settings.set("core", key, {
+    ...settings,
+    resource: "health.value",
+  });
+}
+
+function installAbilityLinkedEffectScopeSync() {
+  if (globalThis.__ffxivAbilityEffectScopeSyncInstalled) return;
+  globalThis.__ffxivAbilityEffectScopeSyncInstalled = true;
+
+  Hooks.on("updateActiveEffect", async (effect, changes, options) => {
+    if (options?.ffxivSyncApplyTo) return;
+    const parent = effect?.parent;
+    if (parent?.documentName !== "Item" || parent.type !== "ability") return;
+
+    const hasFlagChange = foundry.utils.hasProperty(changes, "flags.ffxiv.applyTo");
+    const hasTransferChange = foundry.utils.hasProperty(changes, "transfer");
+    if (!hasFlagChange && !hasTransferChange) return;
+
+    const flagged = String(effect.getFlag("ffxiv", "applyTo") || "").trim().toLowerCase();
+    const applyTo = flagged === "self" || flagged === "target" || flagged === "self_auto"
+      ? flagged
+      : effect.transfer
+        ? "self"
+        : "target";
+    const transfer = applyTo === "self";
+
+    const updates = {};
+    if (effect.transfer !== transfer) updates.transfer = transfer;
+    if (flagged !== applyTo) updates["flags.ffxiv.applyTo"] = applyTo;
+    if (!Object.keys(updates).length) return;
+
+    await effect.update(updates, { render: false, ffxivSyncApplyTo: true });
+  });
+}
+
+function installActorSheetActiveEffectRefresh() {
+  if (globalThis.__ffxivActorSheetActiveEffectRefreshInstalled) return;
+  globalThis.__ffxivActorSheetActiveEffectRefreshInstalled = true;
+
+  const refreshActorSheetApps = async (actor) => {
+    const apps = new Set([
+      ...Object.values(actor.apps ?? {}),
+      ...Object.values(ui.windows ?? {}).filter((app) => app?.document === actor),
+    ]);
+    for (const app of apps) {
+      if (!(app instanceof FFXIVActorSheet)) continue;
+      if (app.rendered === false) continue;
+      if (!app._pendingSheetScrollPositions?.length && typeof app._captureSheetScroll === "function") {
+        app._captureSheetScroll();
+      }
+      try {
+        if (typeof app._refreshEffectsPanelIfChanged === "function") {
+          await app._refreshEffectsPanelIfChanged();
+        }
+        if (typeof app._refreshAbilitiesPanel === "function") {
+          await app._refreshAbilitiesPanel();
+        }
+      } finally {
+        if (typeof app._restoreSheetScroll === "function") {
+          app._restoreSheetScroll();
+        }
+      }
+    }
+  };
+
+  const refreshActorSheets = (effect) => {
+    const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
+    if (!actor) return;
+    refreshActorSheetApps(actor).catch((error) => {
+      debugError("FFXIV | Failed to refresh actor sheet active effects:", error);
+    });
+  };
+
+  const cleanupExpiredEffect = (effect) => {
+    if (effect?.parent?.documentName !== "Actor") return;
+    const remaining = Number(effect.duration?.remaining);
+    const expired = Number.isFinite(remaining) && remaining <= 0;
+    if (effect.disabled || !effect.isTemporary || effect.active !== false || !expired) return;
+    effect.delete({ render: false }).catch((error) => {
+      debugError("FFXIV | Failed to delete expired active effect:", error);
+    });
+  };
+
+  Hooks.on("createActiveEffect", (effect, options) => {
+    if (options?.ffxivSuppressStatusText === true) {
+      refreshActorSheets(effect);
+      return;
+    }
+    showActiveEffectCreationText(effect);
+    try {
+      const statuses = Array.from(effect?.statuses ?? effect?._source?.statuses ?? []);
+      const hasEnmity = statuses.some((s) => String(s ?? "").trim() === "enmity");
+      if (hasEnmity) {
+        const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
+        if (actor) {
+          const token = getActorCanvasToken(actor);
+          if (token?.center) {
+            playConfiguredSound("soundNotificationFFXIV_enmity");
+          }
+        }
+      }
+    } catch (err) {
+      debugError("FFXIV | Failed to play enmity sound:", err);
+    }
+    refreshActorSheets(effect);
+  });
+  Hooks.on("updateActiveEffect", (effect) => {
+    cleanupExpiredEffect(effect);
+    refreshActorSheets(effect);
+  });
+  Hooks.on("deleteActiveEffect", (effect, options) => {
+    if (options?.ffxivSuppressRemovalText !== true && options?.ffxivSuppressStatusText !== true)
+      showActiveEffectRemovalText(effect);
+    refreshActorSheets(effect);
+  });
+}
+
+function showActiveEffectCreationText(effect) {
+  try {
+    const statuses = Array.from(effect?.statuses ?? effect?._source?.statuses ?? []);
+    const detrimental = statuses.some((s) => isNegativeStatusEffect(String(s ?? "").trim()));
+    const fill = detrimental ? 0xff6b6b : 0x57d67a;
+    showActiveEffectChangeText(effect, "+", fill);
+  } catch (err) {
+    showActiveEffectChangeText(effect, "+", 0x57d67a);
+  }
+}
+
+function showActiveEffectRemovalText(effect) {
+  try {
+    const statuses = Array.from(effect?.statuses ?? effect?._source?.statuses ?? []);
+    const detrimental = statuses.some((s) => isNegativeStatusEffect(String(s ?? "").trim()));
+    const fill = detrimental ? 0x57d67a : 0xff6b6b;
+    showActiveEffectChangeText(effect, "-", fill);
+  } catch (err) {
+    showActiveEffectChangeText(effect, "-", 0xff6b6b);
+  }
+}
+
+function showActiveEffectChangeText(effect, sign, fill) {
+  const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
+  if (effect?.getFlag?.("ffxiv", ELITE_FOE_EFFECT_FLAG) === true) return;
+  if (!actor || typeof canvas?.interface?.createScrollingText !== "function") return;
+
+  const token = getActorCanvasToken(actor);
+  if (!token?.center) return;
+
+  const direction = CONST.TEXT_ANCHOR_POINTS?.TOP ?? 1;
+  const anchor = CONST.TEXT_ANCHOR_POINTS?.CENTER ?? 0;
+  canvas.interface.createScrollingText(token.center, `${sign}${effect.name}`, {
+    anchor,
+    direction,
+    distance: (canvas.grid?.size ?? 100) * 1.5,
+    fontSize: 28,
+    fill,
+    stroke: 0x000000,
+    strokeThickness: 4,
+    ffxivAllowStatusText: true,
+  });
+}
+
+function installActiveEffectStatusDuplicateControls() {
+  if (globalThis.__ffxivActiveEffectDuplicateControlsInstalled) return;
+  globalThis.__ffxivActiveEffectDuplicateControlsInstalled = true;
+
+  const renderControls = (app, html) => {
+    const effect = app?.document;
+    if (!effect || effect.documentName !== "ActiveEffect") return;
+    const root = getHookHTMLElement(html, app);
+    if (!(root instanceof HTMLElement)) return;
+
+    app._ffxivStatusStackObserver?.disconnect?.();
+    if (app._ffxivStatusStackPoll) {
+      clearInterval(app._ffxivStatusStackPoll);
+      app._ffxivStatusStackPoll = null;
+    }
+
+    const decorate = () => {
+      if (app._ffxivStatusStackDecorating) return;
+      const statusesGroup = root.querySelector(".form-group.statuses");
+      if (!(statusesGroup instanceof HTMLElement)) return;
+
+      app._ffxivStatusStackDecorating = true;
+      const tags = Array.from(
+        statusesGroup.querySelectorAll(".tag[data-key]"),
+      );
+      for (const tag of tags) {
+        const statusId = String(tag.dataset.key ?? "").trim();
+        const existing = tag.querySelector(".ffxiv-status-stack-controls");
+        if (!statusId || !isStackableStatusEffect(statusId)) {
+          existing?.remove();
+          continue;
+        }
+
+        const currentValue = `x${getEffectStatusStackCount(effect, statusId)}`;
+        if (existing) {
+          const valueNode = existing.querySelector(".ffxiv-status-stack-value");
+          if (valueNode && valueNode.textContent !== currentValue) {
+            valueNode.textContent = currentValue;
+          }
+          continue;
+        }
+
+        const controls = document.createElement("span");
+        controls.className = "ffxiv-status-stack-controls";
+
+        const minus = document.createElement("button");
+        minus.type = "button";
+        minus.className = "ffxiv-status-stack-btn";
+        minus.textContent = "−";
+        minus.title = game.i18n.localize("FFXIV.CharacterSheet.StackDecrease");
+
+        const value = document.createElement("span");
+        value.className = "ffxiv-status-stack-value";
+        value.textContent = currentValue;
+
+        const plus = document.createElement("button");
+        plus.type = "button";
+        plus.className = "ffxiv-status-stack-btn";
+        plus.textContent = "+";
+        plus.title = game.i18n.localize("FFXIV.CharacterSheet.StackIncrease");
+
+        const updateCount = async (delta) => {
+          const current = getEffectStatusStackCount(effect, statusId);
+          const next = Math.max(1, current + delta);
+          await effect.update(
+            { [`flags.ffxiv.statusStacks.${statusId}`]: next },
+            { render: false, ffxivStatusStackControl: true },
+          );
+          value.textContent = `x${next}`;
+        };
+
+        minus.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          updateCount(-1);
+        });
+        plus.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          updateCount(1);
+        });
+
+        controls.append(minus, value, plus);
+        tag.appendChild(controls);
+      }
+      app._ffxivStatusStackDecorating = false;
+    };
+
+    const observer = new MutationObserver(() => {
+      if (app._ffxivStatusStackDecorating) return;
+      decorate();
+    });
+    const observeTarget = root.querySelector(".form-group.statuses") ?? root;
+    observer.observe(observeTarget, { childList: true, subtree: true });
+    app._ffxivStatusStackObserver = observer;
+
+    decorate();
+    queueMicrotask(() => decorate());
+    requestAnimationFrame(() => decorate());
+    let polls = 0;
+    app._ffxivStatusStackPoll = setInterval(() => {
+      decorate();
+      polls += 1;
+      if (polls >= 20) {
+        clearInterval(app._ffxivStatusStackPoll);
+        app._ffxivStatusStackPoll = null;
+      }
+    }, 100);
+  };
+
+  Hooks.on("renderActiveEffectConfig", renderControls);
+  Hooks.on("renderActiveEffectConfigV2", renderControls);
+  Hooks.on("renderDocumentSheetV2", (app, html) => {
+    if (app?.constructor?.name !== "ActiveEffectConfig") return;
+    renderControls(app, html);
+  });
+  Hooks.on("closeActiveEffectConfig", (app) => {
+    if (!app) return;
+    app._ffxivStatusStackObserver?.disconnect?.();
+    if (app._ffxivStatusStackPoll) {
+      clearInterval(app._ffxivStatusStackPoll);
+      app._ffxivStatusStackPoll = null;
+    }
+    app._ffxivStatusStackDecorating = false;
+    delete app._ffxivStatusStackObserver;
+  });
+}
+
+function getEffectStatusStackCount(effect, statusId) {
+  const perStatus = Number.parseInt(
+    effect?.getFlag("ffxiv", `statusStacks.${statusId}`),
+    10,
+  );
+  if (Number.isFinite(perStatus) && perStatus > 0) return perStatus;
+  const legacy = Number.parseInt(effect?.getFlag("ffxiv", "stackCount"), 10);
+  if (Number.isFinite(legacy) && legacy > 0) return legacy;
+  return 1;
+}
 
 function installStackableStatusEffectHudBehavior() {
   if (globalThis.__ffxivStackableStatusHudInstalled) return;
@@ -641,6 +1237,23 @@ function installStackableStatusEffectHudBehavior() {
       if (!(icon instanceof HTMLElement)) return;
 
       const statusId = icon.dataset.statusId;
+      const linkedGrantedEffect = actor.effects?.some((effect) => {
+        const statuses = effect?.statuses;
+        return (
+          statuses instanceof Set &&
+          statuses.has(statusId) &&
+          Boolean(effect.getFlag("ffxiv", "linkedSourceEffectId"))
+        );
+      });
+      if (linkedGrantedEffect) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        ui.notifications.warn(
+          game.i18n.localize("FFXIV.Notifications.ActorEffectFromItemLocked"),
+        );
+        return;
+      }
       if (!isStackableStatusEffect(statusId)) return;
 
       // Override core toggle behavior for stackable statuses.
@@ -990,6 +1603,99 @@ async function migrateActorCurrencyToFortune() {
   }
 }
 
+function remapLegacyAscendentStatusIds(statuses) {
+  const source = Array.isArray(statuses)
+    ? statuses
+    : statuses instanceof Set
+      ? Array.from(statuses)
+      : [];
+  if (!source.includes("ascendent")) return null;
+  return Array.from(
+    new Set(
+      source.map((statusId) => (statusId === "ascendent" ? "transcendent" : statusId)),
+    ),
+  );
+}
+
+function getStatusEffectConfig(statusId) {
+  return CONFIG.statusEffects?.find((status) => status.id === statusId);
+}
+
+async function migrateOwnerLegacyStatusEffects(owner, { refreshIcons = false } = {}) {
+  const updates = [];
+  for (const effect of owner?.effects ?? []) {
+    const sourceStatuses = Array.isArray(effect._source?.statuses)
+      ? effect._source.statuses
+      : effect.statuses instanceof Set
+        ? Array.from(effect.statuses)
+        : [];
+    const nextStatuses = remapLegacyAscendentStatusIds(sourceStatuses);
+    const statusIds = nextStatuses ?? sourceStatuses;
+    const update = { _id: effect.id };
+
+    if (nextStatuses) update.statuses = nextStatuses;
+    if (refreshIcons && statusIds.length === 1) {
+      const status = getStatusEffectConfig(statusIds[0]);
+      const img = status?.img || status?.icon || "";
+      if (img && effect.img !== img) update.img = img;
+    }
+
+    if (Object.keys(update).length > 1) updates.push(update);
+  }
+
+  if (updates.length) {
+    await owner.updateEmbeddedDocuments("ActiveEffect", updates, {
+      render: false,
+    });
+  }
+  return updates.length;
+}
+
+async function migrateAscendentStatusIdToTranscendent() {
+  if (!game.user?.isGM) return;
+
+  let migratedItems = 0;
+  let migratedEffects = 0;
+
+  const remapStatusEntries = (entries) => {
+    if (!Array.isArray(entries) || !entries.length) return null;
+    let changed = false;
+    const next = entries.map((entry) => {
+      if (!entry || typeof entry !== "object") return entry;
+      if (entry.id !== "ascendent") return entry;
+      changed = true;
+      return { ...entry, id: "transcendent" };
+    });
+    return changed ? next : null;
+  };
+
+  const migrateItemStatusFields = async (item) => {
+    const updates = {};
+    if (item.system?.status_effect === "ascendent") {
+      updates["system.status_effect"] = "transcendent";
+    }
+    const remappedEntries = remapStatusEntries(item.system?.status_effects);
+    if (remappedEntries) updates["system.status_effects"] = remappedEntries;
+    if (!Object.keys(updates).length) return;
+    await item.update(updates, { render: false });
+    migratedItems += 1;
+  };
+
+  for (const item of game.items ?? []) {
+    await migrateItemStatusFields(item);
+  }
+
+  for (const actor of game.actors ?? []) {
+    migratedEffects += await migrateOwnerLegacyStatusEffects(actor);
+    for (const item of actor.items ?? []) {
+      await migrateItemStatusFields(item);
+      migratedEffects += await migrateOwnerLegacyStatusEffects(item);
+    }
+  }
+
+  if (!migratedItems && !migratedEffects) return;
+}
+
 async function refreshSceneActorStatusEffectsForLegacyIcons() {
   const processedActors = new Set();
 
@@ -997,32 +1703,18 @@ async function refreshSceneActorStatusEffectsForLegacyIcons() {
     for (const token of scene.tokens?.contents ?? []) {
       const actor = token.actor;
       if (!actor) continue;
-      if (processedActors.has(actor.uuid)) continue;
-      processedActors.add(actor.uuid);
+      const key = actor.isToken ? token.uuid : actor.uuid;
+      if (processedActors.has(key)) continue;
+      processedActors.add(key);
 
-      const statusIds = Array.from(actor.statuses ?? []).filter(Boolean);
-      if (!statusIds.length) continue;
-
-      for (const statusId of statusIds) {
-        try {
-          if (isStackableStatusEffect(statusId)) {
-            const count = getStatusStackCount(actor, statusId);
-            if (count <= 0) continue;
-            await applyStatusEffectStackDelta(actor, statusId, -count);
-            await applyStatusEffectStackDelta(actor, statusId, count);
-            continue;
-          }
-
-          await actor.toggleStatusEffect(statusId, { active: false });
-          await actor.toggleStatusEffect(statusId, { active: true });
-        } catch (error) {
-          console.error(
-            "FFXIV | Failed to refresh legacy status icon for",
-            actor.name,
-            statusId,
-            error,
-          );
-        }
+      try {
+        await migrateOwnerLegacyStatusEffects(actor, { refreshIcons: true });
+      } catch (error) {
+        console.error(
+          "FFXIV | Failed to refresh legacy status icons for",
+          actor.name,
+          error,
+        );
       }
     }
   }
@@ -1038,6 +1730,17 @@ const ACTION_FORMULA_TYPES = new Set([
   "augment",
   "minion",
 ]);
+const COMBO_MIGRATION_TYPES = new Set([
+  "ability",
+  "primary_ability",
+  "secondary_ability",
+  "instant_ability",
+]);
+const LEGACY_COMBO_MIGRATION_FLAGS = [
+  "flags.ffxiv.comboFromMigration20",
+  "flags.ffxiv.comboFromMigration22",
+];
+const COMBO_MIGRATION_FLAG = "flags.ffxiv.comboFromMigration22";
 const HP_COST_MIGRATION_TYPES = new Set([
   "ability",
   "primary_ability",
@@ -1048,7 +1751,7 @@ const HP_COST_MIGRATION_TYPES = new Set([
   "augment",
   "minion",
 ]);
-const ITEM_DATA_MIGRATION_VERSION = "16";
+const ITEM_DATA_MIGRATION_VERSION = "22";
 function getMigratableItemCompendiumPacks() {
   return game.packs.filter(
     (pack) => pack.documentName === "Item" && !pack.locked,
@@ -1101,6 +1804,27 @@ function getCanonicalizedAbilityGrantItemTags(abilityGrants) {
         },
       },
     };
+  });
+
+  return changed ? nextGrants : null;
+}
+
+function getStrippedAbilityGrantItemData(abilityGrants) {
+  const entries = Array.isArray(abilityGrants)
+    ? abilityGrants
+    : abilityGrants && typeof abilityGrants === "object"
+      ? Object.values(abilityGrants)
+      : [];
+  if (!entries.length) return null;
+
+  let changed = false;
+  const nextGrants = entries.map((grant) => {
+    if (!grant || typeof grant !== "object" || !Object.hasOwn(grant, "item"))
+      return grant;
+
+    changed = true;
+    const { item, ...rest } = grant;
+    return rest;
   });
 
   return changed ? nextGrants : null;
@@ -1429,6 +2153,21 @@ async function _migrateItemDataStructureInternal({ force = false } = {}) {
       abilityTypeStats,
     );
 
+    if (migrationVersion <= 21) {
+      reportPhase("FFXIV.Notifications.ItemMigrationPhaseComboStart");
+      showMigrationProgress(
+        99,
+        "FFXIV.Notifications.ItemMigrationPhaseComboStart",
+      );
+      const comboStats = await migrateLegacyComboFields();
+      reportPhase("FFXIV.Notifications.ItemMigrationPhaseComboDone", comboStats);
+      showMigrationProgress(
+        99,
+        "FFXIV.Notifications.ItemMigrationPhaseComboDone",
+        comboStats,
+      );
+    }
+
     await game.settings.set(
       "ffxiv",
       "itemMigrationVersion",
@@ -1463,6 +2202,211 @@ function normalizeHpCostValue(raw) {
   const parsed = Number.parseInt(raw, 10);
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
+}
+
+function splitLegacyComboTargets(combo) {
+  return String(combo ?? "")
+    .split(/\s+or\s+/i)
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function hasLegacyComboMigrationFlag(item) {
+  return LEGACY_COMBO_MIGRATION_FLAGS.some((flag) =>
+    foundry.utils.getProperty(item, flag),
+  );
+}
+
+function addLegacyComboLinksFromItems(items, comboLinks) {
+  const entries = Array.from(items ?? [])
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => COMBO_MIGRATION_TYPES.has(item?.type));
+  const byName = new Map();
+  for (const entry of entries) {
+    const name = normalizeComboName(entry.item.name);
+    if (name && !byName.has(name)) byName.set(name, entry);
+  }
+
+  for (const sourceEntry of entries) {
+    const source = sourceEntry.item;
+    if (hasLegacyComboMigrationFlag(source)) continue;
+    const targets = splitLegacyComboTargets(source.system?.combo);
+    if (!targets.length) continue;
+    const targetEntries = targets
+      .map((name) => byName.get(normalizeComboName(name)))
+      .filter(Boolean);
+    if (targetEntries.length !== targets.length) continue;
+    if (
+      targetEntries.some((targetEntry) => targetEntry.index <= sourceEntry.index)
+    )
+      continue;
+    const sourceName = String(source.name ?? "").trim();
+    if (!sourceName) continue;
+    const sourceKey = normalizeComboName(sourceName);
+    if (!comboLinks.has(sourceKey)) {
+      comboLinks.set(sourceKey, { sourceName, targets: new Set() });
+    }
+    const entry = comboLinks.get(sourceKey);
+    for (const target of targets) entry.targets.add(target);
+  }
+}
+
+function addLegacyComboLinksFromGrantItems(itemLike, comboLinks) {
+  if (!["job", "augment"].includes(itemLike?.type)) return;
+  const rawGrants = Array.isArray(itemLike.system?.ability_grants)
+    ? itemLike.system.ability_grants
+    : Object.values(itemLike.system?.ability_grants || {});
+  const grantItems = rawGrants
+    .map((grant) => grant?.item)
+    .filter((item) => item && typeof item === "object");
+  addLegacyComboLinksFromItems(grantItems, comboLinks);
+}
+
+function getItemSourceId(item, index = null) {
+  return item.id ?? item._id ?? (index === null ? null : `__combo_${index}`);
+}
+
+function getLegacyComboMigrationUpdates(items, comboLinks = null) {
+  const entries = Array.from(items ?? [])
+    .map((item, index) => ({ item, id: getItemSourceId(item, index), index }))
+    .filter(({ item }) => COMBO_MIGRATION_TYPES.has(item?.type));
+  const byName = new Map();
+  for (const entry of entries) {
+    const { item } = entry;
+    const name = normalizeComboName(item.name);
+    if (name && !byName.has(name)) byName.set(name, entry);
+  }
+
+  const updatesById = new Map();
+  const ensureUpdate = (item) => {
+    const entry = entries.find(({ item: entryItem }) => entryItem === item);
+    const id = entry?.id;
+    if (!id) return null;
+    if (!updatesById.has(id)) updatesById.set(id, { _id: id });
+    return updatesById.get(id);
+  };
+
+  for (const sourceEntry of entries) {
+    const { item: source, id: sourceId, index: sourceIndex } = sourceEntry;
+    if (hasLegacyComboMigrationFlag(source)) continue;
+    if (comboLinks && !comboLinks.has(normalizeComboName(source.name))) continue;
+    const combo = String(source.system?.combo ?? "").trim();
+    if (!combo) continue;
+
+    const targetNames = splitLegacyComboTargets(combo);
+    const targetEntries = targetNames
+      .map((name) => byName.get(normalizeComboName(name)))
+      .filter((target) => {
+        if (!target) return false;
+        return target.id !== sourceId && target.index > sourceIndex;
+      });
+    if (targetEntries.length !== targetNames.length) continue;
+    const targets = targetEntries.map(({ item }) => item);
+
+    const sourceUpdate = ensureUpdate(source);
+    if (sourceUpdate) {
+      sourceUpdate["system.combo"] = "";
+      sourceUpdate[COMBO_MIGRATION_FLAG] = true;
+    }
+    for (const target of targets) {
+      const targetUpdate = ensureUpdate(target);
+      if (targetUpdate) {
+        targetUpdate["system.combo"] = source.name;
+        targetUpdate[COMBO_MIGRATION_FLAG] = true;
+      }
+    }
+  }
+
+  if (comboLinks) {
+    for (const { sourceName, targets } of comboLinks.values()) {
+      for (const targetName of targets) {
+        const target = byName.get(normalizeComboName(targetName));
+        if (!target) continue;
+        const targetUpdate = ensureUpdate(target.item);
+        if (!targetUpdate) continue;
+        targetUpdate["system.combo"] = sourceName;
+        targetUpdate[COMBO_MIGRATION_FLAG] = true;
+      }
+    }
+  }
+
+  return Array.from(updatesById.values()).filter((update) =>
+    Object.keys(update).some((key) => key !== "_id"),
+  );
+}
+
+function migrateLegacyComboItemSources(itemSources, comboLinks = null) {
+  const items = Array.isArray(itemSources)
+    ? foundry.utils.deepClone(itemSources)
+    : [];
+  const updates = getLegacyComboMigrationUpdates(items, comboLinks);
+  if (!updates.length) return { items, changed: 0 };
+
+  const updatesById = new Map(updates.map((update) => [update._id, update]));
+  let changed = 0;
+  for (const [index, item] of items.entries()) {
+    const update = updatesById.get(getItemSourceId(item, index));
+    if (!update) continue;
+    for (const [path, value] of Object.entries(update)) {
+      if (path === "_id") continue;
+      foundry.utils.setProperty(item, path, value);
+    }
+    changed += 1;
+  }
+
+  return { items, changed };
+}
+
+function getLegacyComboGrantPatch(itemLike, comboLinks = null) {
+  if (!["job", "augment"].includes(itemLike?.type)) return null;
+  const rawGrants = Array.isArray(itemLike.system?.ability_grants)
+    ? itemLike.system.ability_grants
+    : Object.values(itemLike.system?.ability_grants || {});
+  if (!rawGrants.length) return null;
+
+  const nextGrants = foundry.utils.deepClone(rawGrants);
+  const grantItems = nextGrants
+    .map((grant) => grant?.item)
+    .filter((item) => item && typeof item === "object");
+  const migrated = migrateLegacyComboItemSources(grantItems, comboLinks);
+  if (!migrated.changed) return null;
+
+  let itemIndex = 0;
+  for (const grant of nextGrants) {
+    if (!grant?.item || typeof grant.item !== "object") continue;
+    grant.item = migrated.items[itemIndex];
+    itemIndex += 1;
+  }
+
+  return { "system.ability_grants": nextGrants };
+}
+
+async function collectLegacyComboLinks() {
+  const comboLinks = new Map();
+  addLegacyComboLinksFromItems(game.items, comboLinks);
+  for (const item of game.items) addLegacyComboLinksFromGrantItems(item, comboLinks);
+
+  return comboLinks;
+}
+
+async function migrateLegacyComboFields() {
+  let updatedWorldItems = 0;
+  const comboLinks = await collectLegacyComboLinks();
+
+  const worldUpdates = getLegacyComboMigrationUpdates(game.items, comboLinks);
+  for (const item of game.items) {
+    const patch = getLegacyComboGrantPatch(item, comboLinks);
+    if (!patch) continue;
+    worldUpdates.push({ _id: item.id, ...patch });
+  }
+  if (worldUpdates.length) {
+    await Item.updateDocuments(worldUpdates, { render: false });
+    updatedWorldItems = worldUpdates.length;
+  }
+
+  return {
+    updatedWorldItems,
+  };
 }
 
 async function migrateAbilityHpCosts() {
@@ -1680,9 +2624,11 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
   let updatedActorTags = 0;
   let updatedAbilityOrders = 0;
   let updatedJobGrantUUIDs = 0;
+  let strippedActorJobGrantItems = 0;
   let createdCompendiumItems = 0;
   let deletedCompendiumItems = 0;
   let updatedCompendiumTags = 0;
+  let updatedActorCompendiumAbilityItems = 0;
   const migratedUUIDMap = new Map();
   const worldUUIDMap = new Map();
   const worldLegacyIdToUuidMap = new Map();
@@ -1815,7 +2761,7 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
           if (
             nextItemSystem.shop_tier !== normalizedTier.shop_tier ||
             (nextItemSystem.shop_tier_custom ?? "") !==
-              normalizedTier.shop_tier_custom
+            normalizedTier.shop_tier_custom
           ) {
             nextItemSystem.shop_tier = normalizedTier.shop_tier;
             nextItemSystem.shop_tier_custom = normalizedTier.shop_tier_custom;
@@ -1854,8 +2800,13 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
     delete source._id;
     return source;
   };
-  
-  
+  const buildEmbeddedAbilityData = (item) => {
+    const source = buildAbilityData(item);
+    source._id = item.id;
+    return source;
+  };
+
+
   const worldItems = Array.from(game.items);
   const worldLegacyItems = [];
   const worldAbilityItems = worldItems.filter(
@@ -2009,7 +2960,7 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
       updatedJobGrantUUIDs += jobUpdates.length;
     }
   }
-  
+
   const worldGrantUpdates = [];
   for (const item of game.items) {
     if (!grantOwnerTypes.has(item.type)) continue;
@@ -2118,9 +3069,10 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
       });
       updatedActorTags += tagUpdates.length;
     }
-    
+
     const UUIDMap = new Map([...worldUUIDMap, ...actorUUIDMap]);
     const jobUpdates = [];
+    let actorJobGrantUUIDUpdates = 0;
     const actorIdToUuidMap = new Map(worldIdToUuidMap);
 
     for (const [oldUuid, newUuid] of actorUUIDMap.entries()) {
@@ -2138,8 +3090,16 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
           legacyIdToUuidMap: actorIdToUuidMap,
         },
       );
-      if (!nextGrants) continue;
-      const update = { _id: item.id, "system.ability_grants": nextGrants };
+      const strippedGrants = item.type === "job"
+        ? getStrippedAbilityGrantItemData(
+          nextGrants ?? item.system?.ability_grants,
+        )
+        : null;
+      if (!nextGrants && !strippedGrants) continue;
+      const update = {
+        _id: item.id,
+        "system.ability_grants": strippedGrants ?? nextGrants,
+      };
       if (
         item.type === "augment" &&
         String(item.system?.granted_ability ?? "").trim()
@@ -2147,14 +3107,64 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
         update["system.granted_ability"] = "";
       }
       jobUpdates.push(update);
+      if (nextGrants) actorJobGrantUUIDUpdates += 1;
+      if (strippedGrants) strippedActorJobGrantItems += 1;
     }
     if (jobUpdates.length) {
       await actor.updateEmbeddedDocuments("Item", jobUpdates, {
         render: false,
       });
-      updatedJobGrantUUIDs += jobUpdates.length;
+      updatedJobGrantUUIDs += actorJobGrantUUIDUpdates;
     }
   }
+
+  for (const pack of getActorCompendiumPacks()) {
+    await withCompendiumUnlocked(pack, async () => {
+      for (const actor of await pack.getDocuments()) {
+        const tagUpdates = [];
+        const toMigrate = [];
+        for (const item of actor.items) {
+          if (item.type === "ability") {
+            const normalizedTags = ensureMigratedAbilitySubtypeTags(
+              item.system?.tags,
+              getAbilitySubtype(item) || "primary_ability",
+            );
+            const currentTags = Array.isArray(item.system?.tags)
+              ? item.system.tags
+              : [];
+            if (JSON.stringify(normalizedTags) !== JSON.stringify(currentTags)) {
+              tagUpdates.push({ _id: item.id, "system.tags": normalizedTags });
+            }
+            continue;
+          }
+
+          if (legacyAbilityTypes.has(item.type)) toMigrate.push(item);
+        }
+
+        if (tagUpdates.length) {
+          await actor.updateEmbeddedDocuments("Item", tagUpdates, {
+            render: false,
+          });
+          updatedActorCompendiumAbilityItems += tagUpdates.length;
+        }
+
+        if (!toMigrate.length) continue;
+        const createData = toMigrate.map((item) => buildEmbeddedAbilityData(item));
+        await actor.deleteEmbeddedDocuments(
+          "Item",
+          toMigrate.map((item) => item.id),
+          { render: false },
+        );
+        const created = await actor.createEmbeddedDocuments(
+          "Item",
+          createData,
+          { keepId: true, render: false },
+        );
+        updatedActorCompendiumAbilityItems += created.length;
+      }
+    });
+  }
+
   const uuidTextStats = await remapMigratedItemUUIDTextLinks(migratedUUIDMap);
   return {
     createdWorldItems,
@@ -2168,6 +3178,8 @@ async function migrateAbilityItemTypes({ onProgress = null } = {}) {
     updatedActorTags,
     updatedAbilityOrders,
     updatedJobGrantUUIDs,
+    strippedActorJobGrantItems,
+    updatedActorCompendiumAbilityItems,
     ...uuidTextStats,
   };
 }
@@ -2444,79 +3456,6 @@ function applyFFXIVChatTheme(element) {
   chatElement.classList.add("chat-ffxiv", `${theme}_theme`);
 }
 
-function isFFXIVItemHotbarDrop(data) {
-  if (data?.type !== "Item") return false;
-  return Boolean(data.uuid || (data.actorId && data.itemId));
-}
-
-async function createItemMacro(data, slot) {
-  if (data.type !== "Item") return;
-
-  const uuid =
-    data.uuid ||
-    (data.actorId && data.itemId
-      ? `Actor.${data.actorId}.Item.${data.itemId}`
-      : null);
-  if (!uuid) return;
-
-  const item = await fromUuid(uuid);
-  if (!item)
-    return ui.notifications.warn(
-      game.i18n.localize("FFXIV.Notifications.MacroItemMissing"),
-    );
-  const folder = await getPlayerMacroFolder(item);
-
-  const command = `const item = await fromUuid("${uuid}");
-if (!item) return ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.MacroItemMissing"));
-return item.roll?.();`;
-
-  let macro = game.macros.find(
-    (m) =>
-      m.name === item.name &&
-      m.command === command &&
-      m.folder?.id === folder?.id,
-  );
-  if (!macro) {
-    macro = await Macro.create({
-      name: item.name,
-      type: "script",
-      img: item.img,
-      command,
-      folder: folder?.id,
-      flags: { ffxiv: { itemUuid: uuid } },
-    });
-  }
-
-  game.user.assignHotbarMacro(macro, slot);
-  return false;
-}
-
-async function getPlayerMacroFolder(item) {
-  const parentFolder = await getOrCreateMacroFolder("Player Macros");
-  const actorName =
-    item.parent?.documentName === "Actor"
-      ? item.parent.name
-      : game.user.character?.name || game.user.name;
-  return getOrCreateMacroFolder(actorName, parentFolder);
-}
-
-async function getOrCreateMacroFolder(name, parent = null) {
-  const parentId = parent?.id ?? null;
-  const existing = game.folders.find(
-    (folder) =>
-      folder.type === "Macro" &&
-      folder.name === name &&
-      (folder.folder?.id ?? folder.parent ?? null) === parentId,
-  );
-  if (existing) return existing;
-
-  return Folder.create({
-    name,
-    type: "Macro",
-    folder: parentId,
-  });
-}
-
 /* -------------------------------------------- */
 /*  Render Actor Sheet Hook                     */
 /* -------------------------------------------- */
@@ -2536,7 +3475,7 @@ Hooks.on("renderActorSheet", async (app) => {
   const itemsToUpdate = [];
 
   items.forEach((item) => {
-    if (FF_XIV.inventory_items.indexOf(item.type) > -1) {
+    if (FFXIV.inventory_items.indexOf(item.type) > -1) {
       const position = Number(item.system.position) || 0;
       if (occupiedPositions.has(position) || position === 0) {
         itemsToUpdate.push(item);
@@ -2548,7 +3487,7 @@ Hooks.on("renderActorSheet", async (app) => {
 
   let nextFreePosition = 1;
   itemsToUpdate.forEach((item) => {
-    if (CONFIG.FF_XIV.inventory_items.indexOf(item.type) > -1) {
+    if (CONFIG.FFXIV.inventory_items.indexOf(item.type) > -1) {
       while (occupiedPositions.has(nextFreePosition)) {
         nextFreePosition++;
       }
@@ -2672,7 +3611,8 @@ Hooks.on("renderActorSheet", (app, html) => {
   );
 });
 
-Hooks.on("updateItem", (item) => {
+Hooks.on("updateItem", (item, changes, options) => {
+  if (options?.ffxivSkipActorSheetRefresh) return;
   refreshOwnedItemActorSheets(item, { preserveTopWindow: true }).catch((err) =>
     debugError("FFXIV | Failed to refresh actor sheet after item update", err),
   );
@@ -2902,11 +3842,15 @@ Hooks.on("renderTokenHUD", (app, html) => {
 });
 
 Hooks.on("updateActor", (actor, changes) => {
-  if (actor?.type !== "character") return;
-  const manaChanged =
+  if (!["character", "npc"].includes(actor?.type)) return;
+  const resourceChanged =
+    foundry.utils.hasProperty(changes, "system.health.value") ||
+    foundry.utils.hasProperty(changes, "system.health.max") ||
+    foundry.utils.hasProperty(changes, "system.barrier.value") ||
+    foundry.utils.hasProperty(changes, "system.barrier.max") ||
     foundry.utils.hasProperty(changes, "system.mana.value") ||
     foundry.utils.hasProperty(changes, "system.mana.max");
-  if (!manaChanged) return;
+  if (!resourceChanged) return;
   refreshActorTokenBars(actor);
 });
 
@@ -2917,12 +3861,40 @@ function installTokenBarrierOverlay() {
   const originalDrawBars = tokenProto.drawBars;
   tokenProto.drawBars = function (...args) {
     const result = originalDrawBars.apply(this, args);
+    // If Foundry does not have the fancy new bar color hook, paint health the old-fashioned way.
+    // This behaviour was added in 14.364
+    if (!tokenProto._ffxivBarColorsPatched) drawFFXIVHealthBarOverlay(this);
     drawFFXIVBarrierOverlay(this);
     drawFFXIVManaOverlay(this);
     return result;
   };
 
   tokenProto._ffxivBarrierOverlayPatched = true;
+}
+
+function installTokenBarColors() {
+  const tokenProto = foundry.canvas.placeables.Token?.prototype;
+  if (!tokenProto || tokenProto._ffxivBarColorsPatched) return;
+
+  const originalGetBarColors = tokenProto._getBarColors;
+  if (typeof originalGetBarColors !== "function") {
+    // Older Foundry versions do not know this trick yet, so the overlay fallback gets to keep its job.
+    return;
+  }
+  tokenProto._getBarColors = function (index, data) {
+    if (["character", "npc"].includes(this.actor?.type) && data?.attribute === "health") {
+      const value = Math.max(Number(data.value) || 0, 0);
+      const max = Number(data.max) || 0;
+      if (max > 0) {
+        const color = foundry.utils.Color.from(value / max >= 0.3 ? "#54ad24" : "#c12c2c");
+        return { empty: color, full: color };
+      }
+    }
+
+    return originalGetBarColors.call(this, index, data);
+  };
+
+  tokenProto._ffxivBarColorsPatched = true;
 }
 
 function installTokenStatusStackCounterOverlay() {
@@ -2942,6 +3914,7 @@ function installTokenStatusStackCounterOverlay() {
   if (typeof originalRefreshEffects === "function") {
     tokenProto._refreshEffects = function (...args) {
       const result = originalRefreshEffects.apply(this, args);
+      fitFFXIVTokenEffectIconAspectRatios(this);
       drawFFXIVStatusStackCounters(this);
       return result;
     };
@@ -2950,6 +3923,7 @@ function installTokenStatusStackCounterOverlay() {
     if (typeof originalDrawEffects === "function") {
       tokenProto._drawEffects = async function (...args) {
         const result = await originalDrawEffects.apply(this, args);
+        fitFFXIVTokenEffectIconAspectRatios(this);
         drawFFXIVStatusStackCounters(this);
         return result;
       };
@@ -2957,6 +3931,46 @@ function installTokenStatusStackCounterOverlay() {
   }
 
   tokenProto._ffxivStatusStackCounterPatched = true;
+}
+
+function fitFFXIVTokenEffectIconAspectRatios(token) {
+  const effectsContainer = token?.effects;
+  if (!effectsContainer) return;
+
+  for (const sprite of effectsContainer.children.filter(
+    (effect) => effect?.isSprite && effect !== effectsContainer.overlay,
+  )) {
+    const texture = sprite.texture;
+    const textureWidth = Number(texture?.width || texture?.baseTexture?.width);
+    const textureHeight = Number(texture?.height || texture?.baseTexture?.height);
+    if (!Number.isFinite(textureWidth) || !Number.isFinite(textureHeight)) continue;
+    if (textureWidth <= 0 || textureHeight <= 0) continue;
+
+    const currentWidth = Number(sprite.width);
+    const currentHeight = Number(sprite.height);
+    const currentX = Number(sprite.x);
+    const currentY = Number(sprite.y);
+    const currentIsSlot = Math.abs(currentWidth - currentHeight) <= 0.5;
+    const slotWidth = Number(currentIsSlot ? currentWidth : sprite._ffxivEffectSlotWidth);
+    const slotHeight = Number(currentIsSlot ? currentHeight : sprite._ffxivEffectSlotHeight);
+    const slotX = Number(currentIsSlot ? currentX : sprite._ffxivEffectSlotX);
+    const slotY = Number(currentIsSlot ? currentY : sprite._ffxivEffectSlotY);
+    if (!Number.isFinite(slotWidth) || !Number.isFinite(slotHeight)) continue;
+    if (slotWidth <= 0 || slotHeight <= 0) continue;
+
+    sprite._ffxivEffectSlotWidth = slotWidth;
+    sprite._ffxivEffectSlotHeight = slotHeight;
+    sprite._ffxivEffectSlotX = slotX;
+    sprite._ffxivEffectSlotY = slotY;
+
+    const scale = Math.min(slotWidth / textureWidth, slotHeight / textureHeight);
+    const width = textureWidth * scale;
+    const height = textureHeight * scale;
+    sprite.width = width;
+    sprite.height = height;
+    sprite.x = slotX + ((slotWidth - width) / 2);
+    sprite.y = slotY + ((slotHeight - height) / 2);
+  }
 }
 
 async function refreshAllTokenStatusStackCounters() {
@@ -2991,6 +4005,8 @@ function drawFFXIVStatusStackCounters(token) {
     if (statusEffect.img)
       iconPathToStatusId.set(statusEffect.img, statusEffect.id);
   }
+  const iconPathToEffects = getTokenStackableEffectsByIcon(token.actor);
+  const statusIdCounts = getTokenStackableEffectCountsByStatusId(iconPathToEffects);
 
   for (const sprite of effectsContainer.children.filter(
     (effect) => effect?.isSprite && effect !== effectsContainer.overlay,
@@ -2998,8 +4014,11 @@ function drawFFXIVStatusStackCounters(token) {
     const statusId = iconPathToStatusId.get(sprite.name);
     if (!statusId) continue;
 
-    const stackCount = getStatusStackCount(token.actor, statusId);
-    if (stackCount <= 1) continue;
+    const effect = iconPathToEffects.get(sprite.name)?.shift();
+    const stackCount = effect
+      ? getStatusStackValue(effect, 1, statusId)
+      : getStatusStackCount(token.actor, statusId);
+    if (stackCount <= 1 && (statusIdCounts.get(statusId) ?? 0) <= 1) continue;
 
     const iconSize = sprite.height || 20;
     const textStyle = CONFIG.canvasTextStyle.clone();
@@ -3020,6 +4039,93 @@ function drawFFXIVStatusStackCounters(token) {
     label.resolution = Math.max(1, (20 / iconSize) * 1.5);
     counterContainer.addChild(label);
   }
+}
+
+function getTokenStackableEffectsByIcon(actor) {
+  const effectsByIcon = new Map();
+  for (const effect of actor?.effects ?? []) {
+    if (effect.disabled) continue;
+    const statusId = getSingleStackableStatusId(effect);
+    if (!statusId) continue;
+
+    const icon = effect.img || effect.icon;
+    if (!icon) continue;
+    if (!effectsByIcon.has(icon)) effectsByIcon.set(icon, []);
+    effectsByIcon.get(icon).push(effect);
+  }
+  return effectsByIcon;
+}
+
+function getTokenStackableEffectCountsByStatusId(effectsByIcon) {
+  const counts = new Map();
+  for (const effects of effectsByIcon.values()) {
+    for (const effect of effects) {
+      const statusId = getSingleStackableStatusId(effect);
+      if (!statusId) continue;
+      counts.set(statusId, (counts.get(statusId) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+function getSingleStackableStatusId(effect) {
+  const statuses = effect?.statuses;
+  if (!(statuses instanceof Set)) return null;
+  const stackableStatuses = Array.from(statuses).filter((statusId) =>
+    isStackableStatusEffect(statusId),
+  );
+  return stackableStatuses.length === 1 ? stackableStatuses[0] : null;
+}
+
+function drawFFXIVHealthBarOverlay(token) {
+  const overlay = getHealthOverlayGraphic(token);
+  if (!overlay) return;
+
+  overlay.clear();
+  overlay.visible = false;
+
+  if (!token?.actor || !["character", "npc"].includes(token.actor.type)) return;
+
+  const healthBarName = getTokenBarByAttribute(token, "health");
+  if (!healthBarName) return;
+
+  const healthBar = token.bars?.[healthBarName];
+  if (!healthBar || healthBar.visible === false) return;
+
+  const healthData = token.document?.getBarAttribute?.(healthBarName);
+  const maxHealth = Number(healthData?.max) || 0;
+  if (maxHealth <= 0) return;
+
+  const currentHealth = Math.max(Number(healthData?.value) || 0, 0);
+  const healthPct = Math.clamp(currentHealth / maxHealth, 0, 1);
+  const { width, height } = token.document.getSize();
+  const scale = canvas.dimensions.uiScale;
+  const barHeight = 8 * (token.document.height >= 2 ? 1.5 : 1) * scale;
+  const barY = healthBarName === "bar1" ? height - barHeight : 0;
+  const barWidth = width;
+  const healthColor = healthPct * 100 >= 30 ? 0x54ad24 : 0xc12c2c;
+  const trackColor = 0x111111;
+
+  overlay.position.set(0, 0);
+  overlay.lineStyle(scale, 0x000000, 0.85);
+  overlay.beginFill(trackColor, 0.85);
+  overlay.drawRoundedRect(0, barY, barWidth, barHeight, 2 * scale);
+
+  if (healthPct > 0) {
+    overlay.beginFill(healthColor, 0.95);
+    overlay.drawRoundedRect(0, barY, healthPct * barWidth, barHeight, 2 * scale);
+  }
+
+  overlay.visible = true;
+}
+
+function getHealthOverlayGraphic(token) {
+  const bars = token?.bars;
+  if (!bars) return null;
+  if (bars[FFXIV_HEALTH_OVERLAY_KEY]) return bars[FFXIV_HEALTH_OVERLAY_KEY];
+  const overlay = bars.addChild(new PIXI.Graphics());
+  bars[FFXIV_HEALTH_OVERLAY_KEY] = overlay;
+  return overlay;
 }
 
 function drawFFXIVBarrierOverlay(token) {
@@ -3164,12 +4270,423 @@ function refreshActorTokenBars(actor) {
   if (!actor || !canvas?.tokens) return;
 
   for (const token of canvas.tokens.placeables) {
-    if (!token?.actor || token.actor.type !== "character") continue;
-    if (token.actor === actor || token.actor.id === actor.id) {
+    if (!token?.actor || !["character", "npc"].includes(token.actor.type)) continue;
+    if (
+      token.actor === actor ||
+      token.actor.uuid === actor.uuid ||
+      token.actor.id === actor.id
+    ) {
       if (typeof token.drawBars === "function") token.drawBars();
       else token.renderFlags?.set?.({ refreshBars: true });
     }
   }
+}
+
+function renderCombatStepIndicators(app, html) {
+  const element = getHookHTMLElement(html, app);
+  if (!element) return;
+
+  element
+    .querySelectorAll(".ffxiv-combat-step-indicator")
+    .forEach((indicator) => indicator.remove());
+
+  const combat = app?.viewed ?? app?.combat ?? game.combat;
+  const turns = combat?.turns ?? [];
+  if (!turns.length) return;
+
+  const combatantElements = new Map();
+  const combatantRows = element.querySelectorAll("[data-combatant-id]");
+  for (const combatantElement of combatantRows) {
+    const combatantId = combatantElement.dataset.combatantId;
+    if (combatantId) combatantElements.set(combatantId, combatantElement);
+  }
+  if (!combatantElements.size) return;
+
+  let currentStep = null;
+  let previousElement = null;
+  for (const combatant of turns) {
+    const combatantElement = combatantElements.get(combatant.id);
+    if (!combatantElement) continue;
+
+    const step = getTurnStep(combatant);
+    if (step !== currentStep) {
+      if (previousElement) {
+        previousElement.after(createCombatStepIndicator(
+          currentStep,
+          "end",
+          previousElement,
+        ));
+      }
+      combatantElement.before(createCombatStepIndicator(
+        step,
+        "start",
+        combatantElement,
+      ));
+      currentStep = step;
+    }
+    previousElement = combatantElement;
+  }
+
+  if (previousElement) {
+    previousElement.after(createCombatStepIndicator(
+      currentStep,
+      "end",
+      previousElement,
+    ));
+  }
+}
+
+function renderCombatTrackerStatusStacks(app, html) {
+  const element = getHookHTMLElement(html, app);
+  if (!element) return;
+
+  const combat = app?.viewed ?? app?.combat ?? game.combat;
+  if (!combat?.combatants?.size) return;
+
+  const combatantElements = element.querySelectorAll("[data-combatant-id]");
+  for (const combatantElement of combatantElements) {
+    const combatant = combat.combatants.get(
+      combatantElement.dataset.combatantId,
+    );
+    if (!combatant?.actor) continue;
+    decorateCombatantStatusStacks(combatantElement, combatant.actor);
+  }
+}
+
+function decorateCombatantStatusStacks(combatantElement, actor) {
+  const effects = combatantElement.querySelector(
+    ".token-effects, .combatant-effects, .effects",
+  );
+  if (!(effects instanceof HTMLElement)) return;
+
+  effects
+    .querySelectorAll(".ffxiv-combat-status-stack")
+    .forEach((counter) => counter.remove());
+
+  const statusEffects = new Map(
+    (CONFIG.statusEffects ?? []).map((effect) => [effect.id, effect]),
+  );
+  for (const statusId of actor.statuses ?? []) {
+    if (!isStackableStatusEffect(statusId)) continue;
+    const status = statusEffects.get(statusId);
+    const icon = getCombatTrackerStatusIcon(effects, statusId, status);
+    if (!(icon instanceof HTMLImageElement)) continue;
+    const label = game.i18n.localize(status?.name ?? status?.label ?? statusId);
+    const count = getStatusStackCount(actor, statusId);
+    if (count <= 1) {
+      icon.title = label;
+      icon.setAttribute("data-tooltip", label);
+      continue;
+    }
+
+    const wrapper =
+      icon.parentElement?.classList.contains("ffxiv-combat-status")
+        ? icon.parentElement
+        : document.createElement("span");
+    if (wrapper !== icon.parentElement) {
+      wrapper.className = "ffxiv-combat-status";
+      icon.before(wrapper);
+      wrapper.appendChild(icon);
+    }
+
+    const counter = document.createElement("span");
+    counter.className = "ffxiv-combat-status-stack";
+    counter.textContent = String(count);
+    wrapper.appendChild(counter);
+
+    icon.title = `${label} (x${count})`;
+    icon.setAttribute("data-tooltip", `${label} (x${count})`);
+  }
+}
+
+function getCombatTrackerStatusIcon(effects, statusId, status) {
+  const icons = Array.from(effects.querySelectorAll("img"));
+  return icons.find((icon) => {
+    const iconStatusId = String(
+      icon.dataset.statusId ?? icon.dataset.status ?? "",
+    );
+    if (iconStatusId === statusId) return true;
+    const src = String(icon.getAttribute("src") ?? icon.src ?? "");
+    return Boolean(status?.img && src.includes(status.img)) ||
+      Boolean(status?.icon && src.includes(status.icon));
+  });
+}
+
+function renderCombatTrackerOrderControls(app, html) {
+  const element = getHookHTMLElement(html, app);
+  if (!element) return;
+
+  const combat = app?.viewed ?? app?.combat ?? game.combat;
+  const turns = combat?.turns ?? [];
+  if (!turns.length) return;
+
+  const stepIndexes = new Map();
+  for (const combatant of turns) {
+    const step = getTurnStep(combatant);
+    if (!stepIndexes.has(step)) stepIndexes.set(step, []);
+    stepIndexes.get(step).push(combatant.id);
+  }
+
+  const combatantElements = element.querySelectorAll("[data-combatant-id]");
+  for (const combatantElement of combatantElements) {
+    const combatantId = combatantElement.dataset.combatantId;
+    const combatant = combat.combatants.get(combatantId);
+    if (!combatant) continue;
+
+    const controls = getCombatTrackerInitiativeElement(combatantElement);
+    if (!(controls instanceof HTMLElement)) continue;
+
+    const stepIds = stepIndexes.get(getTurnStep(combatant)) ?? [];
+    const index = stepIds.indexOf(combatant.id);
+    controls.replaceChildren(
+      createCombatOrderButton(combat, combatant, -1, index <= 0),
+      createCombatOrderButton(
+        combat,
+        combatant,
+        1,
+        index === -1 || index >= stepIds.length - 1,
+      ),
+    );
+    controls.classList.add("ffxiv-combat-order-controls");
+  }
+}
+
+function getCombatTrackerInitiativeElement(combatantElement) {
+  const element = combatantElement.querySelector(
+    ".token-initiative, .combatant-initiative, .initiative",
+  );
+  if (element instanceof HTMLElement) return element;
+
+  const controls = document.createElement("div");
+  controls.className = "token-initiative";
+  combatantElement.appendChild(controls);
+  return controls;
+}
+
+function createCombatOrderButton(combat, combatant, direction, unavailable) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ffxiv-combat-order-button";
+  button.disabled = unavailable || !game.user.isGM;
+  button.dataset.direction = String(direction);
+  button.title = game.i18n.localize(
+    direction < 0 ? "FFXIV.Combat.MoveUp" : "FFXIV.Combat.MoveDown",
+  );
+
+  const icon = document.createElement("i");
+  icon.className = direction < 0 ? "fas fa-chevron-up" : "fas fa-chevron-down";
+  button.appendChild(icon);
+
+  button.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (button.disabled) return;
+    await combat.reorderCombatant(combatant.id, direction);
+  });
+
+  return button;
+}
+
+function installCarouselCombatTrackerStepIndicators(api = null) {
+  if (globalThis.__ffxivCarouselCombatStepIndicatorsInstalled) return;
+  if (game.modules.get("combat-tracker-dock")?.active !== true) return;
+
+  const CombatDockClass = api?.CombatDock ?? CONFIG.combatTrackerDock?.CombatDock;
+  if (!CombatDockClass?.prototype) return;
+  globalThis.__ffxivCarouselCombatStepIndicatorsInstalled = true;
+
+  const render = (dock) => renderCarouselCombatStepIndicators(dock);
+  for (const method of ["setupCombatants", "updateOrder", "updateCombatant"]) {
+    const original = CombatDockClass.prototype[method];
+    if (typeof original !== "function") continue;
+    CombatDockClass.prototype[method] = function ffxivWrappedCombatDockMethod(
+      ...args
+    ) {
+      const result = original.apply(this, args);
+      render(this);
+      return result;
+    };
+  }
+  renderCarouselCombatStepIndicators(ui.combatDock);
+}
+
+function renderCarouselCombatStepIndicators(dock) {
+  const container = dock?.element?.querySelector?.("#combatants");
+  if (!(container instanceof HTMLElement)) return;
+
+  container
+    .querySelectorAll(".ffxiv-carousel-combat-step-indicator")
+    .forEach((indicator) => indicator.remove());
+
+  const combatants = dock.sortedCombatants ?? dock.combat?.turns ?? [];
+  if (!combatants.length) return;
+
+  const portraitElements = new Map();
+  for (const portrait of dock.portraits ?? []) {
+    if (portrait?.combatant?.id && portrait.element instanceof HTMLElement) {
+      portraitElements.set(portrait.combatant.id, portrait.element);
+    }
+  }
+  for (const element of container.querySelectorAll("[data-combatant-id]")) {
+    const combatantId = element.dataset.combatantId;
+    if (combatantId && !portraitElements.has(combatantId)) {
+      portraitElements.set(combatantId, element);
+    }
+  }
+
+  const orderedEntries = combatants
+    .map((combatant) => {
+      const element = portraitElements.get(combatant.id);
+      if (!(element instanceof HTMLElement)) return null;
+      return {
+        combatant,
+        element,
+        order: getCarouselCombatantElementOrder(element),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.order - b.order);
+  if (!orderedEntries.length) return;
+
+  let currentStep = null;
+  let previousEntry = null;
+  for (const entry of orderedEntries) {
+    const step = getTurnStep(entry.combatant);
+    if (step !== currentStep) {
+      if (previousEntry) {
+        container.appendChild(createCarouselCombatStepBoundary(
+          currentStep,
+          step,
+          previousEntry.order,
+          dock,
+        ));
+      } else {
+        container.appendChild(createCarouselCombatStepIndicator(
+          step,
+          "start",
+          entry.order - 1,
+          dock,
+        ));
+      }
+      currentStep = step;
+    }
+    previousEntry = entry;
+  }
+
+  if (previousEntry) {
+    container.appendChild(createCarouselCombatStepIndicator(
+      currentStep,
+      "end",
+      previousEntry.order + 1,
+      dock,
+    ));
+    moveCarouselRoundSeparatorAfterStepEnd(container, previousEntry.order + 2);
+  }
+}
+
+function getCarouselCombatantElementOrder(element) {
+  const order = Number.parseFloat(element.style.order);
+  if (Number.isFinite(order)) return order;
+  return Array.prototype.indexOf.call(
+    element.parentElement?.children ?? [],
+    element,
+  );
+}
+
+function createCarouselCombatStepIndicator(step, position, order, dock) {
+  const element = document.createElement("div");
+  element.classList.add("separator", "ffxiv-carousel-combat-step-indicator");
+  element.classList.add(`ffxiv-combat-step-${position}`);
+  element.classList.add(dock?.isVertical ? "vertical" : "horizontal");
+  element.dataset.step = String(step);
+  element.setAttribute("role", "presentation");
+  element.title = getCombatStepIndicatorLabel(step, position);
+  element.style.order = String(order);
+  return element;
+}
+
+function createCarouselCombatStepBoundary(previousStep, nextStep, order, dock) {
+  const element = document.createElement("div");
+  element.classList.add(
+    "separator",
+    "ffxiv-carousel-combat-step-indicator",
+    "ffxiv-carousel-combat-step-boundary",
+  );
+  element.classList.add(dock?.isVertical ? "vertical" : "horizontal");
+  element.dataset.previousStep = String(previousStep);
+  element.dataset.nextStep = String(nextStep);
+  element.style.setProperty(
+    "--ffxiv-previous-step-color",
+    getCarouselCombatStepColor(previousStep),
+  );
+  element.style.setProperty(
+    "--ffxiv-next-step-color",
+    getCarouselCombatStepColor(nextStep),
+  );
+  element.setAttribute("role", "presentation");
+  element.title = `${getCombatStepIndicatorLabel(
+    previousStep,
+    "end",
+  )} / ${getCombatStepIndicatorLabel(nextStep, "start")}`;
+  element.style.order = String(order);
+  return element;
+}
+
+function getCarouselCombatStepColor(step) {
+  return step === 0 ? "#54ad24" : "#c12c2c";
+}
+
+function getCombatStepIndicatorLabel(step, position) {
+  const stepLabel = step === 0
+    ? game.i18n.localize("FFXIV.Combat.AdventurerStep")
+    : game.i18n.localize("FFXIV.Combat.EnemyStep");
+  return position === "start"
+    ? stepLabel
+    : game.i18n.format("FFXIV.Combat.StepEnd", { step: stepLabel });
+}
+
+function moveCarouselRoundSeparatorAfterStepEnd(container, order) {
+  const separator = container.querySelector(
+    ".separator:not(.ffxiv-carousel-combat-step-indicator)",
+  );
+  if (separator instanceof HTMLElement) {
+    separator.style.order = String(order);
+  }
+}
+
+async function syncCombatantKnockedOutStatus(combatant) {
+  const actor = combatant?.actor;
+  if (!actor) return;
+
+  const flagKey = "knockedOutFromDefeated";
+  if (combatant.defeated) {
+    if (!hasStatus(actor, "knocked_out")) {
+      await applyStatusEffectChange(actor, "knocked_out", true);
+      if (hasStatus(actor, "knocked_out")) {
+        await combatant.setFlag("ffxiv", flagKey, true);
+      }
+    }
+    return;
+  }
+
+  if (combatant.getFlag("ffxiv", flagKey) !== true) return;
+  await combatant.unsetFlag("ffxiv", flagKey);
+  if (hasStatus(actor, "knocked_out")) {
+    await applyStatusEffectChange(actor, "knocked_out", false);
+  }
+}
+
+function createCombatStepIndicator(step, position, combatantElement) {
+  const tagName = combatantElement?.tagName === "LI" ? "li" : "div";
+  const element = document.createElement(tagName);
+  element.classList.add(
+    "ffxiv-combat-step-indicator",
+    `ffxiv-combat-step-${position}`,
+  );
+  element.dataset.step = String(step);
+  element.setAttribute("role", "presentation");
+  element.textContent = getCombatStepIndicatorLabel(step, position);
+  return element;
 }
 
 function getHookHTMLElement(html, app) {
@@ -3189,42 +4706,242 @@ function getHookHTMLElement(html, app) {
 }
 
 const FFXIV_MARKER_SOCKET_TYPE = "placeMarkerTile";
+const FFXIV_REGION_MARKER_OVERLAY = Symbol("ffxivRegionMarkerOverlay");
+const FFXIV_REGION_MARKER_MASK = Symbol("ffxivRegionMarkerMask");
 const markerDialogs = new WeakSet();
 
-Hooks.on("getSceneControlButtons", (controls) => {
-  if (!controls.tiles?.tools) return;
-  controls.tiles.visible = true;
-
-  const markerTool = {
-    name: "ffxivMarker",
-    title: game.i18n.localize("FFXIV.MarkerPlacement.Title"),
-    icon: "fas fa-map-marker-alt",
-    visible: true,
-    button: true,
-    onChange: async (_event, active) => {
-      if (!active) return;
-      await openMarkerPlacementTool();
-    },
-  };
-  controls.tiles.tools = insertSceneToolAfterSelect(
-    controls.tiles.tools,
-    "ffxivMarker",
-    markerTool,
-  );
+Hooks.on("drawRegion", (region) => {
+  drawRegionMarkerOverlay(region);
 });
 
-function insertSceneToolAfterSelect(tools, toolKey, tool) {
-  const entries = Object.entries(tools).filter(([key]) => key !== toolKey);
-  const selectIndex = entries.findIndex(([key, value]) => {
-    const name = value?.name ?? key;
-    return name === "select" || name === "selectTile" || name === "tilesSelect";
+Hooks.on("refreshRegion", (region) => {
+  drawRegionMarkerOverlay(region);
+});
+
+Hooks.on("destroyRegion", (region) => {
+  region[FFXIV_REGION_MARKER_OVERLAY]?.destroy();
+  region[FFXIV_REGION_MARKER_MASK]?.destroy();
+  delete region[FFXIV_REGION_MARKER_OVERLAY];
+  delete region[FFXIV_REGION_MARKER_MASK];
+});
+
+Hooks.on("preUpdateToken", (token, changes, options) => {
+  if (!("rotation" in changes)) return;
+  const hasFixedMarker = Array.from(token.attachments.regions).some((region) => {
+    const marker = region.getFlag("ffxiv", "markerPlacement");
+    return marker?.targeted && marker.followRotation === false;
   });
-  const insertIndex = selectIndex >= 0 ? selectIndex + 1 : entries.length;
-  entries.splice(insertIndex, 0, [toolKey, tool]);
-  return Object.fromEntries(entries);
+  if (hasFixedMarker) options.ffxivPriorRotation = token.rotation;
+});
+
+Hooks.on("updateToken", async (token, changes, options) => {
+  if (!("rotation" in changes) || !Number.isFinite(options.ffxivPriorRotation))
+    return;
+  const rotation = token.rotation - options.ffxivPriorRotation;
+  if (!rotation) return;
+  const pivot = token.getMovementOrigin(token._source);
+  const updates = [];
+  for (const region of token.attachments.regions) {
+    const marker = region.getFlag("ffxiv", "markerPlacement");
+    if (!marker?.targeted || marker.followRotation !== false) continue;
+    updates.push({
+      _id: region.id,
+      shapes: region.shapes.map((source) => {
+        const shape = source.clone();
+        shape.rotate(-rotation, { pivot });
+        return shape.toObject();
+      }),
+    });
+  }
+  if (updates.length)
+    await token.parent.updateEmbeddedDocuments("Region", updates);
+});
+
+Hooks.on("renderSceneControls", (app, html) => {
+  const element = getHookHTMLElement(html, app);
+  const button = element?.querySelector?.(
+    'button.tool[data-tool="ffxivRegionMarker"]',
+  );
+  if (!button || button.dataset.ffxivClassicMarkerBound) return;
+  button.dataset.ffxivClassicMarkerBound = "true";
+  button.addEventListener("contextmenu", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await openMarkerPlacementTool();
+  });
+});
+
+Hooks.on("getSceneControlButtons", (controls) => {
+  const regionMarkerTool = {
+    name: "ffxivRegionMarker",
+    title: game.i18n.localize("FFXIV.MarkerPlacement.RegionTitle"),
+    icon: "fa-solid fa-bullseye",
+    order: 1,
+    visible: game.user?.hasPermission("REGION_CREATE"),
+    button: true,
+    toolclip: {
+      heading: "FFXIV.MarkerPlacement.Toolclip.Heading",
+      items: [
+        { paragraph: "FFXIV.MarkerPlacement.Toolclip.Description" },
+        {
+          heading: "FFXIV.MarkerPlacement.Toolclip.Region",
+          reference: "CONTROLS.Click",
+        },
+        {
+          heading: "FFXIV.MarkerPlacement.Toolclip.Classic",
+          reference: "CONTROLS.RightClick",
+        },
+      ],
+    },
+    onChange: async (_event, active) => {
+      if (!active) return;
+      await openRegionMarkerPlacementTool();
+    },
+  };
+  const tools = {
+    ffxivRegionMarker: regionMarkerTool,
+    ffxivClearMarkers: {
+      name: "ffxivClearMarkers",
+      title: game.i18n.localize("FFXIV.MarkerPlacement.Clear.Title"),
+      icon: "fa-solid fa-trash",
+      order: 2,
+      visible: game.user?.isGM,
+      button: true,
+      onChange: async (_event, active) => {
+        if (!active) return;
+        await clearPlacedMarkers();
+      },
+    },
+  };
+
+  if (game.user?.isGM) {
+    tools.ffxivLimitBreak = {
+      name: "ffxivLimitBreak",
+      title: game.i18n.localize("FFXIV.LimitBreak.Control"),
+      icon: "fa-regular fa-swords",
+      order: 0,
+      visible: true,
+      button: true,
+      active: isLimitBreakActive(),
+      onChange: async (_event, active) => {
+        if (!active) return;
+        await toggleLimitBreakGauge();
+      },
+    };
+  }
+
+  controls.ffxiv = {
+    name: "ffxiv",
+    title: "Final Fantasy XIV Tools",
+    icon: "ffxiv-control-icon",
+    order:
+      Number(controls.regions?.order ?? controls.region?.order ?? 5) + 0.1,
+    visible: Object.values(tools).some((tool) => tool.visible),
+    tools,
+  };
+});
+
+async function clearPlacedMarkers() {
+  const scene = canvas.scene;
+  if (!scene || !game.user?.isGM) return;
+  const regionIds = scene.regions
+    .filter((region) => region.getFlag("ffxiv", "markerPlacement"))
+    .map((region) => region.id);
+  const tileIds = scene.tiles
+    .filter((tile) => tile.getFlag("ffxiv", "markerPlacement"))
+    .map((tile) => tile.id);
+  if (!regionIds.length && !tileIds.length) {
+    ui.notifications.info(
+      game.i18n.localize("FFXIV.MarkerPlacement.Clear.None"),
+    );
+    return;
+  }
+
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    window: {
+      title: game.i18n.localize("FFXIV.MarkerPlacement.Clear.Title"),
+    },
+    content: `<p>${game.i18n.format(
+      regionIds.length + tileIds.length === 1
+        ? "FFXIV.MarkerPlacement.Clear.ConfirmOne"
+        : "FFXIV.MarkerPlacement.Clear.ConfirmMany",
+      { count: regionIds.length + tileIds.length },
+    )}</p>`,
+  });
+  if (!confirmed) return;
+  if (regionIds.length)
+    await scene.deleteEmbeddedDocuments("Region", regionIds);
+  if (tileIds.length) await scene.deleteEmbeddedDocuments("Tile", tileIds);
 }
 
-async function openMarkerPlacementTool() {
+async function toggleLimitBreakGauge() {
+  if (!game.user?.isGM) return;
+
+  if (isLimitBreakActive()) {
+    await deactivateLimitBreakGauge();
+    refreshSceneControls();
+    return;
+  }
+
+  const max = await promptLimitBreakMax();
+  if (!max) {
+    refreshSceneControls();
+    return;
+  }
+
+  await activateLimitBreakGauge(max);
+  refreshSceneControls();
+}
+
+async function promptLimitBreakMax() {
+  let max = getLimitBreakMax();
+  const content = `
+    <form class="ffxiv-limit-break-dialog">
+      <div class="form-group">
+        <label for="ffxiv-limit-break-max">${game.i18n.localize("FFXIV.LimitBreak.Segments")}</label>
+        <input id="ffxiv-limit-break-max" type="number" name="max" min="1" max="10" step="1" value="${max}">
+      </div>
+    </form>`;
+
+  const confirmed = await foundry.applications.api.DialogV2.wait({
+    window: { title: game.i18n.localize("FFXIV.LimitBreak.Activate") },
+    content,
+    buttons: [
+      {
+        action: "activate",
+        label: game.i18n.localize("FFXIV.LimitBreak.Activate"),
+        icon: "fas fa-check",
+        default: true,
+        callback: () => true,
+      },
+      {
+        action: "cancel",
+        label: game.i18n.localize("FFXIV.Dialogs.Cancel"),
+        icon: "fas fa-times",
+        callback: () => false,
+      },
+    ],
+    render: (_app, html) => {
+      const root = getHookHTMLElement(html);
+      const input = root?.querySelector?.("input[name='max']");
+      input?.addEventListener("change", () => {
+        max = Number(input.value) || max;
+      });
+      input?.addEventListener("input", () => {
+        max = Number(input.value) || max;
+      });
+    },
+  });
+
+  if (!confirmed) return null;
+  return Math.max(1, Math.min(10, Number(max) || 3));
+}
+
+function refreshSceneControls() {
+  globalThis.ui?.controls?.render?.({ force: true });
+}
+
+async function openMarkerPlacementTool(assignedMarker = null) {
   if (!canvas.scene) {
     ui.notifications.error(
       game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"),
@@ -3232,7 +4949,7 @@ async function openMarkerPlacementTool() {
     return;
   }
 
-  const marker = await configureMarkerShape();
+  const marker = assignedMarker ?? (await configureMarkerShape());
   if (!marker) return;
 
   const gridSize = canvas.grid.size;
@@ -3306,6 +5023,539 @@ async function openMarkerPlacementTool() {
   }
 }
 
+async function openRegionMarkerPlacementTool(assignedMarker = null) {
+  if (!canvas.scene) {
+    ui.notifications.error(
+      game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"),
+    );
+    return false;
+  }
+
+  const marker = assignedMarker ?? (await configureMarkerShape({ region: true }));
+  if (!marker) return false;
+  const bounds = getMarkerBounds(marker.state);
+  if (!bounds) {
+    ui.notifications.warn(
+      game.i18n.localize("FFXIV.MarkerPlacement.Errors.EmptyShape"),
+    );
+    return false;
+  }
+
+  const gridSize = canvas.grid.size;
+  const widthCells = bounds.maxX - bounds.minX + 1;
+  const heightCells = bounds.maxY - bounds.minY + 1;
+  const centerX = Math.floor(widthCells / 2);
+  const centerY = Math.floor(heightCells / 2);
+  let placementShape;
+  if (marker.shape === "circle") {
+    placementShape = {
+      type: "circle",
+      x: 0,
+      y: 0,
+      radius: marker.radius * gridSize,
+      gridBased: false,
+    };
+  } else {
+    const baseOffset = canvas.grid.getOffset({ x: 0, y: 0 });
+    const offsets = [];
+    for (let y = bounds.minY; y <= bounds.maxY; y++) {
+      for (let x = bounds.minX; x <= bounds.maxX; x++) {
+        if (!marker.state[y][x]) continue;
+        offsets.push({
+          i: baseOffset.i + y - bounds.minY - centerY,
+          j: baseOffset.j + x - bounds.minX - centerX,
+        });
+      }
+    }
+    placementShape = {
+      type: "grid",
+      offsets,
+      origin: { x: 0, y: 0 },
+    };
+  }
+  const color =
+    marker.mode === "tankbuster"
+      ? "#b22222"
+      : marker.type === "enemy"
+        ? "#ffa500"
+        : "#66ffff";
+  const placementData = createMarkerRegionData({
+    marker,
+    color,
+    shape: placementShape,
+  });
+
+  try {
+    ui.notifications.info(
+      game.i18n.localize(
+        marker.targeted
+          ? "FFXIV.MarkerPlacement.Instructions.ClickToken"
+          : "FFXIV.MarkerPlacement.Instructions.ClickToPlace",
+      ),
+    );
+    const placementPromise = canvas.regions.placeRegion(placementData, {
+      create: false,
+      allowRotation: false,
+      attachToToken: marker.targeted,
+      preSkip: ({ event }) => (event.button !== 0 ? false : undefined),
+    });
+    const stage = canvas.stage;
+    let rightPress = null;
+    const onPointerDown = (event) => {
+      if (event.button !== 2) return;
+      rightPress = {
+        x: event.global.x,
+        y: event.global.y,
+        time: performance.now(),
+        moved: false,
+      };
+    };
+    const onPointerMove = (event) => {
+      if (!rightPress) return;
+      if (Math.hypot(event.global.x - rightPress.x, event.global.y - rightPress.y) > 5) {
+        rightPress.moved = true;
+      }
+    };
+    const onPointerUp = (event) => {
+      if (event.button !== 2 || !rightPress) return;
+      const press = rightPress;
+      rightPress = null;
+      if (!press.moved && performance.now() - press.time <= 350) {
+        canvas.regions._cancelPlacement();
+      }
+    };
+    stage.on("pointerdown", onPointerDown);
+    stage.on("pointermove", onPointerMove);
+    stage.on("pointerup", onPointerUp);
+    stage.on("pointerupoutside", onPointerUp);
+    let placement;
+    try {
+      placement = await placementPromise;
+    } finally {
+      stage.off("pointerdown", onPointerDown);
+      stage.off("pointermove", onPointerMove);
+      stage.off("pointerup", onPointerUp);
+      stage.off("pointerupoutside", onPointerUp);
+    }
+    if (!placement) return false;
+
+    const placedShape = placement.shapes[0];
+    let shapes;
+    if (marker.shape === "circle") {
+      shapes = [placedShape.toObject()];
+    } else {
+      const rectangles = decomposeMarkerRectangles(marker.state, bounds);
+      const originX = placedShape.origin.x - (centerX + 0.5) * gridSize;
+      const originY = placedShape.origin.y - (centerY + 0.5) * gridSize;
+      shapes = rectangles.map((rectangle) => ({
+        type: "rectangle",
+        x: originX + rectangle.x * gridSize,
+        y: originY + rectangle.y * gridSize,
+        width: rectangle.width * gridSize,
+        height: rectangle.height * gridSize,
+        gridBased: false,
+      }));
+    }
+    const regionData = createMarkerRegionData({
+      marker,
+      color,
+      shapes,
+      attachment: placement.attachment.token?.id ?? null,
+      levels: Array.from(placement.levels),
+      hidden: placement.hidden,
+    });
+    await canvas.scene.createEmbeddedDocuments("Region", [regionData], {
+      controlObject: true,
+    });
+    return true;
+  } catch (err) {
+    debugError("Region marker placement failed:", err);
+    ui.notifications.error(
+      game.i18n.localize("FFXIV.MarkerPlacement.Errors.RegionFailed"),
+    );
+    return false;
+  } finally {
+    ui.controls.activate?.({ control: "ffxiv" });
+  }
+}
+
+function createMarkerRegionData({
+  marker,
+  color,
+  shape,
+  shapes,
+  attachment = null,
+  levels = [canvas.level.id],
+  hidden = false,
+}) {
+  return {
+    name: game.i18n.localize("FFXIV.MarkerPlacement.RegionName"),
+    color,
+    shapes: shapes ?? [shape],
+    levels,
+    attachment: { token: attachment },
+    restriction: { enabled: false },
+    highlightMode: "shapes",
+    displayMeasurements: false,
+    visibility: CONST.REGION_VISIBILITY.ALWAYS,
+    hidden,
+    ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
+    flags: {
+      ffxiv: {
+        markerPlacement: {
+          mode: marker.mode,
+          targeted: marker.targeted,
+          followRotation: marker.followRotation,
+          opacity: marker.opacity,
+        },
+      },
+    },
+  };
+}
+
+function drawRegionMarkerOverlay(region) {
+  const marker = region.document.getFlag("ffxiv", "markerPlacement");
+  let overlay = region[FFXIV_REGION_MARKER_OVERLAY];
+  if (!marker) {
+    overlay?.destroy();
+    region[FFXIV_REGION_MARKER_MASK]?.destroy();
+    delete region[FFXIV_REGION_MARKER_OVERLAY];
+    delete region[FFXIV_REGION_MARKER_MASK];
+    return;
+  }
+
+  overlay ??= region.addChild(new PIXI.Graphics());
+  region[FFXIV_REGION_MARKER_OVERLAY] = overlay;
+  let mask = region[FFXIV_REGION_MARKER_MASK];
+  mask ??= region.addChild(new PIXI.Graphics());
+  region[FFXIV_REGION_MARKER_MASK] = mask;
+  drawRegionMarkerMask(mask, region.document.shapes);
+  overlay.mask = mask;
+  overlay.clear();
+  overlay.eventMode = "none";
+
+  const bounds = region.bounds;
+  if (!bounds.width || !bounds.height) return;
+  const alpha = Math.max(0.35, Number(marker.opacity) || 0.8);
+
+  for (const area of getRegionMarkerAreas(region.document.shapes, bounds)) {
+    const centerX = area.x + area.width / 2;
+    const centerY = area.y + area.height / 2;
+    const size = Math.min(canvas.grid.size, area.width, area.height);
+
+    if (marker.mode === "stack") {
+      const halfExtent = Math.min(
+        Math.min(area.width, area.height) / 2,
+        canvas.grid.size * 3,
+      );
+      const armLength = Math.max(0, halfExtent - canvas.grid.size / 2);
+      const chevronLength =
+        armLength > 0
+          ? Math.min(canvas.grid.size * 0.65, armLength * 0.55)
+          : canvas.grid.size * 0.4;
+      const step =
+        armLength > 0
+          ? Math.max(0, (armLength - chevronLength) / 3)
+          : chevronLength * 0.18;
+      const distance =
+        armLength > 0
+          ? halfExtent - chevronLength / 2
+          : chevronLength * 0.9;
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        drawRegionStackChevrons(
+          overlay,
+          centerX + dx * distance,
+          centerY + dy * distance,
+          -dx,
+          -dy,
+          chevronLength,
+          step,
+          alpha,
+        );
+      }
+    }
+
+    if (marker.mode === "knockback") {
+      drawRegionKnockbackPattern(
+        overlay,
+        centerX,
+        centerY,
+        Math.min(area.width, area.height) / 2,
+        canvas.grid.size,
+        alpha,
+      );
+    }
+
+    if (marker.mode === "tankbuster") {
+      drawTankbusterCautionRing(overlay, centerX, centerY, size, alpha);
+      drawTankbusterChevron(overlay, centerX, centerY - size * 1.05, size * 0.55);
+      drawTankbusterChevron(overlay, centerX, centerY - size * 0.45, size * 0.75);
+    }
+  }
+
+}
+
+function getRegionMarkerAreas(shapes, fallback) {
+  if (shapes.length === 1 && shapes[0].type === "circle") {
+    const shape = shapes[0];
+    return [{
+      x: shape.x - shape.radius,
+      y: shape.y - shape.radius,
+      width: shape.radius * 2,
+      height: shape.radius * 2,
+    }];
+  }
+
+  const rectangles = shapes
+    .filter((shape) => shape.type === "rectangle")
+    .map((shape) => ({
+      x: shape.x - shape.width * shape.anchorX,
+      y: shape.y - shape.height * shape.anchorY,
+      width: shape.width,
+      height: shape.height,
+    }));
+  if (rectangles.length) return mergeConnectedMarkerAreas(rectangles);
+
+  const gridShape = shapes.find((shape) => shape.type === "grid");
+  if (gridShape) {
+    const cells = gridShape.offsets.map((offset) => {
+      const center = canvas.grid.getCenterPoint(offset);
+      return {
+        x: center.x - canvas.grid.sizeX / 2,
+        y: center.y - canvas.grid.sizeY / 2,
+        width: canvas.grid.sizeX,
+        height: canvas.grid.sizeY,
+      };
+    });
+    return mergeConnectedMarkerAreas(cells);
+  }
+  return [fallback];
+}
+
+function mergeConnectedMarkerAreas(rectangles) {
+  const groups = rectangles.map((rectangle) => [rectangle]);
+  const overlaps = (a, b) => {
+    const overlapX =
+      Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+    const overlapY =
+      Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+    return (
+      (overlapX > 0 && overlapY >= 0) ||
+      (overlapY > 0 && overlapX >= 0)
+    );
+  };
+  for (let left = 0; left < groups.length; left++) {
+    for (let right = groups.length - 1; right > left; right--) {
+      if (!groups[left].some((a) => groups[right].some((b) => overlaps(a, b))))
+        continue;
+      groups[left].push(...groups[right]);
+      groups.splice(right, 1);
+      left = -1;
+      break;
+    }
+  }
+  return groups.map((group) => {
+    const minX = Math.min(...group.map((area) => area.x));
+    const minY = Math.min(...group.map((area) => area.y));
+    const maxX = Math.max(...group.map((area) => area.x + area.width));
+    const maxY = Math.max(...group.map((area) => area.y + area.height));
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  });
+}
+
+function drawRegionMarkerMask(graphics, shapes) {
+  graphics.clear();
+  graphics.beginFill(0xffffff);
+  for (const shape of shapes) {
+    if (shape.type === "rectangle") {
+      graphics.drawRect(
+        shape.x - shape.width * shape.anchorX,
+        shape.y - shape.height * shape.anchorY,
+        shape.width,
+        shape.height,
+      );
+    } else if (shape.type === "circle") {
+      graphics.drawCircle(shape.x, shape.y, shape.radius);
+    } else if (shape.type === "grid") {
+      const vertices = canvas.grid.getShape();
+      for (const offset of shape.offsets) {
+        const center = canvas.grid.getCenterPoint(offset);
+        graphics.drawPolygon(
+          vertices.flatMap((vertex) => [
+            center.x + vertex.x,
+            center.y + vertex.y,
+          ]),
+        );
+      }
+    }
+  }
+  graphics.endFill();
+}
+
+function drawRegionKnockbackPattern(
+  graphics,
+  x,
+  y,
+  halfExtent,
+  gridSize,
+  alpha,
+) {
+  const reach = Math.min(halfExtent * 0.82, gridSize * 3);
+  const ringCount = reach >= gridSize * 1.75 ? 3 : 2;
+  const innerRadius = Math.min(gridSize * 0.85, reach * 0.7);
+  const colors = [0xfff4bd, 0xffd166, 0xff5a36];
+  for (let ring = 0; ring < ringCount; ring++) {
+    const chevronCount = ring === 0 ? 8 : ringCount === 3 ? 12 : 10;
+    const radius =
+      innerRadius +
+      (ringCount === 1
+        ? 0
+        : (ring / (ringCount - 1)) * Math.max(0, reach - innerRadius));
+    for (let index = 0; index < chevronCount; index++) {
+      const angle = (index / chevronCount) * Math.PI * 2;
+      const ux = Math.cos(angle);
+      const uy = Math.sin(angle);
+      drawRegionChevron(
+        graphics,
+        x + ux * radius,
+        y + uy * radius,
+        ux,
+        uy,
+        gridSize * (ring === 0 ? 0.26 : ringCount === 3 ? 0.3 : 0.32),
+        colors[ring],
+        ring === 0 ? 1 : alpha,
+      );
+    }
+  }
+}
+
+function drawRegionStackChevrons(
+  graphics,
+  x,
+  y,
+  ux,
+  uy,
+  chevronLength,
+  step,
+  alpha,
+) {
+  const colors = [0xd9362b, 0xf06a2a, 0xffcf35, 0xffffff];
+  for (let index = 0; index < colors.length; index++) {
+    drawRegionChevron(
+      graphics,
+      x + ux * index * step,
+      y + uy * index * step,
+      ux,
+      uy,
+      chevronLength,
+      colors[index],
+      index === colors.length - 1 ? 1 : alpha,
+    );
+  }
+}
+
+function drawRegionChevron(graphics, x, y, ux, uy, size, color, alpha) {
+  const px = -uy;
+  const py = ux;
+  const tipX = x + ux * size * 0.5;
+  const tipY = y + uy * size * 0.5;
+  const backX = x - ux * size * 0.5;
+  const backY = y - uy * size * 0.5;
+  const notchX = x + ux * size * 0.12;
+  const notchY = y + uy * size * 0.12;
+  graphics.beginFill(color, alpha);
+  graphics.drawPolygon([
+    tipX,
+    tipY,
+    backX + px * size * 0.5,
+    backY + py * size * 0.5,
+    backX + px * size * 0.22,
+    backY + py * size * 0.22,
+    notchX,
+    notchY,
+    backX - px * size * 0.22,
+    backY - py * size * 0.22,
+    backX - px * size * 0.5,
+    backY - py * size * 0.5,
+  ]);
+  graphics.endFill();
+}
+
+function drawTankbusterCautionRing(graphics, x, y, size, alpha) {
+  const segments = 20;
+  for (const radius of [size * 0.65, size]) {
+    for (let index = 0; index < segments; index++) {
+      const start = (index / segments) * Math.PI * 2;
+      const end = ((index + 1) / segments) * Math.PI * 2;
+      graphics.lineStyle(size * 0.14, index % 2 ? 0x220000 : 0xff315f, alpha);
+      graphics.arc(x, y, radius, start, end);
+    }
+  }
+}
+
+function drawTankbusterChevron(graphics, x, y, size) {
+  const halfWidth = size * 0.65;
+  const thickness = size * 0.28;
+  graphics.lineStyle(Math.max(2, size * 0.1), 0xff315f, 1);
+  graphics.beginFill(0xf5f5f5, 1);
+  graphics.drawPolygon([
+    x - halfWidth,
+    y - thickness,
+    x,
+    y + halfWidth * 0.65,
+    x + halfWidth,
+    y - thickness,
+    x + halfWidth - thickness,
+    y - thickness * 2,
+    x,
+    y + halfWidth * 0.65 - thickness * 1.4,
+    x - halfWidth + thickness,
+    y - thickness * 2,
+  ]);
+  graphics.endFill();
+}
+
+function decomposeMarkerRectangles(state, bounds) {
+  const rows = state
+    .slice(bounds.minY, bounds.maxY + 1)
+    .map((row) => row.slice(bounds.minX, bounds.maxX + 1));
+  const rectangles = [];
+  const active = new Map();
+
+  for (let y = 0; y < rows.length; y++) {
+    const runs = [];
+    for (let x = 0; x < rows[y].length; ) {
+      if (!rows[y][x]) {
+        x++;
+        continue;
+      }
+      const start = x;
+      while (x < rows[y].length && rows[y][x]) x++;
+      runs.push({ x: start, width: x - start });
+    }
+
+    const next = new Map();
+    for (const run of runs) {
+      const key = `${run.x}:${run.width}`;
+      const rectangle = active.get(key) ?? { ...run, y, height: 0 };
+      rectangle.height++;
+      next.set(key, rectangle);
+    }
+    for (const [key, rectangle] of active) {
+      if (!next.has(key)) rectangles.push(rectangle);
+    }
+    active.clear();
+    for (const [key, rectangle] of next) active.set(key, rectangle);
+  }
+  rectangles.push(...active.values());
+  return rectangles;
+}
+
 async function requestMarkerTileCreation(tileData) {
   if (game.user.isGM)
     return createMarkerTileFromRequest({
@@ -3313,7 +5563,7 @@ async function requestMarkerTileCreation(tileData) {
       tileData,
     });
 
-  const gm = game.users.find((user) => user.active && user.isGM);
+  const gm = getActiveGM();
   if (!gm) {
     ui.notifications.error(
       game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoGM"),
@@ -3321,7 +5571,7 @@ async function requestMarkerTileCreation(tileData) {
     return null;
   }
 
-  game.socket.emit("system.ffxiv", {
+  emitToActiveGM({
     type: FFXIV_MARKER_SOCKET_TYPE,
     userName: game.user.name,
     gmUserId: gm.id,
@@ -3357,7 +5607,7 @@ async function createMarkerTile(sceneId, tileData) {
   return result[0] ?? null;
 }
 
-async function configureMarkerShape() {
+async function configureMarkerShape({ region = false } = {}) {
   const size = 15;
   const center = Math.floor(size / 2);
   const state = Array.from({ length: size }, () =>
@@ -3366,12 +5616,15 @@ async function configureMarkerShape() {
   for (let y = center - 2; y <= center + 2; y++) {
     for (let x = center - 2; x <= center + 2; x++) state[y][x] = true;
   }
+  const geometry = { shape: "grid", radius: null };
   let selection = {
     state,
     opacity: 0.8,
     type: "enemy",
     mode: "standard",
     targeted: false,
+    followRotation: true,
+    shape: "grid",
   };
   const wrapper = document.createElement("div");
   wrapper.innerHTML = `
@@ -3397,11 +5650,11 @@ async function configureMarkerShape() {
             <option value="allied">${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Ally")}</option>
           </select>
         </div>
-        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
+        ${region ? "" : `<div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
           <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Opacity")}</label>
           <input type="range" id="ffxiv-marker-opacity" min="0" max="100" value="80">
           <span id="ffxiv-marker-opacity-value">80%</span>
-        </div>
+        </div>`}
         <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
           <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Mode")}</label>
           <select id="ffxiv-marker-mode">
@@ -3411,32 +5664,61 @@ async function configureMarkerShape() {
             <option value="tankbuster">${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Tankbuster")}</option>
           </select>
         </div>
-        <label class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
-          <input type="checkbox" id="ffxiv-marker-targeted">
-          ${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Targeted")}
+        <label class="ffxiv-marker-checkbox">
+          <span class="ffxiv-marker-checkbox-control">
+            <input type="checkbox" id="ffxiv-marker-targeted">
+            <span class="checkmark"></span>
+          </span>
+          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Targeted")}</span>
         </label>
+        ${region ? `<label class="ffxiv-marker-checkbox">
+          <span class="ffxiv-marker-checkbox-control">
+            <input type="checkbox" id="ffxiv-marker-follow-rotation" checked disabled>
+            <span class="checkmark"></span>
+          </span>
+          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.FollowRotation")}</span>
+        </label>
+        <label class="ffxiv-marker-checkbox">
+          <span class="ffxiv-marker-checkbox-control">
+            <input type="checkbox" id="ffxiv-marker-circle">
+            <span class="checkmark"></span>
+          </span>
+          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Circle")}</span>
+        </label>` : ""}
         <div class="ffxiv-marker-grid" style="display: grid; grid-template-columns: repeat(${size}, 24px); flex: 0 0 auto;">
           ${state
-            .flatMap((row, y) =>
-              row.map(
-                (_on, x) =>
-                  `<div class="ffxiv-marker-cell" data-x="${x}" data-y="${y}" style="width: 24px; height: 24px; box-sizing: border-box; border: 1px solid #888; background: ${state[y][x] ? "orange" : "#222"}; cursor: pointer;"></div>`,
-              ),
-            )
-            .join("")}
+      .flatMap((row, y) =>
+        row.map(
+          (_on, x) =>
+            `<div class="ffxiv-marker-cell" data-x="${x}" data-y="${y}" style="width: 24px; height: 24px; box-sizing: border-box; border: 1px solid #888; background: ${state[y][x] ? "orange" : "#222"}; cursor: pointer;"></div>`,
+        ),
+      )
+      .join("")}
         </div>
       </div>
       <div class="ffxiv-marker-panel" style="display: flex; flex-direction: column; gap: 8px; flex: 0 0 260px;">
+        ${region ? `<strong>${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Title")}</strong>
+        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
+          <select id="ffxiv-marker-custom" style="min-width: 0; flex: 1;">
+            <option value="">${game.i18n.localize("FFXIV.MarkerPlacement.Custom.New")}</option>
+          </select>
+          <button type="button" id="ffxiv-marker-save" data-tooltip="${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Save")}">
+            <i class="fa-solid fa-floppy-disk"></i>
+          </button>
+          <button type="button" id="ffxiv-marker-delete" data-tooltip="${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Delete")}">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>` : ""}
         <strong>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Presets")}</strong>
 	        <div class="ffxiv-marker-presets" style="display: flex; flex-direction: column; gap: 8px;">
 	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
 	            <button type="button" data-span="1" data-mode="standard">Standard 3x3</button>
 	            <button type="button" data-span="2" data-mode="standard">Standard 5x5</button>
 	          </div>
-	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
+	          ${region ? "" : `<div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
 	            <button type="button" data-circle-span="2" data-mode="standard">Circle 5x5</button>
 	            <button type="button" data-circle-span="3" data-mode="standard">Circle 7x7</button>
-	          </div>
+	          </div>`}
 	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
 	            <button type="button" data-span="1" data-mode="stack">Stack 3x3</button>
 	            <button type="button" data-span="2" data-mode="stack">Stack 5x5</button>
@@ -3460,13 +5742,18 @@ async function configureMarkerShape() {
     null,
     state,
     center,
+    geometry,
     (selectionValue) => {
       selection = selectionValue;
     },
   );
   const confirmed = await foundry.applications.api.DialogV2.wait({
     window: {
-      title: game.i18n.localize("FFXIV.MarkerPlacement.Title"),
+      title: game.i18n.localize(
+        region
+          ? "FFXIV.MarkerPlacement.Title"
+          : "FFXIV.MarkerPlacement.ClassicTitle",
+      ),
       resizable: true,
     },
     position: { width: 760 },
@@ -3492,6 +5779,7 @@ async function configureMarkerShape() {
         html,
         state,
         center,
+        geometry,
         (selectionValue) => {
           selection = selectionValue;
         },
@@ -3508,6 +5796,7 @@ function initializeMarkerShapeDialog(
   html,
   state,
   center,
+  geometry,
   setSelection,
   dialogKey,
 ) {
@@ -3521,13 +5810,18 @@ function initializeMarkerShapeDialog(
   const opacityValue = element.querySelector("#ffxiv-marker-opacity-value");
   const mode = element.querySelector("#ffxiv-marker-mode");
   const targeted = element.querySelector("#ffxiv-marker-targeted");
+  const followRotation = element.querySelector(
+    "#ffxiv-marker-follow-rotation",
+  );
+  const circle = element.querySelector("#ffxiv-marker-circle");
+  const custom = element.querySelector("#ffxiv-marker-custom");
+  const saveCustom = element.querySelector("#ffxiv-marker-save");
+  const deleteCustom = element.querySelector("#ffxiv-marker-delete");
   const preview = element.querySelector("#ffxiv-marker-preview");
   const previewContainer = preview.closest(".ffxiv-marker-preview");
   if (
     !cells.length ||
     !type ||
-    !opacity ||
-    !opacityValue ||
     !mode ||
     !targeted ||
     !preview
@@ -3535,13 +5829,26 @@ function initializeMarkerShapeDialog(
     markerDialogs.delete(element);
     return false;
   }
+  const getOpacity = () => (opacity ? Number(opacity.value) / 100 : 0.8);
+  const updateGeometry = () => {
+    geometry.shape = circle?.checked ? "circle" : "grid";
+    const bounds = getMarkerBounds(state);
+    geometry.radius =
+      geometry.shape === "circle" && bounds
+        ? Math.max(bounds.maxX - bounds.minX + 1, bounds.maxY - bounds.minY + 1) / 2
+        : null;
+  };
   const updateSelection = () => {
+    updateGeometry();
     setSelection({
       state,
-      opacity: Number(opacity.value) / 100,
+      opacity: getOpacity(),
       type: type.value,
       mode: mode.value,
       targeted: targeted.checked,
+      followRotation: followRotation?.checked ?? true,
+      shape: geometry.shape,
+      radius: geometry.radius,
     });
   };
 
@@ -3563,10 +5870,13 @@ function initializeMarkerShapeDialog(
     const rendered = renderMarkerDataUrl(
       {
         state,
-        opacity: Number(opacity.value) / 100,
+        opacity: getOpacity(),
         type: type.value,
         mode: mode.value,
         targeted: targeted.checked,
+        followRotation: followRotation?.checked ?? true,
+        shape: geometry.shape,
+        radius: geometry.radius,
       },
       Math.max(24, Math.round(canvas.grid.size / 3)),
     );
@@ -3602,17 +5912,62 @@ function initializeMarkerShapeDialog(
     };
     image.src = rendered.src;
   };
+  const getCustomMarkers = () =>
+    foundry.utils.deepClone(game.settings.get("ffxiv", "customMarkers") ?? {});
+  const refreshCustomMarkers = (selected = "") => {
+    if (!custom) return;
+    const markers = getCustomMarkers();
+    custom.replaceChildren(
+      new Option(
+        game.i18n.localize("FFXIV.MarkerPlacement.Custom.New"),
+        "",
+      ),
+      ...Object.keys(markers)
+        .sort((a, b) => a.localeCompare(b))
+        .map((name) => new Option(name, name)),
+    );
+    custom.value = selected in markers ? selected : "";
+    deleteCustom.disabled = !custom.value;
+  };
+  const loadCustomMarker = (name) => {
+    const marker = getCustomMarkers()[name];
+    if (!marker) return;
+    for (let y = 0; y < state.length; y++) {
+      for (let x = 0; x < state[y].length; x++) {
+        state[y][x] = Boolean(marker.state?.[y]?.[x]);
+      }
+    }
+    type.value = marker.type === "allied" ? "allied" : "enemy";
+    mode.value = ["standard", "stack", "knockback", "tankbuster"].includes(
+      marker.mode,
+    )
+      ? marker.mode
+      : "standard";
+    targeted.checked = Boolean(marker.targeted);
+    if (followRotation) {
+      followRotation.checked = marker.followRotation !== false;
+      followRotation.disabled = !targeted.checked;
+    }
+    if (circle) circle.checked = Boolean(marker.circle);
+    type.disabled = mode.value === "tankbuster";
+    updateCells();
+    updatePreview();
+  };
   const configurePreset = (span, presetMode) => {
     for (const row of state) row.fill(false);
     for (let y = center - span; y <= center + span; y++) {
       for (let x = center - span; x <= center + span; x++) state[y][x] = true;
     }
     mode.value = presetMode;
+    if (custom) custom.value = "";
+    if (deleteCustom) deleteCustom.disabled = true;
     type.disabled = presetMode === "tankbuster";
     updateCells();
     updatePreview();
   };
   const configureCirclePreset = (span, presetMode) => {
+    geometry.shape = "circle";
+    geometry.radius = span + 0.5;
     for (const row of state) row.fill(false);
     if (span === 1) {
       state[center][center] = true;
@@ -3682,19 +6037,90 @@ function initializeMarkerShapeDialog(
         );
       });
     });
-  opacity.addEventListener("input", () => {
+  opacity?.addEventListener("input", () => {
     opacityValue.textContent = `${opacity.value}%`;
     updatePreview();
   });
-  type.addEventListener("change", () => {
+  type.addEventListener("change", (event) => {
+    event.stopPropagation();
     updateCells();
     updatePreview();
   });
-  mode.addEventListener("change", () => {
+  mode.addEventListener("change", (event) => {
+    event.stopPropagation();
     type.disabled = mode.value === "tankbuster";
     updatePreview();
   });
-  targeted.addEventListener("change", updatePreview);
+  targeted.addEventListener("change", (event) => {
+    event.stopPropagation();
+    if (followRotation) followRotation.disabled = !targeted.checked;
+    updatePreview();
+  });
+  followRotation?.addEventListener("change", (event) => {
+    event.stopPropagation();
+    updatePreview();
+  });
+  circle?.addEventListener("change", (event) => {
+    event.stopPropagation();
+    updatePreview();
+  });
+  custom?.addEventListener("change", () => {
+    deleteCustom.disabled = !custom.value;
+    if (custom.value) loadCustomMarker(custom.value);
+  });
+  saveCustom?.addEventListener("click", async (event) => {
+    event.preventDefault();
+    let name = custom.value;
+    if (!name) {
+      try {
+        name = await foundry.applications.api.DialogV2.prompt({
+          window: {
+            title: game.i18n.localize("FFXIV.MarkerPlacement.Custom.NameTitle"),
+          },
+          content: `<input type="text" name="name" required autofocus>`,
+          ok: {
+            label: game.i18n.localize("FFXIV.MarkerPlacement.Custom.Save"),
+            callback: (_event, button) =>
+              button.form.elements.name.value.trim(),
+          },
+        });
+      } catch {
+        return;
+      }
+      if (!name) return;
+    }
+    const markers = getCustomMarkers();
+    markers[name] = {
+      state: state.map((row) => Array.from(row, Boolean)),
+      type: type.value,
+      mode: mode.value,
+      targeted: targeted.checked,
+      followRotation: followRotation?.checked ?? true,
+      circle: Boolean(circle?.checked),
+    };
+    await game.settings.set("ffxiv", "customMarkers", markers);
+    refreshCustomMarkers(name);
+  });
+  deleteCustom?.addEventListener("click", async (event) => {
+    event.preventDefault();
+    const name = custom.value;
+    if (!name) return;
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: {
+        title: game.i18n.localize("FFXIV.MarkerPlacement.Custom.Delete"),
+      },
+      content: `<p>${game.i18n.format(
+        "FFXIV.MarkerPlacement.Custom.DeleteConfirm",
+        { name },
+      )}</p>`,
+    });
+    if (!confirmed) return;
+    const markers = getCustomMarkers();
+    delete markers[name];
+    await game.settings.set("ffxiv", "customMarkers", markers);
+    refreshCustomMarkers();
+  });
+  refreshCustomMarkers();
   updateCells();
   updatePreview();
   return true;
@@ -3742,6 +6168,39 @@ function renderMarkerDataUrl(marker, gridSize) {
   const cropped = marker.state
     .slice(bounds.minY, bounds.maxY + 1)
     .map((row) => row.slice(bounds.minX, bounds.maxX + 1));
+  if (marker.shape === "circle" && marker.radius) {
+    const diameter = marker.radius * 2;
+    const width = diameter * gridSize;
+    const height = width;
+    const canvasElement = document.createElement("canvas");
+    canvasElement.width = width;
+    canvasElement.height = height;
+    const ctx = canvasElement.getContext("2d");
+    const baseColor =
+      marker.mode === "tankbuster"
+        ? "firebrick"
+        : marker.type === "enemy"
+          ? "orange"
+          : "#66ffff";
+    ctx.globalAlpha = marker.opacity;
+    ctx.fillStyle = baseColor;
+    ctx.beginPath();
+    ctx.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2);
+    ctx.clip();
+    drawMarkerOverlays(ctx, cropped, gridSize, marker);
+    ctx.restore();
+    return {
+      src: canvasElement.toDataURL("image/webp"),
+      width,
+      height,
+      widthCells: diameter,
+      heightCells: diameter,
+    };
+  }
   const widthCells = cropped[0].length;
   const heightCells = cropped.length;
   const width = widthCells * gridSize;
@@ -3775,7 +6234,16 @@ function renderMarkerDataUrl(marker, gridSize) {
     }
   }
 
-  drawMarkerOverlays(ctx, cropped, width, height, gridSize, marker);
+  ctx.save();
+  ctx.beginPath();
+  for (let y = 0; y < heightCells; y++) {
+    for (let x = 0; x < widthCells; x++) {
+      if (cropped[y][x]) ctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
+    }
+  }
+  ctx.clip();
+  drawMarkerOverlays(ctx, cropped, gridSize, marker);
+  ctx.restore();
   return {
     src: canvasElement.toDataURL("image/webp"),
     width,
@@ -3817,108 +6285,259 @@ function drawMarkerCell(ctx, x, y, size, [top, left, right, bottom]) {
   ctx.closePath();
 }
 
-function drawMarkerOverlays(ctx, cropped, width, height, gridSize, marker) {
-  const widthCells = cropped[0].length;
-  const heightCells = cropped.length;
-  const centerX = Math.floor(widthCells / 2);
-  const centerY = Math.floor(heightCells / 2);
+function drawMarkerOverlays(ctx, cropped, gridSize, marker) {
+  for (const area of getMarkerComponentAreas(cropped, gridSize)) {
+    const cx = area.x + area.width / 2;
+    const cy = area.y + area.height / 2;
 
-  if (marker.mode === "stack") {
-    for (const { dx, dy } of [
-      { dx: 1, dy: 0 },
-      { dx: -1, dy: 0 },
-      { dx: 0, dy: 1 },
-      { dx: 0, dy: -1 },
-    ]) {
-      for (let step = 1; step <= 2; step++) {
-        const x = centerX + dx * step;
-        const y = centerY + dy * step;
-        if (!cropped[y]?.[x]) break;
-        drawMarkerArrow(
+    if (marker.mode === "stack") {
+      const halfExtent = Math.min(
+        Math.min(area.width, area.height) / 2,
+        gridSize * 3,
+      );
+      const armLength = Math.max(0, halfExtent - gridSize / 2);
+      const chevronLength =
+        armLength > 0
+          ? Math.min(gridSize * 0.65, armLength * 0.55)
+          : gridSize * 0.4;
+      const step =
+        armLength > 0
+          ? Math.max(0, (armLength - chevronLength) / 3)
+          : chevronLength * 0.18;
+      const distance =
+        armLength > 0
+          ? halfExtent - chevronLength / 2
+          : chevronLength * 0.9;
+      for (const { dx, dy } of [
+        { dx: 1, dy: 0 },
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: 0, dy: -1 },
+      ]) {
+        drawCanvasStackChevrons(
           ctx,
-          x * gridSize + gridSize / 2,
-          y * gridSize + gridSize / 2,
-          width / 2,
-          height / 2,
-          gridSize * 0.4,
-          "yellow",
-          step === 1 ? marker.opacity : marker.opacity * 0.5,
-          true,
+          cx + dx * distance,
+          cy + dy * distance,
+          -dx,
+          -dy,
+          chevronLength,
+          step,
+          marker.opacity,
         );
       }
     }
-  }
 
-  if (marker.mode === "knockback") {
-    for (let y = 0; y < heightCells; y++) {
-      for (let x = 0; x < widthCells; x++) {
-        if (!cropped[y][x] || (x === centerX && y === centerY)) continue;
-        drawMarkerArrow(
-          ctx,
-          x * gridSize + gridSize / 2,
-          y * gridSize + gridSize / 2,
-          width / 2,
-          height / 2,
-          gridSize * 0.6,
-          "#8b4513",
-          marker.opacity * 0.5,
-          false,
-        );
-      }
+    if (marker.mode === "knockback") {
+      drawCanvasKnockbackPattern(
+        ctx,
+        cx,
+        cy,
+        Math.min(area.width, area.height) / 2,
+        gridSize,
+        marker.opacity,
+      );
+    }
+
+    if (marker.mode === "tankbuster") {
+      drawCanvasTankbusterCautionRing(ctx, cx, cy, gridSize, marker.opacity);
+      drawCanvasTankbusterChevron(
+        ctx,
+        cx,
+        cy - gridSize * 1.05,
+        gridSize * 0.55,
+      );
+      drawCanvasTankbusterChevron(
+        ctx,
+        cx,
+        cy - gridSize * 0.45,
+        gridSize * 0.75,
+      );
     }
   }
 
-  if (marker.targeted && cropped[centerY - 1]?.[centerX]) {
-    const cx = centerX * gridSize + gridSize / 2;
-    const cy = (centerY - 1) * gridSize + gridSize / 2;
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = "red";
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - gridSize * 0.4);
-    ctx.lineTo(cx + gridSize * 0.2, cy);
-    ctx.lineTo(cx, cy + gridSize * 0.4);
-    ctx.lineTo(cx - gridSize * 0.2, cy);
-    ctx.closePath();
-    ctx.fill();
-    ctx.lineWidth = Math.max(2, gridSize * 0.03);
-    ctx.strokeStyle = "black";
-    ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function getMarkerComponentAreas(state, gridSize) {
+  const visited = state.map((row) => row.map(() => false));
+  const areas = [];
+  for (let startY = 0; startY < state.length; startY++) {
+    for (let startX = 0; startX < state[startY].length; startX++) {
+      if (!state[startY][startX] || visited[startY][startX]) continue;
+      const queue = [[startX, startY]];
+      visited[startY][startX] = true;
+      let minX = startX;
+      let minY = startY;
+      let maxX = startX;
+      let maxY = startY;
+      while (queue.length) {
+        const [x, y] = queue.pop();
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+        for (const [nextX, nextY] of [
+          [x + 1, y],
+          [x - 1, y],
+          [x, y + 1],
+          [x, y - 1],
+        ]) {
+          if (
+            !state[nextY]?.[nextX] ||
+            visited[nextY]?.[nextX]
+          )
+            continue;
+          visited[nextY][nextX] = true;
+          queue.push([nextX, nextY]);
+        }
+      }
+      areas.push({
+        x: minX * gridSize,
+        y: minY * gridSize,
+        width: (maxX - minX + 1) * gridSize,
+        height: (maxY - minY + 1) * gridSize,
+      });
+    }
+  }
+  return areas;
+}
+
+function drawCanvasKnockbackPattern(
+  ctx,
+  x,
+  y,
+  halfExtent,
+  gridSize,
+  alpha,
+) {
+  const reach = Math.min(halfExtent * 0.82, gridSize * 3);
+  const ringCount = reach >= gridSize * 1.75 ? 3 : 2;
+  const innerRadius = Math.min(gridSize * 0.85, reach * 0.7);
+  const colors = ["#fff4bd", "#ffd166", "#ff5a36"];
+  for (let ring = 0; ring < ringCount; ring++) {
+    const chevronCount = ring === 0 ? 8 : ringCount === 3 ? 12 : 10;
+    const radius =
+      innerRadius +
+      (ringCount === 1
+        ? 0
+        : (ring / (ringCount - 1)) * Math.max(0, reach - innerRadius));
+    for (let index = 0; index < chevronCount; index++) {
+      const angle = (index / chevronCount) * Math.PI * 2;
+      const ux = Math.cos(angle);
+      const uy = Math.sin(angle);
+      drawCanvasChevron(
+        ctx,
+        x + ux * radius,
+        y + uy * radius,
+        ux,
+        uy,
+        gridSize * (ring === 0 ? 0.26 : ringCount === 3 ? 0.3 : 0.32),
+        colors[ring],
+        ring === 0 ? 1 : alpha,
+      );
+    }
   }
   ctx.globalAlpha = 1;
 }
 
-function drawMarkerArrow(
-  ctx,
-  tileX,
-  tileY,
-  originX,
-  originY,
-  length,
-  color,
-  alpha,
-  inward,
-) {
-  const dx = inward ? originX - tileX : tileX - originX;
-  const dy = inward ? originY - tileY : tileY - originY;
-  const distance = Math.hypot(dx, dy);
-  if (!distance) return;
-  const ux = dx / distance;
-  const uy = dy / distance;
+function drawCanvasChevron(ctx, x, y, ux, uy, size, color, alpha) {
   const px = -uy;
   const py = ux;
-  const halfLength = length / 2;
-  const tipX = tileX + ux * halfLength;
-  const tipY = tileY + uy * halfLength;
-  const baseX = tileX - ux * halfLength;
-  const baseY = tileY - uy * halfLength;
+  const tipX = x + ux * size * 0.5;
+  const tipY = y + uy * size * 0.5;
+  const backX = x - ux * size * 0.5;
+  const backY = y - uy * size * 0.5;
+  const notchX = x + ux * size * 0.12;
+  const notchY = y + uy * size * 0.12;
   ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(baseX + px * length * 0.5, baseY + py * length * 0.5);
-  ctx.lineTo(baseX - px * length * 0.5, baseY - py * length * 0.5);
-  ctx.lineTo(tipX, tipY);
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(backX + px * size * 0.5, backY + py * size * 0.5);
+  ctx.lineTo(backX + px * size * 0.22, backY + py * size * 0.22);
+  ctx.lineTo(notchX, notchY);
+  ctx.lineTo(backX - px * size * 0.22, backY - py * size * 0.22);
+  ctx.lineTo(backX - px * size * 0.5, backY - py * size * 0.5);
   ctx.closePath();
   ctx.fill();
+}
+
+function drawCanvasStackChevrons(
+  ctx,
+  x,
+  y,
+  ux,
+  uy,
+  chevronLength,
+  step,
+  alpha,
+) {
+  const colors = ["#d9362b", "#f06a2a", "#ffcf35", "#ffffff"];
+  for (let index = 0; index < colors.length; index++) {
+    const cx = x + ux * index * step;
+    const cy = y + uy * index * step;
+    const length = chevronLength;
+    const px = -uy;
+    const py = ux;
+    const tipX = cx + ux * length * 0.5;
+    const tipY = cy + uy * length * 0.5;
+    const backX = cx - ux * length * 0.5;
+    const backY = cy - uy * length * 0.5;
+    const notchX = cx + ux * length * 0.12;
+    const notchY = cy + uy * length * 0.12;
+    ctx.globalAlpha = index === colors.length - 1 ? 1 : alpha;
+    ctx.fillStyle = colors[index];
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(backX + px * length * 0.5, backY + py * length * 0.5);
+    ctx.lineTo(backX + px * length * 0.22, backY + py * length * 0.22);
+    ctx.lineTo(notchX, notchY);
+    ctx.lineTo(backX - px * length * 0.22, backY - py * length * 0.22);
+    ctx.lineTo(backX - px * length * 0.5, backY - py * length * 0.5);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawCanvasTankbusterCautionRing(ctx, x, y, size, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = size * 0.14;
+  for (const radius of [size * 0.65, size]) {
+    ctx.strokeStyle = "#ff315f";
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "#220000";
+    ctx.setLineDash([size * 0.22, size * 0.22]);
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCanvasTankbusterChevron(ctx, x, y, size) {
+  const halfWidth = size * 0.65;
+  const thickness = size * 0.28;
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#f5f5f5";
+  ctx.strokeStyle = "#ff315f";
+  ctx.lineWidth = Math.max(2, size * 0.1);
+  ctx.beginPath();
+  ctx.moveTo(x - halfWidth, y - thickness);
+  ctx.lineTo(x, y + halfWidth * 0.65);
+  ctx.lineTo(x + halfWidth, y - thickness);
+  ctx.lineTo(x + halfWidth - thickness, y - thickness * 2);
+  ctx.lineTo(x, y + halfWidth * 0.65 - thickness * 1.4);
+  ctx.lineTo(x - halfWidth + thickness, y - thickness * 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 async function previewMarkerPlacement(rendered) {
@@ -4076,22 +6695,1103 @@ function getCenteredMarkerPosition(tile, tokenPosition) {
   };
 }
 
-function applyDamageToActor(actor, damage) {
+async function applyDamageToActor(actor, damage, options = {}) {
   const incomingDamage = Math.max(Number.parseInt(damage, 10) || 0, 0);
   const barrier = Math.max(Number(actor.system.barrier?.value) || 0, 0);
   const healthDamage = Math.max(incomingDamage - barrier, 0);
+  const nextHealth = Math.max(
+    (Number(actor.system.health?.value) || 0) - healthDamage,
+    0,
+  );
   const updates = {
-    "system.health.value": Math.max(
-      (Number(actor.system.health?.value) || 0) - healthDamage,
-      0,
-    ),
+    "system.health.value": nextHealth,
   };
 
   if (barrier > 0) {
     updates["system.barrier.value"] = Math.max(barrier - incomingDamage, 0);
   }
 
-  return actor.update(updates);
+  const result = await actor.update(updates, { ffxivSkipKnockedOutSync: true });
+  if (healthDamage > 0 && nextHealth <= 0 && !hasStatus(actor, "knocked_out")) {
+    await applyStatusEffectChange(actor, "knocked_out", true);
+  }
+  showFloatingCombatText(actor, incomingDamage, "damage", options);
+  return result;
+}
+
+async function applyHealingToActor(actor, amount, options = {}) {
+  const result = await recoverActorHealth(actor, amount);
+  if (result.healing > 0) {
+    showFloatingCombatText(actor, result.healing, "healing", options);
+  }
+  return result;
+}
+
+function showFloatingCombatText(actor, amount, kind, options = {}) {
+  const value = Math.max(Number.parseInt(amount, 10) || 0, 0);
+  if (value <= 0) return;
+  if (!game.settings.get("ffxiv", "floatingDamageNumbers")) return;
+  if (typeof canvas?.interface?.createScrollingText !== "function") return;
+
+  const token = options.token ?? getActorCanvasToken(actor);
+  if (!token?.center) return;
+
+  const isHealing = kind === "healing";
+  const direction = CONST.TEXT_ANCHOR_POINTS?.TOP ?? 1;
+  const anchor = CONST.TEXT_ANCHOR_POINTS?.CENTER ?? 0;
+  canvas.interface.createScrollingText(token.center, `${isHealing ? "+" : "-"}${value}`, {
+    anchor,
+    direction,
+    distance: (canvas.grid?.size ?? 100) * 1.5,
+    fontSize: 34,
+    fill: isHealing ? 0x62d26f : 0xff5c5c,
+    stroke: 0x000000,
+    strokeThickness: 5,
+  });
+}
+
+function getActorCanvasToken(actor) {
+  if (!actor) return null;
+  const actorUuid = String(actor.uuid ?? "").trim();
+  const tokens = canvas?.tokens?.placeables ?? [];
+  const exactTokens = tokens.filter((token) => {
+    const tokenActor = token.actor;
+    return (
+      tokenActor === actor ||
+      (actorUuid && tokenActor?.uuid === actorUuid)
+    );
+  });
+  if (exactTokens.length) {
+    return exactTokens.find((token) => token.isOwner) ?? exactTokens[0];
+  }
+  if (actorUuid && !actorUuid.startsWith("Actor.")) return null;
+
+  const fallbackTokens = tokens.filter((token) => {
+    const tokenActor = token.actor;
+    return (
+      tokenActor?.id === actor.id ||
+      token.document?.actorId === actor.id
+    );
+  });
+  return fallbackTokens.find((token) => token.isOwner) ?? fallbackTokens[0] ?? null;
+}
+
+async function applyDamageToActorWithEffects(
+  targetActor,
+  rawDamage,
+  { sourceActor = null, targetToken = null } = {},
+) {
+  const damage = getDamageWithEffects(targetActor, rawDamage, { sourceActor });
+  if (!damage) return null;
+  if (damage.resolvedDamage > 0) {
+    await applyDamageToActor(targetActor, damage.resolvedDamage, {
+      token: targetToken,
+    });
+    if (hasStatus(targetActor, "sleep")) {
+      await applyStatusEffectChange(targetActor, "sleep", false);
+    }
+    await applyDrainRecovery(sourceActor);
+  }
+  return damage;
+}
+
+function getDamageWithEffects(
+  targetActor,
+  rawDamage,
+  { sourceActor = null } = {},
+) {
+  if (!targetActor) return null;
+  const baseDamage = Math.max(Number.parseInt(rawDamage, 10) || 0, 0);
+  if (baseDamage <= 0) {
+    return { actor: targetActor, baseDamage, resolvedDamage: 0 };
+  }
+  if (hasStatus(targetActor, "transcendent")) {
+    return { actor: targetActor, baseDamage, resolvedDamage: 0 };
+  }
+  const outgoing = sourceActor ? getActorDamageEffectModifiers(sourceActor, "outgoing") : { flat: 0, mult: 1 };
+  const incoming = getActorDamageEffectModifiers(targetActor, "incoming");
+  const self = sourceActor?.id === targetActor.id
+    ? getActorDamageEffectModifiers(targetActor, "self")
+    : { flat: 0, mult: 1 };
+
+  const totalFlat = outgoing.flat + incoming.flat + self.flat;
+  const totalMult = outgoing.mult * incoming.mult * self.mult;
+  const resolvedDamage = Math.max(
+    Math.floor((baseDamage + totalFlat) * totalMult),
+    0,
+  );
+
+  return { actor: targetActor, baseDamage, resolvedDamage };
+}
+
+async function applyDrainRecovery(sourceActor) {
+  const drain = getActorDrainValue(sourceActor);
+  if (drain <= 0) return;
+  await applyHealingToActor(sourceActor, drain);
+}
+
+async function applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults) {
+  if (!sourceActor || !sourceItem) return;
+  const damageInstances = Array.from(damageResults ?? []).filter(
+    (result) => Number(result?.resolvedDamage) > 0,
+  ).length;
+  if (damageInstances <= 0) return;
+
+  const amount = getActorDamageMpRecovery(sourceActor, sourceItem);
+  if (amount <= 0) return;
+  await recoverActorMana(sourceActor, amount * damageInstances, {
+    render: false,
+  });
+}
+
+function getActorDamageMpRecovery(actor, item) {
+  let recovery = 0;
+  const effects = Array.from(actor?.allApplicableEffects?.() ?? []);
+  for (const effect of effects) {
+    if (!effect || effect.disabled) continue;
+
+    const data = foundry.utils.getProperty(effect, "flags.ffxiv.mpRecovery.onDamage");
+    const entries = Array.isArray(data) ? data : data ? [data] : [];
+    for (const entry of entries) {
+      if (!mpRecoveryEntryAppliesToItem(entry, item)) continue;
+      const amount = Number(entry.amount ?? entry.flat);
+      if (Number.isFinite(amount)) recovery += amount;
+    }
+
+    for (const change of effect.changes ?? []) {
+      const key = String(change?.key ?? "").trim().toLowerCase();
+      if (key !== "flags.ffxiv.mprecovery.ondamage.amount") continue;
+
+      const amount = Number(change?.value);
+      if (!Number.isFinite(amount)) continue;
+      const mode = normalizeActiveEffectChangeMode(change?.mode);
+      if (mode === "multiply") recovery *= amount;
+      else if (mode === "override") recovery = amount;
+      else if (mode === "subtract") recovery -= amount;
+      else recovery += amount;
+    }
+  }
+  return Math.max(Math.floor(recovery), 0);
+}
+
+function mpRecoveryEntryAppliesToItem(entry, item) {
+  if (!entry || typeof entry !== "object") return false;
+  const requiredTags = toArray(entry.tags ?? entry.tag).filter(Boolean);
+  if (!requiredTags.length) return true;
+
+  const itemTags = Array.isArray(item?.system?.tags) ? item.system.tags : [];
+  return requiredTags.some((tag) =>
+    itemTags.some((itemTag) => FFXIVItem._tagMatches(itemTag, [tag])),
+  );
+}
+
+function toArray(value) {
+  if (Array.isArray(value)) return value;
+  return value === undefined || value === null || value === "" ? [] : [value];
+}
+
+function getActorDamageEffectModifiers(actor, channel) {
+  const channelPath = `damage.${channel}`;
+
+  const result = { flat: 0, mult: 1 };
+  const effects = Array.from(actor?.allApplicableEffects?.() ?? []);
+  for (const effect of effects) {
+    if (!effect || effect.disabled) continue;
+
+    const flagFlat = Number(foundry.utils.getProperty(effect, `flags.ffxiv.${channelPath}.flat`));
+    if (Number.isFinite(flagFlat)) result.flat += flagFlat;
+    const flagMult = Number(foundry.utils.getProperty(effect, `flags.ffxiv.${channelPath}.mult`));
+    if (Number.isFinite(flagMult)) result.mult *= flagMult;
+
+    for (const change of effect.changes ?? []) {
+      const key = String(change?.key ?? "").trim().toLowerCase();
+      const mode = normalizeActiveEffectChangeMode(change?.mode);
+      const value = Number(change?.value);
+      if (!Number.isFinite(value)) continue;
+
+      if (key === `flags.ffxiv.${channelPath}.flat`) {
+        if (mode === "multiply") result.flat *= value;
+        else if (mode === "override") result.flat = value;
+        else if (mode === "subtract") result.flat -= value;
+        else result.flat += value;
+      }
+      if (key === `flags.ffxiv.${channelPath}.mult`) {
+        if (mode === "add") result.mult += value;
+        else if (mode === "override") result.mult = value;
+        else if (mode === "subtract") result.mult -= value;
+        else result.mult *= value;
+      }
+    }
+  }
+
+  if (!Number.isFinite(result.mult) || result.mult < 0) result.mult = 1;
+  if (!Number.isFinite(result.flat)) result.flat = 0;
+  return result;
+}
+
+function normalizeActiveEffectChangeMode(mode) {
+  if (typeof mode === "string" && mode) return mode.toLowerCase();
+  const legacy = Number.parseInt(mode, 10);
+  switch (legacy) {
+    case 1:
+      return "multiply";
+    case 2:
+      return "add";
+    case 5:
+      return "override";
+    default:
+      return "add";
+  }
+}
+
+function normalizeStatusEntryStacks(entry) {
+  const parsed = Number.parseInt(entry?.stacks, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function normalizeStatusEntryApplyTo(entry) {
+  return String(entry?.applyTo ?? "").trim().toLowerCase() === "self"
+    ? "self"
+    : "target";
+}
+
+function normalizeStatusEntry(entry, fallbackSourceUuid = null) {
+  return {
+    statusId: String(
+      entry?.statusId ?? entry?.id ?? entry?.effect?.id ?? "",
+    ).trim(),
+    active: entry?.active !== undefined
+      ? entry.active !== false
+      : entry?.action !== false,
+    applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
+    applyTo: normalizeStatusEntryApplyTo(entry),
+    stacks: normalizeStatusEntryStacks(entry),
+    allSources: entry?.allSources === true,
+    duration: entry?.duration ?? null,
+    sourceUuid:
+      String(entry?.sourceUuid ?? fallbackSourceUuid ?? "").trim() || null,
+  };
+}
+
+async function applyStatusEntryToActor(actor, entry) {
+  const statusId = String(entry?.statusId ?? entry?.effect?.id ?? "").trim();
+  if (!actor || !statusId) return;
+  const stacks = normalizeStatusEntryStacks(entry);
+  const isActive = entry.active !== false;
+  const origin = String(entry?.sourceUuid ?? "").trim() || null;
+  const duration = entry?.duration ?? null;
+
+  if (!isActive && entry?.allSources === true) {
+    return (await deleteActorStatuses(actor, [statusId])) > 0;
+  }
+
+  if (isStackableStatusEffect(statusId)) {
+    let result;
+    if (isAdditiveStackableStatusEffect(statusId)) {
+      const delta = isActive ? stacks : -stacks;
+      result = await applyStatusEffectStackDelta(actor, statusId, delta, { origin, duration, ffxivSuppressStatusText: true });
+    } else {
+      result = await applyStatusEffectStackValue(actor, statusId, isActive ? stacks : 0, {
+        origin,
+        duration,
+        ffxivSuppressStatusText: true,
+      });
+    }
+    return result !== false;
+  }
+  const result = await applyStatusEffectChange(actor, statusId, isActive, { origin, duration, ffxivSuppressStatusText: true });
+  return result !== false;
+}
+
+function getStatusLabelById(statusId) {
+  const effect = CONFIG.statusEffects?.find((entry) => entry.id === statusId);
+  if (!effect) return statusId;
+  return game.i18n.localize(effect.label ?? effect.name ?? statusId);
+}
+
+function getStatusEntryNotificationKey(entry) {
+  return entry?.active === false
+    ? "FFXIV.Notifications.EffectRemoved"
+    : "FFXIV.Notifications.EffectApplied";
+}
+
+async function applyLinkedEffectsToActor(actor, effectDocs) {
+  if (!actor || !Array.isArray(effectDocs) || !effectDocs.length) return;
+  let normalizedEffectDocs = effectDocs.map((doc) =>
+    prepareLinkedActiveEffectDuration(actor, foundry.utils.deepClone(doc)),
+  );
+  normalizedEffectDocs = await prepareLinkedActiveEffectStatusRules(
+    actor,
+    normalizedEffectDocs,
+  );
+  if (!normalizedEffectDocs.length) return 0;
+
+  const replacementSources = normalizedEffectDocs
+    .filter((doc) => !isLinkedEffectDocAdditiveStackable(doc))
+    .map((doc) => {
+      const sourceEffectId = String(foundry.utils.getProperty(doc, "flags.ffxiv.linkedSourceEffectId") ?? "").trim();
+      if (!sourceEffectId) return null;
+      const sourceItemUuid = String(foundry.utils.getProperty(doc, "flags.ffxiv.linkedSourceItemUuid") ?? doc.origin ?? "").trim();
+      const sourceItemId = String(foundry.utils.getProperty(doc, "flags.ffxiv.linkedSourceItemId") ?? getItemIdFromUuid(sourceItemUuid)).trim();
+      return { sourceEffectId, sourceItemUuid, sourceItemId };
+    })
+    .filter(Boolean);
+
+  if (replacementSources.length && actor.effects?.size) {
+    const ids = actor.effects
+      .filter((effect) => {
+        const linkedId = String(effect.getFlag("ffxiv", "linkedSourceEffectId") ?? "").trim();
+        if (!linkedId) return false;
+        const origin = String(effect.origin ?? "").trim();
+        const originItemId = getItemIdFromUuid(origin);
+        const flaggedSourceUuid = String(effect.getFlag("ffxiv", "linkedSourceItemUuid") ?? "").trim();
+        const flaggedSourceItemId = String(effect.getFlag("ffxiv", "linkedSourceItemId") ?? "").trim();
+        return replacementSources.some(({ sourceEffectId, sourceItemUuid, sourceItemId }) => {
+          if (linkedId !== sourceEffectId) return false;
+          if (!sourceItemUuid && !sourceItemId) return true;
+          if (sourceItemUuid && (origin === sourceItemUuid || flaggedSourceUuid === sourceItemUuid)) return true;
+          if (!sourceItemId) return false;
+          if (originItemId === sourceItemId || flaggedSourceItemId === sourceItemId) return true;
+          return getItemIdFromUuid(flaggedSourceUuid) === sourceItemId;
+        });
+      })
+      .map((effect) => effect.id)
+      .filter(Boolean);
+    if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+  }
+  const created = await actor.createEmbeddedDocuments("ActiveEffect", normalizedEffectDocs, { render: false });
+
+  const appliedStatuses = new Set(
+    normalizedEffectDocs.flatMap((doc) => getLinkedEffectDocStatuses(doc)),
+  );
+  if (appliedStatuses.has("stun")) {
+    await actor.setFlag("ffxiv", "stunnedInEncounter", true);
+  }
+  if (appliedStatuses.has("petrified")) {
+    await markPetrifiedAppliedThisTurn(actor);
+  }
+  if (appliedStatuses.has("knocked_out")) {
+    await deleteActorStatuses(actor, getKnockedOutBlockedStatusIds());
+    await removeEnmityInflictedByActor(actor);
+    await clearActorJobResources(actor);
+  }
+  return created.length;
+}
+
+const COMATOSE_LINKED_ALLOWED_STATUS_IDS = new Set(["comatose", "death"]);
+const KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS = new Set([
+  "comatose",
+  "death",
+  "knocked_out",
+]);
+const ELITE_FOE_EFFECT_FLAG = "eliteFoeEffect";
+const ELITE_FOE_EFFECT_ICON = "systems/ffxiv/assets/effects/large_enemy.webp";
+
+async function syncEliteFoeEffects() {
+  if (!game.user?.isGM) return;
+  for (const actor of game.actors ?? []) {
+    await syncEliteFoeEffect(actor);
+  }
+  for (const token of canvas?.tokens?.placeables ?? []) {
+    await syncEliteFoeEffect(token.actor);
+  }
+}
+
+async function syncEliteFoeEffect(actor) {
+  if (!game.user?.isGM) return;
+  if (actor?.documentName !== "Actor" || actor.type !== "npc") return;
+
+  const effects = getEliteFoeEffects(actor);
+  if (actor.system?.elite_foe === true) {
+    if (!effects.length) {
+      await createEliteFoeEffect(actor);
+      return;
+    }
+    const primary = effects[0];
+    const label = game.i18n.localize("FFXIV.CharacterSheet.EliteFoe");
+    const updates = {};
+    if (primary.name !== label) updates.name = label;
+    if (primary.img !== ELITE_FOE_EFFECT_ICON) updates.img = ELITE_FOE_EFFECT_ICON;
+    if (primary.icon !== ELITE_FOE_EFFECT_ICON) updates.icon = ELITE_FOE_EFFECT_ICON;
+    if (primary.disabled) updates.disabled = false;
+    if (primary.origin !== actor.uuid) updates.origin = actor.uuid;
+    if (primary.transfer !== false) updates.transfer = false;
+    if (primary.displayStatusIcon !== true) updates.displayStatusIcon = true;
+    if (primary.showIcon !== (CONST.ACTIVE_EFFECT_SHOW_ICON?.ALWAYS ?? 2)) {
+      updates.showIcon = CONST.ACTIVE_EFFECT_SHOW_ICON?.ALWAYS ?? 2;
+    }
+    if (primary.getFlag("ffxiv", ELITE_FOE_EFFECT_FLAG) !== true) {
+      updates[`flags.ffxiv.${ELITE_FOE_EFFECT_FLAG}`] = true;
+    }
+    if (Object.keys(updates).length) {
+      await primary.update(updates, {
+        render: false,
+        ffxivSyncEliteFoeEffect: true,
+      });
+    }
+    const duplicates = effects.slice(1).map((effect) => effect.id).filter(Boolean);
+    if (duplicates.length) {
+      await actor.deleteEmbeddedDocuments("ActiveEffect", duplicates, {
+        render: false,
+        ffxivSyncEliteFoeEffect: true,
+      });
+    }
+    return;
+  }
+
+  const ids = effects.map((effect) => effect.id).filter(Boolean);
+  if (ids.length) {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+      render: false,
+      ffxivSyncEliteFoeEffect: true,
+    });
+  }
+}
+
+function getEliteFoeEffects(actor) {
+  return Array.from(actor?.effects ?? []).filter((effect) =>
+    effect?.getFlag("ffxiv", ELITE_FOE_EFFECT_FLAG) === true,
+  );
+}
+
+async function createEliteFoeEffect(actor) {
+  const label = game.i18n.localize("FFXIV.CharacterSheet.EliteFoe");
+  const showAlways = CONST.ACTIVE_EFFECT_SHOW_ICON?.ALWAYS ?? 2;
+  await actor.createEmbeddedDocuments(
+    "ActiveEffect",
+    [
+      {
+        name: label,
+        img: ELITE_FOE_EFFECT_ICON,
+        icon: ELITE_FOE_EFFECT_ICON,
+        origin: actor.uuid,
+        disabled: false,
+        transfer: false,
+        displayStatusIcon: true,
+        showIcon: showAlways,
+        duration: {},
+        flags: {
+          ffxiv: {
+            [ELITE_FOE_EFFECT_FLAG]: true,
+          },
+        },
+      },
+    ],
+    { render: false, ffxivSyncEliteFoeEffect: true },
+  );
+}
+
+async function prepareLinkedActiveEffectStatusRules(actor, effectDocs) {
+  const preparedDocs = [];
+  let removeWeakness = false;
+  let appliedComatose = false;
+
+  for (const doc of effectDocs) {
+    const statuses = getLinkedEffectDocStatuses(doc);
+    doc.statuses = statuses;
+
+    if (!statuses.length) {
+      preparedDocs.push(doc);
+      continue;
+    }
+
+    if (
+      hasStatus(actor, "knocked_out") &&
+      statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+    )
+      continue;
+
+    if (
+      hasStatus(actor, "comatose") &&
+      statuses.some((statusId) => !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+    )
+      continue;
+
+    if (
+      hasStatus(actor, "transcendent") &&
+      statuses.some((statusId) => isNegativeStatusEffect(statusId))
+    )
+      continue;
+
+    if (statuses.some((statusId) => isEliteFoeBlockedStatus(actor, statusId)))
+      continue;
+
+    if (
+      statuses.includes("dot") &&
+      isThunderSpellEffect(doc) &&
+      hasThunderSpellDotFromSource(actor, getLinkedEffectSourceActorUuid(doc))
+    )
+      continue;
+
+    if (statuses.length === 1 && statuses[0] === "weakness") {
+      if (hasStatus(actor, "brink_death")) {
+        setLinkedEffectDocStatus(doc, "comatose");
+        appliedComatose = true;
+        preparedDocs.push(doc);
+        continue;
+      }
+      if (hasStatus(actor, "weakness")) {
+        setLinkedEffectDocStatus(doc, "brink_death");
+        removeWeakness = true;
+        preparedDocs.push(doc);
+        continue;
+      }
+    }
+
+    if (
+      statuses.includes("stun") &&
+      (hasStatus(actor, "stun") ||
+        actor.getFlag("ffxiv", "stunnedInEncounter") === true)
+    )
+      continue;
+
+    if (statuses.includes("comatose")) appliedComatose = true;
+    preparedDocs.push(doc);
+  }
+
+  if (appliedComatose) {
+    await deleteActorStatuses(actor, getComatoseBlockedStatusIds());
+    return preparedDocs.filter((doc) => {
+      const statuses = getLinkedEffectDocStatuses(doc);
+      return (
+        !statuses.length ||
+        statuses.every((statusId) =>
+          COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId),
+        )
+      );
+    });
+  }
+
+  if (preparedDocs.some((doc) => getLinkedEffectDocStatuses(doc).includes("knocked_out"))) {
+    await deleteActorStatuses(actor, getKnockedOutBlockedStatusIds());
+    return preparedDocs.filter((doc) => {
+      const statuses = getLinkedEffectDocStatuses(doc);
+      return (
+        !statuses.length ||
+        statuses.every((statusId) =>
+          KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId),
+        )
+      );
+    });
+  }
+
+  if (removeWeakness) await deleteActorStatuses(actor, ["weakness"]);
+  return preparedDocs;
+}
+
+function getLinkedEffectDocStatuses(doc) {
+  return sanitizeEffectStatuses(doc?.statuses ?? []);
+}
+
+function isThunderSpellEffect(effect) {
+  if (foundry.utils.getProperty(effect, "flags.ffxiv.thunderSpell") === true)
+    return true;
+  const origin = String(effect?.origin ?? "").trim();
+  const source = origin ? fromUuidSync(origin) : null;
+  return source?.type === "ability" &&
+    Array.from(source.system?.tags ?? []).some((tag) =>
+      FFXIVItem._tagMatches(tag, ["FFXIV.Tags.ThunderSpell"]),
+    );
+}
+
+function getLinkedEffectSourceActorUuid(effect) {
+  const flagged = String(
+    foundry.utils.getProperty(effect, "flags.ffxiv.linkedSourceActorUuid") ?? "",
+  ).trim();
+  if (flagged) return flagged;
+  const origin = String(effect?.origin ?? "").trim();
+  const source = origin ? fromUuidSync(origin) : null;
+  return source?.parent?.documentName === "Actor" ? source.parent.uuid : null;
+}
+
+function hasThunderSpellDotFromSource(actor, sourceActorUuid) {
+  if (!sourceActorUuid) return false;
+  return Array.from(actor?.effects ?? []).some((effect) =>
+    !effect.disabled &&
+    effect.statuses instanceof Set &&
+    effect.statuses.has("dot") &&
+    isThunderSpellEffect(effect) &&
+    getLinkedEffectSourceActorUuid(effect) === sourceActorUuid,
+  );
+}
+
+function isLinkedEffectDocAdditiveStackable(doc) {
+  return getLinkedEffectDocStatuses(doc).some((statusId) =>
+    isAdditiveStackableStatusEffect(statusId),
+  );
+}
+
+function canLinkedEffectDocApplyToActor(actor, doc) {
+  const statuses = getLinkedEffectDocStatuses(doc);
+  if (!statuses.length) return true;
+  if (
+    hasStatus(actor, "knocked_out") &&
+    statuses.some((statusId) => !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+  )
+    return false;
+  if (
+    hasStatus(actor, "comatose") &&
+    statuses.some((statusId) => !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId))
+  )
+    return false;
+  if (
+    hasStatus(actor, "transcendent") &&
+    statuses.some((statusId) => isNegativeStatusEffect(statusId))
+  )
+    return false;
+  if (statuses.some((statusId) => isEliteFoeBlockedStatus(actor, statusId)))
+    return false;
+  if (
+    statuses.includes("dot") &&
+    isThunderSpellEffect(doc) &&
+    hasThunderSpellDotFromSource(actor, getLinkedEffectSourceActorUuid(doc))
+  )
+    return false;
+  if (
+    statuses.includes("stun") &&
+    (hasStatus(actor, "stun") ||
+      actor.getFlag("ffxiv", "stunnedInEncounter") === true)
+  )
+    return false;
+  return true;
+}
+
+function hasApplicableLinkedEffectDocs(actor, effectDocs) {
+  return effectDocs.some((doc) => canLinkedEffectDocApplyToActor(actor, doc));
+}
+
+function setLinkedEffectDocStatus(doc, statusId) {
+  doc.statuses = [statusId];
+  const status = (CONFIG.statusEffects ?? []).find(
+    (entry) => String(entry?.id ?? "").trim().toLowerCase() === statusId,
+  );
+  const statusImg = status?.img || status?.icon;
+  if (statusImg) {
+    doc.img = statusImg;
+    doc.icon = statusImg;
+  }
+  return doc;
+}
+
+function getComatoseBlockedStatusIds() {
+  return (CONFIG.statusEffects ?? [])
+    .map((entry) => String(entry?.id ?? "").trim().toLowerCase())
+    .filter(
+      (statusId) =>
+        statusId && !COMATOSE_LINKED_ALLOWED_STATUS_IDS.has(statusId),
+    );
+}
+
+function getKnockedOutBlockedStatusIds() {
+  return (CONFIG.statusEffects ?? [])
+    .map((entry) => String(entry?.id ?? "").trim().toLowerCase())
+    .filter(
+      (statusId) =>
+        statusId && !KNOCKED_OUT_LINKED_ALLOWED_STATUS_IDS.has(statusId),
+    );
+}
+
+async function deleteActorStatuses(actor, statusIds) {
+  if (!actor?.effects?.size) return 0;
+  const statusSet = new Set(statusIds);
+  const ids = actor.effects
+    .filter((effect) => {
+      if (!effect || effect.disabled) return false;
+      const statuses = effect.statuses;
+      return (
+        statuses instanceof Set &&
+        Array.from(statuses).some((statusId) => statusSet.has(statusId))
+      );
+    })
+    .map((effect) => effect.id)
+    .filter(Boolean);
+  if (ids.length) {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+  }
+  return ids.length;
+}
+
+function prepareLinkedActiveEffectDuration(actor, doc) {
+  if (!doc.duration || typeof doc.duration !== "object") return doc;
+
+  doc.duration.startTime = game.time?.worldTime ?? null;
+
+  const combat = game.combat;
+  if (!combat?.started || !combat.turns?.length) {
+    doc.duration.startRound = null;
+    doc.duration.startTurn = null;
+    return doc;
+  }
+
+  doc.duration.combat = combat.id;
+  doc.duration.startRound = combat.round ?? 0;
+  doc.duration.startTurn = combat.turn ?? 0;
+
+  const offset = getTurnsUntilActorTurnEnd(actor, combat) - 1;
+  if (offset <= 0) return doc;
+
+  const turns = Number(doc.duration.turns);
+  if (Number.isFinite(turns) && turns > 0) {
+    doc.duration.turns = turns + offset;
+    return doc;
+  }
+
+  const units = String(doc.duration.units ?? "").toLowerCase();
+  const value = Number(doc.duration.value);
+  if (Number.isFinite(value) && value > 0 && (units === "turn" || units === "turns")) {
+    doc.duration.value = value + offset;
+  }
+  return doc;
+}
+
+function getTurnsUntilActorTurnEnd(actor, combat) {
+  const turns = combat?.turns ?? [];
+  if (!turns.length) return 1;
+
+  const currentTurn = Number.isInteger(combat.turn) ? combat.turn : 0;
+  const targetTurn = turns.findIndex((combatant) =>
+    isSameActorDocument(combatant.actor, actor),
+  );
+  if (targetTurn < 0) return 1;
+  if (targetTurn >= currentTurn) return targetTurn - currentTurn + 1;
+  return turns.length - currentTurn + targetTurn + 1;
+}
+
+function isSameActorDocument(first, second) {
+  return (
+    first &&
+    second &&
+    (first === second ||
+      (first.uuid && second.uuid && first.uuid === second.uuid) ||
+      (first.id && second.id && first.id === second.id))
+  );
+}
+
+function getItemIdFromUuid(uuid) {
+  const raw = String(uuid ?? "").trim();
+  if (!raw) return "";
+  const parts = raw.split(".");
+  const itemIndex = parts.lastIndexOf("Item");
+  return itemIndex >= 0 ? String(parts[itemIndex + 1] ?? "").trim() : "";
+}
+
+async function removeLinkedEffectsFromActor(actor, sourceItemUuid, sourceEffectIds = [], options = {}) {
+  if (!actor?.effects?.size) return 0;
+  const includeAutoApply = options.includeAutoApply === true;
+  const normalizedSourceUuid = String(sourceItemUuid ?? "").trim();
+  const sourceItemId = getItemIdFromUuid(normalizedSourceUuid);
+  const idSet = new Set((Array.isArray(sourceEffectIds) ? sourceEffectIds : []).map(String));
+  const sourceEffectIdsProvided = idSet.size > 0;
+  const hasSourceIdentity = Boolean(normalizedSourceUuid || sourceItemId);
+
+  const effectsToDelete = actor.effects.filter((effect) => {
+    const linkedId = String(effect.getFlag("ffxiv", "linkedSourceEffectId") ?? "").trim();
+    const linkedAutoApply = effect.getFlag("ffxiv", "linkedAutoApply") === true;
+    const origin = String(effect.origin ?? "").trim();
+    const originItemId = getItemIdFromUuid(origin);
+    const flaggedSourceUuid = String(effect.getFlag("ffxiv", "linkedSourceItemUuid") ?? "").trim();
+    const flaggedSourceItemId = String(effect.getFlag("ffxiv", "linkedSourceItemId") ?? "").trim();
+
+    const matchesSourceIdentity = (() => {
+      if (!hasSourceIdentity) return false;
+      if (origin && normalizedSourceUuid && origin === normalizedSourceUuid) return true;
+      if (flaggedSourceUuid && normalizedSourceUuid && flaggedSourceUuid === normalizedSourceUuid) {
+        return true;
+      }
+      if (sourceItemId) {
+        if (originItemId && originItemId === sourceItemId) return true;
+        if (flaggedSourceItemId && flaggedSourceItemId === sourceItemId) return true;
+        const flaggedSourceUuidItemId = getItemIdFromUuid(flaggedSourceUuid);
+        if (flaggedSourceUuidItemId && flaggedSourceUuidItemId === sourceItemId) return true;
+      }
+      return false;
+    })();
+
+    if (sourceEffectIdsProvided) {
+      if (linkedAutoApply && !includeAutoApply) return false;
+      if (linkedId && idSet.has(linkedId)) return true;
+      // Legacy safety: allow source-based fallback even when per-effect ids are missing or mismatched.
+      if (matchesSourceIdentity) return true;
+      return false;
+    }
+
+    if (matchesSourceIdentity) return true;
+    return !hasSourceIdentity && Boolean(linkedId);
+  });
+  const ids = effectsToDelete.map((effect) => effect.id).filter(Boolean);
+  if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids, { render: false });
+  return ids.length;
+}
+
+function parseJsonIdArray(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((id) => String(id ?? "").trim())
+      .filter(Boolean);
+  } catch (_error) {
+    return [];
+  }
+}
+
+function parseJsonStatusEntries(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((entry) => normalizeStatusEntry(entry))
+      .filter((entry) => entry.statusId);
+  } catch (_error) {
+    return [];
+  }
+}
+
+function parseJsonStatusApplications(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((application) => ({
+        actorId: String(
+          application?.actorId ?? application?.actorRef ?? "",
+        ).trim(),
+        entries: (Array.isArray(application?.entries)
+          ? application.entries
+          : []
+        )
+          .map((entry) => normalizeStatusEntry(entry))
+          .filter((entry) => entry.statusId),
+      }))
+      .filter((application) => application.actorId && application.entries.length);
+  } catch (_error) {
+    return [];
+  }
+}
+
+function getActorReference(actor) {
+  return String(actor?.uuid ?? actor?.id ?? "").trim();
+}
+
+async function resolveActorFromReference(ref) {
+  const value = String(ref ?? "").trim();
+  if (!value) return null;
+  if (value.includes(".")) {
+    try {
+      const doc = await fromUuid(value);
+      if (doc?.documentName === "Actor") return doc;
+      if (doc?.actor?.documentName === "Actor") return doc.actor;
+    } catch (_error) { }
+  }
+  return game.actors.get(value) ?? null;
+}
+
+async function resolveItemFromReference(ref, actor = null) {
+  const value = String(ref ?? "").trim();
+  if (!value) return null;
+  if (value.includes(".")) {
+    try {
+      const doc = await fromUuid(value);
+      if (doc?.documentName === "Item") return doc;
+    } catch (_error) { }
+  }
+  return actor?.items?.get(value) ?? game.items?.get(value) ?? null;
+}
+
+async function resolveSocketActors(data = {}) {
+  data = data ?? {};
+  const refs =
+    Array.isArray(data.actorRefs) && data.actorRefs.length
+      ? data.actorRefs
+      : data.actorIds;
+  const actors = [];
+  const seen = new Set();
+  for (const ref of refs ?? []) {
+    const actor = await resolveActorFromReference(ref);
+    const key = String(actor?.uuid ?? actor?.id ?? "").trim();
+    if (!actor || !key || seen.has(key)) continue;
+    seen.add(key);
+    actors.push(actor);
+  }
+  return actors;
+}
+
+function setApplyActiveEffectsButtonState(button, applied, options = {}) {
+  if (!(button instanceof HTMLButtonElement)) return;
+  const applyLabel = game.i18n.localize("FFXIV.Abilities.ApplyActiveEffects");
+  const undoLabel = game.i18n.localize("FFXIV.Abilities.UndoActiveEffects");
+  if (!applied) {
+    button.dataset.ffxivLinkedState = "apply";
+    delete button.dataset.appliedActorIds;
+    delete button.dataset.appliedSourceEffectIds;
+    delete button.dataset.appliedSourceItemUuid;
+    button.textContent = applyLabel;
+    return;
+  }
+
+  const actorIds = Array.from(
+    new Set(
+      (Array.isArray(options.actorIds) ? options.actorIds : [])
+        .map((id) => String(id ?? "").trim())
+        .filter(Boolean),
+    ),
+  );
+  const sourceEffectIds = Array.from(
+    new Set(
+      (Array.isArray(options.sourceEffectIds) ? options.sourceEffectIds : [])
+        .map((id) => String(id ?? "").trim())
+        .filter(Boolean),
+    ),
+  );
+  button.dataset.ffxivLinkedState = "applied";
+  button.dataset.appliedActorIds = JSON.stringify(actorIds);
+  button.dataset.appliedSourceEffectIds = JSON.stringify(sourceEffectIds);
+  button.dataset.appliedSourceItemUuid = String(options.sourceItemUuid ?? "").trim();
+  button.textContent = undoLabel;
+}
+
+function setApplyStatusButtonState(button, applied, options = {}) {
+  if (!(button instanceof HTMLButtonElement)) return;
+  if (!applied) {
+    button.dataset.ffxivStatusState = "apply";
+    delete button.dataset.appliedActorIds;
+    delete button.dataset.appliedStatusEntries;
+    delete button.dataset.appliedStatusApplications;
+    return;
+  }
+
+  const actorIds = Array.from(
+    new Set(
+      (Array.isArray(options.actorIds) ? options.actorIds : [])
+        .map((id) => String(id ?? "").trim())
+        .filter(Boolean),
+    ),
+  );
+  const statusEntries = (Array.isArray(options.statusEntries) ? options.statusEntries : [])
+    .map((entry) => normalizeStatusEntry(entry))
+    .filter((entry) => entry.statusId);
+  const applications = (Array.isArray(options.applications) ? options.applications : [])
+    .map((application) => ({
+      actorId: String(
+        application?.actorId ?? application?.actorRef ?? "",
+      ).trim(),
+      entries: (Array.isArray(application?.entries)
+        ? application.entries
+        : []
+      )
+        .map((entry) => normalizeStatusEntry(entry))
+        .filter((entry) => entry.statusId),
+    }))
+    .filter((application) => application.actorId && application.entries.length);
+  button.dataset.ffxivStatusState = "applied";
+  button.dataset.appliedActorIds = JSON.stringify(actorIds);
+  button.dataset.appliedStatusEntries = JSON.stringify(statusEntries);
+  button.dataset.appliedStatusApplications = JSON.stringify(applications);
+}
+
+function getLinkedEffectApplyTo(effect) {
+  const flagged = String(effect?.getFlag("ffxiv", "applyTo") || "")
+    .trim()
+    .toLowerCase();
+  if (flagged === "self" || flagged === "target" || flagged === "self_auto" || flagged === "automation") return flagged;
+  return "target";
+}
+
+function sanitizeEffectStatuses(statuses) {
+  if (!statuses) return [];
+  const statusIds = Array.from(statuses)
+    .map((id) => String(id ?? "").trim().toLowerCase())
+    .map((id) => (id === "ascendent" ? "transcendent" : id))
+    .filter(Boolean);
+  if (!statusIds.length) return [];
+  const validIds = new Set(
+    (CONFIG.statusEffects ?? []).map((entry) =>
+      String(entry?.id ?? "").trim().toLowerCase(),
+    ),
+  );
+  const sanitized = [];
+  for (const id of statusIds) {
+    if (!validIds.has(id)) continue;
+    if (sanitized.includes(id)) continue;
+    sanitized.push(id);
+  }
+  return sanitized;
+}
+
+function buildLinkedActiveEffectDocs(item, effects, options = {}) {
+  const autoApply = options.autoApply === true;
+  const sourceItemUuid = item.uuid;
+  const thunderSpell = item.type === "ability" &&
+    Array.from(item.system?.tags ?? []).some((tag) =>
+      FFXIVItem._tagMatches(tag, ["FFXIV.Tags.ThunderSpell"]),
+    );
+  return effects.flatMap((effect) => {
+    const sourceData = effect.toObject();
+    const statuses = sanitizeEffectStatuses(
+      effect.statuses ?? effect._source?.statuses ?? [],
+    );
+    const showAlways = CONST.ACTIVE_EFFECT_SHOW_ICON?.ALWAYS ?? 2;
+    const statusConfigs = new Map(
+      (CONFIG.statusEffects ?? []).map((status) => [
+        String(status?.id ?? "").trim().toLowerCase(),
+        status,
+      ]),
+    );
+    const withCommonFields = (doc) => {
+      delete doc._id;
+      doc.origin = sourceItemUuid;
+      doc.disabled = false;
+      doc.transfer = false;
+      doc.showIcon = showAlways;
+      doc.displayStatusIcon = true;
+      doc.flags = foundry.utils.mergeObject(doc.flags || {}, {
+        ffxiv: {
+          linkedSourceEffectId: effect.id,
+          linkedSourceItemId: item.id,
+          linkedSourceItemUuid: sourceItemUuid,
+          linkedSourceActorUuid:
+            item.parent?.documentName === "Actor" ? item.parent.uuid : null,
+          linkedAutoApply: autoApply,
+          thunderSpell,
+        },
+      });
+      return doc;
+    };
+
+    if (statuses.length <= 1) {
+      const doc = withCommonFields(foundry.utils.deepClone(sourceData));
+      doc.statuses = statuses;
+      if (statuses.length === 1) {
+        const status = statusConfigs.get(statuses[0]);
+        const statusImg = status?.img || status?.icon;
+        if (statusImg) {
+          doc.img = statusImg;
+          doc.icon = statusImg;
+        }
+      }
+      return [doc];
+    }
+
+    return statuses.map((statusId, index) => {
+      const doc = withCommonFields(foundry.utils.deepClone(sourceData));
+      doc.statuses = [statusId];
+      if (index > 0) {
+        if (Array.isArray(doc.changes)) doc.changes = [];
+        if (doc.system && Array.isArray(doc.system.changes))
+          doc.system.changes = [];
+      }
+      const status = statusConfigs.get(statusId);
+      const statusImg = status?.img || status?.icon;
+      if (statusImg) {
+        doc.img = statusImg;
+        doc.icon = statusImg;
+      }
+      return doc;
+    });
+  });
 }
 
 function normalizeTagValue(tag) {
@@ -4130,7 +7830,7 @@ async function migrateCustomTagSettings() {
   ];
 
   for (const { configKey, baseKey } of categories) {
-    const baseTags = Array.isArray(FF_XIV[baseKey]) ? FF_XIV[baseKey] : [];
+    const baseTags = Array.isArray(FFXIV[baseKey]) ? FFXIV[baseKey] : [];
     const normalizedBase = new Set(baseTags.map(normalizeTagValue));
     const raw = game.settings.get("ffxiv", configKey);
     const customTags = parseTagSetting(raw);
@@ -4168,10 +7868,10 @@ Hooks.on("ready", function () {
     },
   ];
 
-  CONFIG.FF_XIV = CONFIG.FF_XIV || {};
+  CONFIG.FFXIV = CONFIG.FFXIV || {};
 
   for (let { configKey, configTarget, baseKey } of categories) {
-    const baseTags = Array.isArray(FF_XIV[baseKey]) ? FF_XIV[baseKey] : [];
+    const baseTags = Array.isArray(FFXIV[baseKey]) ? FFXIV[baseKey] : [];
     const raw = game.settings.get("ffxiv", configKey);
     const customTags = parseTagSetting(raw);
     const combinedTags = [...baseTags, ...customTags];
@@ -4183,16 +7883,15 @@ Hooks.on("ready", function () {
       seen.add(normalized);
       deduped.push(tag.trim());
     }
-    CONFIG.FF_XIV[configTarget] = buildTagPool(deduped);
+    CONFIG.FFXIV[configTarget] = buildTagPool(deduped);
   }
 
   if (game.user.isGM) {
     game.socket.on("system.ffxiv", async (params) => {
       debugLog("get socket");
       const { type, data, userName, gmUserId } = params;
-      if (gmUserId && gmUserId !== game.user.id) return;
-      const actors =
-        data.actorIds?.map((id) => game.actors.get(id)).filter(Boolean) ?? [];
+      if (!gmUserId || gmUserId !== game.user.id) return;
+      const actors = await resolveSocketActors(data);
       switch (type) {
         case FFXIV_MARKER_SOCKET_TYPE:
           try {
@@ -4201,17 +7900,63 @@ Hooks.on("ready", function () {
             debugError("socket marker placement failed:", err);
           }
           break;
+        case FFXIV_SUMMON_SOCKET_TYPE:
+          try {
+            await createSummonTokenFromRequest(data);
+          } catch (err) {
+            debugError("socket summon actor failed:", err);
+          }
+          break;
         case "applyEffect": {
           debugLog("status socket");
-          const effects = (
-            Array.isArray(data.effects)
-              ? data.effects
-              : [{ effect: data.effect, active: data.active }]
-          ).filter((entry) => entry.effect);
-          if (!actors || !effects.length) return;
-          const effectList = effects
-            .map((entry) => game.i18n.localize(entry.effect.label))
-            .join(", ");
+          const normalizeEffects = (entries) => (Array.isArray(entries) ? entries : [])
+            .map((entry) => ({
+              ...entry,
+              statusId: String(entry?.statusId ?? entry?.effect?.id ?? "").trim(),
+            }))
+            .filter((entry) => entry.statusId);
+          const applications = [];
+          if (Array.isArray(data.applications)) {
+            for (const application of data.applications) {
+              const actor = await resolveActorFromReference(
+                application.actorRef ?? application.actorUuid ?? application.actorId,
+              );
+              const effects = normalizeEffects(application.effects);
+              if (actor && effects.length) applications.push({ actor, effects });
+            }
+          } else {
+            const effects = normalizeEffects(
+              Array.isArray(data.effects)
+                ? data.effects
+                : [{ effect: data.effect, active: data.active }],
+            );
+            for (const actor of actors) {
+              if (effects.length) applications.push({ actor, effects });
+            }
+          }
+          if (!applications.length) return;
+          const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
+          if (autoApply) {
+            for (const { actor, effects } of applications) {
+              for (const entry of effects) {
+                const applied = await applyStatusEntryToActor(actor, entry);
+                if (applied) {
+                  ui.notifications.info(
+                    game.i18n.format(getStatusEntryNotificationKey(entry), {
+                      effect: getStatusLabelById(entry.statusId),
+                      actor: actor.name,
+                    }),
+                  );
+                }
+              }
+            }
+            break;
+          }
+
+          const effectList = Array.from(new Set(
+            applications.flatMap(({ effects }) =>
+              effects.map((entry) => getStatusLabelById(entry.statusId))),
+          )).join(", ");
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-apply-effect",
             window: {
@@ -4220,22 +7965,29 @@ Hooks.on("ready", function () {
               ),
             },
             content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest", { playerName: userName, effect: effectList })}</p>
-                <ul>${actors.map((a) => `<li>${a.name}</li>`).join("")}</ul>`,
+                <ul>${applications.map(({ actor, effects }) => {
+                  const labels = effects
+                    .map((entry) => getStatusLabelById(entry.statusId))
+                    .join(", ");
+                  return `<li>${actor.name}: ${labels}</li>`;
+                }).join("")}</ul>`,
             buttons: [
               {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
                 callback: async () => {
-                  for (const actor of actors) {
-                    for (const { effect, active } of effects) {
-                      await applyStatusEffectChange(actor, effect.id, active);
-                      ui.notifications.info(
-                        game.i18n.format("FFXIV.Notifications.EffectApplied", {
-                          effect: game.i18n.localize(effect.label),
-                          actor: actor.name,
-                        }),
-                      );
+                  for (const { actor, effects } of applications) {
+                    for (const entry of effects) {
+                      const applied = await applyStatusEntryToActor(actor, entry);
+                      if (applied) {
+                        ui.notifications.info(
+                          game.i18n.format(getStatusEntryNotificationKey(entry), {
+                            effect: getStatusLabelById(entry.statusId),
+                            actor: actor.name,
+                          }),
+                        );
+                      }
                     }
                   }
                 },
@@ -4253,9 +8005,15 @@ Hooks.on("ready", function () {
         case "applyHeal": {
           debugLog("heal socket");
           const heal = data.heal;
-          debugLog(actors, !actors);
-          debugLog(heal, !heal);
-          if (!actors || !heal) return;
+          if (!actors.length || !heal) return;
+          const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
+          if (autoApply) {
+            for (const actor of actors) {
+              await applyHealingToActor(actor, heal);
+            }
+            break;
+          }
+
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-heal",
             window: {
@@ -4270,13 +8028,9 @@ Hooks.on("ready", function () {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
-                callback: () => {
+                callback: async () => {
                   for (const actor of actors) {
-                    const health = Math.min(
-                      actor.system.health.value + parseInt(heal),
-                      actor.system.health.max,
-                    );
-                    actor.update({ "system.health.value": health });
+                    await applyHealingToActor(actor, heal);
                   }
                 },
               },
@@ -4293,7 +8047,25 @@ Hooks.on("ready", function () {
         case "applyDamage": {
           debugLog("damage socket");
           const damage = data.damage;
-          if (!actors || !damage) return;
+          if (!actors.length || !damage) return;
+          const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
+          const sourceActor = await resolveActorFromReference(
+            data.sourceActorUuid ?? data.sourceActorId,
+          );
+          const sourceItem = await resolveItemFromReference(
+            data.sourceItemUuid ?? data.sourceItemId,
+            sourceActor,
+          );
+          if (autoApply) {
+            const damageResults = [];
+            for (const actor of actors) {
+              const result = await applyDamageToActorWithEffects(actor, damage, { sourceActor });
+              if (result) damageResults.push(result);
+            }
+            await applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults);
+            break;
+          }
+
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-damage",
             window: {
@@ -4308,10 +8080,13 @@ Hooks.on("ready", function () {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
-                callback: () => {
+                callback: async () => {
+                  const damageResults = [];
                   for (const actor of actors) {
-                    applyDamageToActor(actor, damage);
+                    const result = await applyDamageToActorWithEffects(actor, damage, { sourceActor });
+                    if (result) damageResults.push(result);
                   }
+                  await applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults);
                 },
               },
               {
@@ -4323,6 +8098,75 @@ Hooks.on("ready", function () {
           }).render(true);
           break;
         }
+        case "applyLinkedEffects": {
+          const applications = [];
+          const requests = Array.isArray(data.applications)
+            ? data.applications
+            : actors.map((actor) => ({ ...data, actorRef: getActorReference(actor) }));
+          for (const request of requests) {
+            const actor = await resolveActorFromReference(
+              request.actorRef ?? request.actorUuid ?? request.actorId,
+            );
+            const effectDocs = Array.isArray(request.effectDocs) ? request.effectDocs : [];
+            const removeSourceIds = Array.isArray(request.removeSourceIds) ? request.removeSourceIds : [];
+            const removeAllFromSource = request.removeAllFromSource === true;
+            if (!actor || (!effectDocs.length && !removeSourceIds.length && !removeAllFromSource)) continue;
+            applications.push({
+              actor,
+              effectDocs,
+              removeSourceIds,
+              removeAllFromSource,
+              includeAutoApply: request.includeAutoApply === true,
+              sourceItemUuid: String(request.sourceItemUuid ?? "").trim(),
+            });
+          }
+          if (!applications.length) return;
+          const applyApplications = async () => {
+            for (const application of applications) {
+              await applyLinkedEffectsToActor(application.actor, application.effectDocs);
+              if (application.removeSourceIds.length || application.removeAllFromSource) {
+                await removeLinkedEffectsFromActor(
+                  application.actor,
+                  application.sourceItemUuid,
+                  application.removeSourceIds,
+                  { includeAutoApply: application.includeAutoApply },
+                );
+              }
+            }
+          };
+          const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
+          if (autoApply) {
+            await applyApplications();
+            break;
+          }
+
+          new foundry.applications.api.DialogV2({
+            id: "gamemaster-socket-apply-linked-effects",
+            window: {
+              title: game.i18n.localize("FFXIV.Notifications.StatusChangeRequest"),
+            },
+            content: `<p>${game.i18n.format("FFXIV.Notifications.EffectRequest", { playerName: userName, effect: game.i18n.localize("FFXIV.Abilities.LinkedActiveEffects") })}</p>
+                <ul>${applications.map(({ actor }) => `<li>${actor.name}</li>`).join("")}</ul>`,
+            buttons: [
+              {
+                label: game.i18n.localize("FFXIV.Sockets.Accept"),
+                action: "accept",
+                type: "submit",
+                callback: applyApplications,
+              },
+              {
+                label: game.i18n.localize("FFXIV.Sockets.Decline"),
+                action: "decline",
+                type: "submit",
+              },
+            ],
+          }).render(true);
+          break;
+        }
+        case "limitBreakSpend": {
+          await consumeLimitBreakSegment();
+          break;
+        }
         default:
           debugError("socket error : type of request not found", type);
       }
@@ -4330,89 +8174,225 @@ Hooks.on("ready", function () {
   }
 });
 
+async function consumeLimitBreakSegment() {
+  if (!game.user?.isGM) return false;
+  if (!isLimitBreakActive()) return false;
+  const value = getLimitBreakValue();
+  if (value <= 0) return false;
+  await game.settings.set("ffxiv", "limitBreakValue", value - 1);
+  return true;
+}
+
+Hooks.on("createChatMessage", async (message, _options, userId) => {
+  if (userId !== game.user.id) return;
+  if (message.getFlag("ffxiv", "selfAutoLinkedEffectsApplied")) return;
+
+  const content = String(message.content ?? "");
+  if (!content.includes("item-card")) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = content;
+  const sourceElement =
+    wrapper.querySelector(".ffxiv-apply-active-effects") ??
+    wrapper.querySelector(".item-card[data-item-id]");
+  if (!(sourceElement instanceof HTMLElement)) return;
+
+  const item = await resolveChatAbilityItem(sourceElement);
+  if (!item) return;
+  const sourceActor = item.parent?.documentName === "Actor"
+    ? item.parent
+    : await resolveActorFromReference(
+      sourceElement.dataset.actorUuid ?? sourceElement.dataset.actorId,
+    );
+  if (!sourceActor) return;
+
+  const selfAutoEffects = Array.from(item.effects ?? []).filter(
+    (effect) => !effect.disabled && getLinkedEffectApplyTo(effect) === "self_auto",
+  );
+  if (!selfAutoEffects.length) return;
+
+  const isAddEffect = (effect) =>
+    String(effect.getFlag("ffxiv", "applyAction") || "add") !== "remove";
+  const isRemoveEffect = (effect) =>
+    String(effect.getFlag("ffxiv", "applyAction") || "add") === "remove";
+  const effectDocs = buildLinkedActiveEffectDocs(
+    item,
+    selfAutoEffects.filter(isAddEffect),
+    { autoApply: true },
+  );
+  const removeSourceIds = selfAutoEffects
+    .filter(isRemoveEffect)
+    .map((effect) => effect.id)
+    .filter(Boolean);
+  if (!effectDocs.length && !removeSourceIds.length) return;
+
+  if (sourceActor.testUserPermission(game.user, "OWNER")) {
+    await applyLinkedEffectsToActor(sourceActor, effectDocs);
+    if (removeSourceIds.length) {
+      await removeLinkedEffectsFromActor(sourceActor, item.uuid, removeSourceIds, { includeAutoApply: true });
+    }
+    await message.setFlag("ffxiv", "selfAutoLinkedEffectsApplied", true);
+    return;
+  }
+
+  const sent = emitToActiveGM({
+    type: "applyLinkedEffects",
+    data: {
+      actorIds: [sourceActor.id],
+      actorRefs: [getActorReference(sourceActor)],
+      effectDocs,
+      removeSourceIds,
+      sourceItemUuid: item.uuid,
+      includeAutoApply: true,
+    },
+    userName: game.user.name,
+  });
+  if (sent) {
+    await message.setFlag("ffxiv", "selfAutoLinkedEffectsApplied", true);
+  }
+});
+
+Hooks.on("canvasReady", () => {
+  try {
+    if (!canvas?.interface || typeof canvas.interface.createScrollingText !== "function") return;
+    if (canvas.interface.__ffxivCreateScrollingTextWrapped) return;
+    const originalCreateScrollingText = canvas.interface.createScrollingText.bind(canvas.interface);
+    canvas.interface.createScrollingText = (center, text, options = {}) => {
+      try {
+        if (options?.ffxivAllowStatusText === true) {
+          return originalCreateScrollingText(center, text, options);
+        }
+        if (typeof text === "string" && Array.isArray(CONFIG.statusEffects) && CONFIG.statusEffects.length) {
+          for (const entry of CONFIG.statusEffects) {
+            const label = game.i18n.localize(entry.label ?? entry.name ?? entry.id);
+            if (label && text.includes(label)) return; // suppress default status scrolling text
+          }
+        }
+      } catch (err) {
+        // fall through to original
+      }
+      return originalCreateScrollingText(center, text, options);
+    };
+    canvas.interface.__ffxivCreateScrollingTextWrapped = true;
+  } catch (err) {
+    // This is a best effort attempt to suppress default status effect scrolling text, but it may not work in all versions of Foundry
+    // or with all modules that modify the canvas interface. If it fails, it will simply fall back to the original behavior without breaking anything.
+    // Hopefully. :')
+  }
+});
+
 Hooks.on("renderChatMessageHTML", (message, html) => {
+  debugLog("renderChatMessageHTML hook");
   applyFFXIVChatTheme(html);
 
   const jqueryhtml = $(html);
-  const markApplyToChatCard = async ({ kind, amount, count }) => {
-    const typeKey = kind === "heal" ? "FFXIV.Chat.Heal" : "FFXIV.Chat.Damage";
-    const notice = game.i18n.format("FFXIV.Chat.ApplyResult", {
-      type: game.i18n.localize(typeKey),
-      amount: amount,
-      count: count,
-    });
-
-    jqueryhtml
-      .find(".ffxiv-apply-dmg, .ffxiv-apply-heal")
-      .prop("disabled", true)
-      .addClass("ffxiv-apply-used");
-
-    const existing = jqueryhtml.find(".ffxiv-apply-result");
-    if (existing.length) {
-      existing.text(notice);
-    } else {
-      const buttonRow = jqueryhtml
-        .find(".ffxiv-apply-dmg, .ffxiv-apply-heal")
-        .first()
-        .parent();
-      if (buttonRow.length) {
-        buttonRow.after(`<div class="ffxiv-apply-result">${notice}</div>`);
-      } else {
-        jqueryhtml.append(`<div class="ffxiv-apply-result">${notice}</div>`);
+  const markApplyToChatCard = async ({ kind, amount, count, results = [] }) => {
+    const typeKey = kind === "heal" ? "FFXIV.Chat.HealNoun" : "FFXIV.Chat.DamageNoun";
+    const resultKey = count === 1
+      ? "FFXIV.Chat.ApplyResultSingle"
+      : "FFXIV.Chat.ApplyResultPlural";
+    const typeLabel = game.i18n.has(typeKey)
+      ? game.i18n.localize(typeKey)
+      : game.i18n.localize(
+        kind === "heal" ? "FFXIV.Chat.Heal" : "FFXIV.Chat.Damage",
+      ).toLowerCase();
+    const changed = kind === "damage"
+      ? results.filter((result) =>
+        result && result.resolvedDamage !== result.baseDamage
+      )
+      : [];
+    const resolvedAmounts = results.map((result) => result?.resolvedDamage);
+    const sameResolvedAmount =
+      kind === "damage" &&
+      resolvedAmounts.length === count &&
+      resolvedAmounts.every((value) => value === resolvedAmounts[0]);
+    let notice = game.i18n.format(
+      game.i18n.has(resultKey) ? resultKey : "FFXIV.Chat.ApplyResult",
+      {
+        type: typeLabel,
+        amount: sameResolvedAmount ? resolvedAmounts[0] : amount,
+        count: count,
+      },
+    );
+    if (kind === "damage") {
+      if (changed.length === 1 && count === 1) {
+        notice += ` (${changed[0].baseDamage} -> ${changed[0].resolvedDamage})`;
+      } else if (changed.length) {
+        const summary = changed
+          .map((result) =>
+            `${result.actor?.name ?? "Target"}: ${result.baseDamage} -> ${result.resolvedDamage}`
+          )
+          .join(", ");
+        notice += ` (${summary})`;
       }
     }
 
+    const buttonRow = jqueryhtml
+      .find(".ffxiv-apply-dmg, .ffxiv-apply-heal")
+      .first()
+      .parent();
+    const resultMarkup = `<div class="ffxiv-apply-result">${notice}</div>`;
+    if (buttonRow.length) {
+      buttonRow.replaceWith(resultMarkup);
+    } else {
+      const existing = jqueryhtml.find(".ffxiv-apply-result");
+      if (existing.length) existing.text(notice);
+      else jqueryhtml.append(resultMarkup);
+    }
+
     const updatedContent = jqueryhtml.find(".message-content").first().html();
-    if (updatedContent) await message.update({ content: updatedContent });
+    if (updatedContent) await message.update({ content: updatedContent }, { notify: true });
   };
 
   jqueryhtml.find(".ffxiv-roll-base").on("click", async (ev) => {
-    const itemId = ev.currentTarget.dataset.itemId;
-    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
-    const item = actor?.items?.get(itemId);
-    if (item) item._rollBase(ev);
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollBase(ev);
   });
 
   jqueryhtml.find(".ffxiv-roll-alternate").on("click", async (ev) => {
-    const itemId = ev.currentTarget.dataset.itemId;
-    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
-    const item = actor?.items?.get(itemId);
-    if (item) item._rollAlternate(ev);
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollAlternate(ev);
   });
 
   jqueryhtml.find(".ffxiv-roll-hit").on("click", async (ev) => {
-    const itemId = ev.currentTarget.dataset.itemId;
-    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
-    const item = actor?.items?.get(itemId);
-    if (item) item._rollHit(ev);
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollHit(ev);
   });
 
   jqueryhtml.find(".ffxiv-roll-direct").on("click", async (ev) => {
-    const itemId = ev.currentTarget.dataset.itemId;
-    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
-    const item = actor?.items?.get(itemId);
-    if (item) item._rollDirect(ev);
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollDirect(ev);
+  });
+
+  jqueryhtml.find(".ffxiv-roll-option-direct").on("click", async (ev) => {
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollOptionDirect(ev);
+  });
+
+  jqueryhtml.find(".ffxiv-roll-resource-bonus").on("click", async (ev) => {
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollJobResourceBonus(ev);
   });
 
   jqueryhtml.find(".ffxiv-roll-critical").on("click", async (ev) => {
-    const itemId = ev.currentTarget.dataset.itemId;
-    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
-    const item = actor?.items?.get(itemId);
-    if (item) item._rollCritical(ev);
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollCritical(ev);
   });
 
   jqueryhtml.find(".ffxiv-roll-critical-alternate").on("click", async (ev) => {
-    const itemId = ev.currentTarget.dataset.itemId;
-    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
-    const item = actor?.items?.get(itemId);
-    if (item) item._rollCriticalAlternate(ev);
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollCriticalAlternate(ev);
   });
 
   jqueryhtml.find(".ffxiv-show-modifiers").on("click", async (ev) => {
     debugLog("call show modifiers");
-    const itemId = ev.currentTarget.dataset.itemId;
-    debugLog(itemId);
-    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    const actor = item?.parent?.documentName === "Actor"
+      ? item.parent
+      : await resolveActorFromReference(
+        ev.currentTarget.dataset.actorUuid ??
+        ev.currentTarget.dataset.actorId,
+      );
     debugLog(actor);
     if (actor) actor._showModifiers(ev);
   });
@@ -4430,32 +8410,31 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     for (const token of targets) {
       const actor = token.actor;
       if (actor.testUserPermission(game.user, "OWNER")) {
-        ownActors.push(actor);
+        ownActors.push({ actor, token });
       } else {
-        actorsNeedingGM.push(actor);
+        actorsNeedingGM.push({ actor, token });
       }
     }
-    for (const actor of ownActors) {
-      const health = Math.min(
-        actor.system.health.value + parseInt(heal),
-        actor.system.health.max,
-      );
-      actor.update({ "system.health.value": health });
+    for (const { actor, token } of ownActors) {
+      await applyHealingToActor(actor, heal, { token });
     }
     if (actorsNeedingGM.length > 0) {
       debugLog("Send socket to GM, heal", heal);
-      game.socket.emit("system.ffxiv", {
+      const sent = emitToActiveGM({
         type: "applyHeal",
         data: {
-          actorIds: actorsNeedingGM.map((a) => a.id),
+          actorIds: actorsNeedingGM.map(({ actor }) => actor.id),
+          actorRefs: actorsNeedingGM.map(({ actor }) => getActorReference(actor)),
           heal: heal,
           active: ev.currentTarget.dataset.action === "true",
         },
         userName: game.user.name,
       });
-      ui.notifications.info(
-        game.i18n.localize("FFXIV.Notifications.SendSocket"),
-      );
+      if (sent) {
+        ui.notifications.info(
+          game.i18n.localize("FFXIV.Notifications.SendSocket"),
+        );
+      }
     }
 
     await markApplyToChatCard({
@@ -4470,122 +8449,675 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
       return;
     }
+    const sourceItem = await resolveChatAbilityItem(ev.currentTarget);
     const damage = parseInt(eval(ev.currentTarget.dataset.damage));
+    const sourceActor = await resolveActorFromReference(
+      ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
+    );
     const ownActors = [];
     const actorsNeedingGM = [];
     for (const token of targets) {
       const actor = token.actor;
       if (actor.testUserPermission(game.user, "OWNER")) {
-        ownActors.push(actor);
+        ownActors.push({ actor, token });
       } else {
-        actorsNeedingGM.push(actor);
+        actorsNeedingGM.push({ actor, token });
       }
     }
-    for (const actor of ownActors) {
-      applyDamageToActor(actor, damage);
+    const damageResults = [];
+    const ownDamageResults = [];
+    for (const { actor, token } of ownActors) {
+      const result = await applyDamageToActorWithEffects(actor, damage, {
+        sourceActor,
+        targetToken: token,
+      });
+      if (result) {
+        damageResults.push(result);
+        ownDamageResults.push(result);
+      }
+    }
+    await applyDamageSourceManaRecovery(sourceActor, sourceItem, ownDamageResults);
+    for (const { actor } of actorsNeedingGM) {
+      const result = getDamageWithEffects(actor, damage, { sourceActor });
+      if (result) damageResults.push(result);
     }
     if (actorsNeedingGM.length > 0) {
       debugLog("Send socket to GM, damage", damage);
-      game.socket.emit("system.ffxiv", {
+      const sent = emitToActiveGM({
         type: "applyDamage",
         data: {
-          actorIds: actorsNeedingGM.map((a) => a.id),
+          actorIds: actorsNeedingGM.map(({ actor }) => actor.id),
+          actorRefs: actorsNeedingGM.map(({ actor }) => getActorReference(actor)),
           damage: damage,
+          sourceActorId: sourceActor?.id ?? null,
+          sourceActorUuid: sourceActor?.uuid ?? null,
+          sourceItemId: sourceItem?.id ?? ev.currentTarget.dataset.itemId ?? null,
+          sourceItemUuid: sourceItem?.uuid ?? ev.currentTarget.dataset.itemUuid ?? null,
           active: ev.currentTarget.dataset.action === "true",
         },
         userName: game.user.name,
       });
-      ui.notifications.info(
-        game.i18n.localize("FFXIV.Notifications.SendSocket"),
-      );
+      if (sent) {
+        ui.notifications.info(
+          game.i18n.localize("FFXIV.Notifications.SendSocket"),
+        );
+      }
     }
 
     await markApplyToChatCard({
       kind: "damage",
       amount: damage,
       count: targets.length,
+      results: damageResults,
     });
   });
 
-  jqueryhtml.find(".ffxiv-apply-status").on("click", async (ev) => {
-    const itemId = ev.currentTarget.dataset.itemId;
-    const actor = game.actors.get(ev.currentTarget.dataset.actorId);
-    const item = actor?.items?.get(itemId);
-    const statusEntries = getStatusEffectEntriesForItem(item, ev.currentTarget);
-    const targets = Array.from(game.user.targets);
-
-    if (targets.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
-      return;
-    }
-    if (!statusEntries.length) return;
-
-    const ownActors = [];
-    const actorsNeedingGM = [];
-
-    for (const token of targets) {
-      const actor = token.actor;
-      if (actor.testUserPermission(game.user, "OWNER")) {
-        ownActors.push(actor);
+jqueryhtml.find(".ffxiv-undo-status-effect").on("click", async (ev) => {
+  ev.stopPropagation();
+  const button = ev.currentTarget;
+  const undoData = button.closest('.fxiv-status-effect-applied')?.dataset?.undoStatus;
+  const undoId = button.closest('.fxiv-status-effect-applied')?.dataset?.undoId;
+  if (!undoData || !undoId) return;
+  
+  try {
+    const data = JSON.parse(undoData);
+    const actor = await resolveActorFromReference(data.actorId);
+    if (!actor) return;
+    
+    const entry = {
+      statusId: data.statusId,
+      active: false,
+      stacks: data.stacks,
+      sourceUuid: data.sourceUuid,
+      applyTo: data.applyTo,
+      allSources: true,
+    };
+    
+    const applied = await applyStatusEntryToActor(actor, entry);
+    if (applied) {
+      const chatCard = button.closest('.chat-message');
+      if (chatCard) {
+        const message = game.messages.get(chatCard.dataset.messageId);
+        if (message) {
+          const effectLabel = data.stacks > 1 ? `${getStatusLabelById(data.statusId)} (${data.stacks})` : getStatusLabelById(data.statusId);
+          const removedText = `<div class="effect fxiv-status-effect-applied"><span class="fxiv-status-effect-text"><strong>${effectLabel}</strong> removed from ${actor.name}.</span></div>`;
+          
+          // Use the unique ID to find and replace in message content
+          const regex = new RegExp(`<div[^>]*data-undo-id="${undoId}"[^>]*>.*?</div>`, 's');
+          const newContent = message.content.replace(regex, removedText);
+          
+          await message.update({
+            content: newContent
+          });
+        }
       } else {
-        actorsNeedingGM.push(actor);
-      }
-    }
-
-    for (const actor of ownActors) {
-      for (const { effect, active } of statusEntries) {
-        await applyStatusEffectChange(actor, effect.id, active);
+        const effectLabel = data.stacks > 1 ? `${getStatusLabelById(data.statusId)} (${data.stacks})` : getStatusLabelById(data.statusId);
         ui.notifications.info(
-          game.i18n.format("FFXIV.Notifications.EffectApplied", {
-            effect: game.i18n.localize(effect.label),
+          game.i18n.format("FFXIV.Notifications.EffectRemoved", {
+            effect: effectLabel,
             actor: actor.name,
           }),
         );
       }
     }
+  } catch (err) {
+    console.error("Failed to undo status effect:", err);
+  }
+});
 
-    if (actorsNeedingGM.length > 0) {
-      debugLog("Send socket to GM, statusEffects", statusEntries);
-      game.socket.emit("system.ffxiv", {
+jqueryhtml.find(".ffxiv-apply-status").on("click", async (ev) => {
+    const button =
+      ev.currentTarget instanceof HTMLButtonElement ? ev.currentTarget : null;
+    const currentState = String(button?.dataset?.ffxivStatusState || "apply");
+    if (currentState === "applied") {
+      let applications = parseJsonStatusApplications(
+        button?.dataset?.appliedStatusApplications,
+      );
+      if (!applications.length) {
+        const actorIds = parseJsonIdArray(button?.dataset?.appliedActorIds);
+        const statusEntries = parseJsonStatusEntries(
+          button?.dataset?.appliedStatusEntries,
+        );
+        applications = actorIds.map((actorId) => ({
+          actorId,
+          entries: statusEntries,
+        }));
+      }
+      applications = applications
+        .map((application) => ({
+          ...application,
+          entries: application.entries.map((entry) => ({
+            ...entry,
+            active: entry.active === false,
+          })),
+        }))
+        .filter((application) => application.entries.length);
+      if (!applications.length) {
+        setApplyStatusButtonState(button, false);
+        return;
+      }
+
+      const socketApplications = [];
+      const appliedEffects = [];
+      for (const application of applications) {
+        const actor = await resolveActorFromReference(application.actorId);
+        if (!actor) continue;
+        if (actor.testUserPermission(game.user, "OWNER")) {
+          for (const entry of application.entries) {
+            const applied = await applyStatusEntryToActor(actor, entry);
+            if (applied) {
+              const stacks = entry?.stacks ? Number.parseInt(entry.stacks, 10) : 1;
+              const effectLabel = stacks > 1 ? `${getStatusLabelById(entry.statusId)} (${stacks})` : getStatusLabelById(entry.statusId);
+              const key = getStatusEntryNotificationKey(entry);
+              const isRemoved = key.includes('Removed');
+              appliedEffects.push({
+                effect: effectLabel,
+                actor: actor.name,
+                isRemoved,
+                statusId: entry.statusId,
+                actorId: actor.uuid,
+                sourceUuid: entry.sourceUuid,
+                stacks: stacks,
+                applyTo: entry.applyTo,
+              });
+            }
+          }
+          continue;
+        }
+        socketApplications.push({
+          actorId: actor.id,
+          actorRef: getActorReference(actor),
+          effects: application.entries,
+        });
+      }
+      
+      if (appliedEffects.length) {
+        const chatCard = button.closest('.chat-message');
+        if (chatCard) {
+          const message = game.messages.get(chatCard.dataset.messageId);
+          if (message) {
+            const messageId = message.id;
+            const effectText = appliedEffects
+              .map(({ effect, actor, isRemoved, statusId, actorId, sourceUuid, stacks, applyTo }, index) => 
+                `<div class="effect fxiv-status-effect-applied" data-undo-id="${messageId}-${index}" data-undo-status='{"statusId":"${statusId}","actorId":"${actorId}","sourceUuid":"${sourceUuid}","stacks":${stacks},"applyTo":"${applyTo}"}'>
+                  <span class="fxiv-status-effect-text"><strong>${effect}</strong> ${isRemoved ? 'removed from' : 'applied to'} ${actor}.</span>
+                  <button class="ffxiv-undo-status-effect">
+                    <i class="fas fa-undo"></i>
+                  </button>
+                </div>`
+              )
+              .join("");
+            
+            await message.update({
+              content: message.content + `<div class="item-dialog-effects fxiv-status-effects">${effectText}</div>`
+            });
+            
+            setTimeout(() => {
+              const scrollContainer = chatCard.closest('.chat-log') || 
+                                      chatCard.closest('#chat-log') ||
+                                      document.querySelector('.chat-log') ||
+                                      document.querySelector('#chat-log');
+              
+              if (scrollContainer) {
+                const previousScrollTop = scrollContainer.scrollTop;
+                const previousScrollHeight = scrollContainer.scrollHeight;
+                const wasNearBottom = previousScrollTop + scrollContainer.clientHeight >= previousScrollHeight - 10;
+                
+                if (wasNearBottom) {
+                  scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                }
+              }
+            }, 50);
+          }
+        } else {
+          for (const { effect, actor, isRemoved } of appliedEffects) {
+            const key = isRemoved ? "FFXIV.Notifications.EffectRemoved" : "FFXIV.Notifications.EffectApplied";
+            ui.notifications.info(
+              game.i18n.format(key, {
+                effect,
+                actor,
+              }),
+            );
+          }
+        }
+      }
+      
+      if (socketApplications.length) {
+        const sent = emitToActiveGM({
+          type: "applyEffect",
+          data: { applications: socketApplications },
+          userName: game.user.name,
+        });
+        if (!sent) return;
+      }
+
+      setApplyStatusButtonState(button, false);
+      return;
+    }
+
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    const statusEntries = getStatusEffectEntriesForItem(item, ev.currentTarget);
+    if (!statusEntries.length) return;
+
+    const selfEntries = statusEntries.filter((entry) => entry.applyTo === "self");
+    const targetEntries = statusEntries.filter((entry) => entry.applyTo !== "self");
+    const targets = Array.from(game.user.targets);
+
+    if (targetEntries.length && targets.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
+      return;
+    }
+
+    const sourceActor = item?.parent?.documentName === "Actor"
+      ? item.parent
+      : await resolveActorFromReference(
+        ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
+      );
+    const applications = [];
+    const socketApplications = [];
+    let sentSocketRequest = false;
+
+    const applyEntries = async (actor, entries) => {
+      if (!actor || !entries.length) return;
+      const actorRef = getActorReference(actor);
+      if (!actorRef) return;
+
+      if (!actor.testUserPermission(game.user, "OWNER")) {
+        socketApplications.push({
+          actorId: actor.id,
+          actorRef,
+          effects: entries,
+        });
+        return;
+      }
+
+      let actorChanged = false;
+      const appliedEffects = [];
+      for (const entry of entries) {
+        const applied = await applyStatusEntryToActor(actor, entry);
+        if (applied) {
+          actorChanged = true;
+          const stacks = entry?.stacks ? Number.parseInt(entry.stacks, 10) : 1;
+          const effectLabel = stacks > 1 ? `${getStatusLabelById(entry.statusId)} (${stacks})` : getStatusLabelById(entry.statusId);
+          appliedEffects.push({
+            effect: effectLabel,
+            actor: actor.name,
+            statusId: entry.statusId,
+            actorId: actor.uuid,
+            sourceUuid: entry.sourceUuid,
+            stacks: stacks,
+            applyTo: entry.applyTo,
+          });
+        }
+      }
+      if (actorChanged) {
+        applications.push({ actorId: actorRef, entries });
+        if (appliedEffects.length) {
+          const chatCard = ev.currentTarget.closest('.chat-message');
+          if (chatCard) {
+            const message = game.messages.get(chatCard.dataset.messageId);
+            if (message) {
+              const messageId = message.id;
+              const effectText = appliedEffects
+                .map(({ effect, actor, statusId, actorId, sourceUuid, stacks, applyTo }, index) => 
+                  `<div class="effect fxiv-status-effect-applied" data-undo-id="${messageId}-${index}" data-undo-status='{"statusId":"${statusId}","actorId":"${actorId}","sourceUuid":"${sourceUuid}","stacks":${stacks},"applyTo":"${applyTo}"}'>
+                    <span class="fxiv-status-effect-text"><strong>${effect}</strong> applied to ${actor}.</span>
+                    <button class="ffxiv-undo-status-effect">
+                      <i class="fas fa-undo"></i>
+                    </button>
+                  </div>`
+                )
+                .join("");
+              
+              await message.update({
+                content: message.content + `<div class="item-dialog-effects fxiv-status-effects">${effectText}</div>`
+              });
+              
+              setTimeout(() => {
+                const scrollContainer = chatCard.closest('.chat-log') || 
+                                        chatCard.closest('#chat-log') ||
+                                        document.querySelector('.chat-log') ||
+                                        document.querySelector('#chat-log');
+                
+                if (scrollContainer) {
+                  const previousScrollTop = scrollContainer.scrollTop;
+                  const previousScrollHeight = scrollContainer.scrollHeight;
+                  const wasNearBottom = previousScrollTop + scrollContainer.clientHeight >= previousScrollHeight - 10;
+                  
+                  if (wasNearBottom) {
+                    scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                  }
+                }
+              }, 50);
+            }
+          } else {
+            for (const { effect, actor } of appliedEffects) {
+              ui.notifications.info(
+                game.i18n.format("FFXIV.Notifications.EffectApplied", {
+                  effect,
+                  actor,
+                }),
+              );
+            }
+          }
+        }
+      }
+    };
+
+    if (selfEntries.length) await applyEntries(sourceActor, selfEntries);
+    if (targetEntries.length) {
+      debugLog("Apply status effects", targetEntries);
+      for (const token of targets) {
+        await applyEntries(token.actor, targetEntries);
+      }
+    }
+
+    if (socketApplications.length) {
+      sentSocketRequest = emitToActiveGM({
         type: "applyEffect",
-        data: {
-          actorIds: actorsNeedingGM.map((a) => a.id),
-          effects: statusEntries,
-        },
+        data: { applications: socketApplications },
         userName: game.user.name,
       });
+      if (sentSocketRequest) {
+        for (const application of socketApplications) {
+          applications.push({
+            actorId: application.actorRef,
+            entries: application.effects,
+          });
+        }
+      }
+    }
+
+    if (sentSocketRequest) {
       ui.notifications.info(
         game.i18n.localize("FFXIV.Notifications.SendSocket"),
       );
     }
+
+    if (applications.length) {
+      setApplyStatusButtonState(button, true, {
+        actorIds: applications.map((application) => application.actorId),
+        statusEntries,
+        applications,
+      });
+    }
+  });
+
+  jqueryhtml.find(".ffxiv-apply-active-effects").on("click", async (ev) => {
+    const button =
+      ev.currentTarget instanceof HTMLButtonElement ? ev.currentTarget : null;
+    const currentState = String(button?.dataset?.ffxivLinkedState || "apply");
+    if (currentState === "applied") {
+      let sourceItemUuid = String(
+        button?.dataset?.appliedSourceItemUuid ??
+        button?.dataset?.itemUuid ??
+        "",
+      ).trim();
+      if (!sourceItemUuid) {
+        const sourceItem = await resolveChatAbilityItem(ev.currentTarget);
+        sourceItemUuid = String(sourceItem?.uuid ?? "").trim();
+      }
+      const actorIds = parseJsonIdArray(button?.dataset?.appliedActorIds);
+      const sourceEffectIds = parseJsonIdArray(
+        button?.dataset?.appliedSourceEffectIds,
+      );
+      if (!actorIds.length) {
+        setApplyActiveEffectsButtonState(button, false);
+        return;
+      }
+
+      const ownActors = [];
+      const actorsNeedingGM = [];
+      for (const actorRef of actorIds) {
+        const actor = await resolveActorFromReference(actorRef);
+        if (!actor) continue;
+        if (actor.testUserPermission(game.user, "OWNER")) ownActors.push(actor);
+        else actorsNeedingGM.push(actor);
+      }
+
+      let removedCount = 0;
+      for (const actor of ownActors) {
+        removedCount += await removeLinkedEffectsFromActor(
+          actor,
+          sourceItemUuid,
+          sourceEffectIds,
+        );
+      }
+
+      if (!removedCount) {
+        const fallbackCandidates = [];
+        const sourceActorRef = String(
+          button?.dataset?.actorUuid ?? button?.dataset?.actorId ?? "",
+        ).trim();
+        if (sourceActorRef) fallbackCandidates.push(sourceActorRef);
+        for (const token of game.user.targets ?? []) {
+          const ref = getActorReference(token?.actor);
+          if (ref) fallbackCandidates.push(ref);
+        }
+        const uniqueFallbackRefs = Array.from(new Set(fallbackCandidates));
+        for (const actorRef of uniqueFallbackRefs) {
+          const actor = await resolveActorFromReference(actorRef);
+          if (!actor) continue;
+          if (!actor.testUserPermission(game.user, "OWNER")) continue;
+          removedCount += await removeLinkedEffectsFromActor(
+            actor,
+            sourceItemUuid,
+            sourceEffectIds,
+          );
+        }
+      }
+
+      if (actorsNeedingGM.length) {
+        const sent = emitToActiveGM({
+          type: "applyLinkedEffects",
+          data: {
+            applications: actorsNeedingGM.map((actor) => ({
+              actorId: actor.id,
+              actorRef: getActorReference(actor),
+              effectDocs: [],
+              removeSourceIds: sourceEffectIds,
+              removeAllFromSource: sourceEffectIds.length === 0,
+              sourceItemUuid,
+            })),
+          },
+          userName: game.user.name,
+        });
+        if (!sent) return;
+      }
+
+      setApplyActiveEffectsButtonState(button, false);
+      return;
+    }
+
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (!item) return;
+    const sourceItemUuid = item.uuid;
+
+    const sourceActor = item.parent?.documentName === "Actor"
+      ? item.parent
+      : await resolveActorFromReference(
+        ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
+      );
+
+    const linkedEffects = Array.from(item.effects ?? []).filter(
+      (effect) => !effect.disabled,
+    );
+    const manualLinkedEffects = linkedEffects.filter((effect) => {
+      const applyTo = getLinkedEffectApplyTo(effect);
+      return applyTo !== "self_auto" && applyTo !== "automation";
+    });
+    if (!manualLinkedEffects.length) return;
+
+    const selfEffects = manualLinkedEffects.filter(
+      (effect) => getLinkedEffectApplyTo(effect) === "self",
+    );
+    const targetEffects = manualLinkedEffects.filter(
+      (effect) => getLinkedEffectApplyTo(effect) === "target",
+    );
+    const targets = Array.from(game.user.targets).map((token) => token.actor).filter(Boolean);
+
+    if (!selfEffects.length && targetEffects.length && targets.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
+      return;
+    }
+
+    const isAddEffect = (effect) =>
+      String(effect.getFlag("ffxiv", "applyAction") || "add") !== "remove";
+    const isRemoveEffect = (effect) =>
+      String(effect.getFlag("ffxiv", "applyAction") || "add") === "remove";
+
+    const buildDocs = (effects) =>
+      buildLinkedActiveEffectDocs(item, effects.filter(isAddEffect));
+    const buildRemoveSourceIds = (effects) =>
+      effects.filter(isRemoveEffect).map((effect) => effect.id).filter(Boolean);
+    const addSourceIds = manualLinkedEffects
+      .filter(isAddEffect)
+      .map((effect) => effect.id)
+      .filter(Boolean);
+
+    const ownActors = [];
+    const actorsNeedingGM = [];
+    if (sourceActor && selfEffects.length) {
+      if (sourceActor.testUserPermission(game.user, "OWNER")) ownActors.push({ actor: sourceActor, effects: selfEffects });
+      else actorsNeedingGM.push({ actor: sourceActor, effects: selfEffects });
+    }
+    for (const actor of targets) {
+      if (!targetEffects.length) continue;
+      if (actor.testUserPermission(game.user, "OWNER")) ownActors.push({ actor, effects: targetEffects });
+      else actorsNeedingGM.push({ actor, effects: targetEffects });
+    }
+
+    const affectedActorIds = [];
+
+    for (const { actor, effects } of ownActors) {
+      const docs = buildDocs(effects);
+      const removeSourceIds = buildRemoveSourceIds(effects);
+      if (!docs.length && !removeSourceIds.length) continue;
+      const appliedCount = await applyLinkedEffectsToActor(actor, docs);
+      if (removeSourceIds.length) {
+        await removeLinkedEffectsFromActor(actor, item.uuid, removeSourceIds);
+      }
+      const actorRef = getActorReference(actor);
+      if (appliedCount > 0 && actorRef) affectedActorIds.push(actorRef);
+    }
+
+    if (actorsNeedingGM.length > 0) {
+      const socketApplications = [];
+      for (const { actor, effects } of actorsNeedingGM) {
+        const effectDocs = buildDocs(effects);
+        const removeSourceIds = buildRemoveSourceIds(effects);
+        if (!effectDocs.length && !removeSourceIds.length) continue;
+        const actorRef = getActorReference(actor);
+        if (
+          actorRef &&
+          effectDocs.length &&
+          hasApplicableLinkedEffectDocs(actor, effectDocs)
+        ) {
+          affectedActorIds.push(actorRef);
+        }
+        socketApplications.push({
+          actorId: actor.id,
+          actorRef: getActorReference(actor),
+          effectDocs,
+          removeSourceIds,
+          sourceItemUuid: item.uuid,
+        });
+      }
+      if (socketApplications.length) {
+        const sent = emitToActiveGM({
+          type: "applyLinkedEffects",
+          data: { applications: socketApplications },
+          userName: game.user.name,
+        });
+        if (!sent) {
+          const pendingRefs = new Set(
+            socketApplications.map((application) => application.actorRef),
+          );
+          for (let index = affectedActorIds.length - 1; index >= 0; index--) {
+            if (pendingRefs.has(affectedActorIds[index])) affectedActorIds.splice(index, 1);
+          }
+        }
+      }
+    }
+
+    if (addSourceIds.length && affectedActorIds.length) {
+      setApplyActiveEffectsButtonState(button, true, {
+        actorIds: affectedActorIds,
+        sourceEffectIds: addSourceIds,
+        sourceItemUuid: item.uuid,
+      });
+    }
   });
 });
 
+async function resolveChatAbilityItem(element) {
+  const itemUuid = String(element?.dataset?.itemUuid ?? "").trim();
+  if (itemUuid) {
+    try {
+      const byUuid = await fromUuid(itemUuid);
+      if (byUuid?.documentName === "Item") return byUuid;
+    } catch (_error) { }
+  }
+
+  const actorUuid = String(element?.dataset?.actorUuid ?? "").trim();
+  if (actorUuid) {
+    try {
+      const actorDoc = await fromUuid(actorUuid);
+      if (actorDoc?.documentName === "Actor") {
+        const item = actorDoc.items?.get(element?.dataset?.itemId);
+        if (item) return item;
+      }
+    } catch (_error) { }
+  }
+
+  const actorId = String(element?.dataset?.actorId ?? "").trim();
+  const itemId = String(element?.dataset?.itemId ?? "").trim();
+  const actor = game.actors.get(actorId);
+  return actor?.items?.get(itemId) ?? null;
+}
+
 function getStatusEffectEntriesForItem(item, element) {
+  const embeddedEntries = parseStatusEntriesFromElement(element);
   const sourceEntries =
     Array.isArray(item?.system?.status_effects) &&
-    item.system.status_effects.length
+      item.system.status_effects.length
       ? item.system.status_effects
       : item?.system?.status_effect
         ? [
-            {
-              id: item.system.status_effect,
-              action: item.system.status_action !== false,
-            },
-          ]
+          {
+            id: item.system.status_effect,
+            action: item.system.status_action !== false,
+            applyMode:
+              item.system.status_apply_mode === "auto" ? "auto" : "manual",
+            applyTo: "target",
+          },
+        ]
         : element?.dataset?.effectId
           ? [
-              {
-                id: element.dataset.effectId,
-                action: element.dataset.action === "true",
-              },
-            ]
+            {
+              id: element.dataset.effectId,
+              action: element.dataset.action === "true",
+              applyMode: "manual",
+              applyTo: "target",
+            },
+          ]
           : [];
 
-  return sourceEntries
-    .map((entry) => ({
-      effect: CONFIG.statusEffects.find((effect) => effect.id === entry?.id),
-      active: entry?.action !== false,
-    }))
-    .filter((entry) => entry.effect);
+  const chosenEntries = sourceEntries.length ? sourceEntries : embeddedEntries;
+
+  return chosenEntries
+    .map((entry) => normalizeStatusEntry(entry, element?.dataset?.sourceUuid))
+    .filter((entry) => entry.statusId && entry.applyMode !== "auto");
+}
+
+function parseStatusEntriesFromElement(element) {
+  const raw = element?.dataset?.statusEntries;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(decodeURIComponent(raw));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    debugError("FFXIV | Failed to parse embedded status entries:", error);
+    return [];
+  }
 }

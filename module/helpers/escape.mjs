@@ -16,31 +16,27 @@ function onActivate(event) {
 
 function onEscape(event) {
   if (event.key !== "Escape") return;
-  if (hasNativeAppPriority(event)) return;
+  if (event.repeat) return;
 
-  const app = getActiveApp(event);
-  if (!app) return;
+  const apps = getOpenAppsSortedByZIndex();
 
-  event.preventDefault();
-  event.stopPropagation();
-  event.stopImmediatePropagation();
+  if (blurFocusedElement(event)) {
+    consumeEvent(event);
+    return;
+  }
 
-  if (closingApp === app) return;
-  closingApp = app;
+  if (closeContextMenu(event, apps)) {
+    consumeEvent(event);
+    return;
+  }
 
-  Promise.resolve(app.close())
-    .catch((err) =>
-      console.error("FFXIV | Failed to close active window with Escape", err),
-    )
-    .finally(() => {
-      if (closingApp === app) closingApp = null;
-    });
+  if (!apps.length) return;
+
+  consumeEvent(event);
+  closeTopmostApp(apps);
 }
 
-function getActiveApp(event) {
-  const apps = getOpenApps({ ffxivOnly: true });
-  if (!apps.length) return null;
-
+function getActiveApp(event, apps = getOpenAppsSortedByZIndex()) {
   const targeted = getEventApp(event, apps);
   if (targeted) return targeted;
 
@@ -50,6 +46,52 @@ function getActiveApp(event) {
   if (activeApp && apps.includes(activeApp)) return activeApp;
 
   return null;
+}
+
+function blurFocusedElement(event) {
+  const element = getFocusedElement(event);
+  if (!element) return false;
+  element.blur();
+  return true;
+}
+
+function getFocusedElement(event) {
+  const target =
+    event.composedPath?.().find((node) => node instanceof HTMLElement) ??
+    event.target;
+  const focused =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const element = focused && isFormField(focused) ? focused : target;
+  if (!(element instanceof HTMLElement) || !isFormField(element)) return null;
+  return element;
+}
+
+function isFormField(element) {
+  if (element.isContentEditable) return true;
+  return ["INPUT", "SELECT", "TEXTAREA"].includes(element.tagName);
+}
+
+function closeContextMenu(event, apps) {
+  if (closeFoundryContextMenu(event, apps)) return true;
+
+  const active = getActiveApp(event, apps);
+  if (active && closeAppContextMenu(active)) return true;
+  return apps.some((app) => app !== active && closeAppContextMenu(app));
+}
+
+function closeFoundryContextMenu(event, apps) {
+  const element = getElement(ui.context?.element);
+  if (!element) return false;
+  if (!getContainingApp(element, apps)) return false;
+  ui.context.close();
+  return true;
+}
+
+function closeAppContextMenu(app) {
+  if (typeof app?._closeInventoryContextMenu !== "function") return false;
+  if (!app._inventoryContextMenu?.element) return false;
+  app._closeInventoryContextMenu();
+  return true;
 }
 
 function getTopmostApp(apps) {
@@ -62,12 +104,34 @@ function getTopmostApp(apps) {
   );
 }
 
-function getEventApp(event, apps = getOpenApps()) {
+async function closeTopmostApp(apps) {
+  while (apps.length) {
+    const app = apps.pop();
+    if (closingApp === app) return;
+    closingApp = app;
+
+    try {
+      const closed = await app.close({ closeKey: true });
+      if (closed || !isAppRendered(app)) return;
+    } catch (err) {
+      console.error("FFXIV | Failed to close active window with Escape", err);
+      return;
+    } finally {
+      if (closingApp === app) closingApp = null;
+    }
+  }
+}
+
+function getEventApp(event, apps = getOpenAppsSortedByZIndex()) {
   const target =
     event.composedPath?.().find((node) => node instanceof HTMLElement) ??
     event.target;
   if (!(target instanceof Node)) return null;
 
+  return getContainingApp(target, apps);
+}
+
+function getContainingApp(target, apps) {
   return (
     apps
       .map((app) => ({ app, element: getAppElement(app) }))
@@ -77,52 +141,36 @@ function getEventApp(event, apps = getOpenApps()) {
   );
 }
 
-function getOpenApps({ ffxivOnly = false } = {}) {
-  const apps = [
-    ...Object.values(ui.windows ?? {}),
-    ...Array.from(foundry.applications.instances?.values?.() ?? []),
-  ];
+function getOpenAppsSortedByZIndex() {
+  const windows = Object.values(ui.windows ?? {});
+  const instances = Array.from(foundry.applications.instances?.values?.() ?? [])
+    .filter((app) => app.hasFrame !== false);
 
-  return [...new Set(apps)].filter((app) => {
-    if (typeof app?.close !== "function") return false;
-    const element = getAppElement(app);
-    if (!element || !document.body.contains(element)) return false;
-    if (ffxivOnly && !isFFXIVApp(app, element)) return false;
-    return app.rendered ?? true;
-  });
+  return [...new Set([...windows, ...instances])]
+    .map((app) => ({ app, element: getAppElement(app) }))
+    .filter(({ app, element }) => {
+      if (typeof app?.close !== "function") return false;
+      if (app.isEscapeable === false) return false;
+      if (!element || !document.body.contains(element)) return false;
+      if (!isAppRendered(app)) return false;
+      return Number.isFinite(getZIndex(element));
+    })
+    .sort((a, b) => getZIndex(a.element) - getZIndex(b.element))
+    .map(({ app }) => app);
 }
 
-function hasNativeAppPriority(event) {
-  const apps = getOpenApps({ ffxivOnly: false });
-  if (!apps.length) return false;
-
-  const topmost = getTopmostApp(apps);
-  if (topmost) {
-    const element = getAppElement(topmost);
-    if (element && !isFFXIVApp(topmost, element)) return true;
+function isAppRendered(app) {
+  if (typeof app?.rendered === "boolean") return app.rendered;
+  if (typeof app?._state === "number") {
+    const states = foundry.applications.api.ApplicationV2.RENDER_STATES;
+    return app._state >= states.RENDERED;
   }
-
-  const targeted = getEventApp(event, apps);
-  if (!targeted) return false;
-  const element = getAppElement(targeted);
-  if (!element) return false;
-  return !isFFXIVApp(targeted, element);
-}
-
-function isFFXIVApp(app, element) {
-  if (element?.classList?.contains("ffxiv")) return true;
-  if (typeof app?.id === "string" && app.id.startsWith("FFXIV")) return true;
-  if (
-    typeof app?.constructor?.name === "string" &&
-    app.constructor.name.startsWith("FFXIV")
-  )
-    return true;
-  return false;
+  return true;
 }
 
 function getAppElement(app) {
-  if (app?.element instanceof HTMLElement) return app.element;
-  if (app?.element?.[0] instanceof HTMLElement) return app.element[0];
+  const element = getElement(app?.element);
+  if (element) return element;
   if (app?.id) {
     const byId = document.getElementById(app.id);
     if (byId) return byId;
@@ -133,7 +181,19 @@ function getAppElement(app) {
   return null;
 }
 
+function getElement(element) {
+  if (element instanceof HTMLElement) return element;
+  if (element?.[0] instanceof HTMLElement) return element[0];
+  return null;
+}
+
 function getZIndex(element) {
   const z = Number.parseInt(getComputedStyle(element).zIndex, 10);
   return Number.isFinite(z) ? z : 0;
+}
+
+function consumeEvent(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
 }

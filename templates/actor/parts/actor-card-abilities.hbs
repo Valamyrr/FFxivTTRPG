@@ -17,22 +17,25 @@
       <div class="ability-right">
         <div class="ability-tags">
           {{#each (actionTags type system.tags) as |tag| }}
-            <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+            <span class="tag">{{localize tag}}</span>
           {{/each}}
+          {{#if system.job_resources_max}}
+            <div class="ability-limitations">
+              {{#repeat system.job_resources_max}}
+                <div class="limitation-wrapper">
+                  <input type="checkbox"
+                         class="job_resource"
+                         data-index="{{index}}"
+                         data-item-id="{{../_id}}"
+                         {{#if (lookup ../system.job_resource_status index) }}
+                         checked
+                         {{/if}}>
+                  <span class="checkmark"></span>
+                </div>
+              {{/repeat}}
+            </div>
+          {{/if}}
         </div>
-        <div class="ability-limitations">
-          {{#repeat system.limitations_max}}
-          <div class="limitation-wrapper">
-            <input type="checkbox"
-                   class="limitation"
-                   data-index="{{index}}"
-                   data-item-id="{{../_id}}"
-                   {{#if (lookup ../system.limitations_status index) }}
-                   checked
-                   {{/if}}>
-            <span class="checkmark"></span>
-          </div>
-        {{/repeat}}
       </div>
     </div>
   </div>
@@ -65,9 +68,7 @@
       </div>
     {{/if}}
     {{#if system.combo }}
-      <div class="detail">
-        <strong>{{localize "FFXIV.Abilities.Combo"}}:</strong> {{system.combo}}
-      </div>
+      {{> "systems/ffxiv/templates/item/parts/combo-chain.hbs" combo=system.combo current=name showLabel=true}}
     {{/if}}
     {{#if system.trigger }}
       <div class="detail">
@@ -80,47 +81,46 @@
       </div>
     {{/if}}
   </div>
-</div>
-<div class="ability-effects">
-  {{#if system.base_effect }}
-    <div class="effect">
-      <strong>{{localize "FFXIV.Abilities.BaseEffect"}}:</strong> {{{enriched.base_effect}}}
-    </div>
+  <div class="ability-effects">
+    {{#if system.base_effect }}
+      <div class="effect">
+        <strong>{{localize "FFXIV.Abilities.BaseEffect"}}:</strong> {{{enriched.base_effect}}}
+      </div>
+    {{/if}}
+    {{#if system.direct_hit }}
+      <div class="effect">
+        <strong>{{localize "FFXIV.Abilities.DirectHit"}}:</strong> {{{enriched.direct_hit}}}
+      </div>
+    {{/if}}
+    {{#if system.limitations }}
+      <div class="effect">
+        <strong>{{localize "FFXIV.Abilities.Limitations"}}:</strong> {{{enriched.limitations}}}
+      </div>
+    {{/if}}
+    {{#if system.marker_area }}
+      <div class="effect">
+        <strong>{{localize "FFXIV.Abilities.MarkerArea"}}:</strong> {{{enriched.marker_area}}}
+      </div>
+    {{/if}}
+    {{#if system.origin }}
+      <div class="effect">
+        <strong>{{localize "FFXIV.Abilities.Origin"}}:</strong> {{{enriched.origin}}}
+      </div>
+    {{/if}}
+    {{#if system.marker_trigger }}
+      <div class="effect">
+        <strong>{{localize "FFXIV.Abilities.MarkerTrigger"}}:</strong> {{{enriched.marker_trigger}}}
+      </div>
+    {{/if}}
+    {{#if system.marker_effect }}
+      <div class="effect">
+        <strong>{{localize "FFXIV.Abilities.MarkerEffect"}}:</strong> {{{enriched.marker_effect}}}
+      </div>
+    {{/if}}
+  </div>
+  {{#if system.description }}
+    <div class="ability-description">{{{enriched.description}}}</div>
   {{/if}}
-  {{#if system.direct_hit }}
-    <div class="effect">
-      <strong>{{localize "FFXIV.Abilities.DirectHit"}}:</strong> {{{enriched.direct_hit}}}
-    </div>
-  {{/if}}
-  {{#if system.limitations }}
-    <div class="effect">
-      <strong>{{localize "FFXIV.Abilities.Limitations"}}:</strong> {{{enriched.limitations}}}
-    </div>
-  {{/if}}
-  {{#if system.marker_area }}
-    <div class="effect">
-      <strong>{{localize "FFXIV.Abilities.MarkerArea"}}:</strong> {{{enriched.marker_area}}}
-    </div>
-  {{/if}}
-  {{#if system.origin }}
-    <div class="effect">
-      <strong>{{localize "FFXIV.Abilities.Origin"}}:</strong> {{{enriched.origin}}}
-    </div>
-  {{/if}}
-  {{#if system.marker_trigger }}
-    <div class="effect">
-      <strong>{{localize "FFXIV.Abilities.MarkerTrigger"}}:</strong> {{{enriched.marker_trigger}}}
-    </div>
-  {{/if}}
-  {{#if system.marker_effect }}
-    <div class="effect">
-      <strong>{{localize "FFXIV.Abilities.MarkerEffect"}}:</strong> {{{enriched.marker_effect}}}
-    </div>
-  {{/if}}
-</div>
-{{#if system.description }}
-  <div class="ability-description">{{{enriched.description}}}</div>
-{{/if}}
-<button type="button" class="ability-roll-button" data-item-id={{_id}}>{{localize "FFXIV.CharacterSheet.Roll"}}
-</button>
+  <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{localize "FFXIV.CharacterSheet.Roll"}}
+  </button>
 </div>

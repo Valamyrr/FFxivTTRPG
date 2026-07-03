@@ -1,0 +1,38 @@
+.ffxiv .popout-editor-window,
+.ffxiv .popout-editor-window .sheet-body,
+.ffxiv .popout-editor-window textarea {
+  height: 100%;
+}
+
+.ffxiv .popout-editor-window textarea {
+  width: 100%;
+  min-height: 230px;
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 4px;
+  color: var(--text-color-input);
+  padding: 8px;
+}
+
+.ffxiv .popout-editor-window button[type="submit"] {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.ffxiv .prosemirror menu .pm-dropdown {
+  background-color: var(--primary-color);
+}
+
+.ffxiv .prosemirror menu button:hover,
+.prosemirror menu button.active {
+  background-color: var(--primary-color);
+}
+
+.ffxiv .prosemirror menu .pm-dropdown:hover i {
+  color: var(--text-color);
+}
+
+.ffxiv input::placeholder {
+  color: var(--placeholder-color);
+}

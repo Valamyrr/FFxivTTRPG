@@ -1,10 +1,83 @@
 import { debugError, debugLog } from "../helpers/debug.mjs";
+import {
+  getActorCheckPenalty,
+  getLargestCheckPenalty,
+  hasStatus,
+} from "../helpers/status-effects.mjs";
 
 /**
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
  * @extends {Actor}
  */
 export class FFXIVActor extends Actor {
+  static _normalizeLinkedTraitName(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  static _getLinkedTraitRefs(value) {
+    if (Array.isArray(value))
+      return value.flatMap((entry) => FFXIVActor._getLinkedTraitRefs(entry));
+    if (typeof value === "string") return [value];
+    if (!value || typeof value !== "object") return [];
+    return [value.key, value.name].filter(Boolean);
+  }
+
+  static _getEffectCountsAsRefs(effect) {
+    return [
+      effect.getFlag?.("ffxiv", "countsAs"),
+      effect.getFlag?.("ffxiv", "equivalentEffects"),
+      effect.getFlag?.("ffxiv", "effectAliases"),
+    ].flatMap((value) => FFXIVActor._getLinkedTraitRefs(value));
+  }
+
+  getLinkedActiveTraitKeys() {
+    const keys = new Set();
+    for (const effect of this.effects ?? []) {
+      if (effect.disabled) continue;
+      const flagKey = FFXIVActor._normalizeLinkedTraitName(
+        effect.getFlag?.("ffxiv", "effectKey"),
+      );
+      if (flagKey) keys.add(flagKey);
+
+      const nameKey = FFXIVActor._normalizeLinkedTraitName(effect.name);
+      if (nameKey) keys.add(nameKey);
+
+      for (const value of FFXIVActor._getEffectCountsAsRefs(effect)) {
+        const key = FFXIVActor._normalizeLinkedTraitName(value);
+        if (key) keys.add(key);
+      }
+    }
+    return keys;
+  }
+
+  isTraitLinkedToActiveEffect(item, keys = null) {
+    if (item?.type !== "trait") return false;
+    const traitKey = FFXIVActor._normalizeLinkedTraitName(item.name);
+    if (!traitKey) return false;
+    return (keys ?? this.getLinkedActiveTraitKeys()).has(traitKey);
+  }
+
+  findTraitLinkedToActiveEffect(effect) {
+    const keys = [
+      effect?.getFlag?.("ffxiv", "effectKey"),
+      effect?.name,
+    ]
+      .map((value) => FFXIVActor._normalizeLinkedTraitName(value))
+      .filter(Boolean);
+    if (!keys.length) return null;
+    return this.items.find(
+      (item) =>
+        item.type === "trait" &&
+        keys.includes(FFXIVActor._normalizeLinkedTraitName(item.name)),
+    );
+  }
+
   _toFiniteNumber(value, fallback = 0) {
     if (Number.isFinite(value)) return value;
     const parsed = Number(value);
@@ -227,6 +300,9 @@ export class FFXIVActor extends Actor {
     this._ensureCharacterSystemDefaults();
 
     if (this.type === "npc") {
+      if (typeof this.system.elite_foe !== "boolean") {
+        this.system.elite_foe = false;
+      }
       const currentSize = this.system.size;
       if (currentSize && typeof currentSize === "object" && !Array.isArray(currentSize)) {
         this.system.size = typeof currentSize.text === "string" ? currentSize.text : "";
@@ -270,7 +346,7 @@ export class FFXIVActor extends Actor {
   _prepareCharacterData(actorData) {
     if (actorData.type !== 'character') return;
     const className = actorData.system?.class?.name;
-    const classConfig = CONFIG.FF_XIV?.classes?.[className];
+    const classConfig = CONFIG.FFXIV?.classes?.[className];
 
     if (className && className !== "custom" && classConfig?.role) {
       actorData.system.class.role = classConfig.role;
@@ -280,6 +356,9 @@ export class FFXIVActor extends Actor {
 
   _prepareNpcData(actorData) {
     if (actorData.type !== 'npc') return;
+    const speed = actorData.system?.secondary_attributes?.speed;
+    if (!speed || typeof speed !== "object") return;
+    if (!Number.isFinite(speed.value)) speed.value = 5;
   }
 
   _preparePetData(actorData) {
@@ -332,11 +411,19 @@ export class FFXIVActor extends Actor {
       data.def = Number(secondaryAttributes?.defense?.value) || 0;
       data.mdef = Number(secondaryAttributes?.magic_defense?.value) || 0;
       data.vigilance = Number(secondaryAttributes?.vigilance?.value) || 0;
+      data.speed = this._getStatusAdjustedSpeed(
+        Number(secondaryAttributes?.speed?.value) || 0,
+      );
     }
+    if (this.type === "pet") {
+      data.speed = this._getStatusAdjustedSpeed(Number(data.speed?.value ?? data.speed) || 0);
+    }
+    const linkedTraitEffectKeys = this.getLinkedActiveTraitKeys();
     for (let item of this.items) {
       if (!Array.isArray(item.system.modifiers)) continue; // Skip if item has no modifiers
-      if (item.system.activable) {
-        if (!item.system.active) continue; // Skip if activable but not active
+      const linkedTraitActive = this.isTraitLinkedToActiveEffect(item, linkedTraitEffectKeys);
+      if (item.system.activable || linkedTraitActive) {
+        if (!item.system.active && !linkedTraitActive) continue; // Skip if activable but not active
       }
       if (Object.prototype.hasOwnProperty.call(item.system, "equipped")) {
         if (!item.system.equipped) continue; // Skip if equipped exists but is false
@@ -350,25 +437,25 @@ export class FFXIVActor extends Actor {
         const numericModifier = Number(modValue);
         const modifierValue = Number.isFinite(numericModifier) ? numericModifier : 0;
         if (Object.keys(primaryAttributes).length) {
-          if (modName == CONFIG.FF_XIV.attributes.Strength.label) data.str += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Dexterity.label) data.dex += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Vitality.label) data.vit += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Intelligence.label) data.int += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Mind.label) data.mnd += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Strength.label) data.str += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Dexterity.label) data.dex += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Vitality.label) data.vit += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Intelligence.label) data.int += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Mind.label) data.mnd += modifierValue;
         }
         if (Object.keys(secondaryAttributes).length) {
-          if (modName == CONFIG.FF_XIV.attributes.Defense.label) data.def += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.MagicDefense.label) data.mdef += modifierValue;
-          if (modName == CONFIG.FF_XIV.attributes.Vigilance.label) data.vigilance += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Defense.label) data.def += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.MagicDefense.label) data.mdef += modifierValue;
+          if (modName == CONFIG.FFXIV.attributes.Vigilance.label) data.vigilance += modifierValue;
         }
         data.dmg = data.dmg || "";
-        if (modName == CONFIG.FF_XIV.characteristics.Damages.label) data.dmg += "+" + modifierValue;
+        if (modName == CONFIG.FFXIV.characteristics.Damages.label) data.dmg += "+" + modifierValue;
 
         data.cdmg = data.cdmg || "";
-        if (modName == CONFIG.FF_XIV.characteristics.CriticalDamage.label) data.cdmg += "+" + modifierValue;
+        if (modName == CONFIG.FFXIV.characteristics.CriticalDamage.label) data.cdmg += "+" + modifierValue;
 
         data.hit = data.hit || "";
-        if (modName == CONFIG.FF_XIV.characteristics.BonusToHit.label) data.hit += "+" + modifierValue;
+        if (modName == CONFIG.FFXIV.characteristics.BonusToHit.label) data.hit += "+" + modifierValue;
 
       }
     }
@@ -390,6 +477,30 @@ export class FFXIVActor extends Actor {
     return data;
   }
 
+  _getStatusAdjustedSpeed(baseSpeed) {
+    let speed = Math.max(Number(baseSpeed) || 0, 0);
+    if (hasStatus(this, "bind")) {
+      speed = this._isSmallOrMedium() ? 0 : Math.max(speed - 2, 0);
+    }
+    if (hasStatus(this, "heavy")) {
+      speed = Math.ceil(speed / 2);
+    }
+    if (hasStatus(this, "slow")) {
+      speed = Math.ceil(speed / 2);
+    }
+    return speed;
+  }
+
+  _isSmallOrMedium() {
+    const size = String(
+      this.type === "npc"
+        ? this.system?.size
+        : this.system?.appearance?.size,
+    ).toLowerCase();
+    if (!size) return true;
+    return size.includes("small") || size.includes("medium");
+  }
+
   async _showModifiers() {
     debugLog("showModifiers");
     if (this.items.some(item => item.system.active == true)) {
@@ -404,9 +515,85 @@ export class FFXIVActor extends Actor {
     }
   }
 
+  _getEnmityEffects() {
+    return this.effects.filter((effect) => {
+      if (effect.disabled) return false;
+      const statuses = Array.from(effect.statuses ?? []);
+      return statuses.includes("enmity");
+    });
+  }
+
+  async _getEnmitySourceActor(effect) {
+    const origin = String(effect?.origin ?? "").trim();
+    if (!origin || origin.toLowerCase() === "none") return null;
+
+    let source = null;
+    try {
+      source = await fromUuid(origin);
+    } catch (_error) {
+      return null;
+    }
+
+    if (source?.documentName === "Actor") return source;
+    if (source?.parent?.documentName === "Actor") return source.parent;
+    if (source?.actor?.documentName === "Actor") return source.actor;
+    return null;
+  }
+
+  _targetsIncludeActor(actor) {
+    if (!actor) return false;
+    return Array.from(game.user.targets ?? []).some((token) => {
+      const targetActor = token.actor;
+      return targetActor && (
+        targetActor === actor ||
+        targetActor.uuid === actor.uuid ||
+        targetActor.id === actor.id
+      );
+    });
+  }
+
+  async _getEnmityCheckPenaltyInfo() {
+    for (const effect of this._getEnmityEffects()) {
+      const sourceActor = await this._getEnmitySourceActor(effect);
+      if (sourceActor && !this._targetsIncludeActor(sourceActor)) {
+        return {
+          penalty: this._getEnmityCheckPenalty(effect, sourceActor),
+          sourceActor,
+        };
+      }
+    }
+    return { penalty: 0, sourceActor: null };
+  }
+
+  _getEnmityCheckPenalty(effect, sourceActor) {
+    const sourcePenalty = this._getEnmityCheckPenaltyFromEffects(sourceActor);
+    if (sourcePenalty !== null) return sourcePenalty;
+
+    const effectPenalty = Number(
+      foundry.utils.getProperty(effect, "flags.ffxiv.enmity.checkPenalty"),
+    );
+    return Number.isFinite(effectPenalty) ? effectPenalty : 0;
+  }
+
+  _getEnmityCheckPenaltyFromEffects(sourceActor) {
+    let penalty = null;
+    for (const effect of sourceActor?.allApplicableEffects?.() ?? []) {
+      if (!effect || effect.disabled) continue;
+      const value = Number(
+        foundry.utils.getProperty(effect, "flags.ffxiv.enmity.checkPenalty"),
+      );
+      if (Number.isFinite(value)) penalty = value;
+    }
+    return penalty;
+  }
+
+  async _getEnmityCheckPenalty() {
+    return (await this._getEnmityCheckPenaltyInfo()).penalty;
+  }
+
   async _rollAttribute(attribute) {
     const attributeCapitalized = attribute.charAt(0).toUpperCase() + attribute.slice(1);
-    const abbreviationEntry = CONFIG.FF_XIV.attributesAbbreviations[attributeCapitalized];
+    const abbreviationEntry = CONFIG.FFXIV.attributesAbbreviations[attributeCapitalized];
 
     if (!abbreviationEntry) {
       ui.notifications.warn(`Unknown attribute: ${attribute}`);
@@ -416,13 +603,27 @@ export class FFXIVActor extends Actor {
     const attrKey = abbreviationEntry.value;
     const rollData = this.getRollData();
     const modifiers = rollData[attrKey] ?? 0;
-    const roll = new Roll(`1d20 + ${modifiers}`, rollData);
+    const enmityPenaltyInfo = await this._getEnmityCheckPenaltyInfo();
+    const enmityPenalty = enmityPenaltyInfo.penalty;
+    const statusPenalty = getActorCheckPenalty(this);
+    const checkPenalty = getLargestCheckPenalty(enmityPenalty, statusPenalty);
+    const enmityPenaltyApplies =
+      enmityPenalty && Math.abs(enmityPenalty) >= Math.abs(statusPenalty);
+    let formula = `1d20 + ${modifiers}`;
+    if (checkPenalty) formula += ` - ${Math.abs(checkPenalty)}`;
+    const roll = new Roll(formula, rollData);
     await roll.evaluate();
+    const enmityNote = enmityPenaltyApplies
+      ? `<br>${game.i18n.localize("FFXIV.Effects.Enmity")}: ${enmityPenalty} (${enmityPenaltyInfo.sourceActor.name} not targeted)`
+      : "";
+    const checkPenaltyNote = checkPenalty && !enmityPenaltyApplies
+      ? `<br>${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${statusPenalty}`
+      : "";
 
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor: `<i class="fa-solid fa-dice-d20"></i> ${game.i18n.localize(`FFXIV.Attributes.${attributeCapitalized}.long`) || attribute}`,
-      content: `${roll.total} (${roll.formula})`,
+      content: `${roll.total} (${roll.formula})${enmityNote}${checkPenaltyNote}`,
       rollMode: game.settings.get('core', 'rollMode'),
       flags: { core: { canParseHTML: true } }
     });

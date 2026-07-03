@@ -67,6 +67,9 @@
   <a class="sub-tab" data-tab="traits">{{ localize "FFXIV.Abilities.TraitsShort" }}
     <div class="chip"></div>
   </a>
+  <a class="sub-tab" data-tab="effects">{{ localize "FFXIV.CharacterSheet.Effects" }}
+    <div class="chip"></div>
+  </a>
 </nav>
 <div class="sheet-body-wrapper">
 {{! Sheet Body }}
@@ -172,6 +175,11 @@
     {{/if}}
   </div>
 {{/unless}}
+</div>
+<div class="tab effects modern-panel"
+     data-group="primary"
+     data-tab="effects">
+  {{> "systems/ffxiv/templates/actor/parts/actor-effects.hbs"}}
 </div>
 </section>
 </div>

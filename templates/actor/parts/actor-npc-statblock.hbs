@@ -55,6 +55,18 @@
         {{else}}
           <span class="npc-plain-value npc-specie">{{system.specie}}</span>
         {{/if}}
+        {{#if actorEditMode }}
+          <label class="npc-elite-foe-toggle" title="{{localize 'FFXIV.CharacterSheet.EliteFoeHint'}}">
+            <input type="checkbox"
+                   name="system.elite_foe"
+                   {{#if system.elite_foe}}checked{{/if}} />
+            <span>{{localize "FFXIV.CharacterSheet.EliteFoe"}}</span>
+          </label>
+        {{else if system.elite_foe}}
+          <span class="npc-elite-foe-badge" title="{{localize 'FFXIV.CharacterSheet.EliteFoeHint'}}">
+            {{localize "FFXIV.CharacterSheet.EliteFoe"}}
+          </span>
+        {{/if}}
       </div>
     </div>
     <div class="statblock-content">

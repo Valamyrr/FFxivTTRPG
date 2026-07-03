@@ -1,19 +1,32 @@
 <div class="{{cssClass}} item-modern-sheet">
+  {{#if editable }}
+  <button type="button"
+          class="actor-edit-toggle item-edit-toggle {{#if itemEditMode }}active{{/if }}"
+          aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet' }}"
+          aria-pressed="{{#if itemEditMode }}true{{else }}false{{/if }}"
+          title="{{#if itemEditMode }}{{localize 'FFXIV.CharacterSheet.LockSheet' }}{{else }}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+    <i class="fa-solid {{#if itemEditMode }}fa-lock-open{{else }}fa-lock{{/if }}"></i>
+  </button>
+  {{/if}}
   <header class="sheet-header">
     <img class="profile-img"
          src="{{item.img}}"
+         {{#if itemEditMode }}
          data-edit="img"
+         {{/if}}
          title="{{item.name}}"  alt="" width="32" height="32" />
     <div class="header-fields">
       <h1 class="charname">
         <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
       </h1>
+      {{#if itemEditMode }}
+        <button type="button"
+                class="item-delete"
+                aria-label="{{localize 'FFXIV.Item.Delete'}}">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      {{/if}}
     </div>
-    <button type="button"
-            class="item-delete"
-            aria-label="{{localize 'FFXIV.Item.Delete'}}">
-      <i class="fa-solid fa-trash-can"></i>
-    </button>
   </header>
   {{! Sheet Body }}
   <section class="sheet-body">
@@ -28,8 +41,8 @@
             <li>
               <select class="ffxiv-text-center select-tags"
                       data-index="{{entry.index}}">
-                {{#each ../config.tags_traits as |t| }}
-                  <option value="{{t.label}}" {{#if (eqTag t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
+                {{#each entry.options as |t| }}
+                  <option value="{{t.label}}" {{#if t.selected}}selected{{/if}} {{#if t.disabled}}disabled{{/if}}>{{ localize t.label }}
                   </option>
                 {{/each}}
               </select>
@@ -43,7 +56,18 @@
           {{/each}}
         </ul>
       </div>
-      <div class="resources grid grid-1col">
+      <div class="resources grid grid-2col">
+        <div class="resource flex-group-center">
+          <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <select class="ffxiv-text-center"
+                    name="system.activable"
+                    data-dtype="Boolean">
+              <option value="true" {{#if item.system.activable}}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}</option>
+              <option value="false" {{#unless item.system.activable}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}</option>
+            </select>
+          </div>
+        </div>
         <div class="resource flex-group-center">
           <label for="system.job_resources_max" class="resource-label">{{ localize "FFXIV.Abilities.JobResourceMax" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
@@ -52,19 +76,6 @@
                    min="0"
                    value="{{item.system.job_resources_max}}" />
           </div>
-        </div>
-      </div>
-      <div class="resources grid grid-2col">
-        <div class="resource ffxiv-m-auto">
-          <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
-        </div>
-        <div class="resource-content">
-          <select class="ffxiv-text-center"
-                  name="system.activable"
-                  data-dtype="Boolean">
-            <option value="true" {{#if item.system.activable}}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}</option>
-            <option value="false" {{#unless item.system.activable}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}</option>
-          </select>
         </div>
       </div>
       <hr>
@@ -102,8 +113,22 @@
         </ul>
       </div>
       <hr>
-      {{! Editors must receive enriched text data from getData to properly handle rolls }}
-      <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
+      <section class="item-modern-panel item-description-panel">
+        <header class="ability-panel-header">
+          <h2>{{ localize "FFXIV.Item.Description" }}</h2>
+        </header>
+        {{! Editors must receive enriched text data from getData to properly handle rolls }}
+        {{#if itemEditMode }}
+          <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
+        {{else}}
+          {{#if (hasContent enrichedDescription) }}
+            <div class="profile-paragraph-block item-description-readonly">{{{enrichedDescription}}}</div>
+          {{else}}
+            <span class="item-locked-field item-locked-field-empty">{{localize "FFXIV.None"}}</span>
+          {{/if}}
+        {{/if}}
+      </section>
+      {{> "systems/ffxiv/templates/item/parts/item-summons.hbs" }}
     </div>
   </section>
 </div>

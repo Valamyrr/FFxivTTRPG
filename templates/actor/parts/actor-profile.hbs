@@ -205,7 +205,7 @@
         {{#if actorEditMode }}
           <prose-mirror name="system.profile_trait.effect" value="{{source.profile_trait.effect}}" document-uuid="{{actor.uuid}}" class="sized"></prose-mirror>
         {{else}}
-          <div class="profile-paragraph-block">{{{enriched.profile_trait.effect}}}</div>
+          <div class="profile-paragraph-block">{{{profileTraitEffect}}}</div>
         {{/if}}
       </div>
     </div>
@@ -242,10 +242,12 @@
                     <strong>{{localize "FFXIV.Item.Source"}}:</strong> {{system.source}}
                   </div>
                 {{/if}}
-                <button type="button"
-                        data-item-id="{{_id}}"
-                        class="title-delete"
-                        aria-label="{{localize 'FFXIV.Item.Delete'}}">×</button>
+                {{#if ../actorEditMode }}
+                  <button type="button"
+                          data-item-id="{{_id}}"
+                          class="title-delete"
+                          aria-label="{{localize 'FFXIV.Item.Delete'}}">×</button>
+                {{/if}}
               </div>
               <div class="actor-title-description">{{{ enriched.description }}}</div>
             {{/if}}

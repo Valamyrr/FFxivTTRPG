@@ -1,138 +1,193 @@
-<div class="{{cssClass}} minion-mount-sheet">
+<div class="{{cssClass}} item-modern-sheet minion-mount-sheet">
+  {{#if editable}}
+    <button type="button"
+            class="actor-edit-toggle item-edit-toggle {{#if itemEditMode}}active{{/if}}"
+            aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet'}}"
+            aria-pressed="{{#if itemEditMode}}true{{else}}false{{/if}}"
+            title="{{#if itemEditMode}}{{localize 'FFXIV.CharacterSheet.LockSheet'}}{{else}}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+      <i class="fa-solid {{#if itemEditMode}}fa-lock-open{{else}}fa-lock{{/if}}"></i>
+    </button>
+  {{/if}}
   <header class="sheet-header">
     <img class="profile-img"
          src="{{item.img}}"
-         data-edit="img"
-         title="{{item.name}}"  alt="" width="32" height="32" />
+         {{#if itemEditMode}}data-edit="img"{{/if}}
+         title="{{item.name}}"
+         alt=""
+         width="32"
+         height="32" />
     <div class="header-fields">
       <h1 class="charname">
         <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
       </h1>
+      {{#if itemEditMode}}
+        <button type="button"
+                class="item-delete"
+                aria-label="{{localize 'FFXIV.Item.Delete'}}">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      {{/if}}
     </div>
-    <button type="button"
-            class="item-delete"
-            aria-label="{{localize 'FFXIV.Item.Delete'}}">
-      <i class="fa-solid fa-trash-can"></i>
-    </button>
   </header>
-  {{! Sheet Tab Navigation }}
-  <nav class="sheet-tabs nav-sub-tabs" data-group="primary">
-    <a class="sub-tab" data-tab="details">{{ localize "FFXIV.Item.MinionDetailsTab" }}
-      <div class="chip"></div>
-    </a>
-    <a class="sub-tab" data-tab="attributes">{{ localize "FFXIV.Attributes.Attributes" }}
-      <div class="chip"></div>
-    </a>
-  </nav>
-  {{! Sheet Body }}
+  <hr>
   <section class="sheet-body">
-    {{! Details Tab }}
+    <nav class="sheet-tabs tabs item-sheet-tabs" data-group="primary">
+      <a class="item" data-tab="details">
+        <i class="fa-solid fa-circle-info"></i>
+        {{localize "FFXIV.Item.MinionDetailsTab"}}
+      </a>
+      <a class="item" data-tab="attributes">
+        <i class="fa-solid fa-sliders"></i>
+        {{localize "FFXIV.Attributes.Attributes"}}
+      </a>
+    </nav>
     <div class="tab details-tab" data-group="primary" data-tab="details">
-      <div class="minion-details-card">
+      <div class="item-details-card ability-sheet-card minion-details-card">
         <div class="minion-details-summary">
-          <span class="minion-meta-pill">{{ localize system.minion_type }}</span>
-          {{#if system.price.buy }}
-            <span class="minion-meta-pill">{{ localize "FFXIV.Item.Buy" }}: {{system.price.buy}}
-              {{#if system.price.denomination }}
-              {{ localize system.price.denomination}}{{/if}}</span>
-            {{/if}}
-            {{#if system.price.sell }}
-              <span class="minion-meta-pill">{{ localize "FFXIV.Item.Sell" }}: {{system.price.sell}}
-                {{#if system.price.denomination }}
-                {{ localize system.price.denomination}}{{/if}}</span>
-              {{/if}}
-              {{#if (hasItemQuality system) }}
-                <span class="minion-meta-pill">{{ localize (itemQualityLabelKey system) }}: {{itemQualityDisplay system}}</span>
-              {{/if}}
-            </div>
-            <div class="minion-details-section">
-              <h3>{{ localize "FFXIV.Item.MinionTraitsHeader" }}</h3>
-              <prose-mirror name="system.traits" value="{{source.traits}}" document-uuid="{{item.uuid}}" class="sized minion-details-editor"></prose-mirror>
-            </div>
-            <div class="minion-details-section">
-              <h3>{{ localize "FFXIV.Item.Description" }}</h3>
-              <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized minion-details-editor"></prose-mirror>
-            </div>
-          </div>
+          {{#if system.minion_type}}
+            <span class="minion-meta-pill">{{localize system.minion_type}}</span>
+          {{else}}
+            <span class="minion-meta-pill">{{localize "FFXIV.Tags.Minion"}}</span>
+          {{/if}}
+          {{#if system.price.buy}}
+            <span class="minion-meta-pill">
+              {{localize "FFXIV.Item.Buy"}}: {{system.price.buy}}
+              {{#if system.price.denomination}}{{localize system.price.denomination}}{{/if}}
+            </span>
+          {{/if}}
+          {{#if system.price.sell}}
+            <span class="minion-meta-pill">
+              {{localize "FFXIV.Item.Sell"}}: {{system.price.sell}}
+              {{#if system.price.denomination}}{{localize system.price.denomination}}{{/if}}
+            </span>
+          {{/if}}
+          {{#if (hasItemQuality system)}}
+            <span class="minion-meta-pill">
+              {{localize (itemQualityLabelKey system)}}: {{itemQualityDisplay system}}
+            </span>
+          {{/if}}
         </div>
-        <div class="tab" data-group="primary" data-tab="attributes">
-          <div class="resource flex-group-center">
-            <label for="system.minion_type" class="resource-label">{{ localize "FFXIV.Item.MinionType" }}</label>
-            <div class="resource-content flexrow flex-center flex-between">
-              <select class="ffxiv-text-center" name="system.minion_type">
-                {{#each this.config.minion_types as |t| }}
-                  <option value="{{t}}" {{#if (eq t ../system.minion_type) }}selected {{/if}}>{{ localize t }}
-                  </option>
-                {{/each}}
-              </select>
-            </div>
+        <section class="ability-sheet-panel minion-details-section">
+          <div class="ability-panel-header">
+            <h2>{{localize "FFXIV.Item.MinionTraitsHeader"}}</h2>
           </div>
-          <div class="resources grid grid-2col">
-            <div class="resource flex-group-center consumable-price-resource">
-              <label for="system.price.buy" class="resource-label">{{ localize "FFXIV.Item.Prices" }}</label>
+          {{#if itemEditMode}}
+            <prose-mirror name="system.traits"
+                          value="{{source.traits}}"
+                          document-uuid="{{item.uuid}}"
+                          class="sized minion-details-editor"></prose-mirror>
+          {{else}}
+            {{#if (hasContent enrichedTraits)}}
+              <div class="profile-paragraph-block minion-details-readonly">{{{enrichedTraits}}}</div>
+            {{else}}
+              <span class="item-locked-field item-locked-field-empty">{{localize "FFXIV.None"}}</span>
+            {{/if}}
+          {{/if}}
+        </section>
+        <section class="ability-sheet-panel minion-details-section">
+          <div class="ability-panel-header">
+            <h2>{{localize "FFXIV.Item.Description"}}</h2>
+          </div>
+          {{#if itemEditMode}}
+            <prose-mirror name="system.description"
+                          value="{{source.description}}"
+                          document-uuid="{{item.uuid}}"
+                          class="sized minion-details-editor"></prose-mirror>
+          {{else}}
+            {{#if (hasContent enrichedDescription)}}
+              <div class="profile-paragraph-block minion-details-readonly">{{{enrichedDescription}}}</div>
+            {{else}}
+              <span class="item-locked-field item-locked-field-empty">{{localize "FFXIV.None"}}</span>
+            {{/if}}
+          {{/if}}
+        </section>
+      </div>
+    </div>
+    <div class="tab minion-attributes-tab" data-group="primary" data-tab="attributes">
+      <div class="item-details-card ability-sheet-card minion-attributes-card">
+        <section class="ability-sheet-panel">
+          <div class="ability-panel-header">
+            <h2>{{localize "FFXIV.Attributes.Attributes"}}</h2>
+          </div>
+          <div class="ability-form-grid ability-form-grid-2">
+            <div class="resource">
+              <label for="system.minion_type" class="resource-label">{{localize "FFXIV.Item.MinionType"}}</label>
+              <div class="resource-content">
+                <select name="system.minion_type">
+                  {{#each this.config.minion_types as |t|}}
+                    <option value="{{t}}"
+                            {{#if (or (eq t ../system.minion_type) (and @first (not ../system.minion_type)))}}selected{{/if}}>
+                      {{localize t}}
+                    </option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="resource">
+              <label for="system.shop_tier" class="resource-label">{{localize "FFXIV.Item.ShopTier"}}</label>
+              <div class="resource-content item-shop-tier-content">
+                {{#if (and (eq system.shop_tier "custom") (not itemEditMode))}}
+                  <span class="item-locked-field">{{system.shop_tier_custom}}</span>
+                {{else}}
+                  <select name="system.shop_tier">
+                    <option value="">{{localize "FFXIV.None"}}</option>
+                    {{#each this.config.shop_tiers as |tier|}}
+                      <option value="{{tier.value}}" {{#if (eq tier.value ../system.shop_tier)}}selected{{/if}}>
+                        {{localize tier.label}}
+                      </option>
+                    {{/each}}
+                  </select>
+                  {{#if (eq system.shop_tier "custom")}}
+                    <input class="item-shop-tier-custom"
+                           name="system.shop_tier_custom"
+                           type="text"
+                           aria-label="{{localize 'FFXIV.ShopTier.CustomLabel'}}"
+                           placeholder="{{localize 'FFXIV.ShopTier.CustomLabel'}}"
+                           value="{{system.shop_tier_custom}}" />
+                  {{/if}}
+                {{/if}}
+              </div>
+            </div>
+            <div class="resource consumable-price-resource">
+              <label for="system.price.buy" class="resource-label">{{localize "FFXIV.Item.Prices"}}</label>
               <div class="resource-content consumable-price-inline">
-                <span class="consumable-price-key">{{ localize "FFXIV.Item.BuyShort" }}</span>
+                <span class="consumable-price-key">{{localize "FFXIV.Item.BuyShort"}}</span>
                 <input class="consumable-price-input"
                        name="system.price.buy"
                        type="number"
                        value="{{system.price.buy}}" />
                 <span class="consumable-price-divider">|</span>
-                <span class="consumable-price-key">{{ localize "FFXIV.Item.SellShort" }}</span>
+                <span class="consumable-price-key">{{localize "FFXIV.Item.SellShort"}}</span>
                 <input class="consumable-price-input"
                        name="system.price.sell"
                        type="number"
                        value="{{system.price.sell}}" />
               </div>
             </div>
-            <div class="resource flex-group-center">
-              <label for="system.price.denomination" class="resource-label">{{ localize "FFXIV.Item.Denomination" }}</label>
-              <div class="resource-content flexrow flex-center flex-between">
+            <div class="resource">
+              <label for="system.price.denomination" class="resource-label">{{localize "FFXIV.Item.Denomination"}}</label>
+              <div class="resource-content">
                 <input name="system.price.denomination"
                        type="text"
                        value="{{localize system.price.denomination}}" />
               </div>
             </div>
-            <div class="resource flex-group-center">
-              <label for="system.shop_tier" class="resource-label">{{ localize "FFXIV.Item.ShopTier" }}</label>
-              <div class="resource-content flexrow flex-center flex-between">
-                <select class="ffxiv-text-center" name="system.shop_tier">
-                  <option value="">{{ localize "FFXIV.None" }}</option>
-                  {{#each this.config.shop_tiers as |tier| }}
-                    <option value="{{tier.value}}"
-                            {{#if (eq tier.value ../system.shop_tier) }}
-                            selected
-                            {{/if}}>{{ localize tier.label }}
+            <div class="resource">
+              <label for="system.rarity" class="resource-label">{{localize "FFXIV.Item.Rarity"}}</label>
+              <div class="resource-content">
+                <select name="system.rarity">
+                  <option value="">{{localize "FFXIV.None"}}</option>
+                  {{#each this.config.rarities as |rarity|}}
+                    <option value="{{rarity.value}}" {{#if (eq rarity.value ../system.rarity)}}selected{{/if}}>
+                      {{localize rarity.label}}
                     </option>
                   {{/each}}
                 </select>
               </div>
             </div>
-            <div class="resource flex-group-center">
-              <label for="system.rarity" class="resource-label">{{ localize "FFXIV.Item.Rarity" }}</label>
-              <div class="resource-content flexrow flex-center flex-between">
-                <select class="ffxiv-text-center" name="system.rarity">
-                  <option value="">{{ localize "FFXIV.None" }}</option>
-                  {{#each this.config.rarities as |rarity| }}
-                    <option value="{{rarity.value}}"
-                            {{#if (eq rarity.value ../system.rarity) }}
-                            selected
-                            {{/if}}>{{ localize rarity.label }}
-                    </option>
-                  {{/each}}
-                </select>
-              </div>
-            </div>
-            {{#if (eq system.shop_tier "custom") }}
-              <div class="resource flex-group-center">
-                <label for="system.shop_tier_custom" class="resource-label">{{ localize "FFXIV.ShopTier.CustomLabel" }}</label>
-                <div class="resource-content flexrow flex-center flex-between">
-                  <input name="system.shop_tier_custom"
-                         type="text"
-                         value="{{system.shop_tier_custom}}" />
-                </div>
-              </div>
-            {{/if}}
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
+  </section>
+</div>

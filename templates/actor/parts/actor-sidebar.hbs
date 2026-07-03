@@ -130,5 +130,30 @@
         </div>
       </div>
     </div>
+    {{#if jobResources.length}}
+      <div class="job-resource-summary ability-limitations">
+        {{#each jobResources as |resource|}}
+          <div class="job-resource-row" title="{{resource.name}}">
+            <div class="job-resource-label">
+              <span>{{resource.name}}</span>
+              <span class="job-resource-count">{{resource.count}}/{{resource.max}}</span>
+            </div>
+            <div class="job-resource-boxes">
+              {{#repeat resource.max}}
+                <div class="limitation-wrapper">
+                  <input type="checkbox"
+                         class="job_resource"
+                         data-item-id="{{../id}}"
+                         data-index="{{index}}"
+                         {{#if (lookup ../status index)}}checked{{/if}}
+                         {{#unless ../../owner}}disabled{{/unless}} />
+                  <span class="checkmark"></span>
+                </div>
+              {{/repeat}}
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
   </div>
 </div>

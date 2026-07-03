@@ -1,19 +1,32 @@
 <div class="{{cssClass}} item-modern-sheet">
+  {{#if editable }}
+  <button type="button"
+          class="actor-edit-toggle item-edit-toggle {{#if itemEditMode }}active{{/if }}"
+          aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet' }}"
+          aria-pressed="{{#if itemEditMode }}true{{else }}false{{/if }}"
+          title="{{#if itemEditMode }}{{localize 'FFXIV.CharacterSheet.LockSheet' }}{{else }}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+    <i class="fa-solid {{#if itemEditMode }}fa-lock-open{{else }}fa-lock{{/if }}"></i>
+  </button>
+  {{/if}}
   <header class="sheet-header">
     <img class="profile-img"
          src="{{item.img}}"
+         {{#if itemEditMode }}
          data-edit="img"
+         {{/if}}
          title="{{item.name}}"  alt="" width="32" height="32" />
     <div class="header-fields">
       <h1 class="charname">
         <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
       </h1>
+      {{#if itemEditMode }}
+        <button type="button"
+                class="item-delete"
+                aria-label="{{localize 'FFXIV.Item.Delete'}}">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      {{/if}}
     </div>
-    <button type="button"
-            class="item-delete"
-            aria-label="{{localize 'FFXIV.Item.Delete'}}">
-      <i class="fa-solid fa-trash-can"></i>
-    </button>
   </header>
   <hr>
   {{! Sheet Body }}
@@ -32,8 +45,8 @@
             <li>
               <select class="ffxiv-text-center select-tags"
                       data-index="{{entry.index}}">
-                {{#each ../config.tags_abilities as |t| }}
-                  <option value="{{t.label}}" {{#if (eqTag t.label entry.tag) }}selected {{/if}}>{{ localize t.label }}
+                {{#each entry.options as |t| }}
+                  <option value="{{t.label}}" {{#if t.selected}}selected{{/if}} {{#if t.disabled}}disabled{{/if}}>{{ localize t.label }}
                   </option>
                 {{/each}}
               </select>

@@ -1,0 +1,18 @@
+{{#if limitBreakGauge.enabled}}
+  <section class="limit-break-gauge"
+           data-limit-break-gauge
+           style="--limit-break-segments: {{limitBreakGauge.max}};">
+    <div class="limit-break-gauge-title">{{localize "FFXIV.ItemType.limit_break"}}</div>
+    <div class="limit-break-gauge-row">
+      {{#each limitBreakGauge.segments}}
+        <button type="button"
+                class="limit-break-segment limit-break-control {{#if filled}}filled{{/if}}"
+                data-action="set"
+                data-value="{{value}}"
+                {{#unless ../isGM}}disabled{{/unless}}>
+          <span class="limit-break-segment-fill"></span>
+        </button>
+      {{/each}}
+    </div>
+  </section>
+{{/if}}

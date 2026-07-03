@@ -54,7 +54,18 @@ function buildAbilityFields() {
       initial: "",
     }),
     status_action: new fields.BooleanField({ required: false, initial: true }),
+    status_apply_mode: new fields.StringField({
+      required: false,
+      blank: true,
+      initial: "manual",
+    }),
     status_effects: new fields.ArrayField(
+      new fields.AnyField({ required: false }),
+    ),
+    effect_rules: new fields.ArrayField(
+      new fields.AnyField({ required: false }),
+    ),
+    effect_requirements: new fields.ArrayField(
       new fields.AnyField({ required: false }),
     ),
     marker_area: new fields.StringField({
@@ -72,6 +83,10 @@ function buildAbilityFields() {
       blank: true,
       initial: "",
     }),
+    marker: new fields.ObjectField({ required: false, nullable: true }),
+    markers: new fields.ArrayField(
+      new fields.AnyField({ required: false }),
+    ),
     limitations: new fields.StringField({
       required: false,
       blank: true,
@@ -86,6 +101,15 @@ function buildAbilityFields() {
       min: 0,
       initial: 0,
     }),
+    job_resources_max: new fields.NumberField({
+      required: false,
+      integer: true,
+      min: 0,
+      initial: 0,
+    }),
+    job_resource_status: new fields.ArrayField(
+      new fields.BooleanField({ required: false, initial: false }),
+    ),
     hit_formula: new fields.StringField({
       required: false,
       blank: true,
@@ -132,6 +156,12 @@ function buildAbilityFields() {
       initial: "",
     }),
     hpcost: new fields.NumberField({
+      required: false,
+      integer: true,
+      min: 0,
+      initial: 0,
+    }),
+    mpcost: new fields.NumberField({
       required: false,
       integer: true,
       min: 0,
@@ -194,6 +224,29 @@ function buildPriceField() {
       initial: "Fortune",
     }),
   });
+}
+
+function buildActorGrantField() {
+  return new fields.ArrayField(
+    new fields.SchemaField({
+      uuid: new fields.StringField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      name: new fields.StringField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      type: new fields.StringField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      actor: new fields.AnyField({ required: false }),
+    }),
+  );
 }
 
 function buildInventoryFields() {
@@ -702,6 +755,7 @@ class NpcActorData extends foundry.abstract.TypeDataModel {
         blank: true,
         initial: "",
       }),
+      elite_foe: new fields.BooleanField({ required: false, initial: false }),
     };
   }
 }
@@ -775,6 +829,7 @@ class AbilityItemData extends foundry.abstract.TypeDataModel {
     return {
       ...buildItemFields(),
       ...buildAbilityFields(),
+      summon_actors: buildActorGrantField(),
     };
   }
 }
@@ -804,6 +859,7 @@ class TraitItemData extends foundry.abstract.TypeDataModel {
       job_resource_status: new fields.ArrayField(
         new fields.BooleanField({ required: false, initial: false }),
       ),
+      summon_actors: buildActorGrantField(),
     };
   }
 }
@@ -955,6 +1011,26 @@ class JobItemData extends foundry.abstract.TypeDataModel {
             initial: "",
           }),
           item: new fields.AnyField({ required: false }),
+        }),
+      ),
+      pet_grants: new fields.ArrayField(
+        new fields.SchemaField({
+          uuid: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          name: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          type: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          actor: new fields.AnyField({ required: false }),
         }),
       ),
     };

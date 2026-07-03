@@ -4,9 +4,10 @@
     <div class="charname">
       {{#if actorEditMode }}
         <h1>
-          <textarea name="name"
-                    rows="2"
-                    placeholder="{{localize 'FFXIV.Name'}}">{{actor.name}}</textarea>
+          <input name="name"
+                 type="text"
+                 value="{{actor.name}}"
+                 placeholder="{{localize 'FFXIV.Name'}}" />
         </h1>
       {{else}}
         <h1>{{actor.name}}</h1>
@@ -35,95 +36,139 @@
   </div>
 </header>
 {{!-- Sheet Tab Navigation --}}
-<nav class="sheet-tabs nav-sub-tabs" data-group="primary">
-  {{#if editable }}
-    <button type="button" class="npc-add-ability" title="Add Ability">
-      <i class="fa-solid fa-plus"></i>
-    </button>
-  {{/if}}
-  <a class="sub-tab" data-tab="fight">{{ localize "FFXIV.Abilities.Abilities" }}
+<nav class="sheet-tabs nav-sub-tabs npc-sheet-tabs" data-group="primary">
+  <a class="sub-tab" data-tab="fight">
+    <i class="fa-solid fa-burst" aria-hidden="true"></i>
+    {{ localize "FFXIV.Abilities.Abilities" }}
     <div class="chip"></div>
   </a>
-  <a class="sub-tab" data-tab="traits">{{ localize "FFXIV.Abilities.TraitsShort" }}
+  <a class="sub-tab" data-tab="traits">
+    <i class="fa-solid fa-scroll" aria-hidden="true"></i>
+    {{ localize "FFXIV.Abilities.TraitsShort" }}
+    <div class="chip"></div>
+  </a>
+  <a class="sub-tab" data-tab="effects">
+    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+    {{ localize "FFXIV.CharacterSheet.Effects" }}
     <div class="chip"></div>
   </a>
 </nav>
 <div class="sheet-body-wrapper">
   {{!-- Sheet Body --}}
   <section class="sheet-body modern-tab-layout">
-    <div class="tab fight actor-abilities modern-panel"
+    <div class="tab fight actor-abilities actor-player-abilities modern-panel"
        data-group="primary"
        data-tab="fight">
-    {{#each (sortAbilities items system.ability_order "primary_ability") }}
-      <div class="ability-container">
+    {{#if editable }}
+      <button type="button"
+              class="npc-add-ability npc-create-item"
+              aria-label="Create an ability"
+              title="Create an ability">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    {{/if}}
+    {{#each primary_abilities}}
+      <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
         {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-        <div class="move-buttons">
-          {{#unless @first}}
+        {{#if showMoveControls}}
+        <div class="move-buttons combo-move-buttons">
+          {{#if canMoveGroupUp}}
           <button type="button"
                   class="move-up"
                   data-item-id="{{_id}}"
-                  data-type="primary_ability">▲</button>
-        {{/unless}}
-        {{#unless @last}}
+                  data-type="primary_ability"
+                  aria-label="{{localize 'FFXIV.MoveUp'}}">
+            <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+        {{#if canMoveGroupDown}}
         <button type="button"
                 class="move-down"
                 data-item-id="{{_id}}"
-                data-type="primary_ability">▼</button>
-      {{/unless}}
+                data-type="primary_ability"
+                aria-label="{{localize 'FFXIV.MoveDown'}}">
+          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+        </button>
+      {{/if}}
     </div>
+    {{/if}}
   </div>
 {{/each}}
-{{#each (sortAbilities items system.ability_order "secondary_ability") }}
-  <div class="ability-container">
+{{#each secondary_abilities}}
+  <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
     {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-    <div class="move-buttons">
-      {{#unless @first}}
+    {{#if showMoveControls}}
+    <div class="move-buttons combo-move-buttons">
+      {{#if canMoveGroupUp}}
       <button type="button"
               class="move-up"
               data-item-id="{{_id}}"
-              data-type="secondary_ability">▲</button>
-    {{/unless}}
-    {{#unless @last}}
+              data-type="secondary_ability"
+              aria-label="{{localize 'FFXIV.MoveUp'}}">
+        <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+      </button>
+    {{/if}}
+    {{#if canMoveGroupDown}}
     <button type="button"
             class="move-down"
             data-item-id="{{_id}}"
-            data-type="secondary_ability">▼</button>
-  {{/unless}}
+            data-type="secondary_ability"
+            aria-label="{{localize 'FFXIV.MoveDown'}}">
+      <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+    </button>
+  {{/if}}
 </div>
+{{/if}}
 </div>
 {{/each}}
-{{#each (sortAbilities items system.ability_order "instant_ability") }}
-  <div class="ability-container">
+{{#each instant_abilities}}
+  <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
     {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-    <div class="move-buttons">
-      {{#unless @first}}
+    {{#if showMoveControls}}
+    <div class="move-buttons combo-move-buttons">
+      {{#if canMoveGroupUp}}
       <button type="button"
               class="move-up"
               data-item-id="{{_id}}"
-              data-type="instant_ability">▲</button>
-    {{/unless}}
-    {{#unless @last}}
+              data-type="instant_ability"
+              aria-label="{{localize 'FFXIV.MoveUp'}}">
+        <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+      </button>
+    {{/if}}
+    {{#if canMoveGroupDown}}
     <button type="button"
             class="move-down"
             data-item-id="{{_id}}"
-            data-type="instant_ability">▼</button>
-  {{/unless}}
+            data-type="instant_ability"
+            aria-label="{{localize 'FFXIV.MoveDown'}}">
+      <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+    </button>
+  {{/if}}
 </div>
+{{/if}}
 </div>
 {{/each}}
 {{#unless hasNpcFightAbilities}}
   <div class="abilities-empty-hint">
     {{#if actorEditMode}}
-      Drag an Ability item onto this sheet, or use the + button to create one.
+      Drag an Ability item onto this sheet, or use the create button.
     {{else}}
-      No abilities yet. Enable edit mode to use +, or drag an Ability item onto this sheet.
+      No abilities yet. Enable edit mode to create one, or drag an Ability item onto this sheet.
     {{/if}}
   </div>
 {{/unless}}
   </div>
-  <div class="tab traits actor-abilities modern-panel"
+  <div class="tab traits actor-abilities actor-player-abilities modern-panel"
      data-group="primary"
      data-tab="traits">
+  {{#if editable }}
+    <button type="button"
+            class="npc-add-ability npc-create-item"
+            aria-label="Create a trait"
+            title="Create a trait">
+      <i class="fa-solid fa-plus"></i>
+    </button>
+  {{/if}}
   {{#each (reverse items) }}
     {{#if (isAbilitySubtype this "limit_break") }}
       {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
@@ -137,13 +182,19 @@
         <button type="button"
                 class="move-up"
                 data-item-id="{{_id}}"
-                data-type="trait">▲</button>
+                data-type="trait"
+                aria-label="{{localize 'FFXIV.MoveUp'}}">
+          <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+        </button>
       {{/unless}}
       {{#unless @last}}
       <button type="button"
               class="move-down"
               data-item-id="{{_id}}"
-              data-type="trait">▼</button>
+              data-type="trait"
+              aria-label="{{localize 'FFXIV.MoveDown'}}">
+        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+      </button>
     {{/unless}}
   </div>
 </div>
@@ -151,12 +202,17 @@
 {{#unless hasNpcTraitAbilities}}
   <div class="abilities-empty-hint">
     {{#if actorEditMode}}
-      Drag a Trait or Limit Break onto this sheet, or use the + button to create one.
+      Drag a Trait or Limit Break onto this sheet, or use the create button.
     {{else}}
-      No traits yet. Enable edit mode to use +, or drag a Trait/Limit Break onto this sheet.
+      No traits yet. Enable edit mode to create one, or drag a Trait/Limit Break onto this sheet.
     {{/if}}
   </div>
 {{/unless}}
+  </div>
+  <div class="tab effects modern-panel"
+     data-group="primary"
+     data-tab="effects">
+    {{> "systems/ffxiv/templates/actor/parts/actor-effects.hbs"}}
   </div>
   </section>
 </div>

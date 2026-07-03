@@ -1,0 +1,457 @@
+@mixin styles {
+  &.actor.npc .actor-player-abilities.modern-panel {
+    background: linear-gradient(180deg, rgba(27, 27, 27, 0.96) 0%, rgba(14, 14, 14, 0.96) 100%);
+    border-color: rgba(216, 188, 112, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.1);
+    padding: 8px;
+  }
+
+  &.actor.npc.blue_theme .actor-player-abilities.modern-panel {
+    background: linear-gradient(180deg, rgba(21, 46, 92, 0.88) 0%, rgba(27, 57, 110, 0.88) 100%);
+    border-color: rgba(154, 198, 255, 0.52);
+  }
+
+  &.actor.npc .actor-player-abilities .npc-create-item {
+    border: 1px solid rgba(216, 188, 112, 0.55);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
+    color: var(--text-color-strong);
+  }
+
+  &.actor.npc.blue_theme .actor-player-abilities .npc-create-item {
+    border-color: rgba(160, 206, 255, 0.62);
+    background: linear-gradient(180deg, rgba(43, 100, 188, 0.88) 0%, rgba(27, 73, 143, 0.9) 100%);
+    color: #d7ebff;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .abilities-tab-content.modern-panel {
+    padding: 8px;
+    background: linear-gradient(180deg, rgba(27, 27, 27, 0.96) 0%, rgba(14, 14, 14, 0.96) 100%);
+    border-color: rgba(216, 188, 112, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.1);
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    align-items: stretch;
+    justify-content: stretch;
+    margin-bottom: 8px;
+    filter: none;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs .sub-tab {
+    align-items: center;
+    box-sizing: border-box;
+    clip-path: none;
+    display: inline-flex;
+    height: auto;
+    justify-content: center;
+    line-height: 1.2;
+    margin: 0;
+    min-height: 34px;
+    min-width: 0;
+    padding: 5px 8px !important;
+    width: 100% !important;
+    border: 1px solid rgba(216, 188, 112, 0.55);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(53, 53, 53, 0.9) 0%, rgba(30, 30, 30, 0.92) 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.1);
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 700;
+    gap: 5px;
+    text-align: center;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs .sub-tab i {
+    font-size: 0.85em;
+    line-height: 1;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs .sub-tab.active {
+    border-color: rgba(225, 190, 95, 0.9);
+    background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.15), 0 0 3px rgba(0, 0, 0, 0.55);
+    color: #f4d77e;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-full-tabs .chip {
+    display: none;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .sub-tab-content {
+    border: 1px solid var(--border-color-2);
+    border-radius: 9px;
+    border-color: rgba(216, 188, 112, 0.45);
+    background: linear-gradient(180deg, rgba(31, 31, 31, 0.92) 0%, rgba(15, 15, 15, 0.95) 100%);
+    padding: 6px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container {
+    align-items: stretch;
+    gap: 6px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container:last-child {
+    margin-bottom: 0;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target {
+    padding-left: 20px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source::before,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target::before {
+    border-left: 3px solid rgba(216, 188, 112, 0.72);
+    content: "";
+    left: 7px;
+    position: absolute;
+    width: 0;
+    z-index: 0;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source::after,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target::after {
+    border-top: 3px solid rgba(216, 188, 112, 0.72);
+    content: "";
+    left: 7px;
+    position: absolute;
+    top: 50%;
+    width: 15px;
+    z-index: 0;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source::before {
+    bottom: -4px;
+    top: 50%;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source::after {
+    content: none;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target::before {
+    height: calc(50% + 4px);
+    top: -4px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-source.combo-target::before,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-container.combo-target.combo-branch::before {
+    bottom: -4px;
+    height: auto;
+    top: -4px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-card {
+    border: 1px solid rgba(216, 188, 112, 0.55);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(27, 27, 27, 0.96) 0%, rgba(14, 14, 14, 0.96) 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.1);
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-card-info {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 7px;
+    min-height: 0;
+    padding: 6px;
+    background:
+      linear-gradient(90deg, rgba(225, 190, 95, 0.12) 0%, rgba(225, 190, 95, 0.04) 42%, rgba(0, 0, 0, 0) 100%),
+      linear-gradient(180deg, rgba(38, 36, 29, 0.97) 0%, rgba(18, 18, 18, 0.96) 100%);
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-icon-wrapper {
+    float: none;
+    height: 42px;
+    margin: 0;
+    width: 42px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-icon {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 5px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    object-fit: cover;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-header {
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(216, 188, 112, 0.42);
+    box-shadow: none;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    margin: 0;
+    min-width: 0;
+    padding: 0 0 5px;
+    width: 100%;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-name {
+    display: block;
+    flex: 1 1 auto;
+    font-size: 1.16em;
+    font-weight: 700;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-right {
+    align-items: flex-end;
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    float: none;
+    gap: 4px;
+    max-width: 48%;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-tags {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-tags .tag {
+    border: 1px solid rgba(225, 190, 95, 0.38);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-color-strong);
+    display: inline-flex;
+    font-size: 10px;
+    font-style: normal;
+    line-height: 1;
+    padding: 3px 6px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations {
+    align-items: center;
+    display: inline-flex;
+    gap: 3px;
+    margin-left: 2px;
+    padding-bottom: 1px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations .limitation-wrapper {
+    align-items: center;
+    display: inline-flex;
+    height: 16px;
+    justify-content: center;
+    position: relative;
+    width: 16px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"] {
+    appearance: none !important;
+    cursor: pointer !important;
+    height: 16px !important;
+    left: 0 !important;
+    margin: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    top: 0 !important;
+    width: 16px !important;
+    z-index: 1 !important;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations .checkmark {
+    align-items: center;
+    background: rgba(8, 8, 8, 0.74);
+    border: 1px solid rgba(225, 190, 95, 0.42);
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(255, 236, 174, 0.07), 0 1px 2px rgba(0, 0, 0, 0.32);
+    box-sizing: border-box;
+    display: inline-flex !important;
+    height: 16px !important;
+    justify-content: center;
+    margin-left: 0 !important;
+    min-height: 16px;
+    min-width: 16px;
+    pointer-events: none;
+    position: relative;
+    width: 16px !important;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark {
+    background: linear-gradient(180deg, #f7d979 0%, #c18427 100%) !important;
+    border-color: rgba(255, 232, 153, 0.82) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 249, 207, 0.26), 0 0 5px rgba(202, 137, 39, 0.42);
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark::after {
+    background: rgba(39, 24, 6, 0.88);
+    border-radius: 999px;
+    content: "";
+    height: 6px;
+    width: 6px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"].active + .checkmark,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type="checkbox"].active:checked + .checkmark {
+    border-color: rgba(255, 107, 42, 0.9) !important;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-details {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    grid-column: 2;
+    justify-content: flex-start;
+    padding: 5px 0 2px 2px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .detail {
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.12);
+    display: inline-flex;
+    justify-content: center;
+    line-height: 1.25;
+    font-size: 13px;
+    margin-bottom: 2px;
+    margin-right: 0;
+    padding: 3px 6px;
+    text-align: center;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .combo-chain {
+    display: none;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-effects,
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-description {
+    padding: 6px 8px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-effects {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .effect {
+    margin-bottom: 0.35em;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .effect:last-child {
+    margin-bottom: 0;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-roll-button {
+    min-height: 28px;
+    background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
+    color: var(--text-color-strong);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .move-buttons {
+    gap: 5px;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .move-buttons button {
+    border-color: rgba(216, 188, 112, 0.55);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(53, 53, 53, 0.9) 0%, rgba(30, 30, 30, 0.92) 100%);
+    color: var(--text-color);
+    margin: 0;
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .move-buttons button:hover {
+    border-color: rgba(225, 190, 95, 0.9);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.55);
+  }
+
+  &.actor:is(.character, .npc) .actor-player-abilities .abilities-empty-hint {
+    border: 1px dashed var(--border-color-2);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.16);
+    color: var(--text-color-strong);
+    font-style: italic;
+    line-height: 1.35;
+    margin: 0;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .abilities-tab-content.modern-panel {
+    background: linear-gradient(180deg, rgba(21, 46, 92, 0.88) 0%, rgba(27, 57, 110, 0.88) 100%);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-full-tabs .sub-tab {
+    border-color: rgba(160, 206, 255, 0.62);
+    background: linear-gradient(180deg, rgba(33, 78, 152, 0.75) 0%, rgba(20, 52, 111, 0.78) 100%);
+    color: #dff0ff;
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-full-tabs .sub-tab.active {
+    background: linear-gradient(180deg, rgba(62, 127, 216, 0.8) 0%, rgba(38, 94, 176, 0.84) 100%);
+    box-shadow: inset 0 0 0 1px rgba(208, 232, 255, 0.22);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .sub-tab-content {
+    border-color: rgba(154, 198, 255, 0.52);
+    background: linear-gradient(180deg, rgba(15, 43, 101, 0.72) 0%, rgba(9, 30, 74, 0.78) 100%);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-card {
+    border-color: rgba(156, 199, 255, 0.48);
+    background: linear-gradient(180deg, rgba(28, 62, 126, 0.86) 0%, rgba(17, 43, 95, 0.9) 100%);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-card-info {
+    background:
+      linear-gradient(90deg, rgba(180, 218, 255, 0.14) 0%, rgba(180, 218, 255, 0.05) 42%, rgba(0, 0, 0, 0) 100%),
+      linear-gradient(180deg, rgba(61, 125, 217, 0.78) 0%, rgba(46, 101, 188, 0.8) 60%, rgba(32, 79, 154, 0.86) 100%);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-header {
+    border-bottom-color: rgba(190, 221, 255, 0.6);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-tags .tag {
+    border-color: rgba(190, 221, 255, 0.32);
+    color: #d7ebff;
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-limitations .checkmark {
+    border-color: rgba(160, 206, 255, 0.44);
+    background: rgba(6, 22, 56, 0.78);
+    box-shadow: inset 0 0 0 1px rgba(208, 232, 255, 0.09), 0 1px 2px rgba(0, 13, 38, 0.35);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark {
+    background: linear-gradient(180deg, #b9dcff 0%, #4a8ed8 100%) !important;
+    border-color: rgba(202, 232, 255, 0.86) !important;
+    box-shadow: inset 0 0 0 1px rgba(239, 249, 255, 0.25), 0 0 5px rgba(89, 156, 222, 0.42);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-limitations input[type="checkbox"]:checked + .checkmark::after {
+    background: rgba(6, 25, 64, 0.88);
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-roll-button,
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .move-buttons button {
+    background: linear-gradient(180deg, rgba(43, 100, 188, 0.88) 0%, rgba(27, 73, 143, 0.9) 100%);
+    color: #d7ebff;
+  }
+
+  &.actor:is(.character, .npc).blue_theme .actor-player-abilities .abilities-empty-hint {
+    border-color: rgba(154, 198, 255, 0.58);
+    background: rgba(10, 29, 70, 0.58);
+    color: #d4e9ff;
+  }
+}

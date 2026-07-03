@@ -1,108 +1,7 @@
-// Section Header
-.items-header {
-  height: 28px;
-  margin: 2px 0;
-  padding: 0;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.05);
-  border: $border-groove;
-  font-weight: bold;
+@use "../utils/colors" as *;
+@use "../utils/variables" as *;
 
-  > * {
-    font-size: 14px;
-    text-align: center;
-  }
-
-  .item-name {
-    font-weight: bold;
-    padding-left: 5px;
-    text-align: left;
-    display: flex;
-    // font-size: 16px;
-  }
-}
-
-// -----------------------------------------
-// Items Lists
-// -----------------------------------------
-
-.items-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  color: $c-tan;
-
-  // Child lists
-  .item-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  // Item Name
-  .item-name {
-    flex: 2;
-    margin: 0;
-    overflow: hidden;
-    font-size: 13px;
-    text-align: left;
-    align-items: center;
-    display: flex;
-
-    h3,
-    h4 {
-      margin: 0;
-      white-space: nowrap;
-      overflow-x: hidden;
-    }
-  }
-
-  // Control Buttons
-  .item-controls {
-    display: flex;
-    flex: 0 0 100px;
-    justify-content: flex-end;
-
-    a {
-      font-size: 12px;
-      text-align: center;
-      margin: 0 6px;
-    }
-  }
-
-  // Individual Item
-  .item {
-    align-items: center;
-    padding: 0 2px; // to align with the header border
-    border-bottom: 1px solid $c-faint;
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .item-name {
-      color: $c-dark;
-
-      .item-image {
-        flex: 0 0 30px;
-        height: 30px;
-        background-size: 30px;
-        border: none;
-        margin-right: 5px;
-      }
-    }
-  }
-
-  .item-prop {
-    text-align: center;
-    border-left: 1px solid #c9c7b8;
-    border-right: 1px solid #c9c7b8;
-    font-size: 12px;
-  }
-
-  // Section Header
+@mixin styles {
   .items-header {
     height: 28px;
     margin: 2px 0;
@@ -113,20 +12,1713 @@
     font-weight: bold;
 
     > * {
-      font-size: 12px;
+      font-size: 14px;
       text-align: center;
     }
 
     .item-name {
+      font-weight: bold;
       padding-left: 5px;
       text-align: left;
-      // font-size: 16px;
+      display: flex;
     }
   }
-}
 
-// Example style for FFXIV (can be removed if not needed).
-.item-formula {
-  flex: 0 0 200px;
-  padding: 0 8px;
+  .items-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    color: $c-tan;
+
+    .item-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .item-name {
+      flex: 2;
+      margin: 0;
+      overflow: hidden;
+      font-size: 13px;
+      text-align: left;
+      align-items: center;
+      display: flex;
+
+      h3,
+      h4 {
+        margin: 0;
+        white-space: nowrap;
+        overflow-x: hidden;
+      }
+    }
+
+    .item-controls {
+      display: flex;
+      flex: 0 0 100px;
+      justify-content: flex-end;
+
+      a {
+        font-size: 12px;
+        text-align: center;
+        margin: 0 6px;
+      }
+    }
+
+    .item {
+      align-items: center;
+      padding: 0 2px;
+      border-bottom: 1px solid $c-faint;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .item-name {
+        color: $c-dark;
+
+        .item-image {
+          flex: 0 0 30px;
+          height: 30px;
+          background-size: 30px;
+          border: none;
+          margin-right: 5px;
+        }
+      }
+    }
+
+    .item-prop {
+      text-align: center;
+      border-left: 1px solid #c9c7b8;
+      border-right: 1px solid #c9c7b8;
+      font-size: 12px;
+    }
+
+    .items-header {
+      height: 28px;
+      margin: 2px 0;
+      padding: 0;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.05);
+      border: $border-groove;
+      font-weight: bold;
+
+      > * {
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .item-name {
+        padding-left: 5px;
+        text-align: left;
+      }
+    }
+  }
+
+  .item-formula {
+    flex: 0 0 200px;
+    padding: 0 8px;
+  }
+
+  .trait-active-badge {
+    align-items: center;
+    background: rgba(90, 56, 20, 0.36);
+    border: 1px solid rgba(233, 199, 112, 0.52);
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(255, 225, 140, 0.08);
+    color: #efd699;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    min-height: 24px;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .trait-name-stack {
+    align-items: flex-start;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 3px;
+    max-width: calc(100% - 10em);
+    vertical-align: top;
+  }
+
+  .limit-break-gauge {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+  }
+
+  .limit-break-gauge-title {
+    color: #fff3c4;
+    font-family: "Cinzel", "Roboto", serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    margin: 0;
+    position: absolute;
+    left: -34px;
+    top: 10px;
+    transform: translateY(-50%);
+    text-shadow:
+      0 0 3px #ff7900,
+      0 0 6px #ff3c00,
+      1px 1px 0 #2a0800;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .limit-break-gauge-row {
+    display: grid;
+    gap: 3px;
+    padding-top: 4px;
+    grid-template-columns: repeat(var(--limit-break-segments, 3), minmax(0, 1fr));
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .limit-break-segment {
+    appearance: none;
+    background:
+      linear-gradient(to right, rgba(213, 167, 79, 0.95) 0%, transparent 15%, transparent 85%, rgba(213, 167, 79, 0.95) 100%),
+      linear-gradient(#5a4526 10%, #1b2d43 40%, #6a4a24 95%);
+    border: 0;
+    clip-path: polygon(7% 0, 96% 0, 100% 35%, 94% 100%, 4% 100%, 0 62%);
+    cursor: pointer;
+    margin: 0;
+    min-height: 20px;
+    height: 20px;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+  }
+
+  .limit-break-segment:disabled {
+    cursor: default;
+  }
+
+  .limit-break-segment-fill {
+    background: linear-gradient(90deg, #ffd74f 0%, #fff05c 46%, #ff9f20 100%);
+    border: 1px solid rgba(255, 240, 160, 0.9);
+    border-radius: 8px;
+    box-shadow:
+      inset 0 0 3px rgba(255, 255, 255, 0.65),
+      0 0 6px rgba(255, 167, 30, 0.75);
+    display: block;
+    inset: 4px clamp(4px, 7%, 18px);
+    opacity: 0;
+    position: absolute;
+    transition: opacity 120ms ease;
+  }
+
+  .limit-break-segment.filled .limit-break-segment-fill {
+    opacity: 1;
+  }
+
+  .limit-break-controls {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .limit-break-controls button {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    width: 28px;
+  }
+
+  .limit-break-value {
+    color: var(--text-color);
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 3.5em;
+    text-align: center;
+  }
+
+  &#ffxiv-limit-break-hud {
+    position: fixed;
+    z-index: calc(var(--z-index-ui, 60) - 1);
+    pointer-events: none;
+  }
+
+  .limit-break-hud {
+    display: flex;
+    justify-content: center;
+
+    .window-header {
+      display: none;
+    }
+
+    .limit-break-hud-root {
+      width: 100%;
+      max-width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 0;
+      box-sizing: border-box;
+      pointer-events: auto;
+    }
+
+    .limit-break-gauge {
+      width: 100%;
+      background: transparent;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .limit-break-gauge-title {
+      margin: 0;
+    }
+  }
+
+  &.item {
+    &.item-modern-sheet {
+      position: relative;
+    }
+
+    &.item-modern-sheet .item-edit-toggle {
+      align-items: center;
+      align-self: flex-end;
+      border: 1px solid rgba(216, 188, 112, 0.58);
+      border-radius: 5px;
+      background: rgba(12, 12, 12, 0.92);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
+      display: flex;
+      height: 34px;
+      justify-content: center;
+      line-height: 1;
+      margin-bottom: -44px;
+      margin-left: auto;
+      margin-right: 12px;
+      margin-top: 10px;
+      padding: 0;
+      position: sticky;
+      right: 12px;
+      top: 10px;
+      width: 34px;
+      z-index: 20;
+    }
+
+    &.item-modern-sheet .item-edit-toggle.active {
+      border-color: rgba(225, 190, 95, 0.9);
+      background: rgba(49, 44, 28, 0.96);
+      box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.12), 0 2px 8px rgba(0, 0, 0, 0.42);
+    }
+
+    &:has(.ability-sheet-tabs):not(:has(.minion-mount-sheet)):not(:has(.dialog)) {
+      min-width: 720px;
+    }
+
+    &:has(.consumable-item-sheet),
+    &:has(.minion-mount-sheet) {
+      min-width: 425px;
+    }
+
+    &.item-modern-sheet .window-content,
+    &.item-modern-sheet .sheet-body {
+      overflow-x: hidden;
+    }
+
+    &.item-modern-sheet .sheet-body {
+      box-sizing: border-box;
+      max-width: 100%;
+      padding-top: 0;
+    }
+
+    &.item-modern-sheet .sheet-body > .tab,
+    &.item-modern-sheet .item-details-card,
+    &.item-modern-sheet .ability-sheet-card {
+      box-sizing: border-box;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+    }
+
+    &.item-modern-sheet .sheet-header {
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 10px;
+      margin: 4px 0 6px;
+      min-height: 46px;
+      overflow: visible;
+    }
+
+    &.item-modern-sheet .sheet-header .profile-img {
+      border: 1px solid rgba(225, 190, 95, 0.65);
+      border-radius: 5px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      flex: 0 0 42px;
+      height: 42px;
+      margin-right: 0;
+      object-fit: cover;
+      width: 42px;
+    }
+
+    &.item-modern-sheet .sheet-header .header-fields {
+      align-items: center;
+      display: flex;
+      flex: 0 1 min(27em, calc(100% - 98px));
+      gap: 8px;
+      min-width: 0;
+    }
+
+    &.item-modern-sheet .sheet-header h1.charname {
+      flex: 1 1 18em;
+      line-height: 1.1;
+      margin: 0;
+      min-width: 0;
+      width: auto;
+    }
+
+    &.item-modern-sheet .sheet-header h1.charname input,
+    &.item-modern-sheet .sheet-header h1.charname .item-locked-field {
+      height: 38px;
+      line-height: 38px;
+    }
+
+    &.item-modern-sheet .sheet-header .item-delete {
+      align-self: center;
+      box-sizing: border-box;
+      flex: 0 0 34px;
+      height: 34px;
+      margin: 0;
+      max-height: 34px;
+      max-width: 34px;
+      min-height: 34px;
+      padding: 0;
+      width: 34px;
+    }
+
+    &.item-modern-sheet > hr {
+      margin: 0 0 6px;
+    }
+
+    .ability-sheet-tabs,
+    .item-sheet-tabs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(7.5em, 1fr));
+      gap: 6px;
+      margin: 0 0 10px;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .ability-sheet-tabs .item,
+    .item-sheet-tabs .item {
+      align-items: center;
+      border: 1px solid rgba(216, 188, 112, 0.45);
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.16);
+      display: inline-flex;
+      gap: 5px;
+      justify-content: center;
+      line-height: 1.2;
+      min-height: 30px;
+      min-width: 0;
+      padding: 5px 7px;
+      text-align: center;
+    }
+
+    .ability-sheet-tabs .item.active,
+    .item-sheet-tabs .item.active {
+      border-color: rgba(225, 190, 95, 0.85);
+      background: rgba(225, 190, 95, 0.16);
+      color: var(--text-color-strong, var(--text-color));
+      text-shadow: 0 0 5px var(--text-shadow-color);
+    }
+
+    .ability-sheet-tabs .item i,
+    .item-sheet-tabs .item i {
+      flex: 0 0 auto;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .ability-sheet-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    &.item-modern-sheet .item-details-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    &.item-modern-sheet:not(:has(.ability-sheet-tabs)) .sheet-body > .tab:not(.attributes) {
+      text-align: center;
+    }
+
+    &.minion-mount-sheet .sheet-body > .tab,
+    &.item-modern-sheet .sheet-body > .tab:has(.item-details-card),
+    &.item-modern-sheet .sheet-body > .tab:has(.resources) {
+      text-align: left;
+    }
+
+    &.minion-mount-sheet .sheet-body,
+    &.minion-mount-sheet .sheet-body > .tab {
+      box-sizing: border-box;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+    }
+
+    &.minion-mount-sheet .sheet-header {
+      max-width: 100%;
+      min-width: 0;
+      width: 100%;
+    }
+
+    &.minion-mount-sheet .sheet-header .header-fields {
+      flex: 1 1 auto;
+      max-width: calc(100% - 52px);
+    }
+
+    &.minion-mount-sheet .ability-form-grid-2 {
+      grid-template-columns: repeat(auto-fit, minmax(min(14em, 100%), 1fr));
+    }
+
+    &.minion-mount-sheet .item-shop-tier-content:has(.item-shop-tier-custom) {
+      grid-template-columns: repeat(auto-fit, minmax(min(8em, 100%), 1fr));
+    }
+
+    .ability-sheet-card input:not([type="checkbox"]):not([type="radio"]),
+    .ability-sheet-card select,
+    .ability-sheet-card textarea,
+    .ability-sheet-card .ffxiv-text-center,
+    .ability-sheet-card .item-locked-field,
+    &.item-modern-sheet .item-details-card input:not([type="checkbox"]):not([type="radio"]),
+    &.item-modern-sheet .item-details-card select,
+    &.item-modern-sheet .item-details-card textarea,
+    &.item-modern-sheet .item-details-card .ffxiv-text-center,
+    &.item-modern-sheet .item-details-card .item-locked-field {
+      text-align: left;
+    }
+
+    .ability-sheet-card > hr {
+      display: none;
+    }
+
+    .ability-sheet-panel,
+    .summon-actors-editor,
+    .item-modern-panel,
+    .job-attribute-section,
+    &.item-modern-sheet .item-details-card {
+      border: 1px solid rgba(216, 188, 112, 0.35);
+      border-radius: 7px;
+      background: rgba(0, 0, 0, 0.12);
+      box-sizing: border-box;
+      box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.05);
+      margin-inline: auto;
+      padding: 10px;
+      width: calc(100% - 10px);
+    }
+
+    .ability-panel-header,
+    .status-effects-header {
+      align-items: center;
+      border-bottom: 1px solid rgba(216, 188, 112, 0.28);
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+      margin: 0 0 9px;
+      padding-bottom: 6px;
+    }
+
+    &.item-modern-sheet .resources {
+      margin-bottom: 10px;
+    }
+
+    &.item-modern-sheet .resource {
+      min-width: 0;
+    }
+
+    .ability-form-grid .consumable-price-resource > .resource-label {
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+    }
+
+    .item-shop-tier-content:has(.item-shop-tier-custom) {
+      display: grid;
+      gap: 6px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &.item-modern-sheet .tags-container {
+      min-width: 0;
+    }
+
+    &.item-modern-sheet .tag-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    &.item-modern-sheet .tag-list li {
+      align-items: center;
+      display: flex;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    &.item-modern-sheet .tag-list select {
+      min-width: 0;
+    }
+
+    &.item-modern-sheet .select-tags option:disabled {
+      color: GrayText;
+    }
+
+    .ability-panel-header h2 {
+      border: 0;
+      color: var(--text-color);
+      font-family: "Roboto", sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .ability-panel-header button,
+    .status-effects-header button {
+      align-items: center;
+      display: inline-flex;
+      flex: 0 0 28px;
+      height: 26px;
+      justify-content: center;
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+      width: 28px;
+    }
+
+    .ability-form-grid {
+      display: grid;
+      gap: 9px;
+    }
+
+    .ability-form-grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ability-form-grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .ability-form-span,
+    .ability-target-field,
+    .ability-range-field {
+      grid-column: span 2;
+    }
+
+    .ability-form-grid .resource {
+      align-items: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 0;
+      min-width: 0;
+      text-align: left;
+    }
+
+    .ability-form-grid .resource-label {
+      align-items: center;
+      display: flex;
+      justify-content: flex-start;
+      min-height: 18px;
+      text-align: left;
+    }
+
+    .ability-form-grid .resource-content {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .ability-form-grid input,
+    .ability-form-grid select,
+    .ability-form-grid textarea {
+      border: 1px solid rgba(216, 188, 112, 0.22);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.16);
+      box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.03);
+      min-height: 30px;
+      min-width: 0;
+      padding: 4px 8px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .ability-form-grid textarea {
+      min-height: 74px;
+      resize: vertical;
+    }
+
+    .ability-info-grid .ability-target-field,
+    .ability-info-grid .ability-range-field,
+    .ability-info-grid .ability-combo-field {
+      grid-column: auto;
+    }
+
+    .ability-info-grid .ability-combo-preview {
+      display: flex;
+      grid-column: 1 / -1;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .ability-info-grid .ability-combo-preview:empty {
+      display: none;
+    }
+
+    .ability-info-grid .ability-combo-preview .combo-chain {
+      justify-content: center;
+      margin-top: 4px;
+    }
+
+    .ability-formula-row {
+      align-items: stretch;
+      display: inline-flex;
+      gap: 0;
+      justify-content: flex-start;
+      max-width: 100%;
+      width: auto;
+    }
+
+    .ability-formula-row .ffxiv-hidden {
+      display: none;
+    }
+
+    .ability-formula-row input,
+    .ability-formula-row select,
+    .ability-formula-row .item-locked-field {
+      flex: 0 1 auto;
+      width: auto;
+    }
+
+    .ability-formula-row input,
+    .ability-formula-row .item-locked-field:first-child {
+      flex-basis: 7.5em;
+      min-width: 7.5em;
+      text-align: right;
+    }
+
+    .ability-formula-row select,
+    .ability-formula-row .item-locked-field + .item-locked-field {
+      flex-basis: 11em;
+      min-width: 11em;
+      text-align: left;
+    }
+
+    .ability-formula-row input:not(:last-child),
+    .ability-formula-row .item-locked-field:first-child:not(:last-child) {
+      border-bottom-right-radius: 0;
+      border-right: 0;
+      border-top-right-radius: 0;
+    }
+
+    .ability-formula-row select,
+    .ability-formula-row .item-locked-field + .item-locked-field {
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
+    }
+
+    &.item-locked .ability-formula-row .item-locked-field {
+      flex: 0 0 auto;
+      min-width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      text-align: left;
+      width: auto;
+    }
+
+    &.item-locked .ability-formula-row .item-locked-field:first-child {
+      flex-basis: auto;
+      min-width: 0;
+    }
+
+    &.item-locked .ability-formula-row .item-locked-field + .item-locked-field {
+      flex-basis: auto;
+      min-width: 0;
+    }
+
+    .ability-tags-editor .tag-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(12em, max-content));
+      gap: 6px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .ability-tags-editor .tag-list li {
+      align-items: center;
+      display: grid;
+      grid-template-columns: minmax(11em, 1fr) 28px;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .ability-tags-editor .tag-list li:first-child {
+      grid-template-columns: minmax(11em, 1fr);
+    }
+
+    .ability-tags-editor select {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .ability-tags-editor .remove-tag {
+      align-items: center;
+      display: inline-flex;
+      height: 26px;
+      justify-content: center;
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+      width: 28px;
+    }
+
+    .status-effects-editor {
+      border: 1px solid rgba(216, 188, 112, 0.35);
+      border-radius: 7px;
+      background: rgba(0, 0, 0, 0.12);
+      box-sizing: border-box;
+      box-shadow: inset 0 0 0 1px rgba(255, 226, 142, 0.05);
+      margin-inline: auto;
+      padding: 10px;
+      width: calc(100% - 10px);
+    }
+
+    .status-effects-editor + hr {
+      display: none;
+    }
+
+    .status-effects-editor + hr + .status-effects-editor {
+      margin-top: 10px;
+    }
+
+    .status-effects-editor + .status-effects-editor {
+      margin-top: 10px;
+    }
+
+    .status-effect-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .status-effect-list li {
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.1);
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      padding: 6px;
+    }
+
+    .status-effect-list select,
+    .status-effect-list input {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .status-effect-duration-fields {
+      display: grid;
+      gap: 4px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      min-width: 0;
+    }
+
+    .status-effect-duration-fields label {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .status-effect-duration-fields span {
+      font-size: 0.75rem;
+      line-height: 1;
+      opacity: 0.78;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ability-effect-name {
+      align-items: center;
+      display: flex;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .ability-effect-name img {
+      border: 1px solid rgba(216, 188, 112, 0.35);
+      border-radius: 4px;
+      height: 24px;
+      object-fit: cover;
+      width: 24px;
+    }
+
+    .ability-effect-name span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .item-locked-field {
+      display: inline-block;
+      width: 100%;
+      min-height: 26px;
+      padding: 4px 0;
+      color: var(--text-color);
+      overflow-wrap: anywhere;
+    }
+
+    .item-locked-field-empty {
+      color: var(--text-color);
+      opacity: 0.58;
+    }
+
+    &.item-modern-sheet .item-details-card:not(.ability-sheet-card) .resource.flex-group-center .item-locked-field {
+      text-align: center;
+    }
+
+    .item-locked-field-block {
+      white-space: pre-wrap;
+    }
+
+    .combo-chain.item-locked-field {
+      display: inline-flex;
+    }
+
+    &.minion-mount-sheet .minion-details-card {
+      box-sizing: border-box;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    &.minion-mount-sheet .minion-details-section {
+      margin: 0;
+      width: 100%;
+    }
+
+    &.minion-mount-sheet .ability-sheet-panel,
+    &.minion-mount-sheet .item-details-card {
+      margin-inline: 0;
+      width: 100%;
+    }
+
+    &.minion-mount-sheet .minion-details-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0;
+      padding: 0 5px;
+    }
+
+    &.minion-mount-sheet .minion-meta-pill {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    &.minion-mount-sheet .minion-details-editor {
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      min-height: 110px;
+      min-width: 0;
+      width: 100%;
+    }
+
+    &.minion-mount-sheet .minion-details-readonly {
+      min-height: 48px;
+      padding: 0;
+    }
+
+    .item-description-readonly {
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 5px;
+      min-height: 48px;
+      padding: 10px;
+    }
+
+    &.minion-mount-sheet .editor.prosemirror.minion-details-editor {
+      flex: 0 0 auto;
+      min-height: 110px;
+    }
+
+    &.minion-mount-sheet .editor.prosemirror.minion-details-editor .editor-container,
+    &.minion-mount-sheet .editor.prosemirror.minion-details-editor .editor-content,
+    &.minion-mount-sheet prose-mirror.minion-details-editor .editor-content {
+      min-height: 96px;
+    }
+
+    .sheet-header h1.charname .item-locked-field {
+      color: var(--text-color-input);
+      font-family: "Roboto", sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      height: 38px;
+      line-height: 38px;
+      margin: 0;
+      min-height: 38px;
+      overflow: hidden;
+      padding: 0 5px;
+      text-align: left;
+      text-overflow: ellipsis;
+      text-transform: none;
+      white-space: nowrap;
+    }
+
+    &.item-locked .tags-container {
+      .add-tag,
+      .remove-tag,
+      .add-class,
+      .remove-class,
+      .add-modifier,
+      .remove-modifier {
+        display: none;
+      }
+
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0;
+        list-style: none;
+      }
+
+      .tag-list li {
+        display: inline-flex;
+      }
+
+      .item-locked-field {
+        width: auto;
+        min-height: 0;
+        padding: 3px 8px;
+        border: 1px solid var(--color-border-light-tertiary);
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.08);
+      }
+    }
+
+    &.item-locked .ability-panel-header .add-tag {
+      display: none;
+    }
+
+    &.item-locked .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
+      grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em;
+    }
+
+    &.item-locked .ability-linked-effect-list li {
+      grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;
+    }
+
+    &.item-locked .ability-linked-effect-list .ability-linked-effect-automation {
+      grid-template-columns: minmax(10em, 1fr) 8.75em auto;
+    }
+
+    &.item-locked .ability-automation-edit-list li {
+      display: block;
+    }
+
+    .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
+      grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em 34px;
+    }
+
+    .ability-linked-effect-list li {
+      grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;
+    }
+
+    .ability-linked-effect-list .ability-linked-effect-automation {
+      grid-template-columns: minmax(10em, 1fr) 8.75em auto;
+    }
+
+    .ability-automation-list li {
+      display: block;
+      align-items: start;
+      grid-template-columns: none;
+    }
+
+    .ability-automation-edit-list li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 34px;
+      gap: 8px;
+    }
+
+    .ability-automation-edit-list + .status-effects-header {
+      margin-top: 14px;
+    }
+
+    .ability-automation-heading {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    .ability-automation-text {
+      display: inline;
+      overflow-wrap: break-word;
+    }
+
+    .ability-automation-entry > summary {
+      display: flex;
+      gap: 4px;
+      align-items: baseline;
+      cursor: pointer;
+    }
+
+    .ability-automation-entry > summary::marker {
+      content: "";
+    }
+
+    .ability-automation-entry > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .ability-automation-entry > summary::before {
+      content: "\25B8";
+      flex: 0 0 auto;
+      color: var(--text-color);
+    }
+
+    .ability-automation-entry[open] > summary::before {
+      content: "\25BE";
+    }
+
+    .ability-marker-editor {
+      border-top: 1px solid rgba(216, 188, 112, 0.22);
+      margin-top: 8px;
+      padding-top: 10px;
+    }
+
+    .ability-marker-list-heading,
+    .ability-marker-entry-heading {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .ability-marker-list-heading {
+      border-top: 1px solid rgba(216, 188, 112, 0.22);
+      margin-top: 8px;
+      padding-top: 10px;
+    }
+
+    .ability-marker-list-heading h3,
+    .ability-marker-entry-heading h3 {
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .ability-marker-list-heading button,
+    .ability-marker-entry-heading button {
+      flex: 0 0 28px;
+      height: 28px;
+      line-height: 1;
+      margin: 0;
+      min-height: 28px;
+      padding: 0;
+      width: 28px;
+    }
+
+    .ability-marker-entry-heading {
+      margin-bottom: 8px;
+    }
+
+    .ability-marker-entry-heading .remove-ability-marker {
+      color: #ff3b30;
+    }
+
+    .ability-marker-controls {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(2, minmax(0, 280px));
+      margin-bottom: 10px;
+    }
+
+    .ability-marker-controls label {
+      align-items: center;
+      display: flex;
+      gap: 6px;
+      margin: 0;
+      min-width: 0;
+    }
+
+    .ability-marker-controls label > span {
+      flex: 0 0 auto;
+    }
+
+    .ability-marker-controls select {
+      flex: 0 1 180px;
+      height: 30px;
+      max-width: 180px;
+      min-height: 30px;
+      padding: 4px 8px;
+      width: 180px;
+    }
+
+    .ability-marker-editor .ability-marker-controls .ffxiv-marker-checkbox input {
+      appearance: none;
+      box-shadow: none;
+      height: 16px;
+      inset: 0;
+      margin: 0;
+      min-height: 16px;
+      opacity: 0;
+      padding: 0;
+      position: absolute;
+      width: 16px;
+    }
+
+    .ability-marker-workspace {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+    }
+
+    .ability-marker-editor .ffxiv-marker-grid {
+      display: grid;
+      flex: 0 0 auto;
+      grid-template-columns: repeat(15, 18px);
+    }
+
+    .ability-marker-editor .ffxiv-marker-cell {
+      appearance: none;
+      background: #222;
+      border: 1px solid #888;
+      border-radius: 0;
+      box-shadow: none;
+      flex: none;
+      font-size: 0;
+      height: 18px;
+      line-height: 0;
+      margin: 0;
+      min-height: 0;
+      min-width: 0;
+      padding: 0;
+      width: 18px;
+    }
+
+    .ability-marker-editor .ffxiv-marker-cell.selected.enemy {
+      background: orange;
+    }
+
+    .ability-marker-editor .ffxiv-marker-cell.selected.allied {
+      background: #66ffff;
+    }
+
+    .ability-marker-editor .ffxiv-marker-preview canvas {
+      display: block;
+    }
+
+    .ability-marker-read-list {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      margin-top: 8px;
+    }
+
+    .ability-marker-read-preview {
+      background: rgba(0, 0, 0, 0.14);
+      border: 1px solid rgba(216, 188, 112, 0.22);
+      border-radius: 4px;
+      overflow: hidden;
+      padding: 8px;
+    }
+
+    .ability-marker-read-preview h3 {
+      border-bottom: 1px solid rgba(216, 188, 112, 0.18);
+      font-size: 13px;
+      margin: 0 0 8px;
+      padding-bottom: 5px;
+      text-align: center;
+    }
+
+    .ability-marker-read-canvas {
+      align-items: center;
+      display: flex;
+      height: 110px;
+      justify-content: center;
+    }
+
+    .ability-marker-read-preview canvas {
+      height: auto;
+      max-height: 100px;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    .remove-status-effect,
+    .remove-effect-requirement,
+    .remove-effect-rule,
+    .effect-control-delete .delete-icon {
+      color: #ff3b30;
+    }
+
+    .remove-effect-requirement,
+    .remove-effect-rule {
+      border-color: rgba(255, 59, 48, 0.45);
+      color: #ff3b30;
+      font-weight: 700;
+    }
+
+    .remove-status-effect:hover,
+    .remove-effect-requirement:hover,
+    .remove-effect-rule:hover,
+    .effect-control-delete:hover .delete-icon {
+      color: #ff6b61;
+    }
+
+    .remove-effect-requirement:hover,
+    .remove-effect-rule:hover {
+      border-color: rgba(255, 107, 97, 0.65);
+      color: #ff6b61;
+    }
+
+    .ability-automation-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 8px;
+      margin-top: 4px;
+    }
+
+    .ability-automation-fields label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: stretch;
+      margin: 0;
+    }
+
+    .ability-automation-fields label span {
+      font-size: 12px;
+    }
+
+    .automation-help {
+      display: inline-block;
+      position: relative;
+      vertical-align: text-bottom;
+      z-index: 2;
+    }
+
+    .automation-help[open] {
+      z-index: 3;
+    }
+
+    .automation-help summary {
+      align-items: center;
+      background: rgba(8, 8, 8, 0.74);
+      border: 1px solid rgba(225, 190, 95, 0.42);
+      border-radius: 50%;
+      box-sizing: border-box;
+      color: var(--text-color);
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 10px;
+      height: 14px;
+      justify-content: center;
+      line-height: 1;
+      list-style: none;
+      width: 14px;
+    }
+
+    .automation-help summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .automation-help > span {
+      background: rgba(12, 12, 12, 0.96);
+      border: 1px solid rgba(225, 190, 95, 0.42);
+      border-radius: 4px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+      color: var(--text-color);
+      left: 18px;
+      line-height: 1.35;
+      padding: 6px 8px;
+      position: absolute;
+      top: -4px;
+      width: 220px;
+    }
+
+    .ability-automation-fields input,
+    .ability-automation-fields select {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .ability-automation-file {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 28px;
+      gap: 4px;
+    }
+
+    .ability-automation-file button {
+      height: 26px;
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+    }
+
+    .ability-automation-fields .ability-automation-checkbox {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
+      min-height: 26px;
+    }
+
+    .ability-automation-checkbox > span {
+      font-size: 12px;
+    }
+
+    .ability-automation-checkbox-control {
+      align-items: center;
+      display: inline-flex;
+      height: 16px;
+      justify-content: center;
+      position: relative;
+      width: 16px;
+    }
+
+    .ability-automation-fields .ability-automation-checkbox input[type="checkbox"] {
+      appearance: none !important;
+      cursor: pointer !important;
+      height: 16px !important;
+      left: 0 !important;
+      margin: 0 !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      top: 0 !important;
+      width: 16px !important;
+      z-index: 1 !important;
+    }
+
+    .ability-automation-checkbox .checkmark {
+      align-items: center;
+      background: rgba(8, 8, 8, 0.74);
+      border: 1px solid rgba(225, 190, 95, 0.42);
+      border-radius: 4px;
+      box-shadow: inset 0 0 0 1px rgba(255, 236, 174, 0.07), 0 1px 2px rgba(0, 0, 0, 0.32);
+      box-sizing: border-box;
+      display: inline-flex;
+      height: 16px;
+      justify-content: center;
+      pointer-events: none;
+      width: 16px;
+    }
+
+    .ability-automation-checkbox input[type="checkbox"]:checked + .checkmark {
+      background: linear-gradient(180deg, #f7d979 0%, #c18427 100%);
+      border-color: rgba(255, 232, 153, 0.82);
+      box-shadow: inset 0 0 0 1px rgba(255, 249, 207, 0.26), 0 0 5px rgba(202, 137, 39, 0.42);
+    }
+
+    .ability-automation-checkbox input[type="checkbox"]:checked + .checkmark::after {
+      background: rgba(39, 24, 6, 0.88);
+      border-radius: 999px;
+      content: "";
+      height: 6px;
+      width: 6px;
+    }
+
+    @media (max-width: 620px) {
+      .ability-sheet-tabs,
+      .item-sheet-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .ability-form-grid-2,
+      .ability-form-grid-3 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ability-form-span,
+      .ability-target-field,
+      .ability-range-field {
+        grid-column: auto;
+      }
+
+      .ability-formula-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li,
+      .ability-linked-effect-list li,
+      .ability-linked-effect-list .ability-linked-effect-automation,
+      .ability-automation-fields {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ability-automation-edit-list li {
+        grid-template-columns: minmax(0, 1fr) 34px;
+      }
+    }
+
+    &.blue_theme {
+      .ability-sheet-tabs .item,
+      .item-sheet-tabs .item,
+      .ability-sheet-panel,
+      .summon-actors-editor,
+      .status-effects-editor {
+        border-color: rgba(154, 198, 255, 0.45);
+      }
+
+      .ability-sheet-tabs .item.active,
+      .item-sheet-tabs .item.active {
+        border-color: rgba(190, 221, 255, 0.82);
+        background: rgba(78, 139, 221, 0.22);
+      }
+
+      .ability-panel-header,
+      .status-effects-header {
+        border-bottom-color: rgba(154, 198, 255, 0.3);
+      }
+    }
+
+    .job-tabs {
+      margin-bottom: 10px;
+      text-align: center;
+      filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+    }
+
+    .job-tabs .sub-tab {
+      align-items: center;
+      height: 23px;
+      justify-content: center;
+      line-height: 1;
+      margin: 4px -2px;
+      overflow: hidden;
+      padding: 0 6px !important;
+      position: relative;
+      text-align: center;
+      width: 31%;
+      background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+      border-radius: 3px;
+      clip-path: polygon(5% 0, 95% 0, 100% 30%, 95% 100%, 5% 100%, 0 70%);
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 12px;
+    }
+
+    .job-tabs .chip {
+      background: var(--chip-color);
+      border-radius: 2px;
+      bottom: 3px;
+      height: 5px;
+      left: 10px;
+      position: absolute;
+      transform: rotate(35deg);
+      width: 10px;
+    }
+
+    .job-tabs .sub-tab.active {
+      filter: var(--subtabactive-filter);
+      background: var(--subtabactive-background);
+    }
+
+    .job-tabs .sub-tab.active .chip {
+      background: var(--chip-color-active);
+    }
+
+    .job-progression-tab,
+    .job-pets-tab {
+      min-height: 180px;
+      padding: 8px;
+    }
+
+    .job-overview-basics {
+      margin-bottom: 12px;
+    }
+
+    .job-attribute-section {
+      margin: 12px 0;
+    }
+
+    .job-attribute-section h2 {
+      border: 0;
+      color: var(--text-color);
+      font-family: "Georgia", serif;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .job-primary-attributes,
+    .job-secondary-attributes {
+      display: grid;
+      gap: 8px;
+    }
+
+    .job-primary-attributes {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .job-secondary-attributes {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .job-primary-attributes .resource,
+    .job-secondary-attributes .resource {
+      align-items: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .job-secondary-attributes .resource {
+      grid-column: span 2;
+    }
+
+    .job-secondary-attributes .resource:nth-last-child(2) {
+      grid-column: 2 / span 2;
+    }
+
+    .job-secondary-attributes .resource:last-child {
+      grid-column: 4 / span 2;
+    }
+
+    .job-ability-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      list-style: none;
+      margin: 0;
+      min-height: 80px;
+      padding: 0;
+    }
+
+    .job-progression-tab.drag-over,
+    .job-pets-tab.drag-over,
+    .summon-actors-dropzone.drag-over {
+      outline: 2px solid var(--border-color-1);
+      outline-offset: 3px;
+    }
+
+    .job-ability-row {
+      align-items: center;
+      display: grid;
+      gap: 6px;
+      grid-template-columns: minmax(10em, 1fr) minmax(8em, auto) 28px 28px 32px;
+    }
+
+    .job-ability-row.dragging {
+      opacity: 0.55;
+    }
+
+    .job-ability-row.drop-before {
+      border-top: 2px solid var(--border-color-1);
+      padding-top: 4px;
+    }
+
+    .job-ability-row.drop-after {
+      border-bottom: 2px solid var(--border-color-1);
+      padding-bottom: 4px;
+    }
+
+    .job-ability-edit,
+    .job-pet-edit,
+    .summon-actor-edit {
+      cursor: pointer;
+    }
+
+    .job-ability-edit:hover .job-ability-name,
+    .job-ability-edit:hover .job-ability-type,
+    .job-pet-edit:hover .job-ability-name,
+    .job-pet-edit:hover .job-ability-type,
+    .summon-actor-edit:hover .job-ability-name,
+    .summon-actor-edit:hover .job-ability-type {
+      text-shadow: 0 0 8px var(--text-shadow-color);
+    }
+
+    .job-ability-name,
+    .job-ability-type {
+      align-items: center;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 3px;
+      display: flex;
+      justify-content: center;
+      line-height: 1.2;
+      min-height: 28px;
+      overflow: hidden;
+      padding: 4px 6px;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .job-ability-name {
+      font-weight: 700;
+    }
+
+    .job-ability-row button {
+      min-height: 28px;
+      padding: 0;
+    }
+
+    .job-ability-row button:disabled {
+      opacity: 0.35;
+    }
+
+    .job-ability-row button.remove-job-ability,
+    .job-ability-row button.remove-job-pet,
+    .job-ability-row button.remove-summon-actor {
+      align-items: center;
+      background: #b00000;
+      border: 1px solid white;
+      display: inline-flex;
+      justify-content: center;
+    }
+
+    .job-ability-row button.remove-job-ability:hover,
+    .job-ability-row button.remove-job-pet:hover,
+    .job-ability-row button.remove-summon-actor:hover {
+      background: red;
+      box-shadow: 0 0 5px red;
+    }
+
+    .job-ability-empty {
+      align-items: center;
+      border: 1px dashed var(--color-border-light-tertiary);
+      border-radius: 5px;
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      min-height: 70px;
+      opacity: 0.75;
+    }
+  }
 }

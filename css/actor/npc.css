@@ -645,6 +645,40 @@
   gap: 0.35em;
 }
 
+.npc-elite-foe-toggle,
+.npc-elite-foe-badge {
+  align-items: center;
+  border: 1px solid rgba(233, 199, 112, 0.52);
+  border-radius: 999px;
+  color: #efd699;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 5px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  min-height: 24px;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.npc-elite-foe-toggle {
+  background: rgba(20, 20, 24, 0.32);
+  cursor: pointer;
+  margin: 0;
+}
+
+.npc-elite-foe-toggle input {
+  margin: 0;
+}
+
+.npc-elite-foe-badge {
+  background: rgba(90, 56, 20, 0.36);
+  box-shadow: inset 0 0 0 1px rgba(255, 225, 140, 0.08);
+}
+
 .statblock-header-right {
   margin: auto;
   margin-right: 0
@@ -743,9 +777,10 @@
 
 /*Nav*/
 .npc nav.nav-sub-tabs {
-  --npc-tab-width: 38%;
+  --npc-tab-count: 2;
   --npc-add-width: 34px;
   --npc-add-gap: 6px;
+  --npc-tab-width: calc((100% - var(--npc-add-width) - (2 * var(--npc-add-gap))) / var(--npc-tab-count));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -769,9 +804,17 @@
   line-height: 1.1;
 }
 
+.npc nav.nav-sub-tabs:has(.sub-tab[data-tab="effects"]) {
+  --npc-tab-count: 3;
+}
+
+.npc nav.nav-sub-tabs:has(.sub-tab[data-tab="effects"]) .sub-tab {
+  padding: 2px 5px !important;
+}
+
 .npc nav.nav-sub-tabs .npc-add-ability {
   position: absolute;
-  left: calc((100% - (2 * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
+  left: calc((100% - (var(--npc-tab-count) * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
   top: calc(50% + 1px);
   transform: translateY(-50%);
   transition: none;
@@ -799,7 +842,7 @@
 
 .npc nav.nav-sub-tabs:has(.sub-tab[data-tab="traits"].active) .npc-add-ability {
   left: auto;
-  right: calc((100% - (2 * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
+  right: calc((100% - (var(--npc-tab-count) * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
   clip-path: polygon(15% 0, 100% 0, 100% 100%, 15% 100%, 0 50%);
 }
 

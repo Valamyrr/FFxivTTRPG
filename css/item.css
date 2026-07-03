@@ -313,7 +313,7 @@
   align-items: center;
   display: grid;
   gap: 6px;
-  grid-template-columns: minmax(10em, 1fr) minmax(8em, auto) 32px;
+  grid-template-columns: minmax(10em, 1fr) minmax(8em, auto) 28px 28px 32px;
 }
 
 .ffxiv.item .job-ability-edit {
@@ -349,6 +349,10 @@
 .ffxiv.item .job-ability-row button {
   min-height: 28px;
   padding: 0;
+}
+
+.ffxiv.item .job-ability-row button:disabled {
+  opacity: 0.35;
 }
 
 .ffxiv.item .job-ability-row button.remove-job-ability {

@@ -1,106 +1,161 @@
-<div class="actor-abilities modern-tab-layout">
+<div class="actor-abilities actor-player-abilities modern-tab-layout">
   <div class="abilities-tab-content modern-panel">
-    <!-- Sub-tab navigation for abilities -->
-    <nav class="abilities-sub-tabs" data-group="abilities-sub-tabs">
-      <a class="sub-tab active"
-         data-tab="primary"
-         title="{{localize 'FFXIV.Abilities.Primary'}}">
-        {{localize 'FFXIV.Abilities.Primary'}}
+    <nav class="abilities-sub-tabs ability-full-tabs" data-group="abilities-sub-tabs">
+      <a class="sub-tab {{#if (eq currentAbilityTab 'primary')}}active{{/if}}"
+         data-tab="primary">
+        {{localize 'FFXIV.Tags.Primary'}}
+        <i class="fa-solid fa-circle" aria-hidden="true"></i>
         <div class="chip"></div>
       </a>
-      <a class="sub-tab"
-         data-tab="secondary"
-         title="{{localize 'FFXIV.Abilities.Secondary'}}">
-        {{localize 'FFXIV.Abilities.Secondary'}}
+      <a class="sub-tab {{#if (eq currentAbilityTab 'secondary')}}active{{/if}}"
+         data-tab="secondary">
+        {{localize 'FFXIV.Tags.Secondary'}}
+        <i class="fa-solid fa-triangle" aria-hidden="true"></i>
         <div class="chip"></div>
       </a>
-      <a class="sub-tab"
-         data-tab="instant"
-         title="{{localize 'FFXIV.Abilities.Instant'}}">
-        {{localize 'FFXIV.Abilities.Instant'}}
+      <a class="sub-tab {{#if (eq currentAbilityTab 'instant')}}active{{/if}}"
+         data-tab="instant">
+        {{localize 'FFXIV.Tags.Instant'}}
+        <i class="fa-solid fa-bolt" aria-hidden="true"></i>
         <div class="chip"></div>
       </a>
-      <a class="sub-tab"
-         data-tab="traits"
-         title="{{localize 'FFXIV.Abilities.Trait'}}">
+      <a class="sub-tab {{#if (eq currentAbilityTab 'traits')}}active{{/if}}"
+         data-tab="traits">
         {{localize 'FFXIV.Abilities.Traits'}}
+        <i class="fa-solid fa-scroll" aria-hidden="true"></i>
         <div class="chip"></div>
       </a>
     </nav>
-    <!-- Sub-tab content -->
+    <nav class="abilities-sub-tabs ability-quick-tabs" data-group="abilities-sub-tabs">
+      <a class="sub-tab {{#if (eq currentAbilityTab 'primary')}}active{{/if}}"
+         data-tab="primary"
+         aria-label="{{localize 'FFXIV.Tags.Primary'}}">
+        <i class="fa-solid fa-circle" aria-hidden="true"></i>
+      </a>
+      <a class="sub-tab {{#if (eq currentAbilityTab 'secondary')}}active{{/if}}"
+         data-tab="secondary"
+         aria-label="{{localize 'FFXIV.Tags.Secondary'}}">
+        <i class="fa-solid fa-triangle" aria-hidden="true"></i>
+      </a>
+      <a class="sub-tab {{#if (eq currentAbilityTab 'instant')}}active{{/if}}"
+         data-tab="instant"
+         aria-label="{{localize 'FFXIV.Tags.Instant'}}">
+        <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+      </a>
+      <a class="sub-tab {{#if (eq currentAbilityTab 'traits')}}active{{/if}}"
+         data-tab="traits"
+         aria-label="{{localize 'FFXIV.Abilities.Traits'}}">
+        <i class="fa-solid fa-scroll" aria-hidden="true"></i>
+      </a>
+    </nav>
+    {{#if (eq currentAbilityTab 'primary')}}
     <section class="sub-tab-content active" data-tab="primary">
-      {{!-- Primary abilities content here --}}
-      {{#each (sortAbilities items system.ability_order "primary_ability") }}
-        <div class="ability-container">
+      {{#each primary_abilities }}
+        <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
           {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-          <div class="move-buttons">
-            {{#unless @first}}
+          {{#if showMoveControls}}
+          <div class="move-buttons combo-move-buttons">
+            {{#if canMoveGroupUp}}
             <button type="button"
                     class="move-up"
                     data-item-id="{{_id}}"
-                    data-type="primary_ability">▲</button>
-          {{/unless}}
-          {{#unless @last}}
+                    data-type="primary_ability"
+                    aria-label="{{localize 'FFXIV.MoveUp'}}">
+              <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+            </button>
+          {{/if}}
+          {{#if canMoveGroupDown}}
           <button type="button"
                   class="move-down"
                   data-item-id="{{_id}}"
-                  data-type="primary_ability">▼</button>
-        {{/unless}}
+                  data-type="primary_ability"
+                  aria-label="{{localize 'FFXIV.MoveDown'}}">
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+        {{/if}}
       </div>
+      {{/if}}
     </div>
+  {{else}}
+    <div class="abilities-empty-hint">{{ localize "FFXIV.Job.DropAbilities" }}</div>
   {{/each}}
 </section>
-<section class="sub-tab-content" data-tab="secondary" hidden>
-  {{!-- Secondary abilities content here --}}
-  {{#each (sortAbilities items system.ability_order "secondary_ability") }}
-    <div class="ability-container">
+{{/if}}
+{{#if (eq currentAbilityTab 'secondary')}}
+<section class="sub-tab-content active" data-tab="secondary">
+  {{#each secondary_abilities }}
+    <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-      <div class="move-buttons">
-        {{#unless @first}}
+      {{#if showMoveControls}}
+      <div class="move-buttons combo-move-buttons">
+        {{#if canMoveGroupUp}}
         <button type="button"
                 class="move-up"
                 data-item-id="{{_id}}"
-                data-type="secondary_ability">▲</button>
-      {{/unless}}
-      {{#unless @last}}
+                data-type="secondary_ability"
+                aria-label="{{localize 'FFXIV.MoveUp'}}">
+          <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+        </button>
+      {{/if}}
+      {{#if canMoveGroupDown}}
       <button type="button"
               class="move-down"
               data-item-id="{{_id}}"
-              data-type="secondary_ability">▼</button>
-    {{/unless}}
-  </div>
-</div>
-{{/each}}
-</section>
-<section class="sub-tab-content" data-tab="instant" hidden>
-  {{!-- Instant abilities content here --}}
-  {{#each (sortAbilities items system.ability_order "instant_ability") }}
-    <div class="ability-container">
-      {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
-      <div class="move-buttons">
-        {{#unless @first}}
-        <button type="button"
-                class="move-up"
-                data-item-id="{{_id}}"
-                data-type="instant_ability">▲</button>
-      {{/unless}}
-      {{#unless @last}}
-      <button type="button"
-              class="move-down"
-              data-item-id="{{_id}}"
-              data-type="instant_ability">▼</button>
-    {{/unless}}
-  </div>
-</div>
-{{/each}}
-</section>
-<section class="sub-tab-content" data-tab="traits" hidden>
-  {{#each (reverse items) }}
-    {{#if (isAbilitySubtype this "limit_break") }}
-      {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
+              data-type="secondary_ability"
+              aria-label="{{localize 'FFXIV.MoveDown'}}">
+        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+      </button>
     {{/if}}
+  </div>
+  {{/if}}
+</div>
+{{else}}
+  <div class="abilities-empty-hint">{{ localize "FFXIV.Job.DropAbilities" }}</div>
+{{/each}}
+</section>
+{{/if}}
+{{#if (eq currentAbilityTab 'instant')}}
+<section class="sub-tab-content active" data-tab="instant">
+  {{#each instant_abilities }}
+    <div class="ability-container {{#if comboSource}}combo-source{{/if}} {{#if comboTarget}}combo-target{{/if}} {{#if comboBranch}}combo-branch{{/if}}">
+      {{> "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs" this}}
+      {{#if showMoveControls}}
+      <div class="move-buttons combo-move-buttons">
+        {{#if canMoveGroupUp}}
+        <button type="button"
+                class="move-up"
+                data-item-id="{{_id}}"
+                data-type="instant_ability"
+                aria-label="{{localize 'FFXIV.MoveUp'}}">
+          <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+        </button>
+      {{/if}}
+      {{#if canMoveGroupDown}}
+      <button type="button"
+              class="move-down"
+              data-item-id="{{_id}}"
+              data-type="instant_ability"
+              aria-label="{{localize 'FFXIV.MoveDown'}}">
+        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+      </button>
+    {{/if}}
+  </div>
+  {{/if}}
+</div>
+{{else}}
+  <div class="abilities-empty-hint">{{ localize "FFXIV.Job.DropAbilities" }}</div>
+{{/each}}
+</section>
+{{/if}}
+{{#if (eq currentAbilityTab 'traits')}}
+<section class="sub-tab-content active" data-tab="traits">
+  {{#unless hasTraitAbilities}}
+    <div class="abilities-empty-hint">{{ localize "FFXIV.Job.DropAbilities" }}</div>
+  {{/unless}}
+  {{#each (reverse limit_break) }}
+    {{> "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs" this}}
   {{/each}}
-  {{#each (sortAbilities items system.ability_order "trait") }}
+  {{#each traits }}
     <div class="ability-container">
       {{> "systems/ffxiv/templates/actor/parts/actor-card-traits.hbs" this}}
       <div class="move-buttons">
@@ -108,17 +163,24 @@
         <button type="button"
                 class="move-up"
                 data-item-id="{{_id}}"
-                data-type="trait">▲</button>
+                data-type="trait"
+                aria-label="{{localize 'FFXIV.MoveUp'}}">
+          <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+        </button>
       {{/unless}}
       {{#unless @last}}
       <button type="button"
               class="move-down"
               data-item-id="{{_id}}"
-              data-type="trait">▼</button>
+              data-type="trait"
+              aria-label="{{localize 'FFXIV.MoveDown'}}">
+        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+      </button>
     {{/unless}}
   </div>
 </div>
 {{/each}}
 </section>
+{{/if}}
 </div>
 </div>

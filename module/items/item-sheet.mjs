@@ -1,4 +1,5 @@
 import {
+  onManageActiveEffect,
   prepareActiveEffectCategories,
 } from "../helpers/effects.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
@@ -8,22 +9,64 @@ import {
   ensureAbilitySubtypeTags,
   getSubtypeTagLabel,
 } from "../helpers/ability-subtype.mjs";
+import { isStackableStatusEffect } from "../helpers/status-effects.mjs";
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem:
-    "systems/ffxiv/assets/sfx/ffxiv-close-window.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-close-window.ogg",
   soundNotificationFFXIV_moveItem:
-    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-obtain-item.ogg",
   soundNotificationFFXIV_openSheet:
-    "systems/ffxiv/assets/sfx/ffxiv-switch-target.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-switch-target.ogg",
   soundNotificationFFXIV_closeSheet:
-    "systems/ffxiv/assets/sfx/ffxiv-untarget.mp3",
+    "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
 };
 
 import PopoutEditor from "../popout-editor.js";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
+
+const EDIT_MODE_ITEM_TYPES = new Set([
+  "item",
+  "ability",
+  "primary_ability",
+  "secondary_ability",
+  "instant_ability",
+  "consumable",
+  "currency",
+  "gear",
+  "augment",
+  "minion",
+  "pet",
+  "job",
+  "trait",
+  "limit_break",
+  "title",
+]);
+
+const ABILITY_SHEET_TYPES = new Set([
+  "ability",
+  "primary_ability",
+  "secondary_ability",
+  "instant_ability",
+]);
+
+const ABILITY_SHEET_MIN_WIDTH = 760;
+const ITEM_ENRICHED_FIELDS = [
+  "base_effect",
+  "challenge",
+  "condition",
+  "description",
+  "direct_hit",
+  "marker_area",
+  "marker_effect",
+  "marker_trigger",
+  "range",
+  "target",
+  "traits",
+  "trigger",
+];
 
 /**
  * ApplicationV2 implementation of the FFXIV item sheet.
@@ -37,7 +80,19 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   constructor(...args) {
     super(...args);
     this.options.window ??= {};
+    this.options.position ??= {};
+    const defaultWidth = this.constructor.DEFAULT_OPTIONS.position.width;
+    if (
+      ABILITY_SHEET_TYPES.has(this.item.type) &&
+      (!Number.isFinite(this.options.position.width) ||
+        this.options.position.width === defaultWidth)
+    ) {
+      this.options.position.width = ABILITY_SHEET_MIN_WIDTH;
+    }
     this.options.window.resizable = !this._isLimitedDisplayMode();
+    this.itemEditMode = false;
+    this._expandedEffectRequirements = new Set();
+    this._expandedEffectRules = new Set();
   }
 
   /** @override */
@@ -150,18 +205,52 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.system = itemData.system;
     context.source = this.item._source.system;
     context.flags = itemData.flags;
-    context.config = CONFIG.FF_XIV;
+    context.config = CONFIG.FFXIV;
     context.statusEffects = CONFIG.statusEffects;
     context.itemStatusEffects = this._getStatusEffectEntries(itemData.system);
+    context.effectRequirementEntries = this._getEffectRequirementEntries(itemData.system);
+    context.effectRuleEntries = this._getEffectRuleEntries(itemData.system);
     context.cssClass = this._getSheetClasses().join(" ");
-    context.editable = this.document.isOwner;
+    context.editable = this.document.isOwner && !this._isCompendiumLocked();
+    context.itemEditMode = this._isItemEditMode();
     const actionType =
       this.item.type === "ability"
         ? getAbilitySubtype(this.item)
         : this.item.type;
     context.bakedActionTag = this._getBakedActionTag(actionType);
     context.customTags = this._getCustomActionTags(itemData.system.tags);
+    if (this._hasSummonActorSupport()) {
+      context.system.summon_actors = this._getSummonActorEntries(
+        itemData.system.summon_actors,
+      );
+    }
     context.hasMarkerTag = this._hasMarkerTag(itemData.system.tags);
+    const markers =
+      Array.isArray(itemData.system.markers) && itemData.system.markers.length
+        ? itemData.system.markers
+        : itemData.system.marker
+          ? [itemData.system.marker]
+          : [];
+    context.markerEntries = markers.map((marker, index) => ({
+      index,
+      number: index + 1,
+      marker: {
+        type: marker.type === "allied" ? "allied" : "enemy",
+        mode: ["standard", "stack", "knockback", "tankbuster"].includes(marker.mode)
+          ? marker.mode
+          : "standard",
+        targeted: Boolean(marker.targeted),
+        followRotation: marker.followRotation !== false,
+        circle: marker.shape === "circle",
+      },
+      cells: Array.from({ length: 15 }, (_, y) =>
+        Array.from({ length: 15 }, (_, x) => ({
+          x,
+          y,
+          selected: Boolean(marker.state?.[y]?.[x]),
+        })),
+      ).flat(),
+    }));
     context.hasCheck = this._hasCheck(itemData.system.check);
     if (Object.hasOwn(context.system, "shop_tier")) {
       const normalizedShopTier = normalizeShopTier(
@@ -198,20 +287,29 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         context.system.ability_grants,
       ).map((grant) => ({
         ...grant,
-        typeLabel: this._getJobGrantTypeLabel(grant.type),
+        typeLabel: this._getJobGrantTypeLabel(grant),
       }));
+      context.system.pet_grants = this._normalizeJobPetGrants(
+        context.system.pet_grants,
+      ).map((grant) => ({
+        ...grant,
+        typeLabel: this._getJobPetGrantTypeLabel(grant),
+      }));
+      context.system.has_pets =
+        context.system.pet_grants.length > 0 || context.system.has_pets === true;
     }
     if (this.item.type === "augment") {
       context.system.ability_grants = this._getJobAbilityGrants().map(
         (grant) => ({
           ...grant,
-          typeLabel: this._getJobGrantTypeLabel(grant.type),
+          typeLabel: this._getJobGrantTypeLabel(grant),
         }),
       );
     }
 
-    context.enriched = await this.constructor.enrichAllStrings(
+    context.enriched = await this.constructor.enrichStringFields(
       context.system ?? {},
+      ITEM_ENRICHED_FIELDS,
       this.item.getRollData(),
       this.item,
       this.document.isOwner,
@@ -225,6 +323,20 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     // Prepare active effects for easier access
     context.effects = prepareActiveEffectCategories(this.item.effects);
+    context.abilityLinkedEffects = Array.from(this.item.effects ?? []).map((effect) => {
+      const applyTo = this._getAbilityEffectApplyTo(effect);
+      return {
+        id: effect.id,
+        name: effect.name,
+        icon: effect.img || effect.icon || "icons/svg/aura.svg",
+        sourceName: effect.sourceName,
+        duration: effect.duration,
+        disabled: effect.disabled,
+        applyTo,
+        isAutomation: applyTo === "automation",
+        applyAction: String(effect.getFlag("ffxiv", "applyAction") || "add"),
+      };
+    });
     return context;
   }
 
@@ -269,6 +381,20 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return target;
   }
 
+  static async enrichStringFields(target, fields, rollData, relativeTo, secrets = true) {
+    const enriched = {};
+    for (const field of fields) {
+      const value = foundry.utils.getProperty(target, field);
+      if (typeof value !== "string") continue;
+      foundry.utils.setProperty(
+        enriched,
+        field,
+        await this.enrichAllStrings(value, rollData, relativeTo, secrets),
+      );
+    }
+    return enriched;
+  }
+
   /* -------------------------------------------- */
 
   /** @override */
@@ -287,7 +413,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     this.activateListeners($(this.element));
     this._activateJobDropZone();
+    this._activateJobGrantReorder();
+    this._activateSummonDropZone();
     this._activateFormulaFieldVisibility();
+    this._activateAutomationExpansionTracking();
+    this._activateAutomationHelp();
+    this._applyItemEditMode();
+    this._restoreSheetScroll();
   }
 
   /** @override */
@@ -305,10 +437,11 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _playConfiguredSound(setting) {
-    const src = game.settings.get("ffxiv", setting) || DEFAULT_SOUNDS[setting];
+    const src = this._settingOrDefault(setting, DEFAULT_SOUNDS);
     if (game.settings.get("ffxiv", "soundNotificationFFXIV") && src) {
       foundry.audio.AudioHelper.play({
         src,
+        channel: "interface",
         volume: 1,
         autoplay: true,
         loop: false,
@@ -316,11 +449,178 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
   }
 
+  _settingOrDefault(setting, defaults) {
+    const configured = game.settings.get("ffxiv", setting);
+    const fallback = defaults[setting] || "";
+    if (configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")) return fallback;
+    return configured || fallback;
+  }
+
+  _isItemEditMode() {
+    if (this._isCompendiumLocked()) return false;
+    if (this._isLimitedDisplayMode()) return true;
+    return !EDIT_MODE_ITEM_TYPES.has(this.item.type) || (this.document.isOwner && this.itemEditMode);
+  }
+
+  _isCompendiumLocked() {
+    if (!this.document.pack) return false;
+    const pack = game.packs.get(this.document.pack);
+    return Boolean(pack?.locked);
+  }
+
+  async _toggleItemEditMode(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!EDIT_MODE_ITEM_TYPES.has(this.item.type) || !this.document.isOwner || this._isCompendiumLocked()) return;
+    this._captureSheetScroll();
+    this._captureAutomationExpansion();
+    await this._saveProseMirrorEditors();
+    this.itemEditMode = !this.itemEditMode;
+    await this.render({ force: true });
+  }
+
+  _captureAutomationExpansion() {
+    const capture = (selector, target) => {
+      target.clear();
+      this.element
+        .querySelectorAll(selector)
+        .forEach((entry) => {
+          if (!entry.open) return;
+          const index = Number(entry.dataset.index);
+          if (Number.isInteger(index)) target.add(index);
+        });
+    };
+
+    capture(".effect-requirement-entry", this._expandedEffectRequirements);
+    capture(".effect-rule-entry", this._expandedEffectRules);
+  }
+
+  _activateAutomationExpansionTracking() {
+    const track = (entry, target) => {
+      const index = Number(entry.dataset.index);
+      if (!Number.isInteger(index)) return;
+      if (entry.open) target.add(index);
+      else target.delete(index);
+    };
+
+    this.element
+      .querySelectorAll(".effect-requirement-entry")
+      .forEach((entry) => {
+        entry.addEventListener("toggle", () =>
+          track(entry, this._expandedEffectRequirements),
+        );
+      });
+    this.element
+      .querySelectorAll(".effect-rule-entry")
+      .forEach((entry) => {
+        entry.addEventListener("toggle", () =>
+          track(entry, this._expandedEffectRules),
+        );
+      });
+  }
+
+  _activateAutomationHelp() {
+    this.element
+      .querySelectorAll(".automation-help")
+      .forEach((help) => {
+        help.addEventListener("mouseleave", () => {
+          help.open = false;
+        });
+      });
+  }
+
+  _applyItemEditMode() {
+    if (!EDIT_MODE_ITEM_TYPES.has(this.item.type)) return;
+    const editing = this._isItemEditMode();
+    this.element.classList.toggle("item-editing", editing);
+    this.element.classList.toggle("item-locked", !editing);
+    this.element.classList.toggle("item-compendium-locked", this._isCompendiumLocked());
+    const sheet = this.element.querySelector(".item-modern-sheet") ?? this.element.querySelector(".window-content") ?? this.element;
+
+    const toggle = sheet.querySelector(".item-edit-toggle");
+    if (toggle) {
+      toggle.classList.toggle("active", editing);
+      toggle.setAttribute("aria-pressed", editing ? "true" : "false");
+      toggle.title = game.i18n.localize(editing ? "FFXIV.CharacterSheet.LockSheet" : "FFXIV.CharacterSheet.EditSheet");
+      toggle.setAttribute("aria-label", toggle.title);
+      const icon = toggle.querySelector("i");
+      if (icon) {
+        icon.classList.toggle("fa-lock-open", editing);
+        icon.classList.toggle("fa-lock", !editing);
+      }
+    }
+
+    if (editing) return;
+    sheet
+      .querySelectorAll("input, select, textarea")
+      .forEach((control) => this._replaceLockedItemField(control));
+    sheet
+      .querySelectorAll("button")
+      .forEach((control) => {
+        if (control.closest(".item-edit-toggle")) return;
+        control.disabled = true;
+      });
+  }
+
+  _replaceLockedItemField(control) {
+    if (control.closest(".item-edit-toggle")) return;
+    if (control.type === "hidden" || control.classList.contains("ffxiv-hidden") || control.closest(".ffxiv-hidden")) {
+      control.disabled = true;
+      return;
+    }
+    if (control instanceof HTMLSelectElement && control.closest(".ability-formula-row") && !control.value) {
+      control.remove();
+      return;
+    }
+
+    let display;
+    if (control.name === "system.combo") {
+      const resource = control.closest(".combo-resource");
+      const preview = resource?.querySelector(":scope > .combo-chain");
+      display = preview?.cloneNode(true);
+      preview?.remove();
+    }
+    display ??= document.createElement(control instanceof HTMLTextAreaElement ? "div" : "span");
+    display.classList.add("item-locked-field");
+    if (control instanceof HTMLTextAreaElement) display.classList.add("item-locked-field-block");
+    if (!display.textContent?.trim()) display.textContent = this._getLockedItemFieldText(control);
+    if (this._isEmptyLockedItemField(display.textContent)) {
+      display.classList.add("item-locked-field-empty");
+    }
+    control.replaceWith(display);
+  }
+
+  _isEmptyLockedItemField(value) {
+    const text = String(value ?? "").trim();
+    return !text || text === game.i18n.localize("FFXIV.None") || text === "None";
+  }
+
+  _getLockedItemFieldText(control) {
+    if (control instanceof HTMLSelectElement) {
+      const values = Array.from(control.selectedOptions)
+        .map((option) => {
+          const text = option.textContent?.trim().replace(/\s+/g, " ");
+          return control.closest(".ability-formula-row")
+            ? text?.replace(/^\+\s+/, "+")
+            : text;
+        })
+        .filter(Boolean);
+      return values.join(", ") || game.i18n.localize("FFXIV.None");
+    }
+    if (control.type === "checkbox") {
+      return game.i18n.localize(control.checked ? "FFXIV.Dialogs.Yes" : "FFXIV.Dialogs.No");
+    }
+    const value = String(control.value ?? "").trim();
+    return value || game.i18n.localize("FFXIV.None");
+  }
+
   /** @override */
   _onChangeForm(formConfig, event) {
     if (!formConfig.submitOnChange)
       return super._onChangeForm(formConfig, event);
-    if (!this.isEditable) return;
+    if (!this.isEditable || this._isCompendiumLocked()) return;
+    if (!this._isItemEditMode()) return;
     if (!event.target?.name) return;
 
     event.preventDefault();
@@ -339,6 +639,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "system.direct_formula",
         "system.direct_formula_attribute",
         "system.direct_hit",
+        "system.combo",
         "system.alternate_formula",
         "system.alternate_formula_attribute",
         "system.alternate_formula_critical",
@@ -346,6 +647,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "system.check",
         "system.origin",
       ].includes(event.target.name);
+    if (render) this._captureSheetScroll();
     this.document
       .update(updateData, { render })
       .then(async () => {
@@ -458,9 +760,51 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         );
       });
     };
-    return (Array.isArray(tags) ? tags : [])
+    const itemTags = Array.isArray(tags) ? tags : [];
+    return itemTags
       .map((tag, index) => ({ tag, index }))
-      .filter(({ tag }) => !isBakedTag(tag));
+      .filter(({ tag }) => !isBakedTag(tag))
+      .map((entry) => ({
+        ...entry,
+        options: Object.values(this._getTagPool()).map((option) => {
+          const optionKey = this._getTagComparisonKey(option?.label);
+          return {
+            ...option,
+            disabled: itemTags.some(
+              (tag, index) =>
+                index !== entry.index &&
+                this._getTagComparisonKey(tag) === optionKey,
+            ),
+            selected:
+              this._getTagComparisonKey(entry.tag) === optionKey,
+          };
+        }),
+      }));
+  }
+
+  _getTagPool() {
+    const configMap = {
+      ability: "tags_abilities",
+      primary_ability: "tags_abilities",
+      secondary_ability: "tags_abilities",
+      instant_ability: "tags_abilities",
+      limit_break: "tags_abilities",
+      pet: "tags_abilities",
+      trait: "tags_traits",
+      consumable: "tags_consumables",
+    };
+    return CONFIG.FFXIV[configMap[this.item.type]] || {};
+  }
+
+  _getTagComparisonKey(tag) {
+    const value = String(tag ?? "").trim();
+    const localized = game.i18n.localize(value);
+    return String(localized || value)
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/\p{Diacritic}/gu, "")
+      .replace(/[^\p{Letter}\p{Number}]/gu, "");
   }
 
   async _enforceAbilitySubtypeTag() {
@@ -502,6 +846,326 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return Boolean(check) && check !== "FFXIV.None" && check !== none;
   }
 
+  _hasSummonActorSupport() {
+    return [
+      "ability",
+      "primary_ability",
+      "secondary_ability",
+      "instant_ability",
+      "trait",
+    ].includes(this.item.type);
+  }
+
+  _getSummonActorEntries(
+    entries = this.item.system?.summon_actors,
+    { includeLabels = true } = {},
+  ) {
+    const grants = Array.isArray(entries)
+      ? foundry.utils.deepClone(entries)
+      : entries && typeof entries === "object"
+        ? foundry.utils.deepClone(Object.values(entries))
+        : [];
+    return grants
+      .map((grant) => {
+        const entry = {
+          uuid: String(grant?.uuid ?? "").trim(),
+          name: String(grant?.name ?? "").trim(),
+          type: String(grant?.type ?? "").trim(),
+        };
+        if (includeLabels)
+          entry.typeLabel = this._getSummonActorTypeLabel(entry);
+        return entry;
+      })
+      .filter((grant) => grant.uuid);
+  }
+
+  _getSummonActorGrants() {
+    return this._getSummonActorEntries(this.item.system?.summon_actors, {
+      includeLabels: false,
+    });
+  }
+
+  _getSummonActorTypeLabel(grant) {
+    const type = String(grant?.type ?? "").trim();
+    if (!type) return game.i18n.localize("FFXIV.ItemType.ItemType");
+    const label = game.i18n.localize(`FFXIV.ActorType.${type}`);
+    return label === `FFXIV.ActorType.${type}` ? type : label;
+  }
+
+  _getEffectRequirementEntries(system) {
+    const requirements = Array.isArray(system.effect_requirements)
+      ? system.effect_requirements
+      : [];
+    return requirements.map((requirement, index) => ({
+      name:
+        String(requirement?.name ?? "").trim() ||
+        this._titleizeEffectKey(requirement?.key),
+      mode: requirement?.mode === "forbidden" ? "forbidden" : "required",
+      consume: requirement?.consume === true,
+      bypassText: this._getEffectRefListInput(requirement?.bypass),
+      resourceSpent: String(requirement?.resourceSpent ?? "").trim(),
+      resourceSpentMin: Number.isFinite(Number.parseInt(
+        requirement?.resourceSpentMin ?? requirement?.spentMin ?? requirement?.min,
+        10,
+      ))
+        ? Number.parseInt(
+          requirement?.resourceSpentMin ?? requirement?.spentMin ?? requirement?.min,
+          10,
+        )
+        : "",
+      resourceSpentMax: Number.isFinite(Number.parseInt(
+        requirement?.resourceSpentMax ?? requirement?.spentMax ?? requirement?.max,
+        10,
+      ))
+        ? Number.parseInt(
+          requirement?.resourceSpentMax ?? requirement?.spentMax ?? requirement?.max,
+          10,
+        )
+        : "",
+      open: this._expandedEffectRequirements.has(index),
+      text: this._formatEffectRequirement(requirement),
+    }));
+  }
+
+  _getEffectRuleEntries(system) {
+    const rules = this._getEffectRulesFrom(system, { includeDrafts: true });
+    return rules.map((rule, index) => ({
+      action: this._normalizeEffectRuleAction(rule?.action),
+      trigger: this._normalizeEffectRuleTrigger(rule?.trigger),
+      name: String(rule?.name ?? "").trim() || this._titleizeEffectKey(rule?.key),
+      isResource: this._normalizeEffectRuleAction(rule?.action) === "resource",
+      isToggle: this._normalizeEffectRuleAction(rule?.action) === "toggle",
+      iconOverride: String(rule?.iconOverride ?? rule?.icon ?? "").trim(),
+      threshold: Number.isFinite(Number.parseInt(rule?.threshold, 10))
+        ? Number.parseInt(rule.threshold, 10)
+        : "",
+      operation: this._normalizeEffectRuleOperation(
+        rule?.operation ?? rule?.resourceAction,
+      ),
+      resource: String(rule?.resource ?? rule?.resourceName ?? "").trim(),
+      amount: String(rule?.amount ?? "").trim() || "1",
+      min: Number.isFinite(Number.parseInt(rule?.min, 10))
+        ? Number.parseInt(rule.min, 10)
+        : "",
+      spentResource: String(rule?.spentResource ?? rule?.amountResource ?? "").trim(),
+      requiresResourceSpent: String(rule?.requiresResourceSpent ?? "").trim(),
+      requiresResourceSpentMin: Number.isFinite(Number.parseInt(
+        rule?.requiresResourceSpentMin ?? rule?.spentMin,
+        10,
+      ))
+        ? Number.parseInt(rule?.requiresResourceSpentMin ?? rule?.spentMin, 10)
+        : "",
+      requiresResourceSpentMax: Number.isFinite(Number.parseInt(
+        rule?.requiresResourceSpentMax ?? rule?.spentMax,
+        10,
+      ))
+        ? Number.parseInt(rule?.requiresResourceSpentMax ?? rule?.spentMax, 10)
+        : "",
+      removeText: this._getEffectRefListInput(rule?.remove),
+      requiresText: this._getEffectRefListInput(rule?.requires),
+      forbidsText: this._getEffectRefListInput(rule?.forbids),
+      toggle1Name: this._getEffectRefName(rule?.toggle1),
+      toggle2Name: this._getEffectRefName(rule?.toggle2),
+      open: this._expandedEffectRules.has(index),
+      text: this._formatEffectRule(rule),
+    }));
+  }
+
+  _normalizeEffectRuleAction(value) {
+    const action = String(value ?? "grant").trim().toLowerCase();
+    return ["grant", "remove", "toggle", "resource"].includes(action)
+      ? action
+      : "grant";
+  }
+
+  _normalizeEffectRuleTrigger(value) {
+    const trigger = String(value ?? "use").trim();
+    if (trigger === "cost") return "cost";
+    return trigger === "hitThreshold" ? "hitThreshold" : "use";
+  }
+
+  _normalizeEffectRuleOperation(value) {
+    const operation = String(value ?? "grant").trim().toLowerCase();
+    return ["grant", "consume", "fill", "clear", "set"].includes(operation)
+      ? operation
+      : "grant";
+  }
+
+  _getEffectRefListInput(value) {
+    const entries = Array.isArray(value) ? value : value ? [value] : [];
+    return entries
+      .map((entry) => {
+        if (typeof entry === "string") return entry;
+        return String(entry?.name ?? entry?.key ?? "").trim();
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  _getEffectRefName(value) {
+    if (typeof value === "string") return value;
+    return (
+      String(value?.name ?? "").trim() ||
+      this._titleizeEffectKey(value?.key)
+    );
+  }
+
+  _formatEffectRequirement(requirement) {
+    const name = this._formatEffectRef(requirement);
+    if (!name) return "";
+
+    const parts = [
+      requirement?.mode === "forbidden"
+        ? `Forbids ${name}`
+        : `Requires ${name}`,
+    ];
+    if (requirement?.consume === true) parts.push("consume after use");
+
+    const bypass = this._formatEffectRefList(requirement?.bypass);
+    if (bypass) parts.push(`bypassed by ${bypass}`);
+    const resourceSpent = String(requirement?.resourceSpent ?? "").trim();
+    if (resourceSpent) {
+      const min = Number.parseInt(
+        requirement?.resourceSpentMin ?? requirement?.spentMin ?? requirement?.min,
+        10,
+      );
+      const max = Number.parseInt(
+        requirement?.resourceSpentMax ?? requirement?.spentMax ?? requirement?.max,
+        10,
+      );
+      const range = [
+        Number.isFinite(min) ? `min ${min}` : "",
+        Number.isFinite(max) ? `max ${max}` : "",
+      ].filter(Boolean).join(", ");
+      parts.push(`spent ${resourceSpent}${range ? ` (${range})` : ""}`);
+    }
+    return parts.join("; ");
+  }
+
+  _formatEffectRule(rule) {
+    const trigger = this._formatEffectRuleTrigger(rule);
+    const action = String(rule?.action ?? "grant").trim().toLowerCase();
+    const parts = [];
+
+    if (action === "resource") {
+      const resource = String(rule?.resource ?? rule?.resourceName ?? "").trim();
+      if (!resource) return "";
+      const operation = this._normalizeEffectRuleOperation(
+        rule?.operation ?? rule?.resourceAction,
+      );
+      const amount = String(rule?.amount ?? "").trim() || "1";
+      const min = Number.parseInt(rule?.min, 10);
+      const verb =
+        operation === "consume"
+          ? "consume"
+          : operation === "fill"
+            ? "fill"
+            : operation === "clear"
+              ? "clear"
+              : operation === "set"
+                ? "set"
+                : "grant";
+      const quantity = ["fill", "clear"].includes(operation) ? "" : `${amount} `;
+      parts.push(`${trigger}: ${verb} ${quantity}${resource}`);
+      if (Number.isFinite(min) && min > 0) parts.push(`minimum ${min}`);
+      const spentResource = String(rule?.spentResource ?? "").trim();
+      if (spentResource) parts.push(`from spent ${spentResource}`);
+    } else if (action === "toggle") {
+      const toggle1 = this._formatEffectRef(rule?.toggle1);
+      const toggle2 = this._formatEffectRef(rule?.toggle2);
+      if (!toggle1 || !toggle2) return "";
+      parts.push(`${trigger}: toggle ${toggle1} / ${toggle2}`);
+    } else {
+      const name = this._formatEffectRef(rule);
+      if (!name) return "";
+      const verb = action === "remove" ? "remove" : "grant";
+      parts.push(`${trigger}: ${verb} ${name}`);
+    }
+
+    const remove = this._formatEffectRefList(rule?.remove);
+    if (remove) parts.push(`remove ${remove} first`);
+
+    const requires = this._formatEffectRefList(rule?.requires);
+    if (requires) parts.push(`requires ${requires}`);
+
+    const forbids = this._formatEffectRefList(rule?.forbids);
+    if (forbids) parts.push(`not while under ${forbids}`);
+
+    const spent = String(rule?.requiresResourceSpent ?? "").trim();
+    if (spent) {
+      const min = Number.parseInt(rule?.requiresResourceSpentMin, 10);
+      const max = Number.parseInt(rule?.requiresResourceSpentMax, 10);
+      const range = [
+        Number.isFinite(min) ? `min ${min}` : "",
+        Number.isFinite(max) ? `max ${max}` : "",
+      ].filter(Boolean).join(", ");
+      parts.push(`spent ${spent}${range ? ` (${range})` : ""}`);
+    }
+
+    const duration = this._formatEffectDuration(rule?.duration);
+    if (duration) parts.push(`duration ${duration}`);
+
+    return parts.join("; ");
+  }
+
+  _formatEffectRuleTrigger(rule) {
+    const trigger = String(rule?.trigger ?? "use").trim();
+    if (trigger === "hitThreshold") {
+      const threshold = Number.parseInt(rule?.threshold, 10);
+      return Number.isFinite(threshold)
+        ? `On hit/check d20 ${threshold}+`
+        : "On hit/check";
+    }
+    if (trigger === "cost") return "On cost";
+    if (!trigger || trigger === "use") return "On use";
+    return `On ${trigger}`;
+  }
+
+  _formatEffectRefList(value) {
+    const entries = Array.isArray(value) ? value : value ? [value] : [];
+    return entries
+      .map((entry) => this._formatEffectRef(entry))
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  _formatEffectRef(value) {
+    if (!value) return "";
+    if (typeof value === "string") return this._titleizeEffectKey(value);
+    const name = String(value.name ?? "").trim();
+    if (name) return name;
+    return this._titleizeEffectKey(value.key);
+  }
+
+  _titleizeEffectKey(value) {
+    return String(value ?? "")
+      .trim()
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+
+  _normalizeEffectKey(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  _formatEffectDuration(duration) {
+    if (!duration || typeof duration !== "object") return "";
+    for (const unit of ["turns", "rounds"]) {
+      const value = Number.parseInt(duration[unit], 10);
+      if (!Number.isFinite(value) || value <= 0) continue;
+      const label = value === 1 ? unit.slice(0, -1) : unit;
+      return `${value} ${label}`;
+    }
+    return "";
+  }
+
   _getStatusEffectEntries(system) {
     const entries = Array.isArray(system.status_effects)
       ? foundry.utils.deepClone(system.status_effects)
@@ -510,16 +1174,342 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       entries.push({
         id: system.status_effect,
         action: system.status_action !== false,
+        applyMode: system.status_apply_mode || "manual",
       });
     }
     return entries.map((entry) => ({
       id: entry?.id ?? "",
       action: entry?.action !== false,
+      applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
+      applyTo: this._normalizeStatusApplyTo(entry?.applyTo),
+      allSources: entry?.allSources === true,
+      stacks: this._normalizeStatusStacks(entry?.stacks),
+      stackable: isStackableStatusEffect(entry?.id ?? ""),
+      duration: {
+        turns: this._normalizeStatusDuration(entry?.duration?.turns),
+        rounds: this._normalizeStatusDuration(entry?.duration?.rounds),
+      },
     }));
+  }
+
+  _normalizeStatusApplyTo(value) {
+    return String(value ?? "").trim().toLowerCase() === "self"
+      ? "self"
+      : "target";
+  }
+
+  _normalizeStatusStacks(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  }
+
+  _normalizeStatusDuration(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : "";
   }
 
   _getCurrentStatusEffectEntries() {
     return this._getStatusEffectEntries(this.item.system);
+  }
+
+  _getCurrentEffectRequirements() {
+    return Array.isArray(this.item.system.effect_requirements)
+      ? foundry.utils.deepClone(this.item.system.effect_requirements)
+      : [];
+  }
+
+  _getCurrentEffectRules() {
+    return this._getEffectRulesFrom(this.item.system, { includeDrafts: true });
+  }
+
+  _getEffectRulesFrom(system, { includeDrafts = false } = {}) {
+    const rules = Array.isArray(system.effect_rules)
+      ? foundry.utils.deepClone(system.effect_rules)
+      : [];
+    return rules.filter(
+      (rule, index) =>
+        (includeDrafts && this._expandedEffectRules.has(index)) ||
+        this._isUsableEffectRule(rule),
+    );
+  }
+
+  _isUsableEffectRule(rule) {
+    if (!rule || typeof rule !== "object") return false;
+    const action = this._normalizeEffectRuleAction(rule?.action);
+    if (action === "toggle")
+      return Boolean(
+        this._getEffectRefName(rule?.toggle1) &&
+        this._getEffectRefName(rule?.toggle2),
+      );
+    if (action === "resource")
+      return Boolean(String(rule?.resource ?? rule?.resourceName ?? "").trim());
+    return Boolean(this._formatEffectRef(rule));
+  }
+
+  _getAutomationFieldValue(target) {
+    if (target.type === "checkbox") return target.checked;
+    if (target.type === "number")
+      return target.value === "" ? "" : Number.parseInt(target.value, 10);
+    return String(target.value ?? "").trim();
+  }
+
+  _onChangeEffectRequirement(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+    const field = String(event.currentTarget.dataset.field ?? "");
+    if (!field) return;
+
+    const requirements = this._getCurrentEffectRequirements();
+    requirements[index] ??= {
+      name: "",
+      mode: "required",
+      consume: false,
+    };
+    const value = this._getAutomationFieldValue(event.currentTarget);
+
+    if (field === "bypass") {
+      requirements[index].bypass = this._parseEffectRefList(value);
+      if (!requirements[index].bypass.length) delete requirements[index].bypass;
+    } else if (field === "consume") {
+      requirements[index].consume = value === true;
+    } else if (field === "mode") {
+      requirements[index].mode = value === "forbidden" ? "forbidden" : "required";
+    } else if (field === "name") {
+      requirements[index].name = value;
+      delete requirements[index].key;
+    } else if (field === "resourceSpent") {
+      if (value) requirements[index].resourceSpent = value;
+      else delete requirements[index].resourceSpent;
+    } else if (["resourceSpentMin", "resourceSpentMax"].includes(field)) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) requirements[index][field] = parsed;
+      else delete requirements[index][field];
+    } else {
+      requirements[index][field] = value;
+    }
+
+    this._captureSheetScroll();
+    this.item
+      .update({ "system.effect_requirements": requirements }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onChangeEffectRule(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+    const field = String(event.currentTarget.dataset.field ?? "");
+    if (!field) return;
+
+    const rules = this._getCurrentEffectRules();
+    rules[index] ??= {
+      trigger: "use",
+      action: "grant",
+      name: "",
+    };
+    const value = this._getAutomationFieldValue(event.currentTarget);
+
+    this._setEffectRuleField(rules[index], field, value);
+    this._captureSheetScroll();
+    this.item
+      .update({ "system.effect_rules": rules }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _setEffectRuleField(rule, field, value) {
+    if (["remove", "requires", "forbids"].includes(field)) {
+      rule[field] = this._parseEffectRefList(value);
+      if (!rule[field].length) delete rule[field];
+      return;
+    }
+
+    if (["rounds", "turns"].includes(field)) {
+      rule.duration ??= {};
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        rule.duration[field] = parsed;
+      } else {
+        delete rule.duration[field];
+      }
+      if (!Object.keys(rule.duration).length) delete rule.duration;
+      return;
+    }
+
+    if (field === "toggle1Name") {
+      rule.toggle1 ??= {};
+      rule.toggle1.name = value;
+      delete rule.toggle1.key;
+      this._cleanEffectRef(rule, "toggle1");
+      return;
+    }
+
+    if (field === "toggle2Name") {
+      rule.toggle2 ??= {};
+      rule.toggle2.name = value;
+      delete rule.toggle2.key;
+      this._cleanEffectRef(rule, "toggle2");
+      return;
+    }
+
+    if (field === "action") {
+      rule.action = this._normalizeEffectRuleAction(value);
+      if (rule.action === "resource") {
+        rule.operation ??= "grant";
+        rule.amount ??= 1;
+      }
+      return;
+    }
+
+    if (field === "trigger") {
+      rule.trigger = this._normalizeEffectRuleTrigger(value);
+      return;
+    }
+
+    if (field === "threshold") {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) rule.threshold = parsed;
+      else delete rule.threshold;
+      return;
+    }
+
+    if (field === "operation") {
+      rule.operation = this._normalizeEffectRuleOperation(value);
+      delete rule.resourceAction;
+      return;
+    }
+
+    if (field === "resource") {
+      if (value) rule.resource = value;
+      else delete rule.resource;
+      delete rule.resourceName;
+      return;
+    }
+
+    if (field === "amount") {
+      const amount = String(value ?? "").trim();
+      if (amount)
+        rule.amount = amount.toLowerCase() === "all" ? "all" : amount;
+      else delete rule.amount;
+      return;
+    }
+
+    if (field === "min") {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) rule.min = parsed;
+      else delete rule.min;
+      return;
+    }
+
+    if (field === "spentResource") {
+      if (value) rule.spentResource = value;
+      else delete rule.spentResource;
+      delete rule.amountResource;
+      return;
+    }
+
+    if (field === "requiresResourceSpent") {
+      if (value) rule.requiresResourceSpent = value;
+      else delete rule.requiresResourceSpent;
+      return;
+    }
+
+    if (["requiresResourceSpentMin", "requiresResourceSpentMax"].includes(field)) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) rule[field] = parsed;
+      else delete rule[field];
+      return;
+    }
+
+    if (field === "iconOverride") {
+      if (value) rule.iconOverride = value;
+      else delete rule.iconOverride;
+      delete rule.icon;
+      return;
+    }
+
+    rule[field] = value;
+    if (field === "name") delete rule.key;
+  }
+
+  _cleanEffectRef(rule, field) {
+    if (rule[field]?.key || rule[field]?.name) return;
+    delete rule[field];
+  }
+
+  _parseEffectRefList(value) {
+    return String(value ?? "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  _onAddEffectRequirement(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    this._captureSheetScroll();
+
+    const requirements = this._getCurrentEffectRequirements();
+    requirements.push({
+      name: "",
+      mode: "required",
+      consume: false,
+    });
+    this._expandedEffectRequirements.add(requirements.length - 1);
+    this.item
+      .update({ "system.effect_requirements": requirements }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onAddEffectRule(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    this._captureSheetScroll();
+
+    const rules = this._getCurrentEffectRules();
+    rules.push({
+      trigger: "use",
+      action: "grant",
+      name: "",
+    });
+    this._expandedEffectRules.add(rules.length - 1);
+    this.item
+      .update({ "system.effect_rules": rules }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onRemoveEffectRequirement(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+    this._captureSheetScroll();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const requirements = this._getCurrentEffectRequirements();
+    requirements.splice(index, 1);
+    this.item
+      .update({ "system.effect_requirements": requirements }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _onRemoveEffectRule(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+    this._captureSheetScroll();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const rules = this._getCurrentEffectRules();
+    rules.splice(index, 1);
+    this.item
+      .update({ "system.effect_rules": rules }, { render: false })
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
   }
 
   _onChangeStatusEffect(event) {
@@ -527,18 +1517,45 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!Number.isInteger(index)) return;
 
     const entries = this._getCurrentStatusEffectEntries();
-    entries[index] ??= { id: "", action: true };
+    entries[index] ??= {
+      id: "",
+      action: true,
+      applyMode: "manual",
+      applyTo: "target",
+      stacks: 1,
+      stackable: false,
+      duration: {},
+    };
     if (event.currentTarget.classList.contains("status-effect-id")) {
       entries[index].id = event.currentTarget.value;
+      entries[index].stackable = isStackableStatusEffect(entries[index].id);
+      entries[index].stacks = this._normalizeStatusStacks(entries[index].stacks);
+    } else if (event.currentTarget.classList.contains("status-effect-stacks")) {
+      entries[index].stacks = this._normalizeStatusStacks(event.currentTarget.value);
+    } else if (event.currentTarget.classList.contains("status-effect-apply-mode")) {
+      entries[index].applyMode = event.currentTarget.value === "auto" ? "auto" : "manual";
+    } else if (event.currentTarget.classList.contains("status-effect-apply-to")) {
+      entries[index].applyTo = this._normalizeStatusApplyTo(event.currentTarget.value);
+    } else if (event.currentTarget.classList.contains("status-effect-duration")) {
+      const field = String(event.currentTarget.dataset.field ?? "");
+      if (["turns", "rounds"].includes(field)) {
+        entries[index].duration ??= {};
+        const parsed = Number.parseInt(event.currentTarget.value, 10);
+        if (Number.isFinite(parsed) && parsed > 0) entries[index].duration[field] = parsed;
+        else delete entries[index].duration[field];
+        if (!Object.keys(entries[index].duration).length) delete entries[index].duration;
+      }
     } else {
       entries[index].action = event.currentTarget.value === "true";
     }
+    this._captureSheetScroll();
     this.item
       .update(
         {
           "system.status_effects": entries,
           "system.status_effect": "",
           "system.status_action": true,
+          "system.status_apply_mode": "manual",
         },
         { render: false },
       )
@@ -549,16 +1566,27 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onAddStatusEffect(event) {
     event.preventDefault();
     event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    this._captureSheetScroll();
 
     const entries = this._getCurrentStatusEffectEntries();
     const defaultEffect = CONFIG.statusEffects?.[0]?.id ?? "";
-    entries.push({ id: defaultEffect, action: true });
+    entries.push({
+      id: defaultEffect,
+      action: true,
+      applyMode: "manual",
+      applyTo: "target",
+      stacks: 1,
+      stackable: isStackableStatusEffect(defaultEffect),
+      duration: {},
+    });
     this.item
       .update(
         {
           "system.status_effects": entries,
           "system.status_effect": "",
           "system.status_action": true,
+          "system.status_apply_mode": "manual",
         },
         { render: false },
       )
@@ -569,6 +1597,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onRemoveStatusEffect(event) {
     event.preventDefault();
     event.stopPropagation();
+    this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+    this._captureSheetScroll();
 
     const index = Number(event.currentTarget.dataset.index);
     const entries = this._getCurrentStatusEffectEntries();
@@ -579,6 +1609,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           "system.status_effects": entries,
           "system.status_effect": "",
           "system.status_action": true,
+          "system.status_apply_mode": "manual",
         },
         { render: false },
       )
@@ -586,12 +1617,175 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       .catch((err) => ui.notifications.error(err, { console: true }));
   }
 
+  _onChangeAbilityEffectScope(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const effectId = String(event.currentTarget.dataset.effectId ?? "");
+    const applyTo = String(event.currentTarget.value ?? "target");
+    const effect = this.item.effects.get(effectId);
+    if (!effect) return;
+    this._captureSheetScroll();
+    const updateData = {
+      "flags.ffxiv.applyTo": applyTo,
+      transfer: applyTo === "self",
+    };
+    if (applyTo === "automation") {
+      updateData["flags.ffxiv.effectKey"] = this._normalizeEffectKey(effect.name);
+    }
+    effect
+      .update(updateData, { render: false, ffxivSyncApplyTo: true })
+      .then(() => this._ensureAutomationRuleForEffect(effect, applyTo))
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  async _ensureAutomationRuleForEffect(effect, applyTo) {
+    if (applyTo !== "automation") return;
+
+    const name = String(effect?.name ?? "").trim();
+    const key = this._normalizeEffectKey(
+      effect?.getFlag?.("ffxiv", "effectKey") ?? name,
+    );
+    if (!name || !key) return;
+
+    const rules = this._getCurrentEffectRules();
+    const hasRule = rules.some((rule) => {
+      if (String(rule?.action ?? "grant").trim().toLowerCase() !== "grant")
+        return false;
+      const ruleKey = this._normalizeEffectKey(rule?.key ?? rule?.name);
+      return ruleKey === key;
+    });
+    if (hasRule) return;
+
+    rules.push({
+      trigger: "use",
+      action: "grant",
+      name,
+    });
+    await this.item.update({ "system.effect_rules": rules }, { render: false });
+  }
+
+  _onChangeAbilityEffectAction(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const effectId = String(event.currentTarget.dataset.effectId ?? "");
+    const applyAction = String(event.currentTarget.value ?? "add");
+    const effect = this.item.effects.get(effectId);
+    if (!effect) return;
+    this._captureSheetScroll();
+    effect
+      .setFlag("ffxiv", "applyAction", applyAction)
+      .then(() => this.render({ force: true }))
+      .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _getAbilityEffectApplyTo(effect) {
+    const flagged = String(effect?.getFlag("ffxiv", "applyTo") || "").trim().toLowerCase();
+    if (flagged === "self" || flagged === "target" || flagged === "self_auto" || flagged === "automation") return flagged;
+    return "target";
+  }
+
   /** @override */
   activateListeners(html) {
     html.off(".ffxivItemSheet");
 
+    const storedMarkers =
+      Array.isArray(this.item.system.markers) && this.item.system.markers.length
+        ? foundry.utils.deepClone(this.item.system.markers)
+        : this.item.system.marker
+          ? [foundry.utils.deepClone(this.item.system.marker)]
+          : [];
+    const markerEditors = html[0]?.querySelectorAll(".ability-marker-editor") ?? [];
+    if (markerEditors.length && this._isItemEditMode() && this.document.isOwner) {
+      for (const markerEditor of markerEditors) {
+        const index = Number(markerEditor.dataset.index);
+        game.ffxivttrpg.initializeMarkerEditor(
+          markerEditor,
+          storedMarkers[index],
+          (marker) => {
+            storedMarkers[index] = foundry.utils.deepClone(marker);
+            return this.item.update(
+              {
+                "system.markers": foundry.utils.deepClone(storedMarkers),
+                "system.marker": null,
+              },
+              { render: false },
+            );
+          },
+          this._eventAbortController?.signal,
+        );
+      }
+    } else {
+      html[0]?.querySelectorAll(".ability-marker-read-preview").forEach((preview) => {
+        const index = Number(preview.dataset.index);
+        game.ffxivttrpg.renderMarkerPreview(
+          preview.querySelector("canvas"),
+          storedMarkers[index],
+        );
+      });
+    }
+
     // Everything below here is only needed if the sheet is editable
-    if (!this.document.isOwner) return;
+    if (!this.document.isOwner || this._isCompendiumLocked()) return;
+
+    html.on(
+      "click.ffxivItemSheet",
+      ".item-edit-toggle",
+      this._toggleItemEditMode.bind(this),
+    );
+    if (!this._isItemEditMode()) return;
+
+    html.on("click.ffxivItemSheet", ".add-ability-marker", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+      this._captureSheetScroll();
+      const size = 15;
+      const center = Math.floor(size / 2);
+      const state = Array.from({ length: size }, (_, y) =>
+        Array.from(
+          { length: size },
+          (_, x) =>
+            x >= center - 1 &&
+            x <= center + 1 &&
+            y >= center - 1 &&
+            y <= center + 1,
+        ),
+      );
+      const markers = foundry.utils.deepClone(storedMarkers);
+      markers.push({
+        state,
+        opacity: 0.8,
+        type: "enemy",
+        mode: "standard",
+        targeted: false,
+        followRotation: true,
+        shape: "grid",
+        radius: null,
+      });
+      this.item
+        .update(
+          { "system.markers": markers, "system.marker": null },
+          { render: false },
+        )
+        .then(() => this.render({ force: true }))
+        .catch((err) => ui.notifications.error(err, { console: true }));
+    });
+    html.on("click.ffxivItemSheet", ".remove-ability-marker", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+      this._captureSheetScroll();
+      const markers = foundry.utils.deepClone(storedMarkers);
+      markers.splice(Number(event.currentTarget.dataset.index), 1);
+      this.item
+        .update(
+          { "system.markers": markers, "system.marker": null },
+          { render: false },
+        )
+        .then(() => this.render({ force: true }))
+        .catch((err) => ui.notifications.error(err, { console: true }));
+    });
 
     // hidden here instead of css to prevent non-editable display of edit button
     html
@@ -622,10 +1816,22 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         event.currentTarget.dataset.index ??
           $(event.currentTarget).closest("li").index(),
       );
-      const value = $(event.currentTarget).val(); // Get the selected value
-      const tags = this.item.system.tags || [];
-      tags[index] = value; // Update the correct index in the array
-      this.item.update({ "system.tags": tags }); // Update the item with the new tags array
+      const value = $(event.currentTarget).val();
+      const tags = Array.isArray(this.item.system.tags)
+        ? [...this.item.system.tags]
+        : [];
+      const valueKey = this._getTagComparisonKey(value);
+      const isDuplicate = tags.some(
+        (tag, tagIndex) =>
+          tagIndex !== index &&
+          this._getTagComparisonKey(tag) === valueKey,
+      );
+      if (isDuplicate) {
+        event.currentTarget.value = tags[index] ?? "";
+        return;
+      }
+      tags[index] = value;
+      this.item.update({ "system.tags": tags });
     });
     html.on("change.ffxivItemSheet", ".select-subtype-tag", (event) => {
       const value = $(event.currentTarget).val();
@@ -649,22 +1855,21 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       this.render(); // Re-render to show the updated fields
     });
     html.on("click.ffxivItemSheet", ".add-tag", () => {
-      const tags = this.item.system.tags || [];
+      const tags = Array.isArray(this.item.system.tags)
+        ? [...this.item.system.tags]
+        : [];
 
-      const configMap = {
-        ability: "tags_abilities",
-        primary_ability: "tags_abilities",
-        secondary_ability: "tags_abilities",
-        instant_ability: "tags_abilities",
-        limit_break: "tags_abilities",
-        trait: "tags_traits",
-        consumable: "tags_consumables",
-      };
-
-      const configKey = configMap[this.item.type];
-      const tagPool = CONFIG.FF_XIV[configKey] || {};
-      const defaultTag = Object.values(tagPool)[0]?.label || "";
-      debugLog(defaultTag + " : " + tags);
+      const tagPool = this._getTagPool();
+      const existingTags = new Set(
+        tags.map((tag) => this._getTagComparisonKey(tag)),
+      );
+      const defaultTag =
+        Object.values(tagPool)
+          .map((tag) => tag?.label)
+          .find(
+            (tag) =>
+              tag && !existingTags.has(this._getTagComparisonKey(tag)),
+          ) ?? "";
       if (defaultTag) {
         tags.push(defaultTag);
         this.item.update({ "system.tags": tags });
@@ -674,9 +1879,49 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     html.on(
       "change.ffxivItemSheet",
-      ".status-effect-id, .status-effect-action",
+      ".status-effect-id, .status-effect-action, .status-effect-apply-mode, .status-effect-apply-to, .status-effect-stacks",
       this._onChangeStatusEffect.bind(this),
     );
+    html.on(
+      "change.ffxivItemSheet",
+      ".effect-requirement-field",
+      this._onChangeEffectRequirement.bind(this),
+    );
+    html.on(
+      "change.ffxivItemSheet",
+      ".effect-rule-field",
+      this._onChangeEffectRule.bind(this),
+    );
+    html.on(
+      "change.ffxivItemSheet",
+      ".ability-effect-scope",
+      this._onChangeAbilityEffectScope.bind(this),
+    );
+    html.on(
+      "change.ffxivItemSheet",
+      ".ability-effect-action",
+      this._onChangeAbilityEffectAction.bind(this),
+    );
+    html.on("click.ffxivItemSheet", ".sheet-tabs.tabs .item", (ev) => {
+      const nextTab = String(ev.currentTarget.dataset.tab ?? "");
+      const currentTab = String(this.tabGroups?.primary ?? "");
+      if (nextTab && nextTab !== currentTab) {
+        this._playConfiguredSound("soundNotificationFFXIV_openSheet");
+      }
+    });
+    html.on("click.ffxivItemSheet", ".effect-control", async (ev) => {
+      const action = ev.currentTarget.dataset.action;
+      if (action === "create") {
+        this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+      } else if (action === "delete") {
+        this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+      }
+      await onManageActiveEffect(ev, this.item, { render: false });
+      if (action !== "edit") {
+        this._captureSheetScroll();
+        this.render({ force: true });
+      }
+    });
     html.on(
       "click.ffxivItemSheet",
       ".add-status-effect",
@@ -686,6 +1931,31 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       "click.ffxivItemSheet",
       ".remove-status-effect",
       this._onRemoveStatusEffect.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".add-effect-requirement",
+      this._onAddEffectRequirement.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".add-effect-rule",
+      this._onAddEffectRule.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".effect-rule-icon-picker",
+      this._onPickEffectRuleIcon.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".remove-effect-requirement",
+      this._onRemoveEffectRequirement.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".remove-effect-rule",
+      this._onRemoveEffectRule.bind(this),
     );
 
     //Gear Classes, similar as tags
@@ -718,6 +1988,16 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ".job-ability-edit",
         this._onEditJobAbility.bind(this),
       );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-job-ability-up",
+        this._moveJobAbility.bind(this, -1),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-job-ability-down",
+        this._moveJobAbility.bind(this, 1),
+      );
       html.on("click.ffxivItemSheet", ".remove-job-ability", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -725,6 +2005,33 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         const grants = this._getJobAbilityGrants();
         grants.splice(index, 1);
         this.item.update({ "system.ability_grants": grants });
+        this.render();
+      });
+      html.on(
+        "click.ffxivItemSheet",
+        ".job-pet-edit",
+        this._onEditJobPet.bind(this),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-job-pet-up",
+        this._moveJobPet.bind(this, -1),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-job-pet-down",
+        this._moveJobPet.bind(this, 1),
+      );
+      html.on("click.ffxivItemSheet", ".remove-job-pet", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = Number(event.currentTarget.dataset.index);
+        const grants = this._getJobPetGrants();
+        grants.splice(index, 1);
+        this.item.update({
+          "system.pet_grants": grants,
+          "system.has_pets": grants.length > 0,
+        });
         this.render();
       });
     }
@@ -744,6 +2051,32 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           "system.ability_grants": grants,
           "system.granted_ability": "",
         });
+        this.render();
+      });
+    }
+    if (this._hasSummonActorSupport()) {
+      html.on(
+        "click.ffxivItemSheet",
+        ".summon-actor-edit",
+        this._onEditSummonActor.bind(this),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-summon-actor-up",
+        this._moveSummonActor.bind(this, -1),
+      );
+      html.on(
+        "click.ffxivItemSheet",
+        ".move-summon-actor-down",
+        this._moveSummonActor.bind(this, 1),
+      );
+      html.on("click.ffxivItemSheet", ".remove-summon-actor", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = Number(event.currentTarget.dataset.index);
+        const summons = this._getSummonActorGrants();
+        summons.splice(index, 1);
+        this.item.update({ "system.summon_actors": summons });
         this.render();
       });
     }
@@ -910,17 +2243,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const newQuantity = this.item.system.quantity - 1;
     if (newQuantity < 1) {
       this._deleteItem(event);
-      const deleteSound =
-        game.settings.get("ffxiv", "soundNotificationFFXIV_deleteItem") ||
-        DEFAULT_SOUNDS.soundNotificationFFXIV_deleteItem;
-      if (game.settings.get("ffxiv", "soundNotificationFFXIV") && deleteSound) {
-        foundry.audio.AudioHelper.play({
-          src: deleteSound,
-          volume: 1,
-          autoplay: true,
-          loop: false,
-        });
-      }
+      this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
     } else {
       this.item.update({ "system.quantity": parseInt(newQuantity) });
     }
@@ -981,7 +2304,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     const equippedGear = {
       ...Object.fromEntries(
-        Object.keys(CONFIG.FF_XIV.gear_subcategories).map((k) => [k, ""]),
+        Object.keys(CONFIG.FFXIV.gear_subcategories).map((k) => [k, ""]),
       ),
       ...foundry.utils.deepClone(actor.system.equippedGear || {}),
     };
@@ -990,13 +2313,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     // Blank stored categories represent the default Arms option.
     const defaultCategory =
-      CONFIG.FF_XIV.gear_subcategories.Arms?.label ??
-      Object.values(CONFIG.FF_XIV.gear_subcategories)[0]?.label ??
+      CONFIG.FFXIV.gear_subcategories.Arms?.label ??
+      Object.values(CONFIG.FFXIV.gear_subcategories)[0]?.label ??
       "";
     const selectedCategory = this.item.system.category || defaultCategory;
-    const categoryKey = Object.keys(CONFIG.FF_XIV.gear_subcategories).find(
+    const categoryKey = Object.keys(CONFIG.FFXIV.gear_subcategories).find(
       (key) =>
-        CONFIG.FF_XIV.gear_subcategories[key].label ===
+        CONFIG.FFXIV.gear_subcategories[key].label ===
         selectedCategory,
     );
 
@@ -1078,6 +2401,83 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       .forEach((div) => this._activateEditor?.(div));
   }
 
+  async _saveProseMirrorEditors() {
+    const editors = Array.from(this.element?.querySelectorAll("prose-mirror") ?? []);
+    const updateData = {};
+
+    for (const editor of editors) {
+      const field = editor.getAttribute("name");
+      if (!field) continue;
+
+      if (typeof editor.save === "function") {
+        await editor.save();
+      } else if (typeof editor._save === "function") {
+        await editor._save();
+      }
+
+      const value = editor.value;
+      if (value === undefined) continue;
+      if (foundry.utils.getProperty(this.item, field) !== value) {
+        updateData[field] = value;
+      }
+    }
+
+    if (Object.keys(updateData).length) {
+      await this.item.update(updateData, { render: false });
+    }
+  }
+
+  _captureSheetScroll() {
+    const root = this.element;
+    if (!root) return;
+
+    const selectors = [
+      ".window-content",
+      ".sheet-body",
+      ".sheet-body .tab.active",
+    ];
+
+    this._pendingSheetScrollPositions = selectors.flatMap((selector) => {
+      const element = root.matches?.(selector)
+        ? root
+        : root.querySelector(selector);
+      if (!element) return [];
+      return [
+        {
+          selector,
+          scrollTop: element.scrollTop,
+          scrollLeft: element.scrollLeft,
+        },
+      ];
+    });
+  }
+
+  _restoreSheetScroll() {
+    const positions = this._pendingSheetScrollPositions;
+    if (!positions?.length) return;
+    const restore = () => {
+      for (const position of positions) {
+        const root = this.element;
+        const element = root?.matches?.(position.selector)
+          ? root
+          : root?.querySelector(position.selector);
+        if (!element) continue;
+        element.scrollTop = position.scrollTop;
+        element.scrollLeft = position.scrollLeft;
+      }
+      if (this._pendingSheetScrollPositions === positions) {
+        this._pendingSheetScrollPositions = null;
+      }
+    };
+
+    requestAnimationFrame(() => {
+      restore();
+      setTimeout(() => {
+        if (this._pendingSheetScrollPositions === positions) restore();
+      }, 50);
+    });
+  }
+
   _activateFormulaFieldVisibility() {
     const updateVisibility = () => {
       const hasText = (value) => String(value ?? "").trim().length > 0;
@@ -1092,21 +2492,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           target.style.display = hasText(input.value) ? "" : "none";
         });
 
-      const directHitInput = this.element.querySelector(
-        'input[name="system.direct_hit"]',
-      );
-      const gate = this.element.querySelector("[data-direct-hit-gate]");
-      if (gate && directHitInput) {
-        gate.style.display = hasText(directHitInput.value) ? "" : "none";
-      }
     };
 
     this._formulaVisibilityController?.abort();
     this._formulaVisibilityController = new AbortController();
     const { signal } = this._formulaVisibilityController;
-    const formulaInputs = this.element.querySelectorAll(
-      '[data-formula-source], input[name="system.direct_hit"]',
-    );
+    const formulaInputs = this.element.querySelectorAll("[data-formula-source]");
     formulaInputs.forEach((input) =>
       input.addEventListener("input", updateVisibility, { signal }),
     );
@@ -1204,6 +2595,17 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   setPosition(position = {}) {
+    if (
+      ABILITY_SHEET_TYPES.has(this.item.type) &&
+      Number.isFinite(position.width)
+    ) {
+      const viewportWidth = Math.max(320, window.innerWidth - 24);
+      position.width = Math.max(
+        Math.min(ABILITY_SHEET_MIN_WIDTH, viewportWidth),
+        position.width,
+      );
+    }
+
     if (this._isLimitedDisplayMode()) {
       const defaultWidth =
         Number(this.constructor.DEFAULT_OPTIONS?.position?.width) || 520;
@@ -1220,15 +2622,19 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _activateJobDropZone() {
     this._jobDropController?.abort();
-    if (!["job", "augment"].includes(this.item.type) || !this.document.isOwner)
+    if (
+      !["job", "augment"].includes(this.item.type) ||
+      !this.document.isOwner ||
+      !this._isItemEditMode()
+    )
       return;
 
     const dropZoneSelector =
       this.item.type === "augment"
         ? ".augment-grants-dropzone"
-        : ".job-progression-tab";
-    const dropZone = this.element.querySelector(dropZoneSelector);
-    if (!dropZone) return;
+        : ".job-progression-tab, .job-pets-tab";
+    const dropZones = this.element.querySelectorAll(dropZoneSelector);
+    if (!dropZones.length) return;
 
     this._jobDropController = new AbortController();
     const { signal } = this._jobDropController;
@@ -1237,27 +2643,275 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       event.preventDefault();
       event.stopPropagation();
       if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
-      dropZone.classList.add("drag-over");
+      event.currentTarget.classList.add("drag-over");
     };
 
-    dropZone.addEventListener("dragenter", allowDrop, { signal });
-    dropZone.addEventListener("dragover", allowDrop, { signal });
-    dropZone.addEventListener(
-      "dragleave",
-      (event) => {
-        if (!dropZone.contains(event.relatedTarget))
+    for (const dropZone of dropZones) {
+      dropZone.addEventListener("dragenter", allowDrop, { signal });
+      dropZone.addEventListener("dragover", allowDrop, { signal });
+      dropZone.addEventListener(
+        "dragleave",
+        (event) => {
+          if (!dropZone.contains(event.relatedTarget))
+            dropZone.classList.remove("drag-over");
+        },
+        { signal },
+      );
+      dropZone.addEventListener(
+        "drop",
+        (event) => {
           dropZone.classList.remove("drag-over");
-      },
-      { signal },
-    );
-    dropZone.addEventListener(
-      "drop",
+          if (dropZone.classList.contains("job-pets-tab")) {
+            this._onDropJobPet(event);
+            return;
+          }
+          this._onDropJobAbility(event);
+        },
+        { signal },
+      );
+    }
+  }
+
+  _activateJobGrantReorder() {
+    this._jobGrantReorderController?.abort();
+    if (this.item.type !== "job" || !this.document.isOwner || !this._isItemEditMode()) return;
+
+    const list = this.element.querySelector(".job-progression-tab .job-ability-list");
+    if (!list) return;
+
+    this._jobGrantReorderController = new AbortController();
+    const { signal } = this._jobGrantReorderController;
+    const rows = Array.from(list.querySelectorAll(".job-ability-row"));
+
+    for (const row of rows) {
+      row.draggable = true;
+      row.addEventListener(
+        "dragstart",
+        (event) => this._onJobGrantDragStart(event),
+        { signal },
+      );
+      row.addEventListener(
+        "dragover",
+        (event) => this._onJobGrantDragOver(event),
+        { signal },
+      );
+      row.addEventListener(
+        "dragleave",
+        (event) => this._onJobGrantDragLeave(event),
+        { signal },
+      );
+      row.addEventListener(
+        "drop",
+        (event) => this._onJobGrantDrop(event),
+        { signal },
+      );
+      row.addEventListener(
+        "dragend",
+        () => this._clearJobGrantDragState(),
+        { signal },
+      );
+    }
+
+    list.addEventListener(
+      "dragover",
       (event) => {
-        dropZone.classList.remove("drag-over");
-        this._onDropJobAbility(event);
+        if (!Number.isInteger(this._getJobGrantDragIndex(event))) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
       },
       { signal },
     );
+  }
+
+  _onJobGrantDragStart(event) {
+    if (event.target?.closest?.("button")) {
+      event.preventDefault();
+      return;
+    }
+
+    const row = event.currentTarget;
+    const index = Number(row?.dataset?.index);
+    if (!Number.isInteger(index)) return;
+
+    this._jobGrantDragIndex = index;
+    this._jobGrantDragInProgress = true;
+    event.dataTransfer?.setData("application/x-ffxiv-job-grant-index", String(index));
+    event.dataTransfer?.setData("text/plain", `ffxiv-job-grant:${index}`);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    row.classList.add("dragging");
+  }
+
+  _onJobGrantDragOver(event) {
+    const sourceIndex = this._getJobGrantDragIndex(event);
+    if (!Number.isInteger(sourceIndex)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+
+    const row = event.currentTarget;
+    const targetIndex = Number(row?.dataset?.index);
+    if (!Number.isInteger(targetIndex) || targetIndex === sourceIndex) {
+      this._clearJobGrantDropTargets();
+      return;
+    }
+
+    this._clearJobGrantDropTargets(row);
+    row.classList.toggle("drop-before", sourceIndex > targetIndex);
+    row.classList.toggle("drop-after", sourceIndex < targetIndex);
+  }
+
+  _onJobGrantDragLeave(event) {
+    const row = event.currentTarget;
+    if (row.contains(event.relatedTarget)) return;
+    row.classList.remove("drop-before", "drop-after");
+  }
+
+  async _onJobGrantDrop(event) {
+    const sourceIndex = this._getJobGrantDragIndex(event);
+    if (!Number.isInteger(sourceIndex)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const targetIndex = Number(event.currentTarget?.dataset?.index);
+    if (!Number.isInteger(targetIndex) || targetIndex === sourceIndex) {
+      this._clearJobGrantDragState();
+      return;
+    }
+
+    await this._moveJobGrantToIndex(sourceIndex, targetIndex);
+    this._clearJobGrantDragState();
+  }
+
+  _getJobGrantDragIndex(event) {
+    const raw =
+      event?.dataTransfer?.getData("application/x-ffxiv-job-grant-index") ??
+      "";
+    const index = raw === "" ? this._jobGrantDragIndex : Number(raw);
+    return Number.isInteger(index) ? index : null;
+  }
+
+  _clearJobGrantDropTargets(except = null) {
+    this.element
+      .querySelectorAll(".job-ability-row.drop-before, .job-ability-row.drop-after")
+      .forEach((row) => {
+        if (row === except) return;
+        row.classList.remove("drop-before", "drop-after");
+      });
+  }
+
+  _clearJobGrantDragState() {
+    if (this._jobGrantDragInProgress) {
+      this._jobGrantDragJustEnded = true;
+      setTimeout(() => {
+        this._jobGrantDragJustEnded = false;
+      }, 100);
+    }
+    this._jobGrantDragIndex = null;
+    this._jobGrantDragInProgress = false;
+    this.element
+      .querySelectorAll(".job-ability-row.dragging, .job-ability-row.drop-before, .job-ability-row.drop-after")
+      .forEach((row) =>
+        row.classList.remove("dragging", "drop-before", "drop-after"),
+      );
+  }
+
+  async _moveJobGrantToIndex(sourceIndex, targetIndex) {
+    const grants = this._getJobAbilityGrants();
+    if (!grants[sourceIndex] || !grants[targetIndex]) return;
+
+    const [grant] = grants.splice(sourceIndex, 1);
+    grants.splice(targetIndex, 0, grant);
+    this._captureSheetScroll();
+    await this.item.update(
+      { "system.ability_grants": grants },
+      { render: false },
+    );
+    this.render({ force: true });
+  }
+
+  _activateSummonDropZone() {
+    this._summonDropController?.abort();
+    if (
+      !this._hasSummonActorSupport() ||
+      !this.document.isOwner ||
+      !this._isItemEditMode()
+    )
+      return;
+
+    const dropZones = this.element.querySelectorAll(".summon-actors-dropzone");
+    if (!dropZones.length) return;
+
+    this._summonDropController = new AbortController();
+    const { signal } = this._summonDropController;
+
+    const allowDrop = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+      event.currentTarget.classList.add("drag-over");
+    };
+
+    for (const dropZone of dropZones) {
+      dropZone.addEventListener("dragenter", allowDrop, { signal });
+      dropZone.addEventListener("dragover", allowDrop, { signal });
+      dropZone.addEventListener(
+        "dragleave",
+        (event) => {
+          if (!dropZone.contains(event.relatedTarget))
+            dropZone.classList.remove("drag-over");
+        },
+        { signal },
+      );
+      dropZone.addEventListener(
+        "drop",
+        (event) => {
+          dropZone.classList.remove("drag-over");
+          this._onDropSummonActor(event);
+        },
+        { signal },
+      );
+    }
+  }
+
+  async _onEditSummonActor(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const summon = this._getSummonActorEntries()[index];
+    if (!summon?.uuid) return;
+
+    try {
+      const actor = await fromUuid(summon.uuid);
+      if (actor?.documentName === "Actor") {
+        actor.sheet.render({ force: true });
+        return;
+      }
+    } catch (_error) { }
+    ui.notifications.warn(
+      game.i18n.format("FFXIV.Notifications.SummonActorMissing", {
+        actor: summon.name || game.i18n.localize("FFXIV.ItemType.ability"),
+      }),
+    );
+  }
+
+  async _moveSummonActor(direction, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const summons = this._getSummonActorGrants();
+    const target = index + direction;
+    if (!summons[index] || !summons[target]) return;
+
+    [summons[index], summons[target]] = [summons[target], summons[index]];
+    await this.item.update(
+      { "system.summon_actors": summons },
+      { render: false },
+    );
+    this.render({ force: true });
   }
 
   _onPickItemIcon(event) {
@@ -1269,6 +2923,33 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       type: "imagevideo",
       current: this.item.img,
       callback: (path) => this.item.update({ img: path }),
+    }).render(true);
+  }
+
+  _onPickEffectRuleIcon(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+
+    const rules = this._getCurrentEffectRules();
+    const rule = rules[index];
+    if (!rule) return;
+
+    const FilePickerImpl = foundry.applications.apps.FilePicker.implementation;
+    new FilePickerImpl({
+      type: "imagevideo",
+      current: String(rule.iconOverride ?? rule.icon ?? "").trim(),
+      callback: (path) => {
+        rules[index].iconOverride = path;
+        delete rules[index].icon;
+        this._captureSheetScroll();
+        this.item
+          .update({ "system.effect_rules": rules }, { render: false })
+          .then(() => this.render({ force: true }))
+          .catch((err) => ui.notifications.error(err, { console: true }));
+      },
     }).render(true);
   }
 
@@ -1298,6 +2979,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ? foundry.utils.deepClone(Object.values(grants))
         : [];
     return entries.map((entry) => this._normalizeJobGrantEntry(entry));
+  }
+
+  _normalizeJobPetGrants(grants) {
+    return Array.isArray(grants)
+      ? foundry.utils.deepClone(grants)
+      : grants && typeof grants === "object"
+        ? foundry.utils.deepClone(Object.values(grants))
+        : [];
   }
 
   _getJobAbilityGrants() {
@@ -1346,20 +3035,40 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     ];
   }
 
-  _getJobGrantTypeLabel(type) {
-    if (
-      [
-        "ability",
-        "primary_ability",
-        "secondary_ability",
-        "instant_ability",
-        "limit_break",
-      ].includes(type)
-    ) {
+  _getJobPetGrants() {
+    return this._normalizeJobPetGrants(this.item.system.pet_grants);
+  }
+
+  _getJobGrantTypeLabel(grantOrType) {
+    // Accept either a grant object or a type string. Prefer to derive the
+    // subtype from the grant's item (tags) when available so we can display
+    // "Primary", "Secondary", "Instant", "Trait", or "Limit Break".
+    let type = typeof grantOrType === "string" ? grantOrType : String(grantOrType?.type ?? "");
+    const item = typeof grantOrType === "object" ? grantOrType.item : null;
+
+    const legacyTypes = new Set([
+      "primary_ability",
+      "secondary_ability",
+      "instant_ability",
+      "limit_break",
+    ]);
+
+    if (type === "ability" || legacyTypes.has(type)) {
+      // Try to detect the specific ability subtype from the provided item.
+      const subtype = getAbilitySubtype(item) || (legacyTypes.has(type) ? type : "");
+      if (subtype) {
+        const localized = game.i18n.localize(`FFXIV.ItemType.${subtype}`);
+        return localized.replace(/\s+Ability$/i, "");
+      }
       return game.i18n.localize("FFXIV.ItemType.ability");
     }
+
     const label = game.i18n.localize(`FFXIV.ItemType.${type}`);
     return label.replace(/\s+Ability$/i, "");
+  }
+
+  _getJobPetGrantTypeLabel() {
+    return game.i18n.localize("FFXIV.ItemType.pet");
   }
 
   _normalizeJobGrantEntry(grant) {
@@ -1410,9 +3119,24 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return itemData;
   }
 
+  async _getJobGrantActorData(grant) {
+    if (grant.uuid) {
+      const sourceActor = await fromUuid(grant.uuid).catch(() => null);
+      if (sourceActor) {
+        const actorData = sourceActor.toObject();
+        delete actorData._id;
+        return actorData;
+      }
+    }
+
+    if (grant.actor) return foundry.utils.deepClone(grant.actor);
+    return null;
+  }
+
   async _onEditJobAbility(event) {
     event.preventDefault();
     event.stopPropagation();
+    if (this._jobGrantDragJustEnded) return;
 
     const index = Number(event.currentTarget.dataset.index);
     const grants = this._getJobAbilityGrants();
@@ -1462,6 +3186,99 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     tempItem.update = persistGrant;
     tempItem.sheet.render({ force: true });
+  }
+
+  async _onEditJobPet(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const grants = this._getJobPetGrants();
+    const grant = grants[index];
+    if (!grant) return;
+
+    const actorData = await this._getJobGrantActorData(grant);
+    if (!actorData) {
+      ui.notifications.warn("Could not find the mapped pet to edit.");
+      return;
+    }
+
+    const tempActor = new CONFIG.Actor.documentClass(actorData, {
+      temporary: true,
+    });
+    const persistGrant = async (changes) => {
+      const update = foundry.utils.expandObject(changes);
+      const nextData = foundry.utils.mergeObject(
+        foundry.utils.deepClone(actorData),
+        update,
+        {
+          inplace: false,
+          overwrite: true,
+        },
+      );
+      delete nextData._id;
+
+      grants[index] = {
+        ...grants[index],
+        name: nextData.name,
+        type: nextData.type,
+        actor: nextData,
+      };
+      await this.item.update(
+        {
+          "system.pet_grants": grants,
+          "system.has_pets": grants.length > 0,
+        },
+        { render: false },
+      );
+
+      foundry.utils.mergeObject(actorData, nextData, {
+        inplace: true,
+        overwrite: true,
+      });
+      tempActor.updateSource(update);
+      this.render({ force: true });
+      return tempActor;
+    };
+
+    tempActor.update = persistGrant;
+    tempActor.sheet.render({ force: true });
+  }
+
+  async _moveJobAbility(direction, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const grants = this._getJobAbilityGrants();
+    const target = index + direction;
+    if (!grants[index] || !grants[target]) return;
+
+    [grants[index], grants[target]] = [grants[target], grants[index]];
+    this._captureSheetScroll();
+    await this.item.update(
+      { "system.ability_grants": grants },
+      { render: false },
+    );
+    this.render({ force: true });
+  }
+
+  async _moveJobPet(direction, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const index = Number(event.currentTarget.dataset.index);
+    const grants = this._getJobPetGrants();
+    const target = index + direction;
+    if (!grants[index] || !grants[target]) return;
+
+    [grants[index], grants[target]] = [grants[target], grants[index]];
+    this._captureSheetScroll();
+    await this.item.update(
+      { "system.pet_grants": grants },
+      { render: false },
+    );
+    this.render({ force: true });
   }
 
   async _onDropJobAbility(event) {
@@ -1523,6 +3340,69 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const updateData = { "system.ability_grants": grants };
     if (this.item.type === "augment") updateData["system.granted_ability"] = "";
     await this.item.update(updateData, { render: false });
+    this.render({ force: true });
+  }
+
+  async _onDropJobPet(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const data = this._getDropData(event);
+    let actor = data.uuid ? await fromUuid(data.uuid) : null;
+    if (!actor && typeof Actor.implementation.fromDropData === "function") {
+      actor = await Actor.implementation.fromDropData(data);
+    }
+    if (!actor || actor.documentName !== "Actor" || actor.type !== "pet") {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Job.DropPets"));
+      return;
+    }
+
+    const grants = this._getJobPetGrants();
+    if (grants.some((grant) => grant.uuid === actor.uuid)) return;
+    const actorData = actor.toObject();
+    delete actorData._id;
+    grants.push({
+      uuid: actor.uuid,
+      name: actor.name,
+      type: actor.type,
+      actor: actorData,
+    });
+    await this.item.update(
+      {
+        "system.pet_grants": grants,
+        "system.has_pets": true,
+      },
+      { render: false },
+    );
+    this.render({ force: true });
+  }
+
+  async _onDropSummonActor(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const data = this._getDropData(event);
+    let actor = data.uuid ? await fromUuid(data.uuid) : null;
+    if (!actor && typeof Actor.implementation.fromDropData === "function") {
+      actor = await Actor.implementation.fromDropData(data);
+    }
+    if (!actor || actor.documentName !== "Actor") {
+      ui.notifications.warn(game.i18n.localize("FFXIV.Abilities.DropSummons"));
+      return;
+    }
+
+    const summons = this._getSummonActorGrants();
+    if (summons.some((summon) => summon.uuid === actor.uuid)) return;
+
+    summons.push({
+      uuid: actor.uuid,
+      name: actor.name,
+      type: actor.type,
+    });
+    await this.item.update(
+      { "system.summon_actors": summons },
+      { render: false },
+    );
     this.render({ force: true });
   }
 }

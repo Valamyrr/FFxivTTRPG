@@ -1,9 +1,17 @@
 <div class="augment-card" data-item-id="{{_id}}">
   <div class="augment-card-info">
-    <img src="{{img}}"
-         alt="{{name}}"
-         class="augment-icon"
-         data-item-id="{{_id}}" width="32" height="32">
+    <div class="augment-icon-wrapper">
+      <img src="{{img}}"
+           alt="{{name}}"
+           class="augment-icon"
+           data-item-id="{{_id}}" width="32" height="32">
+      <button type="button"
+              class="ability-delete"
+              data-item-id="{{_id}}"
+              aria-label="{{localize 'FFXIV.Item.Delete'}}">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
     <div class="augment-header">
       <div class="augment-name">{{name}}</div>
     </div>

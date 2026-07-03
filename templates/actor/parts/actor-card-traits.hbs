@@ -13,31 +13,35 @@
       </button>
     </div>
     <div class="ability-header">
-      <div class="ability-name">{{name}}</div>
+      <div class="trait-name-stack">
+        {{#if flags.ffxiv.activeEffectLinked}}
+          <span class="trait-active-badge">ACTIVE</span>
+        {{/if}}
+        <div class="ability-name">{{name}}</div>
+      </div>
       <div class="ability-right">
         <div class="ability-tags">
-          {{#each (customActionTags system.tags) as |tag| }}
-            <span class="tag">{{localize tag}}{{#unless @last}}, {{/unless}}</span>
+          {{#each (traitCardTags system) as |tag| }}
+            <span class="tag">{{localize tag}}</span>
           {{/each}}
-          {{#if (and (hasCustomActionTags system.tags) system.job_resources_max) }}
-            , {{/if}}
-            {{#if system.job_resources_max }}
-              <span class="tag">{{localize "FFXIV.Abilities.JobResource"}}</span>{{/if}}
-            </div>
+          {{#if system.job_resources_max}}
             <div class="ability-limitations">
               {{#repeat system.job_resources_max}}
-              <div class="limitation-wrapper">
-                <input type="checkbox"
-                       class="job_resource"
-                       data-index="{{index}}"
-                       data-item-id="{{../_id}}"
-                       {{#if (lookup ../system.job_resource_status index) }}
-                       checked
-                       {{/if}}>
-                <span class="checkmark"></span>
-              </div>
-            {{/repeat}}
-            {{#if system.activable }}
+                <div class="limitation-wrapper">
+                  <input type="checkbox"
+                         class="job_resource"
+                         data-index="{{index}}"
+                         data-item-id="{{../_id}}"
+                         {{#if (lookup ../system.job_resource_status index) }}
+                         checked
+                         {{/if}}>
+                  <span class="checkmark"></span>
+                </div>
+              {{/repeat}}
+            </div>
+          {{/if}}
+          {{#if system.activable }}
+            <div class="ability-limitations">
               <div class="limitation-wrapper">
                 <input type="checkbox"
                        class="limitation active"
@@ -47,12 +51,13 @@
                        {{/if}}>
                 <span class="checkmark ffxiv-border-orangered"></span>
               </div>
-            {{/if}}
-          </div>
+            </div>
+          {{/if}}
         </div>
       </div>
     </div>
-    <div class="ability-description">{{{enriched.description}}}</div>
-    <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{ localize "FFXIV.CharacterSheet.Show" }}
-    </button>
   </div>
+  <div class="ability-description">{{{enriched.description}}}</div>
+  <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{ localize "FFXIV.CharacterSheet.Show" }}
+  </button>
+</div>

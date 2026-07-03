@@ -1,0 +1,105 @@
+body.ffxiv-compact-directories {
+  :is(#actors, #actors-popout) .directory-item.actor,
+  :is(#items, #items-popout) .directory-item.item {
+    line-height: 24px;
+    position: relative;
+  }
+
+  :is(#actors, #actors-popout, #items, #items-popout) {
+    .directory-item.actor .thumbnail,
+    .directory-item.item .thumbnail {
+      clip-path: inset(12px 0 12px 0);
+      margin-bottom: -14px;
+      margin-top: -11px;
+      position: absolute;
+    }
+
+    .directory-item.actor .entry-name,
+    .directory-item.item .entry-name {
+      line-height: unset;
+      padding-left: 56px;
+      padding-top: 2px;
+      position: relative;
+    }
+
+    li.folder > .folder-header {
+      padding: 0 6px;
+    }
+
+    li.folder > .folder-header + .subdirectory > .folder > .folder-header {
+      top: calc(var(--sidebar-folder-height) * 1);
+    }
+
+    li.folder
+      > .folder-header
+      + .subdirectory
+      > .folder
+      > .folder-header
+      + .subdirectory
+      > .folder
+      > .folder-header {
+      top: calc(var(--sidebar-folder-height) * 2);
+    }
+
+    li.folder
+      > .folder-header
+      + .subdirectory
+      > .folder
+      > .folder-header
+      + .subdirectory
+      > .folder
+      > .folder-header
+      + .subdirectory
+      > .folder
+      > .folder-header {
+      top: calc(var(--sidebar-folder-height) * 3);
+    }
+  }
+
+  :is(#compendium, #compendium-popout) li.folder > .folder-header {
+    padding: 0 6px;
+  }
+
+  .compendium-sidebar .compendium {
+    height: initial;
+
+    .compendium-banner {
+      position: absolute;
+    }
+
+    .compendium-name {
+      justify-content: left;
+      min-width: 0;
+      order: 1;
+      position: relative;
+      width: 100%;
+    }
+
+    .status-icons {
+      font-size: 50%;
+      height: 100%;
+      order: 3;
+      padding: 3px 3px 3px 0;
+      position: relative;
+    }
+
+    .compendium-footer {
+      align-self: center;
+      bottom: unset;
+      display: flex;
+      gap: 3px;
+      height: 100%;
+      left: unset;
+      margin-right: 3px;
+      order: 2;
+      position: relative;
+
+      .source {
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+}

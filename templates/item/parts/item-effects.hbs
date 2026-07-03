@@ -2,7 +2,7 @@
   {{#each effects as |section sid| }}
     <li class="items-header flexrow" data-effect-type="{{section.type}}">
       <h3 class="item-name effect-name flexrow">{{localize section.label}}</h3>
-      <div class="effect-source">{{localize "FF_XIV.Effect.Source"}}</div>
+      <div class="effect-source">{{localize "FFXIV.Item.Source"}}</div>
       <div class="effect-source">{{localize "EFFECT.TabDuration"}}</div>
       <div class="item-controls effect-controls flexrow">
         <a class="effect-control"
@@ -26,7 +26,7 @@
           <div class="item-controls effect-controls flexrow">
             <a class="effect-control"
                data-action="toggle"
-               title="{{localize 'FF_XIV.Effect.Toggle'}}">
+               title="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}">
               <i class="fas {{#if effect.disabled }}fa-check{{else}}fa-times{{/if}}"></i>
             </a>
             <a class="effect-control"
