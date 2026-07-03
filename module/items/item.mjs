@@ -1270,7 +1270,11 @@ export class FFXIVItem extends Item {
     }
 
     try {
-      const tokenData = await this._getSummonTokenData(actor, position);
+      const tokenData = await this._getSummonTokenData(
+        actor,
+        position,
+        sourceToken,
+      );
       tokenData.flags = foundry.utils.mergeObject(tokenData.flags || {}, {
         ffxiv: {
           summoned: true,
@@ -1319,14 +1323,17 @@ export class FFXIVItem extends Item {
     }
   }
 
-  async _getSummonTokenData(actor, position) {
+  async _getSummonTokenData(actor, position, sourceToken = null) {
     const tokenDocument = await actor.getTokenDocument(position);
     const tokenData = tokenDocument.toObject();
     const actorData = this._getSummonActorData(actor);
+    const disposition =
+      sourceToken?.disposition ?? sourceToken?.object?.document?.disposition;
 
     tokenData.actorLink = false;
     tokenData.actorId = null;
     tokenData.delta = foundry.utils.deepClone(actorData);
+    if (Number.isFinite(disposition)) tokenData.disposition = disposition;
     return tokenData;
   }
 

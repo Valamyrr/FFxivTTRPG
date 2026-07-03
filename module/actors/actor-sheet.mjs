@@ -857,11 +857,14 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _applyActorEditMode() {
     if (!EDIT_MODE_ACTOR_TYPES.has(this.actor.type)) return;
 
+    const element = this.element;
+    if (!element) return;
+
     const editing = this._isActorEditMode();
     const rootSelector = `.ffxiv.actor.${this.actor.type}`;
-    const root = this.element.matches(rootSelector)
-      ? this.element
-      : this.element.querySelector(rootSelector);
+    const root = element.matches(rootSelector)
+      ? element
+      : element.querySelector(rootSelector);
     if (!root) return;
 
     root.classList.toggle("actor-editing", editing);
