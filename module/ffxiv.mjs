@@ -3785,7 +3785,7 @@ Hooks.on("renderTokenHUD", (app, html) => {
       0,
       Number(tokenDocument.actor?.system?.mana?.max ?? 5) || 5,
     );
-    manaInput.value = String(Math.max(0, Math.min(manaValue, manaMax)));
+    manaInput.value = String(Math.max(0, manaValue));
     manaInput.disabled = false;
     manaInput.removeAttribute("disabled");
 
@@ -3805,7 +3805,10 @@ Hooks.on("renderTokenHUD", (app, html) => {
           0,
           Number(tokenDocument.actor?.system?.mana?.max ?? 5) || 5,
         );
-        const nextValue = Math.max(0, Math.min(next, manaCap));
+        const nextValue = Math.max(
+          0,
+          Math.min(next, Math.max(manaCap, current)),
+        );
         manaInput.value = String(nextValue);
         if (nextValue === current) return;
         await tokenDocument.actor.update(

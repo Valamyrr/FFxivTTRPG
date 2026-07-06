@@ -1949,6 +1949,7 @@ export class FFXIVItem extends Item {
                 ")";
             }
 
+            previewFormula = appendFormulaModifier(previewFormula, rollData.hit);
             previewFormula = appendFormulaModifier(previewFormula, checkPenalty);
             if (statusPenaltyPreview) {
               statusPenaltyPreview.textContent = statusPenaltyApplies
@@ -2006,15 +2007,9 @@ export class FFXIVItem extends Item {
       );
     }
 
+    formula = appendFormulaModifier(formula, rollData.hit);
     formula = appendFormulaModifier(formula, checkPenalty);
-
-    if (flatModifier !== 0) {
-      formula +=
-        rollData.hit +
-        (flatModifier > 0
-          ? ` + ${flatModifier}`
-          : ` - ${Math.abs(flatModifier)}`);
-    }
+    formula = appendFormulaModifier(formula, flatModifier);
 
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
@@ -2538,7 +2533,7 @@ export class FFXIVItem extends Item {
     const user = game.user.id;
     const rollData = this.getRollData();
     const baseFormula = this._appendDamageFormulaModifiers(
-      rollData.base_formula,
+      this._appendActorDamageModifier(rollData.base_formula),
       "base",
       options,
     );
@@ -3715,7 +3710,10 @@ export class FFXIVItem extends Item {
       this._hasCheck() &&
       this._hasFormula(this.system.base_formula) &&
       this._formulaHasDice(
-        this._appendDamageFormulaModifiers(this.system.base_formula, "base"),
+        this._appendDamageFormulaModifiers(
+          this._appendActorDamageModifier(this.system.base_formula),
+          "base",
+        ),
       )
     );
   }
@@ -3944,6 +3942,32 @@ export class FFXIVItem extends Item {
     const terms = this._getDamageFormulaModifierTerms(rollType, options);
     if (!terms.length) return base;
     return [base, ...terms].join(" + ");
+  }
+
+  _appendActorDamageModifier(formula) {
+    const base = String(formula ?? "").trim();
+    if (!base || /@dmg\b/i.test(base)) return base;
+    if (!this._shouldApplyActorDamageModifier()) return base;
+    return `${base} + @dmg`;
+  }
+
+  _shouldApplyActorDamageModifier() {
+    if (this.parent?.documentName !== "Actor" || !this._isAbilityLikeItem())
+      return false;
+
+    const mode = String(this.system?.damage_modifier_mode ?? "auto")
+      .trim()
+      .toLowerCase();
+    if (mode === "always") return true;
+    if (mode === "never") return false;
+
+    const baseEffect = String(this.system?.base_effect ?? "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return /\b(?:deals?|inflicts?|takes?|suffers?)\b[^.!?]*\bdamage\b/i.test(
+      baseEffect,
+    );
   }
 
   _applyDamageDiceModifiers(formula, rollType, options = {}) {

@@ -614,6 +614,12 @@ function getItemHotbarEntry(item) {
   };
 }
 
+function getDocumentHotbarEntry(document) {
+  if (document?.documentName === "Macro") return getMacroRef(document);
+  if (document?.documentName === "Item") return getItemHotbarEntry(document);
+  return null;
+}
+
 function getItemDropUuid(data) {
   if (data?.type !== "Item") return null;
   return (
@@ -669,20 +675,67 @@ async function assignItemToSlot(
   return setHotbarFlag(hotbar, document);
 }
 
-async function moveItemBetweenHotbarSlots(
+function getUserHotbarEntry(slot, extraHotbar, coreHotbar) {
+  const storageKey = getHotbarFlagStorageKey(slot);
+  if (Object.hasOwn(extraHotbar, storageKey)) return extraHotbar[storageKey];
+  if (!String(slot).includes(".")) return coreHotbar[slot];
+  return null;
+}
+
+function setUserHotbarEntry(slot, entry, extraHotbar, coreHotbar) {
+  const storageKey = getHotbarFlagStorageKey(slot);
+  const isCoreSlot = !String(slot).includes(".");
+  delete extraHotbar[storageKey];
+  if (isCoreSlot) delete coreHotbar[slot];
+  if (!entry) return;
+
+  const macroRef =
+    typeof entry === "string" ? entry : getMacroRefFromHotbarEntry(entry);
+  const macro = getMacroFromRef(macroRef);
+  if (isCoreSlot && macro) coreHotbar[slot] = macro.id;
+  else extraHotbar[storageKey] = entry;
+}
+
+async function moveDocumentBetweenHotbarSlots(
   targetSlot,
   sourceSlot,
-  item,
+  slotDocument,
   document = getHotbarFlagDocument(),
   forceFlag = false,
 ) {
-  const hotbar = getHotbarFlag(document);
-  hotbar[getHotbarFlagStorageKey(targetSlot)] = getItemHotbarEntry(item);
-  delete hotbar[getHotbarFlagStorageKey(sourceSlot)];
-  await setHotbarFlag(hotbar, document, getHotbarFlagKey(document), {
-    refresh: false,
-    suppressRender: true,
-  });
+  const sourceKey = getHotbarFlagStorageKey(sourceSlot);
+  const targetKey = getHotbarFlagStorageKey(targetSlot);
+  const fallbackEntry = getDocumentHotbarEntry(slotDocument);
+
+  if (document?.documentName === "Actor") {
+    const hotbar = getHotbarFlag(document);
+    const sourceEntry = hotbar[sourceKey] ?? fallbackEntry;
+    const targetEntry = hotbar[targetKey];
+    hotbar[targetKey] = sourceEntry;
+    if (targetEntry) hotbar[sourceKey] = targetEntry;
+    else delete hotbar[sourceKey];
+    await setHotbarFlag(hotbar, document, getHotbarFlagKey(document), {
+      refresh: false,
+      suppressRender: true,
+    });
+  } else {
+    const extraHotbar = getHotbarFlag(game.user, "hotbarExtra");
+    const coreHotbar = foundry.utils.deepClone(game.user.hotbar);
+    const sourceEntry =
+      getUserHotbarEntry(sourceSlot, extraHotbar, coreHotbar) ?? fallbackEntry;
+    const targetEntry = getUserHotbarEntry(targetSlot, extraHotbar, coreHotbar);
+    setUserHotbarEntry(targetSlot, sourceEntry, extraHotbar, coreHotbar);
+    setUserHotbarEntry(sourceSlot, targetEntry, extraHotbar, coreHotbar);
+    await setHotbarFlag(extraHotbar, game.user, "hotbarExtra", {
+      refresh: false,
+      suppressRender: true,
+    });
+    await game.user.update(
+      { hotbar: coreHotbar },
+      { recursive: false, diff: false, noHook: true },
+    );
+  }
+
   updateRenderedHotbarSlots([targetSlot, sourceSlot], document, forceFlag);
 }
 
@@ -879,22 +932,39 @@ function getImportableActorItems(actor) {
 
 function getPreferredImportPage(item) {
   const subtype = getAbilitySubtype(item);
+  if (subtype === "primary_ability") return 1;
   if (subtype === "secondary_ability") return 2;
   if (subtype === "instant_ability") return 3;
   return null;
 }
 
-function getFirstOpenImportSlot(occupied, page = null) {
-  const pages = page ? [page] : [1, 2, 3];
-  for (const currentPage of pages) {
-    for (const keyIndex of HOTBAR_KEYS.keys()) {
-      const slot = getSlotForPageKey(currentPage, keyIndex);
+function getFirstOpenImportSlot(
+  occupied,
+  pages = [{ page: 1 }, { page: 2 }, { page: 3 }],
+) {
+  for (const { page, reverse = false } of pages) {
+    const keyIndexes = [...HOTBAR_KEYS.keys()];
+    if (reverse) keyIndexes.reverse();
+
+    for (const keyIndex of keyIndexes) {
+      const slot = getSlotForPageKey(page, keyIndex);
       const storageKey = getHotbarFlagStorageKey(slot);
       if (!occupied.has(storageKey))
-        return { slot, storageKey, page: currentPage };
+        return { slot, storageKey, page };
     }
   }
   return null;
+}
+
+function getImportOverflowPages(page) {
+  const pages = [];
+  for (let currentPage = page - 1; currentPage >= 1; currentPage--) {
+    pages.push({ page: currentPage, reverse: true });
+  }
+  for (let currentPage = page + 1; currentPage <= 3; currentPage++) {
+    pages.push({ page: currentPage });
+  }
+  return pages;
 }
 
 function buildImportedActorHotbar(items) {
@@ -903,8 +973,8 @@ function buildImportedActorHotbar(items) {
   const pending = [];
   let requiredRows = 1;
 
-  const placeItem = (item, page = null) => {
-    const slot = getFirstOpenImportSlot(occupied, page);
+  const placeItem = (item, pages) => {
+    const slot = getFirstOpenImportSlot(occupied, pages);
     if (!slot) return false;
 
     occupied.add(slot.storageKey);
@@ -915,11 +985,16 @@ function buildImportedActorHotbar(items) {
 
   for (const item of items) {
     const preferredPage = getPreferredImportPage(item);
-    if (!preferredPage || !placeItem(item, preferredPage)) pending.push(item);
+    if (!preferredPage || !placeItem(item, [{ page: preferredPage }])) {
+      pending.push({ item, preferredPage });
+    }
   }
 
-  for (const item of pending) {
-    placeItem(item);
+  for (const { item, preferredPage } of pending) {
+    placeItem(
+      item,
+      preferredPage ? getImportOverflowPages(preferredPage) : undefined,
+    );
   }
 
   return { hotbar, requiredRows };
@@ -1114,6 +1189,14 @@ function updateRenderedHotbarSlot(slot, hotbarDocument, forceFlag) {
   if (!hotbar) return;
 
   for (const currentSlot of hotbar.querySelectorAll(getSlotSelector(slot))) {
+    if (
+      !currentSlot.closest(`.${EXTRA_BAR_CLASS}`) &&
+      !currentSlot.matches(
+        ".ffxiv-actor-slot, .ffxiv-user-slot, .ffxiv-extension-slot",
+      )
+    )
+      continue;
+
     const nextSlot = createSlot(
       getSlotDataFromElement(currentSlot, hotbarDocument, forceFlag),
     );
@@ -1668,6 +1751,8 @@ function handleHotbarDragStart(event) {
     JSON.stringify(
       foundry.utils.mergeObject(slotDocument.toDragData(), {
         slot: slot.dataset.slot,
+        ffxivHotbar: true,
+        hotbarDocumentUuid: document.uuid,
       }),
     ),
   );
@@ -1684,13 +1769,27 @@ async function handleMacroDrop(dropSlot, data, actor) {
   const macro = await CONFIG.Macro.documentClass.fromDropData(data);
   if (!macro) return;
 
-  if (actor || String(dropSlot).includes(".")) {
-    await assignMacroToSlot(dropSlot, macro, actor ?? getHotbarFlagDocument(), !!actor);
+  const document = actor ?? getHotbarFlagDocument();
+  const sourceSlot = data.slot;
+  const isMove =
+    data.ffxivHotbar === true &&
+    data.hotbarDocumentUuid === document.uuid &&
+    sourceSlot !== undefined &&
+    String(sourceSlot) !== String(dropSlot);
+
+  if (isMove) {
+    await moveDocumentBetweenHotbarSlots(
+      dropSlot,
+      sourceSlot,
+      macro,
+      document,
+      !!actor,
+    );
     return;
   }
 
-  await assignMacroToSlot(dropSlot, macro, game.user, false, {
-    fromSlot: data.slot,
+  await assignMacroToSlot(dropSlot, macro, document, !!actor, {
+    fromSlot: sourceSlot,
   });
 }
 
@@ -1704,21 +1803,23 @@ async function handleItemDrop(dropSlot, data, actor) {
   const document = actor ?? getHotbarFlagDocument();
   const sourceSlot = data.slot;
   const isMove =
-    sourceSlot !== undefined && String(sourceSlot) !== String(dropSlot);
-  const isFlagOnlyMove =
-    isMove &&
-    (actor || (String(sourceSlot).includes(".") && String(dropSlot).includes(".")));
+    data.ffxivHotbar === true &&
+    data.hotbarDocumentUuid === document.uuid &&
+    sourceSlot !== undefined &&
+    String(sourceSlot) !== String(dropSlot);
 
-  if (isFlagOnlyMove) {
-    await moveItemBetweenHotbarSlots(dropSlot, sourceSlot, item, document, !!actor);
+  if (isMove) {
+    await moveDocumentBetweenHotbarSlots(
+      dropSlot,
+      sourceSlot,
+      item,
+      document,
+      !!actor,
+    );
     return;
   }
 
   await assignItemToSlot(dropSlot, item, document, !!actor);
-
-  if (isMove && (actor || String(sourceSlot).includes("."))) {
-    await assignItemToSlot(sourceSlot, null, document, !!actor);
-  }
 }
 
 async function handleHotbarDrop(event) {

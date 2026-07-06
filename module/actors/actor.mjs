@@ -335,8 +335,41 @@ export class FFXIVActor extends Actor {
   /**
    * Prepare shared data
    */
-  _prepareSharedData() {
-    return;
+  _prepareSharedData(actorData) {
+    const health = actorData.system?.health;
+    const baseMax = Number(health?.max);
+    if (!health || !Number.isFinite(baseMax)) return;
+
+    health.max = Math.max(0, baseMax + this._getHealthModifier());
+  }
+
+  _getHealthModifier() {
+    const healthLabel = CONFIG.FFXIV.characteristics.Health.label;
+    const linkedTraitEffectKeys = this.getLinkedActiveTraitKeys();
+    let modifierTotal = 0;
+
+    for (const item of this.items) {
+      if (!Array.isArray(item.system.modifiers)) continue;
+      const linkedTraitActive = this.isTraitLinkedToActiveEffect(item, linkedTraitEffectKeys);
+      if (item.system.activable || linkedTraitActive) {
+        if (!item.system.active && !linkedTraitActive) continue;
+      }
+      if (
+        Object.prototype.hasOwnProperty.call(item.system, "equipped") &&
+        !item.system.equipped
+      )
+        continue;
+      if (item.type === "title" && item.name !== this.system.activeTitle)
+        continue;
+
+      for (const [modName, modValue] of item.system.modifiers) {
+        if (modName !== healthLabel) continue;
+        const modifierValue = Number(modValue);
+        if (Number.isFinite(modifierValue)) modifierTotal += modifierValue;
+      }
+    }
+
+    return modifierTotal;
   }
 
 
@@ -387,6 +420,10 @@ export class FFXIVActor extends Actor {
     data.def = 0;
     data.mdef = 0;
     data.vigilance = 0;
+    data.dmg = "0";
+    data.cdmg = 0;
+    data.hit = 0;
+    const damageModifiers = [];
 
     const primaryAttributes = data.primary_attributes && typeof data.primary_attributes === "object"
       ? data.primary_attributes
@@ -411,12 +448,10 @@ export class FFXIVActor extends Actor {
       data.def = Number(secondaryAttributes?.defense?.value) || 0;
       data.mdef = Number(secondaryAttributes?.magic_defense?.value) || 0;
       data.vigilance = Number(secondaryAttributes?.vigilance?.value) || 0;
-      data.speed = this._getStatusAdjustedSpeed(
-        Number(secondaryAttributes?.speed?.value) || 0,
-      );
+      data.speed = Number(secondaryAttributes?.speed?.value) || 0;
     }
     if (this.type === "pet") {
-      data.speed = this._getStatusAdjustedSpeed(Number(data.speed?.value ?? data.speed) || 0);
+      data.speed = Number(data.speed?.value ?? data.speed) || 0;
     }
     const linkedTraitEffectKeys = this.getLinkedActiveTraitKeys();
     for (let item of this.items) {
@@ -448,19 +483,20 @@ export class FFXIVActor extends Actor {
           if (modName == CONFIG.FFXIV.attributes.MagicDefense.label) data.mdef += modifierValue;
           if (modName == CONFIG.FFXIV.attributes.Vigilance.label) data.vigilance += modifierValue;
         }
-        data.dmg = data.dmg || "";
-        if (modName == CONFIG.FFXIV.characteristics.Damages.label) data.dmg += "+" + modifierValue;
-
-        data.cdmg = data.cdmg || "";
-        if (modName == CONFIG.FFXIV.characteristics.CriticalDamage.label) data.cdmg += "+" + modifierValue;
-
-        data.hit = data.hit || "";
-        if (modName == CONFIG.FFXIV.characteristics.BonusToHit.label) data.hit += "+" + modifierValue;
-
+        if (modName == CONFIG.FFXIV.attributes.Speed.label) data.speed += modifierValue;
+        if (
+          modName == CONFIG.FFXIV.characteristics.Damages.label &&
+          String(modValue ?? "").trim()
+        )
+          damageModifiers.push(`(${String(modValue).trim()})`);
+        if (modName == CONFIG.FFXIV.characteristics.CriticalDamage.label) data.cdmg += modifierValue;
+        if (modName == CONFIG.FFXIV.characteristics.BonusToHit.label) data.hit += modifierValue;
       }
     }
-    if (data.dmg == "") data.dmg = "0"
-    if (data.cdmg == "") data.cdmg = "0"
+    if (damageModifiers.length) data.dmg = damageModifiers.join(" + ");
+    if (Object.keys(secondaryAttributes).length || this.type === "pet") {
+      data.speed = this._getStatusAdjustedSpeed(data.speed);
+    }
     if (data.adventuring_rank) {
       data.arank_min = data.adventuring_rank.miner
       data.arank_bot = data.adventuring_rank.botanist

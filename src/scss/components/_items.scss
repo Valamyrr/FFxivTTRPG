@@ -673,6 +673,12 @@
       width: 100%;
     }
 
+    .ability-form-grid select.damage-modifier-mode-select {
+      flex: 0 0 50%;
+      max-width: 50%;
+      width: 50%;
+    }
+
     .ability-form-grid textarea {
       min-height: 74px;
       resize: vertical;
@@ -1048,6 +1054,13 @@
       grid-template-columns: minmax(10em, 1fr) 8.75em auto;
     }
 
+    &.item-locked .ability-linked-effect-list .effect-control[data-action="edit"] {
+      color: GrayText;
+      cursor: default;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
     &.item-locked .ability-automation-edit-list li {
       display: block;
     }
@@ -1357,18 +1370,27 @@
       display: none;
     }
 
-    .automation-help > span {
+    .automation-help > .automation-help-content {
       background: rgba(12, 12, 12, 0.96);
       border: 1px solid rgba(225, 190, 95, 0.42);
       border-radius: 4px;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
       color: var(--text-color);
+      font-family: "Roboto", sans-serif;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 400;
+      letter-spacing: normal;
       left: 18px;
-      line-height: 1.35;
-      padding: 6px 8px;
+      line-height: 1.45;
+      padding: 10px 12px;
       position: absolute;
+      text-align: left;
+      text-shadow: none;
+      text-transform: none;
       top: -4px;
-      width: 220px;
+      white-space: normal;
+      width: 300px;
     }
 
     .ability-automation-fields input,

@@ -177,7 +177,23 @@
                 <input name="system.base_formula"
                        type="text"
                        value="{{item.system.base_formula}}"
-                       placeholder="3 + @dmg" />
+                       placeholder="3" />
+              </div>
+            </div>
+            <div class="resource flex-group-center">
+              <label for="system.damage_modifier_mode" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.DamageModifierMode" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.DamageModifierModeHint"}}
+                </span>
+              </label>
+              <div class="resource-content flexrow flex-center flex-between">
+                <select class="ffxiv-text-center damage-modifier-mode-select"
+                        name="system.damage_modifier_mode">
+                  <option value="auto" {{#if (eq item.system.damage_modifier_mode "auto")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAuto" }}</option>
+                  <option value="always" {{#if (eq item.system.damage_modifier_mode "always")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAlways" }}</option>
+                  <option value="never" {{#if (eq item.system.damage_modifier_mode "never")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierNever" }}</option>
+                </select>
               </div>
             </div>
           </div>

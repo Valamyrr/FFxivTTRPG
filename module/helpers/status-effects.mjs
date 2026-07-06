@@ -490,7 +490,9 @@ export async function recoverActorMana(actor, amount, options = {}) {
 
   const maxMana = Number(actor.system?.mana?.max);
   const manaCap = Number.isFinite(maxMana) && maxMana > 0 ? maxMana : 5;
-  const nextMana = Math.min(currentMana + recovery, manaCap);
+  const nextMana = currentMana >= manaCap
+    ? currentMana
+    : Math.min(currentMana + recovery, manaCap);
   if (nextMana === currentMana) {
     return {
       changed: false,

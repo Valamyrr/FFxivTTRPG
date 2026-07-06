@@ -93,6 +93,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.itemEditMode = false;
     this._expandedEffectRequirements = new Set();
     this._expandedEffectRules = new Set();
+    this._automationHelpCleanup = [];
   }
 
   /** @override */
@@ -432,6 +433,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   /** @override */
   async _onClose(options) {
+    this._clearAutomationHelp();
     await super._onClose(options);
     this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
   }
@@ -521,13 +523,88 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _activateAutomationHelp() {
+    this._clearAutomationHelp();
     this.element
       .querySelectorAll(".automation-help")
       .forEach((help) => {
-        help.addEventListener("mouseleave", () => {
+        const content = help.querySelector(":scope > .automation-help-content");
+        const summary = help.querySelector(":scope > summary");
+        if (!content || !summary) return;
+
+        let removeDocumentListeners = () => {};
+        const restoreContent = () => {
+          content.classList.remove("ffxiv-automation-help-popover");
+          content.style.removeProperty("left");
+          content.style.removeProperty("top");
+          if (help.isConnected) help.append(content);
+          else content.remove();
+        };
+        const closeHelp = () => {
           help.open = false;
+        };
+        const positionContent = () => {
+          const margin = 8;
+          const gap = 8;
+          const summaryRect = summary.getBoundingClientRect();
+          const contentRect = content.getBoundingClientRect();
+          let left = summaryRect.right + gap;
+          if (left + contentRect.width > window.innerWidth - margin) {
+            left = summaryRect.left - contentRect.width - gap;
+          }
+          const top = Math.min(
+            Math.max(margin, summaryRect.top - 8),
+            Math.max(margin, window.innerHeight - contentRect.height - margin),
+          );
+          content.style.left = `${Math.max(margin, left)}px`;
+          content.style.top = `${top}px`;
+        };
+        const onToggle = () => {
+          removeDocumentListeners();
+          removeDocumentListeners = () => {};
+
+          if (!help.open) {
+            restoreContent();
+            return;
+          }
+
+          content.classList.add("ffxiv-automation-help-popover");
+          document.body.append(content);
+          positionContent();
+
+          const onPointerDown = (event) => {
+            if (help.contains(event.target) || content.contains(event.target))
+              return;
+            closeHelp();
+          };
+          const onKeyDown = (event) => {
+            if (event.key === "Escape") closeHelp();
+          };
+          const onViewportChange = () => positionContent();
+          document.addEventListener("pointerdown", onPointerDown, true);
+          document.addEventListener("keydown", onKeyDown);
+          window.addEventListener("resize", onViewportChange);
+          window.addEventListener("scroll", onViewportChange, true);
+          removeDocumentListeners = () => {
+            document.removeEventListener("pointerdown", onPointerDown, true);
+            document.removeEventListener("keydown", onKeyDown);
+            window.removeEventListener("resize", onViewportChange);
+            window.removeEventListener("scroll", onViewportChange, true);
+          };
+        };
+
+        help.addEventListener("toggle", onToggle);
+        this._automationHelpCleanup.push(() => {
+          help.removeEventListener("toggle", onToggle);
+          removeDocumentListeners();
+          help.open = false;
+          restoreContent();
         });
       });
+  }
+
+  _clearAutomationHelp() {
+    for (const cleanup of this._automationHelpCleanup ?? []) cleanup();
+    this._automationHelpCleanup = [];
   }
 
   _applyItemEditMode() {

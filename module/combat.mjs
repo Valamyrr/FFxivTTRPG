@@ -389,7 +389,8 @@ export class FFXIVCombat extends Combat {
 
     if (isAdventurerStep && actor.type === "character" && canActorRecover(actor)) {
       manaRecovery = this._getAdventurerStepMpRecovery(actor);
-      if (manaRecovery > 0) nextMana = Math.min(currentMana + manaRecovery, manaCap);
+      if (manaRecovery > 0 && currentMana < manaCap)
+        nextMana = Math.min(currentMana + manaRecovery, manaCap);
       manaRecovery = Math.max(nextMana - currentMana, 0);
     }
 

@@ -135,6 +135,12 @@ function buildAbilityFields() {
       blank: true,
       initial: "",
     }),
+    damage_modifier_mode: new fields.StringField({
+      required: false,
+      blank: false,
+      choices: ["auto", "always", "never"],
+      initial: "auto",
+    }),
     alternate_formula: new fields.StringField({
       required: false,
       blank: true,

@@ -596,6 +596,8 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (fieldName === "system.health.max") {
       const nextMax = Number(updateValue);
       const currentValue = Number(this.actor.system?.health?.value ?? 0);
+      const healthModifier = Number(this.actor._getHealthModifier?.()) || 0;
+      updateData[fieldName] = Math.max(0, nextMax - healthModifier);
       if (Number.isFinite(nextMax) && Number.isFinite(currentValue) && currentValue > nextMax) {
         updateData["system.health.value"] = Math.max(0, nextMax);
       }
@@ -2408,11 +2410,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (event.which === 1) {
       currentMana = useLegacyBehavior
         ? Math.max(0, currentMana - 1)
-        : Math.min(maxMana, currentMana + 1);
+        : currentMana >= maxMana
+          ? currentMana
+          : Math.min(maxMana, currentMana + 1);
     } else if (event.which === 3) {
       event.preventDefault()
       currentMana = useLegacyBehavior
-        ? Math.min(maxMana, currentMana + 1)
+        ? currentMana >= maxMana
+          ? currentMana
+          : Math.min(maxMana, currentMana + 1)
         : Math.max(0, currentMana - 1);
     }
 
