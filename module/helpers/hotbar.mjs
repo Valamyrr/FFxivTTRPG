@@ -4,12 +4,16 @@ const HOTBAR_STACK_CLASS = "ffxiv-hotbar-bars";
 const EXTRA_BAR_CLASS = "ffxiv-extra-action-bar";
 const HOTBAR_PAGES = [1, 2, 3, 4, 5];
 const HOTBAR_COLLISION_OFFSCREEN_TOLERANCE = 60;
+const HOTBAR_ABILITY_TOOLTIP_DELAY = 500;
 let hotbarCollisionObserver = null;
 let hotbarCollisionMutationObserver = null;
 let hotbarCollisionObservedElements = new WeakSet();
 let hotbarCollisionFrame = null;
 let hotbarCollisionTarget = null;
 let hotbarContextMenu = null;
+let hotbarAbilityTooltip = null;
+let hotbarAbilityTooltipTimer = null;
+let hotbarAbilityTooltipSlot = null;
 let suppressHotbarRender = false;
 const HOTBAR_COLLISION_SELECTORS = [
   "#overflow",
@@ -299,6 +303,15 @@ function observeHotbarCollisionMutations() {
     const changedOutsideHotbar = mutations.some(
       (mutation) =>
         !mutation.target.closest?.("#hotbar") &&
+        !mutation.target.closest?.(".ffxiv-hotbar-ability-tooltip") &&
+        !Array.from(mutation.addedNodes).some((node) =>
+          node instanceof Element &&
+          node.matches(".ffxiv-hotbar-ability-tooltip")
+        ) &&
+        !Array.from(mutation.removedNodes).some((node) =>
+          node instanceof Element &&
+          node.matches(".ffxiv-hotbar-ability-tooltip")
+        ) &&
         !mutation.target.closest?.(".ffxiv-window-dragging"),
     );
     if (!changedOutsideHotbar) return;
@@ -1050,7 +1063,10 @@ function createSlot(slot) {
   if (slot.actorUuid) li.dataset.actorUuid = slot.actorUuid;
   li.style.cssText = slot.style ?? "";
   li.setAttribute("aria-label", slot.ariaLabel ?? slotDocument?.name ?? "Empty");
-  if (slot.tooltip) li.dataset.tooltipText = slot.tooltip;
+  const isAbility =
+    slotDocument?.documentName === "Item" &&
+    (slotDocument.type === "ability" || !!getAbilitySubtype(slotDocument));
+  if (slot.tooltip && !isAbility) li.dataset.tooltipText = slot.tooltip;
 
   if (slot.img) {
     const frame = document.createElement("span");
@@ -1077,6 +1093,146 @@ function createSlotData(base, slotDocument) {
     document: slotDocument,
     ...getSlotDisplay(slotDocument),
   };
+}
+
+function getAbilityForTooltip(slot) {
+  const actor = getActorForSlot(slot);
+  const item =
+    getDocumentFromUuidSync(slot.dataset.documentUuid) ??
+    getDocumentForSlot(slot.dataset.slot, actor ?? getHotbarFlagDocument(), !!actor);
+  const subtype = getAbilitySubtype(item);
+  return item?.documentName === "Item" &&
+    (item.type === "ability" || !!subtype)
+    ? item
+    : null;
+}
+
+function createAbilityTooltip(item) {
+  const tooltip = document.createElement("aside");
+  tooltip.className = "ffxiv-hotbar-ability-tooltip";
+  tooltip.setAttribute("role", "tooltip");
+
+  const header = document.createElement("div");
+  header.className = "ffxiv-hotbar-ability-header";
+
+  const img = document.createElement("img");
+  img.src = item.img;
+  img.alt = "";
+  header.append(img);
+
+  const heading = document.createElement("div");
+  const name = document.createElement("div");
+  name.className = "ffxiv-hotbar-ability-name";
+  name.textContent = item.name;
+  heading.append(name);
+
+  const subtype = document.createElement("div");
+  subtype.className = "ffxiv-hotbar-ability-type";
+  const subtypeKey = {
+    primary_ability: "FFXIV.Tags.Primary",
+    secondary_ability: "FFXIV.Tags.Secondary",
+    instant_ability: "FFXIV.Tags.Instant",
+    limit_break: "FFXIV.ItemType.limit_break",
+  }[getAbilitySubtype(item)] ?? "FFXIV.ItemType.ability";
+  const subtypeLabel = game.i18n.localize(subtypeKey);
+  const tags = (Array.isArray(item.system.tags) ? item.system.tags : [])
+    .map((tag) => game.i18n.localize(tag))
+    .filter((tag) => tag.toLocaleLowerCase() !== subtypeLabel.toLocaleLowerCase());
+  subtype.textContent = [subtypeLabel, ...tags].join(" · ");
+  heading.append(subtype);
+  header.append(heading);
+  tooltip.append(header);
+
+  const details = [
+    [game.i18n.localize("FFXIV.Abilities.Range"), item.system.range],
+    [game.i18n.localize("FFXIV.Abilities.Target"), item.system.target],
+    [game.i18n.localize("FFXIV.Abilities.Cost"), item.system.cost],
+    ["CR", item.system.challenge],
+  ].filter(([, value]) => value !== "" && value !== null && value !== undefined);
+
+  if (details.length) {
+    const grid = document.createElement("dl");
+    grid.className = "ffxiv-hotbar-ability-details";
+    for (const [label, value] of details) {
+      const dt = document.createElement("dt");
+      dt.textContent = label;
+      const dd = document.createElement("dd");
+      dd.textContent = value;
+      grid.append(dt, dd);
+    }
+    tooltip.append(grid);
+  }
+
+  const overview = [
+    [game.i18n.localize("FFXIV.Abilities.BaseEffect"), item.system.base_effect],
+    [game.i18n.localize("FFXIV.Abilities.DirectHit"), item.system.direct_hit],
+    [null, item.system.description],
+  ].filter(([, content]) => content);
+  if (overview.length) {
+    const body = document.createElement("div");
+    body.className = "ffxiv-hotbar-ability-overview";
+    for (const [index, [label, content]] of overview.entries()) {
+      if (index) body.append(document.createElement("hr"));
+      const section = document.createElement("div");
+      section.className = "ffxiv-hotbar-ability-section";
+      if (label) {
+        const heading = document.createElement("strong");
+        heading.className = "ffxiv-hotbar-ability-section-label";
+        heading.textContent = label;
+        section.append(heading);
+      }
+      const text = document.createElement("div");
+      text.className = "ffxiv-hotbar-ability-section-content";
+      text.innerHTML = content;
+      section.append(text);
+      body.append(section);
+    }
+    tooltip.append(body);
+  }
+
+  return tooltip;
+}
+
+function positionAbilityTooltip(tooltip, slot) {
+  const slotRect = slot.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const margin = 10;
+  const left = Math.min(
+    Math.max(margin, slotRect.left + slotRect.width / 2 - tooltipRect.width / 2),
+    window.innerWidth - tooltipRect.width - margin,
+  );
+  const top = slotRect.top - tooltipRect.height - margin >= margin
+    ? slotRect.top - tooltipRect.height - margin
+    : slotRect.bottom + margin;
+  tooltip.style.left = `${Math.round(left)}px`;
+  tooltip.style.top = `${Math.round(top)}px`;
+}
+
+function hideAbilityTooltip() {
+  clearTimeout(hotbarAbilityTooltipTimer);
+  hotbarAbilityTooltipTimer = null;
+  hotbarAbilityTooltipSlot = null;
+  document.body.classList.remove("ffxiv-hotbar-tooltip-visible");
+  hotbarAbilityTooltip?.remove();
+  hotbarAbilityTooltip = null;
+}
+
+function queueAbilityTooltip(slot) {
+  hideAbilityTooltip();
+  const item = getAbilityForTooltip(slot);
+  if (!item) return;
+
+  hotbarAbilityTooltipSlot = slot;
+  hotbarAbilityTooltip = createAbilityTooltip(item);
+  document.body.append(hotbarAbilityTooltip);
+  positionAbilityTooltip(hotbarAbilityTooltip, slot);
+  hotbarAbilityTooltipTimer = setTimeout(() => {
+    if (!slot.isConnected || hotbarAbilityTooltipSlot !== slot) return;
+    hotbarAbilityTooltipTimer = null;
+    game.tooltip?.deactivate?.();
+    document.body.classList.add("ffxiv-hotbar-tooltip-visible");
+    hotbarAbilityTooltip?.classList.add("visible");
+  }, HOTBAR_ABILITY_TOOLTIP_DELAY);
 }
 
 function getPageSlots(page, actorHotbar = null) {
@@ -1847,6 +2003,7 @@ async function handleHotbarDrop(event) {
 }
 
 function installExtraBarHandlers(hotbar, app) {
+  hideAbilityTooltip();
   if (hotbar._ffxivHotbarHoverFrame) {
     cancelAnimationFrame(hotbar._ffxivHotbarHoverFrame);
     hotbar._ffxivHotbarHoverFrame = null;
@@ -1866,12 +2023,21 @@ function installExtraBarHandlers(hotbar, app) {
   });
 
   hotbar.addEventListener("pointerover", (event) => {
-    getExtraSlot(event)?.classList.add("hover");
+    const slot = getExtraSlot(event);
+    slot?.classList.add("hover");
   }, { signal });
 
   hotbar.addEventListener("pointerout", (event) => {
-    getExtraSlot(event)?.classList.remove("hover");
+    const slot = getExtraSlot(event);
+    slot?.classList.remove("hover");
   }, { signal });
+
+  for (const slot of getHotbarSlots(hotbar)) {
+    slot.addEventListener("pointerenter", () => queueAbilityTooltip(slot), {
+      signal,
+    });
+    slot.addEventListener("pointerleave", hideAbilityTooltip, { signal });
+  }
 
   document.addEventListener("pointermove", (event) => {
     queueHotbarHoverState(hotbar, event);
@@ -1879,6 +2045,7 @@ function installExtraBarHandlers(hotbar, app) {
 
   window.addEventListener("blur", () => {
     hotbar.classList.remove("ffxiv-hotbar-hover");
+    hideAbilityTooltip();
   }, { signal });
 
   hotbar.addEventListener("dragstart", handleHotbarDragStart, { signal });

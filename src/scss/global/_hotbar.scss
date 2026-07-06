@@ -258,6 +258,115 @@
   color: #ffb4a8;
 }
 
+.ffxiv-hotbar-ability-tooltip {
+  position: fixed;
+  z-index: 10001;
+  width: min(410px, calc(100vw - 20px));
+  padding: 13px 16px 15px;
+  border: 1px solid rgba(194, 190, 174, 0.75);
+  border-radius: 7px;
+  box-sizing: border-box;
+  background:
+    linear-gradient(rgba(37, 37, 35, 0.97), rgba(29, 29, 27, 0.97)),
+    repeating-linear-gradient(0deg, transparent 0 2px, rgba(255, 255, 255, 0.02) 2px 3px);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.12),
+    0 3px 9px rgba(0, 0, 0, 0.72);
+  color: #f3f0e8;
+  font: 16px/1.25 "Roboto", sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.ffxiv-hotbar-ability-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+body.ffxiv-hotbar-tooltip-visible #tooltip {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.ffxiv-hotbar-ability-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 54px;
+  margin-bottom: 8px;
+}
+
+.ffxiv-hotbar-ability-header img {
+  flex: 0 0 54px;
+  width: 54px;
+  height: 54px;
+  border: 1px solid #aaa99f;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 1px 3px #000;
+}
+
+.ffxiv-hotbar-ability-name {
+  margin-top: 2px;
+  font-size: 23px;
+  line-height: 1.15;
+  text-shadow: 0 1px 2px #000;
+}
+
+.ffxiv-hotbar-ability-type {
+  margin-top: 5px;
+  color: #d8d4ca;
+  font-size: 16px;
+}
+
+.ffxiv-hotbar-ability-details {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr;
+  gap: 3px 9px;
+  margin: 0 0 9px;
+  padding: 7px 0;
+  border-bottom: 2px solid rgba(179, 177, 166, 0.38);
+  color: #d2cdc0;
+}
+
+.ffxiv-hotbar-ability-details dt,
+.ffxiv-hotbar-ability-details dd {
+  margin: 0;
+}
+
+.ffxiv-hotbar-ability-details dd {
+  color: #fff;
+  text-align: right;
+}
+
+.ffxiv-hotbar-ability-overview {
+  color: #f5f3ed;
+}
+
+.ffxiv-hotbar-ability-section-label {
+  display: block;
+  margin-bottom: 2px;
+  color: #d2cdc0;
+  font-weight: 400;
+}
+
+.ffxiv-hotbar-ability-overview p {
+  margin: 0 0 5px;
+}
+
+.ffxiv-hotbar-ability-overview p:last-child {
+  margin-bottom: 0;
+}
+
+.ffxiv-hotbar-ability-overview hr {
+  height: 1px;
+  margin: 7px 0;
+  border: 0;
+  background: rgba(179, 177, 166, 0.3);
+}
+
 #hotbar .slot .key,
 #hotbar #action-bar .slot .key,
 #hotbar .ffxiv-extra-action-bar .slot .key,
