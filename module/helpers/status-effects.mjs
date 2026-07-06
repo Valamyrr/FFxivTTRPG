@@ -370,7 +370,8 @@ export function getStatusStackCount(actor, statusId) {
   const effects = getStatusValueEffects(actor, statusId);
   if (!effects.length) return 0;
   if (!isStackableStatusEffect(statusId)) return effects.length;
-  if (statusId === "critical_up") return getStatusStackTotal(actor, statusId);
+  if (isAdditiveStackableStatusEffect(statusId))
+    return getStatusStackTotal(actor, statusId);
   return getHighestStatusStackCount(actor, statusId);
 }
 
