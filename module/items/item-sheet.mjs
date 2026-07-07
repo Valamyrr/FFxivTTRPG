@@ -212,7 +212,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.effectRequirementEntries = this._getEffectRequirementEntries(itemData.system);
     context.effectRuleEntries = this._getEffectRuleEntries(itemData.system);
     context.cssClass = this._getSheetClasses().join(" ");
-    context.editable = this.document.isOwner && !this._isCompendiumLocked();
+    context.editable =
+      this.document.isOwner &&
+      !this._isCompendiumLocked() &&
+      !this._isReadOnlyItemSheet();
     context.itemEditMode = this._isItemEditMode();
     const actionType =
       this.item.type === "ability"
@@ -458,7 +461,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return configured || fallback;
   }
 
+  _isReadOnlyItemSheet() {
+    return this.options?.ffxivReadOnly === true;
+  }
+
   _isItemEditMode() {
+    if (this._isReadOnlyItemSheet()) return false;
     if (this._isCompendiumLocked()) return false;
     if (this._isLimitedDisplayMode()) return true;
     return !EDIT_MODE_ITEM_TYPES.has(this.item.type) || (this.document.isOwner && this.itemEditMode);
@@ -474,7 +482,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     event.preventDefault();
     event.stopPropagation();
 
-    if (!EDIT_MODE_ITEM_TYPES.has(this.item.type) || !this.document.isOwner || this._isCompendiumLocked()) return;
+    if (!EDIT_MODE_ITEM_TYPES.has(this.item.type) || !this.document.isOwner || this._isCompendiumLocked() || this._isReadOnlyItemSheet()) return;
     this._captureSheetScroll();
     this._captureAutomationExpansion();
     await this._saveProseMirrorEditors();
@@ -696,6 +704,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onChangeForm(formConfig, event) {
     if (!formConfig.submitOnChange)
       return super._onChangeForm(formConfig, event);
+    if (this._isReadOnlyItemSheet()) return;
     if (!this.isEditable || this._isCompendiumLocked()) return;
     if (!this._isItemEditMode()) return;
     if (!event.target?.name) return;
@@ -1802,6 +1811,21 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       });
     }
 
+    if (this.item.type == "job") {
+      html.on(
+        "click.ffxivItemSheet",
+        ".job-ability-edit",
+        this._onEditJobAbility.bind(this),
+      );
+    }
+    if (this.item.type === "augment") {
+      html.on(
+        "click.ffxivItemSheet",
+        ".augment-ability-edit",
+        this._onEditJobAbility.bind(this),
+      );
+    }
+
     // Everything below here is only needed if the sheet is editable
     if (!this.document.isOwner || this._isCompendiumLocked()) return;
 
@@ -2062,11 +2086,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (this.item.type == "job") {
       html.on(
         "click.ffxivItemSheet",
-        ".job-ability-edit",
-        this._onEditJobAbility.bind(this),
-      );
-      html.on(
-        "click.ffxivItemSheet",
         ".move-job-ability-up",
         this._moveJobAbility.bind(this, -1),
       );
@@ -2113,11 +2132,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       });
     }
     if (this.item.type === "augment") {
-      html.on(
-        "click.ffxivItemSheet",
-        ".augment-ability-edit",
-        this._onEditJobAbility.bind(this),
-      );
       html.on("click.ffxivItemSheet", ".remove-augment-ability", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -3222,47 +3236,59 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     const itemData = await this._getJobGrantItemData(grant);
     if (!itemData) {
-      ui.notifications.warn("Could not find the mapped item to edit.");
+      ui.notifications.warn("Could not find the mapped item.");
       return;
     }
 
     const tempItem = new CONFIG.Item.documentClass(itemData, {
       temporary: true,
     });
-    const persistGrant = async (changes) => {
-      const update = foundry.utils.expandObject(changes);
-      const nextData = foundry.utils.mergeObject(
-        foundry.utils.deepClone(itemData),
-        update,
-        {
-          inplace: false,
+    const editable =
+      this.document.isOwner &&
+      this._isItemEditMode() &&
+      !this._isCompendiumLocked() &&
+      !this._isReadOnlyItemSheet();
+
+    if (editable) {
+      const persistGrant = async (changes) => {
+        const update = foundry.utils.expandObject(changes);
+        const nextData = foundry.utils.mergeObject(
+          foundry.utils.deepClone(itemData),
+          update,
+          {
+            inplace: false,
+            overwrite: true,
+          },
+        );
+        delete nextData._id;
+
+        grants[index] = {
+          ...grants[index],
+          name: nextData.name,
+          type: nextData.type,
+          item: nextData,
+        };
+        const updateData = { "system.ability_grants": grants };
+        if (this.item.type === "augment")
+          updateData["system.granted_ability"] = "";
+        await this.item.update(updateData, { render: false });
+
+        foundry.utils.mergeObject(itemData, nextData, {
+          inplace: true,
           overwrite: true,
-        },
-      );
-      delete nextData._id;
-
-      grants[index] = {
-        ...grants[index],
-        name: nextData.name,
-        type: nextData.type,
-        item: nextData,
+        });
+        tempItem.updateSource(update);
+        this.render({ force: true });
+        return tempItem;
       };
-      const updateData = { "system.ability_grants": grants };
-      if (this.item.type === "augment")
-        updateData["system.granted_ability"] = "";
-      await this.item.update(updateData, { render: false });
 
-      foundry.utils.mergeObject(itemData, nextData, {
-        inplace: true,
-        overwrite: true,
-      });
-      tempItem.updateSource(update);
-      this.render({ force: true });
-      return tempItem;
-    };
+      tempItem.update = persistGrant;
+    }
 
-    tempItem.update = persistGrant;
-    tempItem.sheet.render({ force: true });
+    new tempItem.sheet.constructor({
+      document: tempItem,
+      ffxivReadOnly: !editable,
+    }).render({ force: true });
   }
 
   async _onEditJobPet(event) {

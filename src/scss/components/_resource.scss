@@ -23,6 +23,9 @@
     display: flex;
     flex-direction: column;
     gap: 7px;
+    box-sizing: border-box;
+    justify-self: center;
+    width: calc(100% - 15px);
     padding: 8px;
     border: 1px solid rgba(216, 188, 112, 0.4);
     border-radius: 8px;

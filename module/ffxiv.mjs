@@ -1475,7 +1475,6 @@ function buildMigratedPetTraitItemData(traits) {
       activable: false,
       modifiers: [],
       source: "",
-      level: 0,
     },
     flags: {
       ffxiv: {
@@ -1751,7 +1750,8 @@ const HP_COST_MIGRATION_TYPES = new Set([
   "augment",
   "minion",
 ]);
-const ITEM_DATA_MIGRATION_VERSION = "22";
+const ITEM_LEVEL_TYPES = new Set(["consumable", "gear", "augment", "job"]);
+const ITEM_DATA_MIGRATION_VERSION = "23";
 function getMigratableItemCompendiumPacks() {
   return game.packs.filter(
     (pack) => pack.documentName === "Item" && !pack.locked,
@@ -1910,6 +1910,156 @@ async function migrateCanonicalItemTags() {
       let changedItems = 0;
       const nextItems = items.map((itemSource) => {
         const migrated = migrateItemSourceTags(itemSource);
+        if (migrated.changed) changedItems += 1;
+        return migrated.item;
+      });
+
+      if (!changedItems) continue;
+      updates.push({ _id: actor.id, items: nextItems });
+      updatedActorCompendiumItems += changedItems;
+    }
+
+    if (!updates.length) continue;
+    await withCompendiumUnlocked(pack, () =>
+      pack.documentClass.updateDocuments(updates, {
+        pack: pack.collection,
+        render: false,
+      }),
+    );
+  }
+
+  return {
+    updatedWorldItems: worldUpdates.length,
+    updatedActorItems,
+    updatedCompendiumItems,
+    updatedActorCompendiumItems,
+  };
+}
+
+function getRemovedItemLevelGrantPatch(abilityGrants) {
+  const entries = Array.isArray(abilityGrants)
+    ? abilityGrants
+    : abilityGrants && typeof abilityGrants === "object"
+      ? Object.values(abilityGrants)
+      : [];
+  if (!entries.length) return null;
+
+  let changed = false;
+  const nextGrants = entries.map((grant) => {
+    const item = grant?.item;
+    if (
+      !item?.system ||
+      ITEM_LEVEL_TYPES.has(item.type) ||
+      !Object.hasOwn(item.system, "level")
+    )
+      return grant;
+
+    changed = true;
+    const nextItem = {
+      ...item,
+      system: { ...item.system },
+    };
+    delete nextItem.system.level;
+    return {
+      ...grant,
+      item: nextItem,
+    };
+  });
+
+  return changed ? nextGrants : null;
+}
+
+function getRemovedItemLevelPatch(itemLike) {
+  const updates = {};
+  if (
+    itemLike?.system &&
+    !ITEM_LEVEL_TYPES.has(itemLike.type) &&
+    Object.hasOwn(itemLike.system, "level")
+  ) {
+    updates["system.-=level"] = null;
+  }
+
+  const nextGrants = getRemovedItemLevelGrantPatch(
+    itemLike?.system?.ability_grants,
+  );
+  if (nextGrants) updates["system.ability_grants"] = nextGrants;
+
+  return Object.keys(updates).length ? updates : null;
+}
+
+function migrateRemovedItemLevelSource(itemSource) {
+  const patch = getRemovedItemLevelPatch(itemSource);
+  if (!patch) return { item: itemSource, changed: false };
+
+  const nextItem = foundry.utils.deepClone(itemSource);
+  for (const [path, value] of Object.entries(patch)) {
+    if (path === "system.-=level") {
+      if (nextItem.system && typeof nextItem.system === "object") {
+        delete nextItem.system.level;
+      }
+      continue;
+    }
+    foundry.utils.setProperty(nextItem, path, value);
+  }
+
+  return { item: nextItem, changed: true };
+}
+
+async function migrateRemovedItemLevelFields() {
+  const worldUpdates = [];
+  let updatedActorItems = 0;
+  let updatedCompendiumItems = 0;
+  let updatedActorCompendiumItems = 0;
+
+  for (const item of game.items) {
+    const patch = getRemovedItemLevelPatch(item.toObject(false));
+    if (!patch) continue;
+    worldUpdates.push({ _id: item.id, ...patch });
+  }
+
+  if (worldUpdates.length) {
+    await Item.updateDocuments(worldUpdates, { render: false });
+  }
+
+  for (const actor of game.actors) {
+    const updates = [];
+    for (const item of actor.items) {
+      const patch = getRemovedItemLevelPatch(item.toObject(false));
+      if (!patch) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+
+    if (!updates.length) continue;
+    await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+    updatedActorItems += updates.length;
+  }
+
+  for (const pack of getItemCompendiumPacks()) {
+    const updates = [];
+    for (const item of await pack.getDocuments()) {
+      const patch = getRemovedItemLevelPatch(item.toObject(false));
+      if (!patch) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+
+    if (!updates.length) continue;
+    await withCompendiumUnlocked(pack, () =>
+      pack.documentClass.updateDocuments(updates, {
+        pack: pack.collection,
+        render: false,
+      }),
+    );
+    updatedCompendiumItems += updates.length;
+  }
+
+  for (const pack of getActorCompendiumPacks()) {
+    const updates = [];
+    for (const actor of await pack.getDocuments()) {
+      const source = actor.toObject(false);
+      const items = Array.isArray(source.items) ? source.items : [];
+      let changedItems = 0;
+      const nextItems = items.map((itemSource) => {
+        const migrated = migrateRemovedItemLevelSource(itemSource);
         if (migrated.changed) changedItems += 1;
         return migrated.item;
       });
@@ -2165,6 +2315,24 @@ async function _migrateItemDataStructureInternal({ force = false } = {}) {
         99,
         "FFXIV.Notifications.ItemMigrationPhaseComboDone",
         comboStats,
+      );
+    }
+
+    if (migrationVersion <= 22) {
+      reportPhase("FFXIV.Notifications.ItemMigrationPhaseLevelFieldStart");
+      showMigrationProgress(
+        99,
+        "FFXIV.Notifications.ItemMigrationPhaseLevelFieldStart",
+      );
+      const levelFieldStats = await migrateRemovedItemLevelFields();
+      reportPhase(
+        "FFXIV.Notifications.ItemMigrationPhaseLevelFieldDone",
+        levelFieldStats,
+      );
+      showMigrationProgress(
+        99,
+        "FFXIV.Notifications.ItemMigrationPhaseLevelFieldDone",
+        levelFieldStats,
       );
     }
 

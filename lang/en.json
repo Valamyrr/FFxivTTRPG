@@ -584,6 +584,8 @@
       "ItemMigrationPhaseAbilityTypeDone": "Item migration: legacy ability conversion complete ({createdWorldItems}/{deletedWorldItems} world recreated, {createdActorItems}/{deletedActorItems} actor recreated, {updatedWorldTags} world tags, {updatedActorTags} actor tags, {updatedCompendiumTags} compendium tags, {updatedActorCompendiumAbilityItems} actor compendium abilities, {updatedAbilityOrders} actor sort orders, {updatedJobGrantUUIDs} job/augment grant links remapped, {strippedActorJobGrantItems} actor job mappings slimmed, {updatedUUIDTextLinks} text UUID links remapped).",
       "ItemMigrationPhaseComboStart": "Item migration: updating combo fields...",
       "ItemMigrationPhaseComboDone": "Item migration: combo update complete ({updatedWorldItems} world, {updatedActorItems} actor items, {updatedCompendiumItems} compendium items, {updatedActorCompendiumItems} actor compendium items).",
+      "ItemMigrationPhaseLevelFieldStart": "Item migration: removing legacy item level fields...",
+      "ItemMigrationPhaseLevelFieldDone": "Item migration: legacy item level fields removed ({updatedWorldItems} world, {updatedActorItems} actor items, {updatedCompendiumItems} compendium items, {updatedActorCompendiumItems} actor compendium items).",
       "ItemMigrationComplete": "Item data migration completed successfully.",
       "ItemMigrationFailed": "Item data migration failed. Check the browser console for details.",
       "NotEnoughHP": "Not Enough HP to cast this ability (HP Cost)",

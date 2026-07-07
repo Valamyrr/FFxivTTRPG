@@ -201,12 +201,6 @@ function buildItemFields() {
       blank: true,
       initial: "",
     }),
-    level: new fields.NumberField({
-      required: false,
-      integer: true,
-      min: 0,
-      initial: 0,
-    }),
   };
 }
 
