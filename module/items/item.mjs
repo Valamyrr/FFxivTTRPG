@@ -1647,7 +1647,97 @@ export class FFXIVItem extends Item {
       { "system.mana.value": Math.max(currentMana - cost.amount, 0) },
       { render: false },
     );
+    this._updateParentActorSheetManaBars();
     return true;
+  }
+
+  _updateParentActorSheetManaBars() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return;
+
+    const sheets = new Set();
+    if (actor.sheet?.rendered) sheets.add(actor.sheet);
+    for (const app of Object.values(ui.windows ?? {})) {
+      if (app?.actor?.id === actor.id && app.rendered) sheets.add(app);
+    }
+    for (const app of foundry.applications.instances?.values?.() ?? []) {
+      if (app?.actor?.id === actor.id && app.rendered) sheets.add(app);
+    }
+    if (!sheets.size) return;
+
+    const currentMana = Number(actor.system?.mana?.value ?? 0);
+    const maxMana = Number(actor.system?.mana?.max ?? 5);
+    const manaCurrentValue = Math.max(
+      0,
+      Number.isFinite(currentMana) ? currentMana : 0,
+    );
+    const manaMaxValue = Math.max(
+      1,
+      Number.isFinite(maxMana) ? maxMana : 5,
+    );
+    const manaPercent = Math.min(
+      100,
+      Math.max(0, (manaCurrentValue / manaMaxValue) * 100),
+    );
+
+    for (const sheet of sheets) {
+      const scrollPositions = this._captureSheetElementScroll(sheet);
+      if (typeof sheet._updateManaBar === "function") {
+        sheet._updateManaBar();
+        this._restoreSheetElementScroll(scrollPositions);
+        continue;
+      }
+
+      const root = sheet.element;
+      if (!root) {
+        this._restoreSheetElementScroll(scrollPositions);
+        continue;
+      }
+      root.querySelectorAll(".mana-fill").forEach((element) => {
+        element.style.width = `${manaPercent}%`;
+      });
+      root.querySelectorAll(".mana-value-current").forEach((element) => {
+        element.textContent = String(manaCurrentValue);
+      });
+      root.querySelectorAll(".mana-value-max").forEach((element) => {
+        element.textContent = String(manaMaxValue);
+      });
+      this._restoreSheetElementScroll(scrollPositions);
+    }
+  }
+
+  _captureSheetElementScroll(sheet) {
+    const root = sheet?.element;
+    if (!root) return [];
+
+    const selectors = [
+      ".window-content",
+      ".fixed-part",
+      ".sheet-body",
+      ".sheet-body .tab.active",
+      ".sub-tab-content.active",
+    ];
+    return selectors.flatMap((selector) => {
+      const element = root.matches?.(selector)
+        ? root
+        : root.querySelector(selector);
+      if (!element) return [];
+      return [
+        {
+          element,
+          scrollTop: element.scrollTop,
+          scrollLeft: element.scrollLeft,
+        },
+      ];
+    });
+  }
+
+  _restoreSheetElementScroll(positions) {
+    for (const position of positions ?? []) {
+      if (!position.element?.isConnected) continue;
+      position.element.scrollTop = position.scrollTop;
+      position.element.scrollLeft = position.scrollLeft;
+    }
   }
 
   _getResolvedMPCost(actor) {
@@ -2200,6 +2290,7 @@ export class FFXIVItem extends Item {
       { "system.mana.value": Math.max(currentMana - directHitOption.mpCost, 0) },
       { render: false },
     );
+    this._updateParentActorSheetManaBars();
     await this._rollDirect({
       ...options,
       directHitOption: directHitOption.key,
@@ -4041,19 +4132,16 @@ export class FFXIVItem extends Item {
   }
 
   _collectDamageFormulaChangeTerms(effect, rollType, terms) {
+    const changeTags = this._getDamageFormulaChangeTags(effect);
     for (const change of effect.changes ?? []) {
       const key = String(change?.key ?? "").trim().toLowerCase();
-      if (
-        key !== "flags.ffxiv.damageformula.formula" &&
-        key !== `flags.ffxiv.damageformula.${rollType}.formula` &&
-        key !== "flags.ffxiv.damageformula.flat" &&
-        key !== `flags.ffxiv.damageformula.${rollType}.flat`
-      )
-        continue;
+      const meta = this._getDamageFormulaChangeMeta(key, rollType);
+      if (!meta) continue;
+      if (!this._damageFormulaTagsApply(changeTags.get(meta.tagKey))) continue;
 
       const value = String(change?.value ?? "").trim();
       if (!value) continue;
-      if (key.endsWith(".flat")) {
+      if (meta.kind === "flat") {
         const numeric = Number(value);
         if (Number.isFinite(numeric) && numeric !== 0)
           terms.push(String(numeric));
@@ -4061,6 +4149,52 @@ export class FFXIVItem extends Item {
       }
       terms.push(value);
     }
+  }
+
+  _getDamageFormulaChangeTags(effect) {
+    const tags = new Map();
+    for (const change of effect.changes ?? []) {
+      const key = String(change?.key ?? "").trim().toLowerCase();
+      const match = key.match(
+        /^flags\.ffxiv\.damageformula(?:\.([^.]+))?\.(requiredtags|tags)$/,
+      );
+      if (!match) continue;
+      const tagKey = match[1]
+        ? `flags.ffxiv.damageformula.${match[1]}.requiredtags`
+        : "flags.ffxiv.damageformula.requiredtags";
+      tags.set(tagKey, this._parseDamageFormulaChangeTags(change?.value));
+    }
+    return tags;
+  }
+
+  _parseDamageFormulaChangeTags(value) {
+    return String(value ?? "")
+      .split(/[,;]/)
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+
+  _getDamageFormulaChangeMeta(key, rollType) {
+    const match = String(key ?? "").match(
+      /^flags\.ffxiv\.damageformula(?:\.([^.]+))?\.(formula|flat)$/,
+    );
+    if (!match) return null;
+    const roll = match[1] || "";
+    if (roll && roll !== String(rollType).toLowerCase()) return null;
+    return {
+      kind: match[2],
+      tagKey: roll
+        ? `flags.ffxiv.damageformula.${roll}.requiredtags`
+        : "flags.ffxiv.damageformula.requiredtags",
+    };
+  }
+
+  _damageFormulaTagsApply(tags) {
+    if (!Array.isArray(tags) || !tags.length) return true;
+    const itemTags = Array.isArray(this.system?.tags) ? this.system.tags : [];
+    return tags.some((tag) =>
+      itemTags.some((itemTag) => FFXIVItem._tagMatches(itemTag, [tag])),
+    );
   }
 
   _damageFormulaEntryApplies(entry, rollType) {
@@ -4094,23 +4228,7 @@ export class FFXIVItem extends Item {
   }
 
   _getDamageFormulaEntryFormula(effect, entry) {
-    if (this._effectMatchesKey(effect, "astral_fire"))
-      return (
-        this._getAstralFireDamageFormula() ||
-        String(entry.formula ?? "").trim()
-      );
     return String(entry.formula ?? "").trim();
-  }
-
-  _getAstralFireDamageFormula() {
-    const trait = this.parent?.items?.find((item) =>
-      item?.type === "trait" &&
-      this._normalizeEffectKey(item.name) === "astral_fire",
-    );
-    const description = String(trait?.system?.description ?? "").toLowerCase();
-    if (description.includes("2d6")) return "2d6";
-    if (description.includes("1d6")) return "1d6";
-    return "";
   }
 
   _toArray(value) {
