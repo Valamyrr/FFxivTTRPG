@@ -177,6 +177,7 @@ export class FFXIVCombat extends Combat {
       await super._onStartTurn(combatant, context);
       const actor = combatant?.actor;
       if (!actor) return;
+      await this._removeExpiredEnmity(combatant);
       await this._removeTurnStartStatuses(actor);
       await this._applyTurnStartJobAutomation(actor);
       if (actor.type !== "npc") return;
@@ -194,17 +195,61 @@ export class FFXIVCombat extends Combat {
 
   async _removeTurnStartStatuses(actor) {
     await applyStatusEffectChange(actor, "transcendent", false);
+    await this._deleteFlaggedEffects(actor, "expireAtTurnStart");
+  }
+
+  async _removeExpiredEnmity(combatant) {
+    const step = getTurnStep(combatant);
+    const firstInStep = this.turns.find((entry) => getTurnStep(entry) === step);
+    if (firstInStep?.id !== combatant.id) return;
+
+    const combatId = String(this.id ?? this.uuid ?? "");
+    const round = Number(this.round ?? 0);
+    for (const actor of this._getUniqueCombatActors().values()) {
+      const ids = actor.effects
+        .filter((effect) => {
+          if (!effect || effect.disabled || !effect.statuses?.has("enmity"))
+            return false;
+          const applied = effect.getFlag("ffxiv", "enmityPhase");
+          if (!applied || String(applied.combatId ?? "") !== combatId)
+            return false;
+          return Number(applied.step) === step && Number(applied.round) < round;
+        })
+        .map((effect) => effect.id)
+        .filter(Boolean);
+      if (ids.length) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+          render: false,
+        });
+      }
+    }
   }
 
   async _removeTurnEndStatuses(actor) {
     await this._deleteStatuses(actor, [
       "drain",
-      "enmity",
       "heavy",
       "paralysis",
       "silence",
+      "stun",
     ]);
+    await this._deleteFlaggedEffects(actor, "expireAtTurnEnd");
     await this._removePetrifiedStatus(actor);
+  }
+
+  async _deleteFlaggedEffects(actor, flag) {
+    if (!actor?.effects?.size) return;
+    const ids = actor.effects
+      .filter((effect) =>
+        !effect.disabled && effect.getFlag("ffxiv", flag) === true,
+      )
+      .map((effect) => effect.id)
+      .filter(Boolean);
+    if (ids.length) {
+      await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+        render: false,
+      });
+    }
   }
 
   async _removePetrifiedStatus(actor) {
@@ -281,7 +326,6 @@ export class FFXIVCombat extends Combat {
       }
     }
 
-    await this._removeStepEndStatuses();
     if (!updates.length && !messages.length) return;
     if (updates.length) {
       await Promise.all(updates);
@@ -526,13 +570,6 @@ export class FFXIVCombat extends Combat {
 
   _applyStepEndRevivify(health, healing, healthCap) {
     return Math.max(0, Math.min(health + healing, healthCap));
-  }
-
-  async _removeStepEndStatuses() {
-    const actors = this._getStepActors(0).concat(this._getStepActors(1));
-    for (const actor of actors) {
-      await this._deleteStatuses(actor, ["enmity"]);
-    }
   }
 
   async _deleteStatuses(actor, statusIds) {

@@ -1024,12 +1024,29 @@ export async function applyStatusEffectChange(
     );
   }
   if (normalizedStatusId === "enmity" && isActive && origin) {
-    return replaceNonStackableStatusEffect(actor, normalizedStatusId, {
+    const effect = await replaceNonStackableStatusEffect(actor, normalizedStatusId, {
       overlay,
       origin,
       duration,
       ffxivSuppressStatusText,
     });
+    const combat = game.combat;
+    const combatant = combat?.combatant;
+    if (effect && combat?.started && combatant) {
+      const combatantActor = combatant.actor;
+      const disposition = combatant.token?.disposition;
+      const step = combatantActor?.type === "character" ||
+          combatantActor?.type === "pet" ||
+          disposition === CONST.TOKEN_DISPOSITIONS.FRIENDLY
+        ? 0
+        : 1;
+      await effect.setFlag("ffxiv", "enmityPhase", {
+        combatId: String(combat.id ?? combat.uuid ?? ""),
+        round: Number(combat.round ?? 0),
+        step,
+      });
+    }
+    return effect;
   }
   const result = await actor.toggleStatusEffect(normalizedStatusId, {
     active,
