@@ -58,5 +58,6 @@ The Ko-fi link may be removed and tips may be refused or refunded if necessary t
 [FFXIV TTRPG Icons Pack](https://github.com/AxeBane/ffxiv-ttrpg-icons-pack)
 
 ## Additional Attributions
-- Status effects drawn and shared by Demonskunk on Discord
-- The header logo for the Final Fantasy XIV TTRPG system was made by and is property of Square Enix.
+- Most status effects drawn and shared by Demonskunk on Discord. Hidden status icon made by FatSpidy
+- The header logo and for the Final Fantasy XIV TTRPG system was made by and is property of Square Enix.
+- Most SFX included are provided by Square Enix's fan kit.
