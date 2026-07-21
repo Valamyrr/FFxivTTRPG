@@ -43,7 +43,7 @@ For issues and technical support, reach out via the [FFXIV TTRPG Fan Discord](ht
 
 [![Voluntary tip on Ko-fi — no benefits](https://badgen.net/badge/Ko-fi/Voluntary%20tip%20%E2%80%94%20no%20benefits/ff5f5f?icon=kofi)](https://ko-fi.com/theaxebane)
 
-You may optionally support the maintainer through Ko-fi using the button above. Any tip is a voluntary, unconditional gift to the maintainer and is **not** a purchase, subscription, license fee, commission, or payment for this project or for any Square Enix material.
+You may optionally support the current maintainer (AxeBane) through Ko-fi using the button above. Any tip is a voluntary, unconditional gift to the maintainer and is **not** a purchase, subscription, license fee, commission, or payment for this project or for any Square Enix material.
 
 Tipping provides **absolutely no additional benefits**. Supporters receive no exclusive content, early access, private builds, downloads, features, voting rights, development priority, technical support priority, recognition, access to restricted channels, or other goods or services. This project and all public releases remain available on the same terms regardless of whether anyone tips.
 
