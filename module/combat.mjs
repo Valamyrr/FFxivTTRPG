@@ -38,10 +38,13 @@ export class FFXIVCombat extends Combat {
   async startCombat() {
     return this._withActorSheetScroll(async () => {
       this._ffxivResolvedStepEnds = new Set();
-      await this._resetActorLimitations();
+      const resetMode = await this._promptCombatStartReset();
+      if (resetMode === null) return this;
+      if (resetMode === "full") await this._resetActorsForCombatStart();
+      else if (resetMode === "limitations") await this._resetActorLimitations();
       await this._resetEncounterStatusFlags();
       const startedCombat = await super.startCombat();
-      await this._applyStartingMpOverrides();
+      if (resetMode !== "full") await this._applyStartingMpOverrides();
       await this._applyEncounterStartJobAutomation();
       return startedCombat;
     });
@@ -132,7 +135,9 @@ export class FFXIVCombat extends Combat {
       await this._resolveCurrentStepEnd();
       this._ffxivAdvancingTurn = true;
       try {
-        return await super.nextTurn();
+        const combat = await super.nextTurn();
+        await this._deleteExpiredTemporaryEffects();
+        return combat;
       } finally {
         this._ffxivAdvancingTurn = false;
       }
@@ -148,7 +153,10 @@ export class FFXIVCombat extends Combat {
   async nextRound() {
     return this._withActorSheetScroll(async () => {
       if (!this._ffxivAdvancingTurn) await this._resolveRemainingStepEnds();
-      return super.nextRound();
+      await this._deleteRoundEndEffects();
+      const combat = await super.nextRound();
+      await this._deleteExpiredTemporaryEffects();
+      return combat;
     });
   }
 
@@ -163,6 +171,7 @@ export class FFXIVCombat extends Combat {
       await super._onEndTurn(combatant, context);
       clearUserTargetsForTiming(TARGET_CLEAR_TIMINGS.TURN_END);
       const actor = combatant?.actor;
+      await this._deleteCombatantTurnEndEffects(combatant, context);
       if (!actor) return;
       await this._applyTurnEndJobAutomation(actor);
       await this._removeTurnEndStatuses(actor);
@@ -176,6 +185,7 @@ export class FFXIVCombat extends Combat {
     return this._withActorSheetScroll(async () => {
       await super._onStartTurn(combatant, context);
       const actor = combatant?.actor;
+      await this._deleteCombatantTurnStartEffects(combatant);
       if (!actor) return;
       await this._removeExpiredEnmity(combatant);
       await this._removeTurnStartStatuses(actor);
@@ -249,6 +259,92 @@ export class FFXIVCombat extends Combat {
       await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
         render: false,
       });
+    }
+  }
+
+  async _deleteRoundEndEffects() {
+    for (const actor of this._getUniqueCombatActors().values()) {
+      await this._deleteFlaggedEffects(actor, "expireAtRoundEnd");
+    }
+  }
+
+  async _deleteExpiredTemporaryEffects() {
+    for (const actor of this._getUniqueCombatActors().values()) {
+      const ids = actor.effects
+        .filter((effect) => {
+          if (!effect || effect.disabled || !effect.isTemporary) return false;
+          const remaining = Number(effect.duration?.remaining);
+          return Number.isFinite(remaining) && remaining <= 0;
+        })
+        .map((effect) => effect.id)
+        .filter(Boolean);
+      if (ids.length) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+          render: false,
+        });
+      }
+    }
+  }
+
+  async _deleteCombatantTurnEndEffects(combatant, context = {}) {
+    if (!combatant) return;
+    const combatId = String(this.id ?? this.uuid ?? "");
+    const combatantId = String(combatant.id ?? "");
+    const round = Number(context?.round ?? this.round ?? 0);
+    const turn = Number(context?.turn ?? this.turn ?? 0);
+    for (const actor of this._getUniqueCombatActors().values()) {
+      const ids = actor.effects
+        .filter((effect) => {
+          if (!effect || effect.disabled) return false;
+          const expiry = effect.getFlag("ffxiv", "expireAtCombatantTurnEnd");
+          if (expiry === true) return true;
+          if (!expiry || typeof expiry !== "object") return false;
+          return (
+            String(expiry.combatId ?? "") === combatId &&
+            String(expiry.combatantId ?? "") === combatantId &&
+            Number(expiry.round) === round &&
+            Number(expiry.turn) === turn
+          );
+        })
+        .map((effect) => effect.id)
+        .filter(Boolean);
+      if (ids.length) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+          render: false,
+        });
+      }
+    }
+  }
+
+  async _deleteCombatantTurnStartEffects(combatant) {
+    if (!combatant) return;
+    const combatId = String(this.id ?? this.uuid ?? "");
+    const combatantId = String(combatant.id ?? "");
+    const round = Number(this.round ?? 0);
+    const turn = Number(this.turn ?? 0);
+    for (const actor of this._getUniqueCombatActors().values()) {
+      const ids = actor.effects
+        .filter((effect) => {
+          if (!effect || effect.disabled) return false;
+          const expiry = effect.getFlag("ffxiv", "expireAtCombatantTurnStart");
+          if (!expiry || typeof expiry !== "object") return false;
+          if (
+            String(expiry.combatId ?? "") !== combatId ||
+            String(expiry.combatantId ?? "") !== combatantId
+          )
+            return false;
+
+          const appliedRound = Number(expiry.round);
+          const appliedTurn = Number(expiry.turn);
+          return appliedRound < round || (appliedRound === round && appliedTurn < turn);
+        })
+        .map((effect) => effect.id)
+        .filter(Boolean);
+      if (ids.length) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+          render: false,
+        });
+      }
     }
   }
 
@@ -482,7 +578,7 @@ export class FFXIVCombat extends Combat {
         const key = String(change?.key ?? "").trim().toLowerCase();
         if (!key.startsWith("flags.ffxiv.mprecovery.")) continue;
 
-        const mode = this._normalizeActiveEffectChangeMode(change?.mode);
+        const mode = this._normalizeActiveEffectChangeMode(change);
         const rawValue = String(change?.value ?? "").trim();
         const value = Number(rawValue);
         if (key === "flags.ffxiv.mprecovery.suppress") {
@@ -543,16 +639,33 @@ export class FFXIVCombat extends Combat {
     return true;
   }
 
-  _normalizeActiveEffectChangeMode(mode) {
-    if (typeof mode === "string" && mode) return mode.toLowerCase();
-    const legacy = Number.parseInt(mode, 10);
+  _normalizeActiveEffectChangeMode(change) {
+    const rawMode = change && typeof change === "object"
+      ? change.type ?? change.mode
+      : change;
+    const mode = String(rawMode ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9.]+/g, "");
+    if (["multiply", "add", "subtract", "override", "upgrade", "downgrade"].includes(mode))
+      return mode;
+
+    const legacy = Number.parseInt(rawMode, 10);
     switch (legacy) {
+      case 0:
+        return "custom";
       case 1:
         return "multiply";
       case 2:
         return "add";
+      case 3:
+        return "downgrade";
+      case 4:
+        return "upgrade";
       case 5:
         return "override";
+      case 6:
+        return "subtract";
       default:
         return "add";
     }
@@ -1044,6 +1157,107 @@ export class FFXIVCombat extends Combat {
         await actor.unsetFlag("ffxiv", "stunnedInEncounter");
       }
     }
+  }
+
+  async _promptCombatStartReset() {
+    if (!game.user?.isGM) return "limitations";
+    const result = await foundry.applications.api.DialogV2.wait({
+      id: `ffxiv-combat-start-reset-${this.id ?? this.uuid ?? "new"}`,
+      window: {
+        title: game.i18n.localize("FFXIV.Dialogs.CombatStartResetTitle"),
+      },
+      content: `<p>${game.i18n.localize("FFXIV.Dialogs.CombatStartReset")}</p>`,
+      buttons: [
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.CombatStartResetLimitations"),
+          action: "limitations",
+          type: "submit",
+          default: true,
+          callback: () => "limitations",
+        },
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.CombatStartResetFull"),
+          action: "full",
+          type: "submit",
+          callback: () => "full",
+        },
+        {
+          label: game.i18n.localize("FFXIV.Dialogs.CombatStartResetNone"),
+          action: "none",
+          type: "submit",
+          callback: () => "none",
+        },
+      ],
+    });
+    return result ?? null;
+  }
+
+  async _resetActorsForCombatStart() {
+    const sheets = this._captureActorSheetScroll();
+    const updatedActors = new Set();
+    for (const actor of this._getUniqueCombatActors().values()) {
+      const actorUpdates = {};
+      const healthMax = Number(actor.system?.health?.max);
+      if (Number.isFinite(healthMax) && healthMax >= 0) {
+        actorUpdates["system.health.value"] = healthMax;
+      }
+
+      const manaMax = Number(actor.system?.mana?.max);
+      if (Number.isFinite(manaMax) && manaMax > 0) {
+        actorUpdates["system.mana.value"] = manaMax;
+      }
+
+      if (actor.system?.barrier && Number(actor.system.barrier.value ?? 0) !== 0) {
+        actorUpdates["system.barrier.value"] = 0;
+      }
+
+      if (Object.keys(actorUpdates).length) {
+        updatedActors.add(actor.id);
+        await actor.update(actorUpdates, {
+          render: false,
+          ffxivSkipActorSheetRefresh: true,
+        });
+        if (healthMax > 0 && hasStatus(actor, "knocked_out")) {
+          await applyStatusEffectChange(actor, "knocked_out", false, {
+            ffxivSuppressStatusText: true,
+          });
+        }
+      }
+
+      const itemUpdates = this._getCombatStartResourceUpdates(actor);
+      if (itemUpdates.length) {
+        updatedActors.add(actor.id);
+        await actor.updateEmbeddedDocuments("Item", itemUpdates, {
+          render: false,
+          ffxivSkipActorSheetRefresh: true,
+        });
+      }
+    }
+
+    await this._refreshActorSheets(sheets, updatedActors);
+  }
+
+  _getCombatStartResourceUpdates(actor) {
+    const updates = [];
+    for (const item of actor.items) {
+      const max = Number.parseInt(item.system?.job_resources_max, 10);
+      if (!Number.isFinite(max) || max <= 0) continue;
+
+      const resourceStatus = new Array(max).fill(!this._hasLimitations(item));
+      const currentStatus = Array.isArray(item.system?.job_resource_status)
+        ? item.system.job_resource_status.slice(0, max)
+        : [];
+      while (currentStatus.length < max) currentStatus.push(false);
+      if (currentStatus.length === resourceStatus.length &&
+        currentStatus.every((status, index) => status === resourceStatus[index]))
+        continue;
+
+      updates.push({
+        _id: item.id,
+        "system.job_resource_status": resourceStatus,
+      });
+    }
+    return updates;
   }
 
   async _resetActorLimitations() {

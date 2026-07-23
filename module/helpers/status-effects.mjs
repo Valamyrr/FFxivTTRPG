@@ -541,7 +541,7 @@ function getStatusStackSourceEffects(actor, statusId, origin = null, sourceEffec
   );
 }
 
-function prepareStatusEffectDuration(duration) {
+function prepareStatusEffectDuration(duration, actor = null) {
   if (!duration || typeof duration !== "object") return null;
 
   const prepared = {};
@@ -557,11 +557,38 @@ function prepareStatusEffectDuration(duration) {
     prepared.combat = combat.id;
     prepared.startRound = combat.round ?? null;
     prepared.startTurn = combat.turn ?? null;
+    const offset = getTurnsUntilActorTurnEnd(actor, combat) - 1;
+    if (offset > 0 && Number.isFinite(prepared.turns) && prepared.turns > 0) {
+      prepared.turns += offset;
+    }
   } else {
     prepared.startRound = null;
     prepared.startTurn = null;
   }
   return prepared;
+}
+
+function getTurnsUntilActorTurnEnd(actor, combat) {
+  const turns = combat?.turns ?? [];
+  if (!actor || !turns.length) return 1;
+
+  const currentTurn = Number.isInteger(combat.turn) ? combat.turn : 0;
+  const targetTurn = turns.findIndex((combatant) =>
+    isSameActorDocument(combatant.actor, actor),
+  );
+  if (targetTurn < 0) return 1;
+  if (targetTurn >= currentTurn) return targetTurn - currentTurn + 1;
+  return turns.length - currentTurn + targetTurn + 1;
+}
+
+function isSameActorDocument(first, second) {
+  return (
+    first &&
+    second &&
+    (first === second ||
+      (first.uuid && second.uuid && first.uuid === second.uuid) ||
+      (first.id && second.id && first.id === second.id))
+  );
 }
 
 async function createStatusStack(
@@ -580,7 +607,7 @@ async function createStatusStack(
   });
   if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
-  const preparedDuration = prepareStatusEffectDuration(duration);
+  const preparedDuration = prepareStatusEffectDuration(duration, actor);
   if (preparedDuration) effect.updateSource({ duration: preparedDuration });
   return ActiveEffectClass.create(effect.toObject(), {
     parent: actor,
@@ -609,7 +636,7 @@ async function collapseLegacyStatusStacks(
     [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]: targetCount,
   };
   if (origin) updateData.origin = origin;
-  const preparedDuration = prepareStatusEffectDuration(duration);
+  const preparedDuration = prepareStatusEffectDuration(duration, actor);
   if (preparedDuration) updateData.duration = preparedDuration;
   await primary.update(updateData, { render: false });
 
@@ -756,7 +783,7 @@ async function setNonStackableStatusOrigin(actor, statusId, origin) {
 }
 
 async function setNonStackableStatusDuration(actor, statusId, duration, origin = null) {
-  const preparedDuration = prepareStatusEffectDuration(duration);
+  const preparedDuration = prepareStatusEffectDuration(duration, actor);
   if (!actor?.effects || !preparedDuration) return;
 
   const effects = actor.effects.filter((effect) => {
@@ -790,7 +817,7 @@ async function replaceNonStackableStatusEffect(
   });
   if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
-  const preparedDuration = prepareStatusEffectDuration(duration);
+  const preparedDuration = prepareStatusEffectDuration(duration, actor);
   if (preparedDuration) effect.updateSource({ duration: preparedDuration });
   return ActiveEffectClass.create(effect.toObject(), {
     parent: actor,

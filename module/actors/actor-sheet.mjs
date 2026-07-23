@@ -763,11 +763,16 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /** @override */
+  async _preClose(options) {
+    await super._preClose(options);
+    this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
+  }
+
+  /** @override */
   async _onClose(options) {
     this._abilityQuickTabsController?.abort();
     this._abilityQuickTabsController = null;
     this._exitActorEditMode();
-    this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
     this._closeInventoryContextMenu();
     this._closeInventoryItemTooltip();
 

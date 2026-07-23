@@ -59,7 +59,7 @@
         <strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{system.base_effect}}
       </div>
     {{/if}}
-    {{#if system.direct_hit }}
+    {{#if (hasContent system.direct_hit) }}
       <div class="effect">
         <strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{system.direct_hit}}
       </div>

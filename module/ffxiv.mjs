@@ -183,6 +183,7 @@ Hooks.once("init", function () {
 });
 
 Hooks.on("preCreateActiveEffect", (effect) => {
+  normalizeLegacySubtractActiveEffectChangeModes(effect);
   const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
   if (!actor) return;
   applyLinkedTraitDataToActiveEffectSource(effect, actor);
@@ -206,7 +207,16 @@ Hooks.on("preCreateActiveEffect", (effect) => {
     return false;
 });
 
+Hooks.on("preCreateItem", (item) => {
+  normalizeDashDirectHitText(item);
+});
+
+Hooks.on("preUpdateItem", (_item, changes) => {
+  normalizeDashDirectHitTextUpdate(changes);
+});
+
 Hooks.on("preUpdateActiveEffect", (effect, changes, options) => {
+  normalizeLegacySubtractActiveEffectUpdate(changes);
   if (options?.ffxivSyncEliteFoeEffect) return;
   if (effect?.parent?.documentName !== "Actor") return;
   if (
@@ -242,6 +252,332 @@ Hooks.on("preDeleteActiveEffect", (effect, options) => {
   if (effect.getFlag("ffxiv", ELITE_FOE_EFFECT_FLAG) === true)
     return false;
 });
+
+function normalizeLegacySubtractActiveEffectChangeModes(effect) {
+  const normalized = normalizeLegacySubtractActiveEffectChangeArray(
+    effect?.system?.changes ??
+    effect?.changes ??
+    effect?._source?.system?.changes ??
+    effect?._source?.changes,
+  );
+  if (!normalized) return false;
+  if (typeof effect.updateSource === "function") {
+    effect.updateSource({ "system.changes": normalized });
+  }
+  return true;
+}
+
+function normalizeLegacySubtractActiveEffectUpdate(changes) {
+  if (!changes || typeof changes !== "object") return false;
+
+  let updated = false;
+  for (const path of ["system.changes", "changes"]) {
+    const normalized = normalizeLegacySubtractActiveEffectChangeArray(
+      foundry.utils.getProperty(changes, path),
+    );
+    if (!normalized) continue;
+    foundry.utils.setProperty(changes, path, normalized);
+    updated = true;
+  }
+
+  for (const [key, value] of Object.entries(changes)) {
+    const modeMatch = key.match(/^((?:system\.)?changes\.\d+)\.mode$/);
+    if (modeMatch && isLegacySubtractActiveEffectChangeMode(value)) {
+      delete changes[key];
+      changes[`${modeMatch[1]}.type`] = "subtract";
+      updated = true;
+      continue;
+    }
+
+    const typeMatch = key.match(/^((?:system\.)?changes\.\d+)\.type$/);
+    if (typeMatch && isLegacySubtractActiveEffectChangeType(value)) {
+      changes[key] = "subtract";
+      updated = true;
+    }
+  }
+
+  return updated;
+}
+
+function normalizeLegacySubtractActiveEffectChangeArray(changes) {
+  if (!Array.isArray(changes)) return null;
+
+  let normalized = null;
+  changes.forEach((change, index) => {
+    if (!change || typeof change !== "object") return;
+    if (
+      !isLegacySubtractActiveEffectChangeMode(change.mode) &&
+      !isLegacySubtractActiveEffectChangeType(change.type)
+    )
+      return;
+
+    normalized ??= foundry.utils.deepClone(changes);
+    normalized[index].type = "subtract";
+    delete normalized[index].mode;
+  });
+  return normalized;
+}
+
+function isLegacySubtractActiveEffectChangeMode(mode) {
+  const text = String(mode ?? "").trim().toLowerCase();
+  return text === "6" || text === "subtract";
+}
+
+function isLegacySubtractActiveEffectChangeType(type) {
+  return String(type ?? "").trim().toLowerCase() === "custom.6";
+}
+
+async function migrateLegacySubtractActiveEffectChangeModes() {
+  if (!game.user?.isGM) return;
+
+  let migrated = 0;
+  for (const owner of getLegacySubtractActiveEffectOwners()) {
+    const updates = [];
+    for (const effect of owner.effects ?? []) {
+      const normalized = normalizeLegacySubtractActiveEffectChangeArray(
+        effect.system?.changes ?? effect.changes,
+      );
+      if (!normalized) continue;
+      updates.push({ _id: effect.id, "system.changes": normalized });
+    }
+    if (!updates.length) continue;
+
+    await owner.updateEmbeddedDocuments("ActiveEffect", updates, {
+      render: false,
+    });
+    migrated += updates.length;
+  }
+
+  if (migrated) {
+    console.log(`FFXIV | Migrated ${migrated} legacy subtract active effect changes.`);
+  }
+}
+
+function getLegacySubtractActiveEffectOwners() {
+  const owners = new Set();
+  const addOwner = (owner) => {
+    if (owner?.effects?.size) owners.add(owner);
+  };
+  for (const actor of game.actors ?? []) {
+    addOwner(actor);
+    for (const item of actor.items ?? []) addOwner(item);
+  }
+  for (const item of game.items ?? []) addOwner(item);
+  return owners;
+}
+
+function normalizeDashDirectHitText(item) {
+  if (!item || typeof item !== "object") return false;
+  const updates = getDashDirectHitTextUpdates(item);
+  if (!Object.keys(updates).length) return false;
+  if (typeof item.updateSource === "function") item.updateSource(updates);
+  return true;
+}
+
+function normalizeDashDirectHitTextUpdate(changes) {
+  if (!changes || typeof changes !== "object") return false;
+
+  let updated = false;
+  for (const path of ["system.direct_hit", "system.pet_ability.direct_hit"]) {
+    if (!isDashDirectHitText(foundry.utils.getProperty(changes, path))) continue;
+    foundry.utils.setProperty(changes, path, "");
+    updated = true;
+  }
+  for (const [key, value] of Object.entries(changes)) {
+    if (
+      (key === "system.direct_hit" || key === "system.pet_ability.direct_hit") &&
+      isDashDirectHitText(value)
+    ) {
+      changes[key] = "";
+      updated = true;
+    }
+  }
+  return updated;
+}
+
+async function migrateDashDirectHitText() {
+  if (!game.user?.isGM) return;
+
+  let migrated = 0;
+  for (const item of game.items ?? []) {
+    const patch = getDashDirectHitTextUpdates(item);
+    if (!Object.keys(patch).length) continue;
+    await item.update(patch, { render: false });
+    migrated += 1;
+  }
+
+  for (const actor of game.actors ?? []) {
+    const updates = [];
+    for (const item of actor.items ?? []) {
+      const patch = getDashDirectHitTextUpdates(item);
+      if (!Object.keys(patch).length) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+    if (!updates.length) continue;
+    await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+    migrated += updates.length;
+  }
+
+  if (migrated) {
+    console.log(`FFXIV | Cleared ${migrated} dash-only direct hit text field(s).`);
+  }
+}
+
+function getDashDirectHitTextUpdates(item) {
+  const updates = {};
+  if (isDashDirectHitText(item?.system?.direct_hit)) {
+    updates["system.direct_hit"] = "";
+  }
+  if (isDashDirectHitText(item?.system?.pet_ability?.direct_hit)) {
+    updates["system.pet_ability.direct_hit"] = "";
+  }
+  return updates;
+}
+
+function isDashDirectHitText(value) {
+  return String(value ?? "").trim() === "-";
+}
+
+const BOOTSHINE_CRITICAL_FORCE_RULE = {
+  requiresAny: [
+    { key: "opo_opo_form", name: "Opo-Opo Form" },
+    { key: "formless_fist", name: "Formless Fist" },
+  ],
+  rolls: ["direct"],
+};
+
+async function migrateBootshineCriticalFlags() {
+  if (!game.user?.isGM) return;
+
+  let migrated = 0;
+  for (const item of game.items ?? []) {
+    const patch = getBootshineCriticalFlagPatch(item);
+    if (!patch) continue;
+    await item.update(patch, { render: false });
+    migrated += 1;
+  }
+
+  for (const actor of game.actors ?? []) {
+    const updates = [];
+    for (const item of actor.items ?? []) {
+      const patch = getBootshineCriticalFlagPatch(item);
+      if (!patch) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+    if (!updates.length) continue;
+    await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+    migrated += updates.length;
+  }
+
+  if (migrated) {
+    console.log(`FFXIV | Migrated ${migrated} Bootshine critical flag(s).`);
+  }
+}
+
+async function migrateEssentialDignityHealingFlags() {
+  if (!game.user?.isGM) return;
+
+  let migrated = 0;
+  for (const item of game.items ?? []) {
+    const patch = getEssentialDignityHealingFlagPatch(item);
+    if (!patch) continue;
+    await item.update(patch, { render: false });
+    migrated += 1;
+  }
+
+  for (const actor of game.actors ?? []) {
+    const updates = [];
+    for (const item of actor.items ?? []) {
+      const patch = getEssentialDignityHealingFlagPatch(item);
+      if (!patch) continue;
+      updates.push({ _id: item.id, ...patch });
+    }
+    if (!updates.length) continue;
+    await actor.updateEmbeddedDocuments("Item", updates, { render: false });
+    migrated += updates.length;
+  }
+
+  if (migrated) {
+    console.log(`FFXIV | Migrated ${migrated} Essential Dignity healing flag(s).`);
+  }
+}
+
+function getBootshineCriticalFlagPatch(item) {
+  if (!item || item.type !== "ability" || item.name !== "Bootshine") return null;
+  const current = foundry.utils.getProperty(item, "flags.ffxiv.critical.force");
+  if (current !== undefined && current !== null && current !== "") return null;
+
+  return {
+    "flags.ffxiv.critical.force": [
+      foundry.utils.deepClone(BOOTSHINE_CRITICAL_FORCE_RULE),
+    ],
+  };
+}
+
+function getEssentialDignityHealingFlagPatch(item) {
+  if (!item || item.type !== "ability" || item.name !== "Essential Dignity") return null;
+  const directFormula = String(item.system?.direct_formula ?? "").trim();
+  const currentHealing = foundry.utils.getProperty(item, "flags.ffxiv.healing.application");
+  const currentOverride = foundry.utils.getProperty(item, "flags.ffxiv.baseFormula.override");
+  const currentEntries = Array.isArray(currentHealing)
+    ? currentHealing
+    : currentHealing
+      ? [currentHealing]
+      : [];
+  const overrideEntries = Array.isArray(currentOverride)
+    ? currentOverride
+    : currentOverride
+      ? [currentOverride]
+      : [];
+  const currentFormula = String(currentEntries[0]?.formula ?? "").trim();
+  const overrideFormula = String(overrideEntries[0]?.formula ?? "").trim();
+  const formula = isSimpleRollFormula(directFormula)
+    ? directFormula
+    : isSimpleRollFormula(overrideFormula)
+      ? overrideFormula
+      : isSimpleRollFormula(currentFormula)
+        ? currentFormula
+        : "";
+  if (!formula) return null;
+
+  const patch = {};
+  let changed = false;
+  if (directFormula) {
+    patch["system.direct_formula"] = "";
+    changed = true;
+  }
+  if (String(item.system?.direct_hit ?? "").trim() === "-") {
+    patch["system.direct_hit"] = "";
+    changed = true;
+  }
+
+  const nextOverride = [
+    {
+      operation: "replace",
+      formula,
+      when: {
+        targetHp: {
+          lte: "halfMax",
+        },
+      },
+    },
+  ];
+  if (JSON.stringify(currentOverride) !== JSON.stringify(nextOverride)) {
+    patch["flags.ffxiv.baseFormula.override"] = nextOverride;
+    changed = true;
+  }
+  if (currentHealing !== undefined && currentHealing !== null) {
+    patch["flags.ffxiv.-=healing"] = null;
+    changed = true;
+  }
+
+  return changed ? patch : null;
+}
+
+function isSimpleRollFormula(value) {
+  const formula = String(value ?? "").trim();
+  return Boolean(formula && /^[\dd+\-*/ ().@a-z_]+$/i.test(formula) && /\d*d\d+/i.test(formula));
+}
 
 Hooks.on("updateActiveEffect", (effect, _changes, options) => {
   if (options?.ffxivSyncEliteFoeEffect) return;
@@ -356,7 +692,7 @@ Handlebars.registerHelper("hasContent", function (value) {
     .replace(/<[^>]*>/g, "")
     .replace(/&nbsp;/gi, " ")
     .trim();
-  return text.length > 0;
+  return text.length > 0 && text !== "-";
 });
 
 Handlebars.registerHelper(
@@ -844,6 +1180,18 @@ Hooks.once("ready", function () {
     });
     migrateLegacyStatusStackEffects().catch((error) => {
       debugError("FFXIV | Failed to migrate legacy status stacks:", error);
+    });
+    migrateLegacySubtractActiveEffectChangeModes().catch((error) => {
+      debugError("FFXIV | Failed to migrate legacy subtract active effect modes:", error);
+    });
+    migrateDashDirectHitText().catch((error) => {
+      debugError("FFXIV | Failed to clear dash-only direct hit text fields:", error);
+    });
+    migrateBootshineCriticalFlags().catch((error) => {
+      debugError("FFXIV | Failed to migrate Bootshine critical flags:", error);
+    });
+    migrateEssentialDignityHealingFlags().catch((error) => {
+      debugError("FFXIV | Failed to migrate Essential Dignity healing flags:", error);
     });
     migrateLegacyPetTraits();
     migrateItemDataStructure();
@@ -6891,11 +7239,16 @@ async function applyDamageToActor(actor, damage, options = {}) {
 }
 
 async function applyHealingToActor(actor, amount, options = {}) {
-  const result = await recoverActorHealth(actor, amount);
+  const healing = await getHealingWithEffects(actor, amount, options);
+  return applyResolvedHealingToActor(actor, healing, options);
+}
+
+async function applyResolvedHealingToActor(actor, healing, options = {}) {
+  const result = await recoverActorHealth(actor, healing.resolvedHealing);
   if (result.healing > 0) {
     showFloatingCombatText(actor, result.healing, "healing", options);
   }
-  return result;
+  return { ...result, ...healing };
 }
 
 function showFloatingCombatText(actor, amount, kind, options = {}) {
@@ -6950,10 +7303,26 @@ function getActorCanvasToken(actor) {
 async function applyDamageToActorWithEffects(
   targetActor,
   rawDamage,
+  { sourceActor = null, sourceItem = null, targetToken = null } = {},
+) {
+  const damage = await getDamageWithEffects(targetActor, rawDamage, {
+    sourceActor,
+    sourceItem,
+  });
+  if (!damage) return null;
+  await applyResolvedDamageToActor(targetActor, damage, {
+    sourceActor,
+    targetToken,
+  });
+  return damage;
+}
+
+async function applyResolvedDamageToActor(
+  targetActor,
+  damage,
   { sourceActor = null, targetToken = null } = {},
 ) {
-  const damage = getDamageWithEffects(targetActor, rawDamage, { sourceActor });
-  if (!damage) return null;
+  if (!targetActor || !damage) return;
   if (damage.resolvedDamage > 0) {
     await applyDamageToActor(targetActor, damage.resolvedDamage, {
       token: targetToken,
@@ -6963,13 +7332,16 @@ async function applyDamageToActorWithEffects(
     }
     await applyDrainRecovery(sourceActor);
   }
-  return damage;
+  await consumeDamageApplicationEffects(
+    targetActor,
+    damage.consumedEffectIds,
+  );
 }
 
-function getDamageWithEffects(
+async function getDamageWithEffects(
   targetActor,
   rawDamage,
-  { sourceActor = null } = {},
+  { sourceActor = null, sourceItem = null } = {},
 ) {
   if (!targetActor) return null;
   const baseDamage = Math.max(Number.parseInt(rawDamage, 10) || 0, 0);
@@ -6979,20 +7351,279 @@ function getDamageWithEffects(
   if (hasStatus(targetActor, "transcendent")) {
     return { actor: targetActor, baseDamage, resolvedDamage: 0 };
   }
-  const outgoing = sourceActor ? getActorDamageEffectModifiers(sourceActor, "outgoing") : { flat: 0, mult: 1 };
-  const incoming = getActorDamageEffectModifiers(targetActor, "incoming");
+  const outgoing = sourceActor
+    ? getActorDamageEffectModifiers(sourceActor, "outgoing", { sourceItem })
+    : { flat: 0, mult: 1 };
+  const incoming = getActorDamageEffectModifiers(targetActor, "incoming", {
+    sourceItem,
+  });
   const self = sourceActor?.id === targetActor.id
-    ? getActorDamageEffectModifiers(targetActor, "self")
+    ? getActorDamageEffectModifiers(targetActor, "self", { sourceItem })
     : { flat: 0, mult: 1 };
 
   const totalFlat = outgoing.flat + incoming.flat + self.flat;
   const totalMult = outgoing.mult * incoming.mult * self.mult;
-  const resolvedDamage = Math.max(
+  const modifiedDamage = Math.max(
     Math.floor((baseDamage + totalFlat) * totalMult),
     0,
   );
+  const application = await applyDamageApplicationModifiers(
+    targetActor,
+    modifiedDamage,
+    { sourceActor, sourceItem },
+  );
 
-  return { actor: targetActor, baseDamage, resolvedDamage };
+  return {
+    actor: targetActor,
+    baseDamage,
+    modifiedDamage,
+    resolvedDamage: application.resolvedDamage,
+    preventedDamage: Math.max(modifiedDamage - application.resolvedDamage, 0),
+    consumedEffectIds: application.consumedEffectIds,
+  };
+}
+
+async function applyDamageApplicationModifiers(
+  targetActor,
+  rawDamage,
+  { sourceActor = null, sourceItem = null } = {},
+) {
+  let resolvedDamage = Math.max(Number.parseInt(rawDamage, 10) || 0, 0);
+  const consumedEffectIds = [];
+  for (const effect of targetActor?.allApplicableEffects?.() ?? []) {
+    if (!effect || effect.disabled) continue;
+
+    const data = foundry.utils.getProperty(effect, "flags.ffxiv.damage.application");
+    const entries = Array.isArray(data) ? data : data ? [data] : [];
+    for (const entry of entries) {
+      if (!damageApplicationEntryApplies(entry, { sourceActor, sourceItem }))
+        continue;
+
+      const amount = await resolveDamageApplicationAmount(entry, {
+        targetActor,
+        sourceActor,
+        sourceItem,
+        currentDamage: resolvedDamage,
+      });
+      if (!Number.isFinite(amount)) continue;
+
+      const operation = String(entry.operation ?? entry.mode ?? "subtract")
+        .trim()
+        .toLowerCase();
+      if (["override", "replace", "set"].includes(operation)) {
+        resolvedDamage = amount;
+      } else if (operation === "multiply") {
+        resolvedDamage *= amount;
+      } else if (["add", "grant"].includes(operation)) {
+        resolvedDamage += amount;
+      } else {
+        resolvedDamage -= amount;
+      }
+
+      if ((entry.consume === true || entry.remove === true) && effect.id) {
+        consumedEffectIds.push(effect.id);
+      }
+    }
+  }
+
+  return {
+    resolvedDamage: Math.max(Math.floor(resolvedDamage), 0),
+    consumedEffectIds: Array.from(new Set(consumedEffectIds)),
+  };
+}
+
+function damageApplicationEntryApplies(entry, { sourceActor = null, sourceItem = null } = {}) {
+  if (!entry || typeof entry !== "object") return false;
+
+  const sourceNames = toArray(
+    entry.sourceNames ?? entry.sourceName ?? entry.sourceAbilities ?? entry.sourceAbility,
+  ).map((value) => String(value ?? "").trim().toLowerCase()).filter(Boolean);
+  if (
+    sourceNames.length &&
+    !sourceNames.includes(String(sourceItem?.name ?? "").trim().toLowerCase())
+  )
+    return false;
+
+  const sourceActorNames = toArray(
+    entry.sourceActorNames ?? entry.sourceActorName ?? entry.sourceActors ?? entry.sourceActor,
+  ).map((value) => String(value ?? "").trim().toLowerCase()).filter(Boolean);
+  if (
+    sourceActorNames.length &&
+    !sourceActorNames.includes(String(sourceActor?.name ?? "").trim().toLowerCase())
+  )
+    return false;
+
+  const tags = toArray(entry.sourceTags ?? entry.tags ?? entry.tag).filter(Boolean);
+  if (tags.length) {
+    const itemTags = Array.isArray(sourceItem?.system?.tags)
+      ? sourceItem.system.tags
+      : [];
+    if (
+      !tags.some((tag) =>
+        itemTags.some((itemTag) => FFXIVItem._tagMatches(itemTag, [tag])),
+      )
+    )
+      return false;
+  }
+
+  return true;
+}
+
+async function resolveDamageApplicationAmount(
+  entry,
+  { targetActor = null, sourceActor = null, sourceItem = null, currentDamage = 0 } = {},
+) {
+  if (entry.percent !== undefined) {
+    const percent = Number(entry.percent);
+    if (Number.isFinite(percent)) return Math.ceil(currentDamage * percent / 100);
+  }
+  if (entry.fraction !== undefined) {
+    const fraction = Number(entry.fraction);
+    if (Number.isFinite(fraction)) return Math.ceil(currentDamage * fraction);
+  }
+
+  const formula = String(entry.formula ?? "").trim();
+  if (formula) {
+    const rollData =
+      sourceItem?.getRollData?.() ??
+      sourceActor?.getRollData?.() ??
+      targetActor?.getRollData?.() ??
+      {};
+    const roll = new Roll(formula, {
+      ...rollData,
+      damage: currentDamage,
+    });
+    await roll.evaluate();
+    return Number(roll.total ?? roll.result);
+  }
+
+  return Number(entry.amount ?? entry.flat ?? entry.value ?? 0);
+}
+
+async function consumeDamageApplicationEffects(actor, effectIds) {
+  const ids = Array.from(new Set(effectIds ?? []))
+    .map((id) => String(id ?? "").trim())
+    .filter((id) => actor?.effects?.has(id));
+  if (!ids.length) return;
+  await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {
+    render: false,
+    ffxivSuppressRemovalText: true,
+  });
+}
+
+async function getHealingWithEffects(
+  targetActor,
+  rawHealing,
+  { sourceActor = null, sourceItem = null } = {},
+) {
+  const baseHealing = Math.max(Number.parseInt(rawHealing, 10) || 0, 0);
+  if (!targetActor || baseHealing <= 0) {
+    return { actor: targetActor, baseHealing, resolvedHealing: 0 };
+  }
+
+  let resolvedHealing = baseHealing;
+  const entries = getItemHealingApplicationEntries(sourceItem);
+  for (const entry of entries) {
+    if (!healingApplicationEntryApplies(entry, targetActor, sourceActor)) continue;
+
+    const amount = await resolveHealingApplicationAmount(entry, sourceItem, sourceActor);
+    if (!Number.isFinite(amount)) continue;
+
+    const operation = String(entry.operation ?? entry.mode ?? "add")
+      .trim()
+      .toLowerCase();
+    if (["override", "replace", "set"].includes(operation)) {
+      resolvedHealing = amount;
+    } else if (operation === "multiply") {
+      resolvedHealing *= amount;
+    } else if (["subtract", "consume"].includes(operation)) {
+      resolvedHealing -= amount;
+    } else {
+      resolvedHealing += amount;
+    }
+  }
+
+  return {
+    actor: targetActor,
+    baseHealing,
+    resolvedHealing: Math.max(Math.floor(resolvedHealing), 0),
+  };
+}
+
+function getItemHealingApplicationEntries(item) {
+  const data = foundry.utils.getProperty(item, "flags.ffxiv.healing.application");
+  return Array.isArray(data) ? data : data ? [data] : [];
+}
+
+function healingApplicationEntryApplies(entry, targetActor, sourceActor = null) {
+  if (!entry || typeof entry !== "object" || !targetActor) return false;
+
+  const condition = entry.when ?? entry.condition ?? entry.conditions ?? {};
+  if (!healingHealthConditionApplies(condition.targetHp ?? condition.health, targetActor))
+    return false;
+  if (!healingHealthConditionApplies(entry.targetHp ?? entry.health, targetActor))
+    return false;
+
+  const sourceNames = toArray(
+    entry.sourceNames ?? entry.sourceName ?? entry.sourceActors ?? entry.sourceActor,
+  ).map((value) => String(value ?? "").trim().toLowerCase()).filter(Boolean);
+  if (
+    sourceNames.length &&
+    !sourceNames.includes(String(sourceActor?.name ?? "").trim().toLowerCase())
+  )
+    return false;
+
+  return true;
+}
+
+function healingHealthConditionApplies(condition, actor) {
+  if (!condition) return true;
+  if (typeof condition !== "object") return true;
+
+  const current = Number(actor.system?.health?.value ?? 0);
+  const max = Number(actor.system?.health?.max ?? 0);
+  if (!Number.isFinite(current)) return false;
+
+  const checks = [
+    ["lte", (left, right) => left <= right],
+    ["lt", (left, right) => left < right],
+    ["gte", (left, right) => left >= right],
+    ["gt", (left, right) => left > right],
+    ["eq", (left, right) => left === right],
+  ];
+  for (const [key, predicate] of checks) {
+    if (condition[key] === undefined) continue;
+    const threshold = resolveHealingHealthThreshold(condition[key], max);
+    if (!Number.isFinite(threshold) || !predicate(current, threshold)) return false;
+  }
+  return true;
+}
+
+function resolveHealingHealthThreshold(value, maxHealth) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (["half", "halfmax", "bloodied"].includes(normalized)) {
+    return Math.ceil((Number(maxHealth) || 0) / 2);
+  }
+  if (normalized.endsWith("%")) {
+    const percent = Number.parseFloat(normalized.slice(0, -1));
+    if (Number.isFinite(percent)) return Math.ceil((Number(maxHealth) || 0) * percent / 100);
+  }
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0 && numeric < 1) {
+    return Math.ceil((Number(maxHealth) || 0) * numeric);
+  }
+  return numeric;
+}
+
+async function resolveHealingApplicationAmount(entry, sourceItem, sourceActor) {
+  const formula = String(entry.formula ?? "").trim();
+  if (formula) {
+    const rollData = sourceItem?.getRollData?.() ?? sourceActor?.getRollData?.() ?? {};
+    const roll = new Roll(formula, rollData);
+    await roll.evaluate();
+    return Number(roll.total ?? roll.result);
+  }
+  return Number(entry.amount ?? entry.flat ?? entry.value ?? 0);
 }
 
 async function applyDrainRecovery(sourceActor) {
@@ -7035,7 +7666,7 @@ function getActorDamageMpRecovery(actor, item) {
 
       const amount = Number(change?.value);
       if (!Number.isFinite(amount)) continue;
-      const mode = normalizeActiveEffectChangeMode(change?.mode);
+      const mode = normalizeActiveEffectChangeMode(change);
       if (mode === "multiply") recovery *= amount;
       else if (mode === "override") recovery = amount;
       else if (mode === "subtract") recovery -= amount;
@@ -7076,7 +7707,7 @@ function getActorDamageEffectModifiers(actor, channel) {
 
     for (const change of effect.changes ?? []) {
       const key = String(change?.key ?? "").trim().toLowerCase();
-      const mode = normalizeActiveEffectChangeMode(change?.mode);
+      const mode = normalizeActiveEffectChangeMode(change);
       const value = Number(change?.value);
       if (!Number.isFinite(value)) continue;
 
@@ -7100,16 +7731,33 @@ function getActorDamageEffectModifiers(actor, channel) {
   return result;
 }
 
-function normalizeActiveEffectChangeMode(mode) {
-  if (typeof mode === "string" && mode) return mode.toLowerCase();
-  const legacy = Number.parseInt(mode, 10);
+function normalizeActiveEffectChangeMode(change) {
+  const rawMode = change && typeof change === "object"
+    ? change.type ?? change.mode
+    : change;
+  const mode = String(rawMode ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, "");
+  if (["multiply", "add", "subtract", "override", "upgrade", "downgrade"].includes(mode))
+    return mode;
+
+  const legacy = Number.parseInt(rawMode, 10);
   switch (legacy) {
+    case 0:
+      return "custom";
     case 1:
       return "multiply";
     case 2:
       return "add";
+    case 3:
+      return "downgrade";
+    case 4:
+      return "upgrade";
     case 5:
       return "override";
+    case 6:
+      return "subtract";
     default:
       return "add";
   }
@@ -7583,11 +8231,26 @@ async function deleteActorStatuses(actor, statusIds) {
 }
 
 function prepareLinkedActiveEffectDuration(actor, doc) {
+  const combat = game.combat;
+  if (combat?.started && combat.turns?.length) {
+    const combatantExpiry = {
+      combatId: combat.id,
+      combatantId: combat.combatant?.id ?? null,
+      round: combat.round ?? 0,
+      turn: combat.turn ?? 0,
+    };
+    if (foundry.utils.getProperty(doc, "flags.ffxiv.expireAtCombatantTurnEnd") === true) {
+      foundry.utils.setProperty(doc, "flags.ffxiv.expireAtCombatantTurnEnd", combatantExpiry);
+    }
+    if (foundry.utils.getProperty(doc, "flags.ffxiv.expireAtCombatantTurnStart") === true) {
+      foundry.utils.setProperty(doc, "flags.ffxiv.expireAtCombatantTurnStart", combatantExpiry);
+    }
+  }
+
   if (!doc.duration || typeof doc.duration !== "object") return doc;
 
   doc.duration.startTime = game.time?.worldTime ?? null;
 
-  const combat = game.combat;
   if (!combat?.started || !combat.turns?.length) {
     doc.duration.startRound = null;
     doc.duration.startTurn = null;
@@ -8175,16 +8838,62 @@ Hooks.on("ready", function () {
 
         case "applyHeal": {
           debugLog("heal socket");
-          const heal = data.heal;
-          if (!actors.length || !heal) return;
+          const sourceActor = await resolveActorFromReference(
+            data.sourceActorUuid ?? data.sourceActorId,
+          );
+          const sourceItem = await resolveItemFromReference(
+            data.sourceItemUuid ?? data.sourceItemId,
+            sourceActor,
+          );
+          const applications = [];
+          if (Array.isArray(data.applications)) {
+            for (const application of data.applications) {
+              const actor = await resolveActorFromReference(
+                application.actorRef ?? application.actorUuid ?? application.actorId,
+              );
+              const heal = Math.max(Number.parseInt(application.heal, 10) || 0, 0);
+              const resolvedHealing = Math.max(
+                Number.parseInt(application.resolvedHealing ?? heal, 10) || 0,
+                0,
+              );
+              if (actor && heal > 0) {
+                applications.push({
+                  actor,
+                  healing: {
+                    actor,
+                    baseHealing: Math.max(
+                      Number.parseInt(application.baseHealing ?? heal, 10) || 0,
+                      0,
+                    ),
+                    resolvedHealing,
+                  },
+                });
+              }
+            }
+          } else {
+            const heal = Math.max(Number.parseInt(data.heal, 10) || 0, 0);
+            if (heal > 0) {
+              for (const actor of actors) {
+                const healing = await getHealingWithEffects(actor, heal, {
+                  sourceActor,
+                  sourceItem,
+                });
+                applications.push({ actor, healing });
+              }
+            }
+          }
+          if (!applications.length) return;
           const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
           if (autoApply) {
-            for (const actor of actors) {
-              await applyHealingToActor(actor, heal);
+            for (const { actor, healing } of applications) {
+              await applyResolvedHealingToActor(actor, healing, { sourceActor, sourceItem });
             }
             break;
           }
 
+          const requestedHeal = Array.from(new Set(
+            applications.map(({ healing }) => healing.resolvedHealing),
+          )).join(", ");
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-heal",
             window: {
@@ -8192,16 +8901,19 @@ Hooks.on("ready", function () {
                 "FFXIV.Notifications.HealChangeRequest",
               ),
             },
-            content: `<p>${game.i18n.format("FFXIV.Notifications.HealRequest", { playerName: userName, heal: heal })}</p>
-                <ul>${actors.map((a) => `<li>${a.name}</li>`).join("")}</ul>`,
+            content: `<p>${game.i18n.format("FFXIV.Notifications.HealRequest", { playerName: userName, heal: requestedHeal })}</p>
+                <ul>${applications.map(({ actor, healing }) => `<li>${actor.name}: ${healing.resolvedHealing}</li>`).join("")}</ul>`,
             buttons: [
               {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
                 callback: async () => {
-                  for (const actor of actors) {
-                    await applyHealingToActor(actor, heal);
+                  for (const { actor, healing } of applications) {
+                    await applyResolvedHealingToActor(actor, healing, {
+                      sourceActor,
+                      sourceItem,
+                    });
                   }
                 },
               },
@@ -8217,9 +8929,7 @@ Hooks.on("ready", function () {
 
         case "applyDamage": {
           debugLog("damage socket");
-          const damage = data.damage;
-          if (!actors.length || !damage) return;
-          const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
+          const damage = Math.max(Number.parseInt(data.damage, 10) || 0, 0);
           const sourceActor = await resolveActorFromReference(
             data.sourceActorUuid ?? data.sourceActorId,
           );
@@ -8227,16 +8937,71 @@ Hooks.on("ready", function () {
             data.sourceItemUuid ?? data.sourceItemId,
             sourceActor,
           );
-          if (autoApply) {
+          const applications = [];
+          if (Array.isArray(data.applications)) {
+            for (const application of data.applications) {
+              const actor = await resolveActorFromReference(
+                application.actorRef ?? application.actorUuid ?? application.actorId,
+              );
+              const resolvedDamage = Math.max(
+                Number.parseInt(application.resolvedDamage ?? application.damage, 10) || 0,
+                0,
+              );
+              if (!actor) continue;
+              applications.push({
+                actor,
+                result: {
+                  actor,
+                  baseDamage: Math.max(
+                    Number.parseInt(application.baseDamage ?? damage, 10) || 0,
+                    0,
+                  ),
+                  modifiedDamage: Math.max(
+                    Number.parseInt(application.modifiedDamage ?? resolvedDamage, 10) || 0,
+                    0,
+                  ),
+                  resolvedDamage,
+                  preventedDamage: Math.max(
+                    Number.parseInt(application.preventedDamage, 10) || 0,
+                    0,
+                  ),
+                  consumedEffectIds: Array.isArray(application.consumedEffectIds)
+                    ? application.consumedEffectIds
+                    : [],
+                },
+              });
+            }
+          }
+          if (!applications.length && (!actors.length || !damage)) return;
+
+          const applyApplications = async () => {
             const damageResults = [];
-            for (const actor of actors) {
-              const result = await applyDamageToActorWithEffects(actor, damage, { sourceActor });
-              if (result) damageResults.push(result);
+            if (applications.length) {
+              for (const { actor, result } of applications) {
+                await applyResolvedDamageToActor(actor, result, { sourceActor });
+                damageResults.push(result);
+              }
+            } else {
+              for (const actor of actors) {
+                const result = await applyDamageToActorWithEffects(actor, damage, {
+                  sourceActor,
+                  sourceItem,
+                });
+                if (result) damageResults.push(result);
+              }
             }
             await applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults);
+          };
+
+          const autoApply = !!game.settings.get("ffxiv", "autoApplySocketRequests");
+          if (autoApply) {
+            await applyApplications();
             break;
           }
 
+          const targetList = applications.length
+            ? applications.map(({ actor, result }) => `<li>${actor.name}: ${result.resolvedDamage}</li>`)
+            : actors.map((a) => `<li>${a.name}</li>`);
           new foundry.applications.api.DialogV2({
             id: "gamemaster-socket-damage",
             window: {
@@ -8245,20 +9010,13 @@ Hooks.on("ready", function () {
               ),
             },
             content: `<p>${game.i18n.format("FFXIV.Notifications.DamageRequest", { playerName: userName, damage: damage })}</p>
-                <ul>${actors.map((a) => `<li>${a.name}</li>`).join("")}</ul>`,
+                <ul>${targetList.join("")}</ul>`,
             buttons: [
               {
                 label: game.i18n.localize("FFXIV.Sockets.Accept"),
                 action: "accept",
                 type: "submit",
-                callback: async () => {
-                  const damageResults = [];
-                  for (const actor of actors) {
-                    const result = await applyDamageToActorWithEffects(actor, damage, { sourceActor });
-                    if (result) damageResults.push(result);
-                  }
-                  await applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults);
-                },
+                callback: applyApplications,
               },
               {
                 label: game.i18n.localize("FFXIV.Sockets.Decline"),
@@ -8471,10 +9229,13 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       ? results.filter((result) =>
         result && result.resolvedDamage !== result.baseDamage
       )
-      : [];
-    const resolvedAmounts = results.map((result) => result?.resolvedDamage);
+      : results.filter((result) =>
+        result && result.resolvedHealing !== result.baseHealing
+      );
+    const resultProperty = kind === "damage" ? "resolvedDamage" : "resolvedHealing";
+    const baseProperty = kind === "damage" ? "baseDamage" : "baseHealing";
+    const resolvedAmounts = results.map((result) => result?.[resultProperty]);
     const sameResolvedAmount =
-      kind === "damage" &&
       resolvedAmounts.length === count &&
       resolvedAmounts.every((value) => value === resolvedAmounts[0]);
     let notice = game.i18n.format(
@@ -8485,17 +9246,15 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
         count: count,
       },
     );
-    if (kind === "damage") {
-      if (changed.length === 1 && count === 1) {
-        notice += ` (${changed[0].baseDamage} -> ${changed[0].resolvedDamage})`;
-      } else if (changed.length) {
-        const summary = changed
-          .map((result) =>
-            `${result.actor?.name ?? "Target"}: ${result.baseDamage} -> ${result.resolvedDamage}`
-          )
-          .join(", ");
-        notice += ` (${summary})`;
-      }
+    if (changed.length === 1 && count === 1) {
+      notice += ` (${changed[0][baseProperty]} -> ${changed[0][resultProperty]})`;
+    } else if (changed.length) {
+      const summary = changed
+        .map((result) =>
+          `${result.actor?.name ?? "Target"}: ${result[baseProperty]} -> ${result[resultProperty]}`
+        )
+        .join(", ");
+      notice += ` (${summary})`;
     }
 
     const buttonRow = jqueryhtml
@@ -8545,6 +9304,16 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     if (item) await item._rollJobResourceBonus(ev);
   });
 
+  jqueryhtml.find(".ffxiv-roll-ability-branch").on("click", async (ev) => {
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._rollAbilityBranch(ev);
+  });
+
+  jqueryhtml.find(".ffxiv-show-ability-branch").on("click", async (ev) => {
+    const item = await resolveChatAbilityItem(ev.currentTarget);
+    if (item) await item._showAbilityBranch(ev);
+  });
+
   jqueryhtml.find(".ffxiv-roll-critical").on("click", async (ev) => {
     const item = await resolveChatAbilityItem(ev.currentTarget);
     if (item) await item._rollCritical(ev);
@@ -8574,20 +9343,34 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.NoTarget"));
       return;
     }
+    const sourceItem = await resolveChatAbilityItem(ev.currentTarget);
+    const sourceActor = await resolveActorFromReference(
+      ev.currentTarget.dataset.actorUuid ?? ev.currentTarget.dataset.actorId,
+    );
     const heal = parseInt(eval(ev.currentTarget.dataset.heal));
     debugLog(ev.currentTarget.dataset);
     const ownActors = [];
     const actorsNeedingGM = [];
+    const healResults = [];
     for (const token of targets) {
       const actor = token.actor;
+      const healing = await getHealingWithEffects(actor, heal, {
+        sourceActor,
+        sourceItem,
+      });
+      healResults.push(healing);
       if (actor.testUserPermission(game.user, "OWNER")) {
-        ownActors.push({ actor, token });
+        ownActors.push({ actor, token, healing });
       } else {
-        actorsNeedingGM.push({ actor, token });
+        actorsNeedingGM.push({ actor, token, healing });
       }
     }
-    for (const { actor, token } of ownActors) {
-      await applyHealingToActor(actor, heal, { token });
+    for (const { actor, token, healing } of ownActors) {
+      await applyResolvedHealingToActor(actor, healing, {
+        sourceActor,
+        sourceItem,
+        token,
+      });
     }
     if (actorsNeedingGM.length > 0) {
       debugLog("Send socket to GM, heal", heal);
@@ -8597,6 +9380,16 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
           actorIds: actorsNeedingGM.map(({ actor }) => actor.id),
           actorRefs: actorsNeedingGM.map(({ actor }) => getActorReference(actor)),
           heal: heal,
+          sourceActorId: sourceActor?.id ?? ev.currentTarget.dataset.actorId ?? null,
+          sourceActorUuid: sourceActor?.uuid ?? ev.currentTarget.dataset.actorUuid ?? null,
+          sourceItemId: sourceItem?.id ?? ev.currentTarget.dataset.itemId ?? null,
+          sourceItemUuid: sourceItem?.uuid ?? ev.currentTarget.dataset.itemUuid ?? null,
+          applications: actorsNeedingGM.map(({ actor, healing }) => ({
+            actorRef: getActorReference(actor),
+            heal,
+            baseHealing: healing.baseHealing,
+            resolvedHealing: healing.resolvedHealing,
+          })),
           active: ev.currentTarget.dataset.action === "true",
         },
         userName: game.user.name,
@@ -8612,6 +9405,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       kind: "heal",
       amount: heal,
       count: targets.length,
+      results: healResults,
     });
   });
   jqueryhtml.find(".ffxiv-apply-dmg").on("click", async (ev) => {
@@ -8640,6 +9434,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     for (const { actor, token } of ownActors) {
       const result = await applyDamageToActorWithEffects(actor, damage, {
         sourceActor,
+        sourceItem,
         targetToken: token,
       });
       if (result) {
@@ -8648,9 +9443,24 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
       }
     }
     await applyDamageSourceManaRecovery(sourceActor, sourceItem, ownDamageResults);
+    const socketDamageApplications = [];
     for (const { actor } of actorsNeedingGM) {
-      const result = getDamageWithEffects(actor, damage, { sourceActor });
+      const result = await getDamageWithEffects(actor, damage, {
+        sourceActor,
+        sourceItem,
+      });
       if (result) damageResults.push(result);
+      if (result) {
+        socketDamageApplications.push({
+          actorId: actor.id,
+          actorRef: getActorReference(actor),
+          baseDamage: result.baseDamage,
+          modifiedDamage: result.modifiedDamage,
+          resolvedDamage: result.resolvedDamage,
+          preventedDamage: result.preventedDamage,
+          consumedEffectIds: result.consumedEffectIds,
+        });
+      }
     }
     if (actorsNeedingGM.length > 0) {
       debugLog("Send socket to GM, damage", damage);
@@ -8660,6 +9470,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
           actorIds: actorsNeedingGM.map(({ actor }) => actor.id),
           actorRefs: actorsNeedingGM.map(({ actor }) => getActorReference(actor)),
           damage: damage,
+          applications: socketDamageApplications,
           sourceActorId: sourceActor?.id ?? null,
           sourceActorUuid: sourceActor?.uuid ?? null,
           sourceItemId: sourceItem?.id ?? ev.currentTarget.dataset.itemId ?? null,
@@ -9113,9 +9924,14 @@ jqueryhtml.find(".ffxiv-apply-status").on("click", async (ev) => {
     const linkedEffects = Array.from(item.effects ?? []).filter(
       (effect) => !effect.disabled,
     );
+    const branchKey = item._normalizeEffectKey?.(
+      ev.currentTarget.dataset.effectBranch,
+    ) ?? "";
     const manualLinkedEffects = linkedEffects.filter((effect) => {
       const applyTo = getLinkedEffectApplyTo(effect);
-      return applyTo !== "self_auto" && applyTo !== "automation";
+      if (applyTo === "self_auto" || applyTo === "automation") return false;
+      const effectBranchKey = item._getLinkedEffectBranchKey?.(effect) ?? "";
+      return branchKey ? effectBranchKey === branchKey : !effectBranchKey;
     });
     if (!manualLinkedEffects.length) return;
 

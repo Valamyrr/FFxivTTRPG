@@ -87,7 +87,7 @@
         <strong>{{localize "FFXIV.Abilities.BaseEffect"}}:</strong> {{{enriched.base_effect}}}
       </div>
     {{/if}}
-    {{#if system.direct_hit }}
+    {{#if (hasContent system.direct_hit) }}
       <div class="effect">
         <strong>{{localize "FFXIV.Abilities.DirectHit"}}:</strong> {{{enriched.direct_hit}}}
       </div>

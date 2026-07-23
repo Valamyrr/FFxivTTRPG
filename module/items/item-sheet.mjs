@@ -211,6 +211,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.itemStatusEffects = this._getStatusEffectEntries(itemData.system);
     context.effectRequirementEntries = this._getEffectRequirementEntries(itemData.system);
     context.effectRuleEntries = this._getEffectRuleEntries(itemData.system);
+    context.conditionalBaseFormula = this._getConditionalBaseFormulaEntry(itemData.flags);
     context.cssClass = this._getSheetClasses().join(" ");
     context.editable =
       this.document.isOwner &&
@@ -435,10 +436,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   /** @override */
+  async _preClose(options) {
+    await super._preClose(options);
+    this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
+  }
+
+  /** @override */
   async _onClose(options) {
     this._clearAutomationHelp();
     await super._onClose(options);
-    this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
   }
 
   _playConfiguredSound(setting) {
@@ -697,6 +703,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return game.i18n.localize(control.checked ? "FFXIV.Dialogs.Yes" : "FFXIV.Dialogs.No");
     }
     const value = String(control.value ?? "").trim();
+    if (control.classList.contains("status-effect-duration")) return value || "N/A";
     return value || game.i18n.localize("FFXIV.None");
   }
 
@@ -710,7 +717,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!event.target?.name) return;
 
     event.preventDefault();
-    const updateData = {
+    const updateData = this._getConditionalBaseFormulaUpdate(event.target) ?? {
       [event.target.name]: this._getChangedFieldValue(event.target),
     };
     const render =
@@ -732,6 +739,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "system.alternate_formula_critical_attribute",
         "system.check",
         "system.origin",
+        "flags.ffxiv.baseFormula.override",
+        "flags.ffxiv.baseFormula.override.formula",
+        "flags.ffxiv.baseFormula.override.threshold",
       ].includes(event.target.name);
     if (render) this._captureSheetScroll();
     this.document
@@ -803,6 +813,57 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (dtype === "Boolean") return target.value === "true";
 
     return target.value;
+  }
+
+  _getConditionalBaseFormulaEntry(flags) {
+    const data = foundry.utils.getProperty(flags, "ffxiv.baseFormula.override");
+    const entry = Array.isArray(data) ? data[0] : data;
+    return {
+      formula: String(entry?.formula ?? "").trim(),
+      hasFormula: Boolean(String(entry?.formula ?? "").trim()),
+      threshold: String(
+        entry?.when?.targetHp?.lte ??
+        entry?.targetHp?.lte ??
+        "halfMax",
+      ).trim() || "halfMax",
+    };
+  }
+
+  _getConditionalBaseFormulaUpdate(target) {
+    if (!target?.name?.startsWith("flags.ffxiv.baseFormula.override.")) return null;
+
+    const current = this._getConditionalBaseFormulaEntry(this.item.toObject(false).flags);
+    const next = {
+      formula: current.formula,
+      threshold: current.threshold || "halfMax",
+    };
+    if (target.name.endsWith(".formula")) {
+      next.formula = String(target.value ?? "").trim();
+    } else if (target.name.endsWith(".threshold")) {
+      next.threshold = String(target.value ?? "").trim() || "halfMax";
+    } else {
+      return null;
+    }
+
+    if (!next.formula) {
+      return {
+        "flags.ffxiv.baseFormula.override": [],
+      };
+    }
+
+    return {
+      "flags.ffxiv.baseFormula.override": [
+        {
+          operation: "replace",
+          formula: next.formula,
+          when: {
+            targetHp: {
+              lte: next.threshold,
+            },
+          },
+        },
+      ],
+    };
   }
 
   _getBakedActionTag(type) {
@@ -1263,19 +1324,23 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         applyMode: system.status_apply_mode || "manual",
       });
     }
-    return entries.map((entry) => ({
-      id: entry?.id ?? "",
-      action: entry?.action !== false,
-      applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
-      applyTo: this._normalizeStatusApplyTo(entry?.applyTo),
-      allSources: entry?.allSources === true,
-      stacks: this._normalizeStatusStacks(entry?.stacks),
-      stackable: isStackableStatusEffect(entry?.id ?? ""),
-      duration: {
-        turns: this._normalizeStatusDuration(entry?.duration?.turns),
-        rounds: this._normalizeStatusDuration(entry?.duration?.rounds),
-      },
-    }));
+    return entries.map((entry) => {
+      const duration = this._getStatusDurationForm(entry?.duration);
+      return {
+        id: entry?.id ?? "",
+        action: entry?.action !== false,
+        applyMode: entry?.applyMode === "auto" ? "auto" : "manual",
+        applyTo: this._normalizeStatusApplyTo(entry?.applyTo),
+        allSources: entry?.allSources === true,
+        stacks: this._normalizeStatusStacks(entry?.stacks),
+        stackable: isStackableStatusEffect(entry?.id ?? ""),
+        duration: duration.value
+          ? { [duration.unit]: duration.value }
+          : {},
+        durationUnit: duration.unit,
+        durationValue: duration.value,
+      };
+    });
   }
 
   _normalizeStatusApplyTo(value) {
@@ -1292,6 +1357,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _normalizeStatusDuration(value) {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : "";
+  }
+
+  _getStatusDurationForm(duration) {
+    const turns = this._normalizeStatusDuration(duration?.turns);
+    if (turns) return { unit: "turns", value: turns };
+    const rounds = this._normalizeStatusDuration(duration?.rounds);
+    if (rounds) return { unit: "rounds", value: rounds };
+    return { unit: "turns", value: "" };
   }
 
   _getCurrentStatusEffectEntries() {
@@ -1623,14 +1696,16 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     } else if (event.currentTarget.classList.contains("status-effect-apply-to")) {
       entries[index].applyTo = this._normalizeStatusApplyTo(event.currentTarget.value);
     } else if (event.currentTarget.classList.contains("status-effect-duration")) {
-      const field = String(event.currentTarget.dataset.field ?? "");
-      if (["turns", "rounds"].includes(field)) {
-        entries[index].duration ??= {};
-        const parsed = Number.parseInt(event.currentTarget.value, 10);
-        if (Number.isFinite(parsed) && parsed > 0) entries[index].duration[field] = parsed;
-        else delete entries[index].duration[field];
-        if (!Object.keys(entries[index].duration).length) delete entries[index].duration;
-      }
+      const current = this._getStatusDurationForm(entries[index].duration);
+      const unit = event.currentTarget.classList.contains("status-effect-duration-unit")
+        ? this._normalizeStatusDurationUnit(event.currentTarget.value)
+        : current.unit;
+      const rawValue = event.currentTarget.classList.contains("status-effect-duration-value")
+        ? event.currentTarget.value
+        : current.value;
+      const value = this._normalizeStatusDuration(rawValue);
+      if (value) entries[index].duration = { [unit]: value };
+      else delete entries[index].duration;
     } else {
       entries[index].action = event.currentTarget.value === "true";
     }
@@ -1647,6 +1722,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       )
       .then(() => this.render({ force: true }))
       .catch((err) => ui.notifications.error(err, { console: true }));
+  }
+
+  _normalizeStatusDurationUnit(value) {
+    return String(value ?? "").trim().toLowerCase() === "rounds"
+      ? "rounds"
+      : "turns";
   }
 
   _onAddStatusEffect(event) {
@@ -1980,7 +2061,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     html.on(
       "change.ffxivItemSheet",
-      ".status-effect-id, .status-effect-action, .status-effect-apply-mode, .status-effect-apply-to, .status-effect-stacks",
+      ".status-effect-id, .status-effect-action, .status-effect-apply-mode, .status-effect-apply-to, .status-effect-stacks, .status-effect-duration",
       this._onChangeStatusEffect.bind(this),
     );
     html.on(

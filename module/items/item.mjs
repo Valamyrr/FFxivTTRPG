@@ -1039,10 +1039,13 @@ export class FFXIVItem extends Item {
     await this._rollBase({
       critical: checkResult?.isCritical ?? false,
       autoFromHit: Boolean(checkResult),
+      forceCriticalRule: checkResult?.forceCriticalRule ?? null,
     });
-    await this._applyEffectRules("use", {
+    await this._consumeForceCriticalRule(checkResult?.forceCriticalRule);
+    const effectRuleResults = await this._applyEffectRules("use", {
       jobResourceCosts: this._ffxivJobResourceCostResult,
     });
+    await this._postEffectRuleResultsToChat(chatMessage, effectRuleResults);
     await this._consumeEffectRequirements();
     await this._applyDeferredHitThresholdRules(checkResult);
     await this._autoApplyStatusEffects(chatMessage);
@@ -1923,6 +1926,13 @@ export class FFXIVItem extends Item {
     options = this._normalizeRollOptions(options);
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
+    const automaticCriticalRule = this._getForceCriticalRule("base", options);
+    if (automaticCriticalRule) {
+      return this._rollAutomaticCriticalCheck({
+        ...options,
+        forceCriticalRule: automaticCriticalRule,
+      });
+    }
 
     const rollData = this.getRollData();
     const baseFormula = this._getHitBaseFormula(rollData);
@@ -2116,7 +2126,9 @@ export class FFXIVItem extends Item {
       this.parent,
       this.parent?.system?.criticalRange,
     );
-    const isCritical = d20Result !== null && d20Result >= criticalRange;
+    const forceCriticalRule = this._getForceCriticalRule("base", options);
+    const isCritical = Boolean(forceCriticalRule) ||
+      (d20Result !== null && d20Result >= criticalRange);
     const isCriticalFailure = false;
     const isInterrupted = this._isInterruptedByParalysis(d20Result);
 
@@ -2138,10 +2150,10 @@ export class FFXIVItem extends Item {
       !isInterrupted && this._shouldAutoRollDirectHit(roll, options);
     const directHitResult = autoDirectHit
       ? await this._evaluateDirectHitRoll({
-          critical: isCritical,
-          autoFromHit: true,
-          effectSnapshot: options.effectSnapshot,
-        })
+        critical: isCritical,
+        autoFromHit: true,
+        effectSnapshot: options.effectSnapshot,
+      })
       : null;
     const buttonData = this._getChatButtonData();
 
@@ -2220,7 +2232,45 @@ export class FFXIVItem extends Item {
       isCriticalFailure,
       interrupted: isInterrupted,
       directHitRoll: directHitResult?.roll ?? null,
+      forceCriticalRule,
       deferredHitThresholdRules: options.deferHitThresholdRules === true,
+    };
+  }
+
+  async _rollAutomaticCriticalCheck(options = {}) {
+    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
+    let directHitResult = null;
+    if (this._hasDirectRoll()) {
+      directHitResult = await this._evaluateDirectHitRoll({
+        ...options,
+        critical: true,
+        autoFromHit: true,
+      });
+      if (directHitResult) {
+        await ChatMessage.create({
+          user: game.user.id,
+          speaker,
+          rolls: [directHitResult.roll],
+          flavor: directHitResult.flavor,
+          content: `${directHitResult.html.html()} ${this._getApplyButton(directHitResult.roll.result)}`,
+        });
+        if (!this._hasFormula(this.system.base_formula)) {
+          await this._consumeForceCriticalRule(options.forceCriticalRule);
+        }
+      }
+    }
+
+    await this._applyCriticalJobResourceAutomation(true);
+    return {
+      roll: null,
+      d20Result: null,
+      isCritical: true,
+      isCriticalFailure: false,
+      interrupted: false,
+      directHitRoll: directHitResult?.roll ?? null,
+      forceCriticalRule: options.forceCriticalRule ?? null,
+      deferredHitThresholdRules: false,
+      automaticCritical: true,
     };
   }
 
@@ -2237,12 +2287,14 @@ export class FFXIVItem extends Item {
       flavor: directHitResult.flavor,
       content: `${directHitResult.html.html()} ${this._getApplyButton(directHitResult.roll.result)}`,
     });
+    await this._consumeForceCriticalRule(directHitResult.forceCriticalRule);
   }
 
   async _evaluateDirectHitRoll(options = {}) {
     options = this._normalizeRollOptions(options);
     if (!this._hasDirectRoll()) return null;
-    const critical = options.critical || this._shouldForceDirectHitCritical(options);
+    const forceCriticalRule = this._getForceCriticalRule("direct", options);
+    const critical = options.critical || Boolean(forceCriticalRule);
     const rollData = this.getRollData();
     const formula = critical
       ? await this._getCriticalDirectFormula(rollData, options)
@@ -2265,6 +2317,7 @@ export class FFXIVItem extends Item {
         autoFromHit: options.autoFromHit,
         directHitOption,
       }),
+      forceCriticalRule,
     };
   }
 
@@ -2404,6 +2457,125 @@ export class FFXIVItem extends Item {
     });
   }
 
+  _getAbilityBranchOption(key) {
+    const normalizedKey = this._normalizeEffectKey(key);
+    if (!normalizedKey) return null;
+    return this._getAbilityBranchOptions().find((option) =>
+      option.key === normalizedKey,
+    ) ?? null;
+  }
+
+  _getAbilityBranchOptions() {
+    return this._getAbilityBranchEntries()
+      .map((entry) => this._prepareAbilityBranchOption(entry))
+      .filter((option) => option?.key);
+  }
+
+  _getAbilityBranchEntries() {
+    const data =
+      foundry.utils.getProperty(this, "flags.ffxiv.branches") ??
+      foundry.utils.getProperty(this, "flags.ffxiv.abilityBranches");
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data !== "object") return [];
+    if (data.key || data.name || data.formula || data.description) return [data];
+    return Object.values(data);
+  }
+
+  _prepareAbilityBranchOption(entry) {
+    const name = String(entry?.name ?? entry?.label ?? entry?.key ?? "").trim();
+    const key =
+      this._normalizeEffectKey(entry?.key) ||
+      this._normalizeEffectKey(name);
+    const formula = this._getAbilityBranchFormula(entry);
+    return {
+      key,
+      name: name || key,
+      buttonLabel: String(entry?.buttonLabel ?? name ?? key).trim() || key,
+      formula,
+      description: String(entry?.description ?? entry?.text ?? "").trim(),
+      applyEffects: entry?.applyEffects === true || this._hasBranchLinkedEffects(key),
+    };
+  }
+
+  _getAbilityBranchFormula(entry) {
+    let formula = String(entry?.formula ?? entry?.rollFormula ?? "").trim();
+    const level = getActorLevel(this.parent);
+    let selectedMinLevel = -Infinity;
+    const upgrades = [
+      ...this._toArray(entry?.formulaByLevel),
+      ...this._toArray(entry?.formulaUpgrades),
+    ];
+    for (const upgrade of upgrades) {
+      const minLevel = Number.parseInt(upgrade?.minLevel, 10);
+      if (!Number.isFinite(minLevel) || level < minLevel) continue;
+      if (minLevel < selectedMinLevel) continue;
+      const upgradeFormula = String(upgrade?.formula ?? upgrade?.rollFormula ?? "").trim();
+      if (!upgradeFormula) continue;
+      formula = upgradeFormula;
+      selectedMinLevel = minLevel;
+    }
+    return formula;
+  }
+
+  _hasBranchLinkedEffects(branchKey) {
+    const normalizedKey = this._normalizeEffectKey(branchKey);
+    if (!normalizedKey) return false;
+    return Array.from(this.effects ?? []).some((effect) =>
+      !effect.disabled &&
+      this._getLinkedEffectBranchKey(effect) === normalizedKey,
+    );
+  }
+
+  _getLinkedEffectBranchKey(effect) {
+    return this._normalizeEffectKey(
+      effect?.getFlag?.("ffxiv", "branch") ??
+      effect?.getFlag?.("ffxiv", "branchKey") ??
+      foundry.utils.getProperty(effect, "flags.ffxiv.branch") ??
+      foundry.utils.getProperty(effect, "flags.ffxiv.branchKey"),
+    );
+  }
+
+  async _rollAbilityBranch(options = {}) {
+    options = this._normalizeRollOptions(options);
+    const branch = this._getAbilityBranchOption(options.abilityBranch);
+    if (!branch) return;
+    if (!branch.formula) {
+      await this._showAbilityBranch(branch);
+      return;
+    }
+
+    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
+    const roll = new Roll(branch.formula, this.getRollData());
+    await roll.evaluate();
+    const rollHTML = $("<div>" + (await roll.render()) + "</div>");
+    await ChatMessage.create({
+      user: game.user.id,
+      speaker,
+      rolls: [roll],
+      flavor: branch.name,
+      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`,
+    });
+  }
+
+  async _showAbilityBranch(options = {}) {
+    options = this._normalizeRollOptions(options);
+    const branch = options.key
+      ? options
+      : this._getAbilityBranchOption(options.abilityBranch);
+    if (!branch) return;
+
+    const content = branch.description
+      ? `<p>${branch.description}</p>`
+      : `<p>${branch.name}</p>`;
+    await ChatMessage.create({
+      user: game.user.id,
+      speaker: ChatMessage.getSpeaker({ actor: this.parent }),
+      flavor: branch.name,
+      content,
+    });
+  }
+
   _getDirectHitOptions({ checkMana = true } = {}, options = {}) {
     const optionsByKey = new Map();
     for (const effect of this._getApplicableEffects(options)) {
@@ -2518,48 +2690,118 @@ export class FFXIVItem extends Item {
     );
   }
 
-  _shouldForceDirectHitCritical(options = {}) {
+  _getForceCriticalRule(rollType = "base", options = {}) {
     const actor = this.parent;
-    if (actor?.documentName !== "Actor") return false;
-    return this._getDirectHitForceCriticalRules().some((rule) => {
-      if (!this._traitModifierEntryApplies(rule)) return false;
-      if (rule.requires.some((entry) => !this._hasNamedApplicableEffect(actor, entry.key, options)))
-        return false;
-      if (
-        rule.requiresAny.length &&
-        !rule.requiresAny.some((entry) =>
-          this._hasNamedApplicableEffect(actor, entry.key, options),
-        )
-      )
-        return false;
-      if (rule.forbids.some((entry) => this._hasNamedApplicableEffect(actor, entry.key, options)))
-        return false;
-      return true;
-    });
+    if (actor?.documentName !== "Actor") return null;
+    return this._getForceCriticalRules(options).find((rule) =>
+      this._forceCriticalRuleApplies(actor, rule, rollType, options),
+    ) ?? null;
   }
 
-  _getDirectHitForceCriticalRules() {
-    const data = foundry.utils.getProperty(this, "flags.ffxiv.directHit.forceCritical");
-    const entries = this._toArray(data);
-    return entries
+  _forceCriticalRuleApplies(actor, rule, rollType, options = {}) {
+    if (!this._traitModifierEntryApplies(rule)) return false;
+    if (!this._forceCriticalRollTypeApplies(rule, rollType)) return false;
+    if (!this._forceCriticalAbilityApplies(rule)) return false;
+    if (rule.requires.some((entry) => !this._hasNamedApplicableEffect(actor, entry.key, options)))
+      return false;
+    if (
+      rule.requiresAny.length &&
+      !rule.requiresAny.some((entry) =>
+        this._hasNamedApplicableEffect(actor, entry.key, options),
+      )
+    )
+      return false;
+    if (rule.forbids.some((entry) => this._hasNamedApplicableEffect(actor, entry.key, options)))
+      return false;
+    return true;
+  }
+
+  _forceCriticalRollTypeApplies(rule, rollType) {
+    const rollTypes = rule.rollTypes;
+    if (!rollTypes.length) return true;
+    return rollTypes.includes("all") ||
+      rollTypes.includes("any") ||
+      rollTypes.includes(String(rollType).toLowerCase());
+  }
+
+  _forceCriticalAbilityApplies(rule) {
+    const names = rule.abilityNames;
+    if (!names.length) return true;
+    const itemKey = this._normalizeEffectKey(this.name);
+    return names.some((name) => this._normalizeEffectKey(name) === itemKey);
+  }
+
+  _getForceCriticalRules(options = {}) {
+    return [
+      ...this._getDocumentForceCriticalRules(this, "item", ""),
+      ...this._getApplicableEffects(options).flatMap((effect) =>
+        this._getDocumentForceCriticalRules(
+          effect,
+          "effect",
+          effect.id ?? effect._id ?? "",
+        ),
+      ),
+    ];
+  }
+
+  _getDocumentForceCriticalRules(document, source, effectId = "") {
+    const data = foundry.utils.getProperty(document, "flags.ffxiv.critical.force");
+    return this._toArray(data)
       .map((entry) => {
         const rule = entry === true ? { always: true } : entry;
-        return {
-          always: rule?.always === true,
-          tags: rule?.tags,
-          tag: rule?.tag,
-          requires: this._normalizeEffectRefs(rule?.requires),
-          requiresAny: this._normalizeEffectRefs(rule?.requiresAny),
-          forbids: this._normalizeEffectRefs(rule?.forbids),
-        };
+        return this._normalizeForceCriticalRule(rule, source, effectId);
       })
-      .filter(
-        (entry) =>
-          entry.always ||
-          entry.requires.length ||
-          entry.requiresAny.length ||
-          entry.forbids.length,
-      );
+      .filter((entry) => this._isUsableForceCriticalRule(entry));
+  }
+
+  _normalizeForceCriticalRule(rule, source, effectId = "", defaultRollTypes = []) {
+    const rollTypes = this._toArray(
+      rule?.rolls ?? rule?.rollTypes ?? rule?.appliesTo ?? rule?.roll,
+    ).map((value) => String(value ?? "").trim().toLowerCase()).filter(Boolean);
+    return {
+      always: rule?.always === true,
+      source,
+      effectId,
+      consume: rule?.consume === true || rule?.remove === true,
+      tags: rule?.tags,
+      tag: rule?.tag,
+      rollTypes: rollTypes.length ? rollTypes : defaultRollTypes,
+      abilityNames: this._toArray(
+        rule?.abilityNames ?? rule?.abilityName ?? rule?.items ?? rule?.item,
+      ),
+      requires: this._normalizeEffectRefs(rule?.requires),
+      requiresAny: this._normalizeEffectRefs(rule?.requiresAny),
+      forbids: this._normalizeEffectRefs(rule?.forbids),
+    };
+  }
+
+  _isUsableForceCriticalRule(rule) {
+    return Boolean(
+      rule?.always ||
+      rule?.requires.length ||
+      rule?.requiresAny.length ||
+      rule?.forbids.length ||
+      rule?.rollTypes.length ||
+      rule?.abilityNames.length,
+    );
+  }
+
+  async _consumeForceCriticalRule(rule) {
+    if (
+      !rule ||
+      rule.source !== "effect" ||
+      rule.consume !== true ||
+      !rule.effectId ||
+      this.parent?.documentName !== "Actor"
+    )
+      return;
+
+    const effect = this.parent.effects?.get(rule.effectId);
+    if (!effect || effect.disabled) return;
+    await this.parent.deleteEmbeddedDocuments("ActiveEffect", [effect.id], {
+      render: false,
+      ffxivSuppressRemovalText: true,
+    });
   }
 
   async _rollCritical(options = {}) {
@@ -2618,7 +2860,10 @@ export class FFXIVItem extends Item {
 
   async _rollBase(options = {}) {
     options = this._normalizeRollOptions(options);
-    const { critical = false, autoFromHit = false } = options;
+    const forceCriticalRule = options.forceCriticalRule ??
+      this._getForceCriticalRule("base", options);
+    const critical = options.critical || Boolean(forceCriticalRule);
+    const { autoFromHit = false } = options;
     if (!this._hasFormula(this.system.base_formula)) return;
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
@@ -2628,8 +2873,10 @@ export class FFXIVItem extends Item {
       "base",
       options,
     );
+    const formulaOverride = this._getBaseRollFormulaOverride();
+    const rollFormula = formulaOverride?.formula ?? baseFormula;
     const formula = this._applyDamageDiceModifiers(
-      critical ? this._doubleDiceCounts(baseFormula) : baseFormula,
+      critical ? this._doubleDiceCounts(rollFormula) : rollFormula,
       "base",
       options,
     );
@@ -2644,6 +2891,85 @@ export class FFXIVItem extends Item {
       flavor: this._getBaseRollFlavor({ critical, autoFromHit }),
       content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`,
     });
+    if (critical) await this._consumeForceCriticalRule(forceCriticalRule);
+  }
+
+  _getBaseRollFormulaOverride() {
+    const targetActors = Array.from(game.user?.targets ?? [])
+      .map((token) => token.actor)
+      .filter(Boolean);
+    if (targetActors.length !== 1) return null;
+
+    const targetActor = targetActors[0];
+    for (const entry of this._getBaseFormulaOverrideEntries()) {
+      const operation = String(entry.operation ?? entry.mode ?? "add")
+        .trim()
+        .toLowerCase();
+      if (!["override", "replace", "set"].includes(operation)) continue;
+
+      const formula = String(entry.formula ?? "").trim();
+      if (!formula) continue;
+      if (!this._healingApplicationEntryApplies(entry, targetActor)) continue;
+      return {
+        formula,
+        targetActor,
+      };
+    }
+    return null;
+  }
+
+  _getBaseFormulaOverrideEntries() {
+    const data = foundry.utils.getProperty(this, "flags.ffxiv.baseFormula.override");
+    return Array.isArray(data) ? data : data ? [data] : [];
+  }
+
+  _healingApplicationEntryApplies(entry, targetActor) {
+    if (!entry || typeof entry !== "object" || !targetActor) return false;
+
+    const condition = entry.when ?? entry.condition ?? entry.conditions ?? {};
+    if (!this._healingHealthConditionApplies(condition.targetHp ?? condition.health, targetActor))
+      return false;
+    if (!this._healingHealthConditionApplies(entry.targetHp ?? entry.health, targetActor))
+      return false;
+
+    return true;
+  }
+
+  _healingHealthConditionApplies(condition, actor) {
+    if (!condition) return true;
+    if (typeof condition !== "object") return true;
+
+    const current = Number(actor.system?.health?.value ?? 0);
+    const max = Number(actor.system?.health?.max ?? 0);
+    if (!Number.isFinite(current)) return false;
+
+    const checks = [
+      ["lte", (left, right) => left <= right],
+      ["lt", (left, right) => left < right],
+      ["gte", (left, right) => left >= right],
+      ["gt", (left, right) => left > right],
+      ["eq", (left, right) => left === right],
+    ];
+    for (const [key, predicate] of checks) {
+      if (condition[key] === undefined) continue;
+      const threshold = this._resolveHealingHealthThreshold(condition[key], max);
+      if (!Number.isFinite(threshold) || !predicate(current, threshold)) return false;
+    }
+    return true;
+  }
+
+  _resolveHealingHealthThreshold(value, maxHealth) {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    if (["half", "halfmax", "bloodied"].includes(normalized)) {
+      return Math.ceil((Number(maxHealth) || 0) / 2);
+    }
+    if (normalized.endsWith("%")) {
+      const percent = Number.parseFloat(normalized.slice(0, -1));
+      if (Number.isFinite(percent)) return Math.ceil((Number(maxHealth) || 0) * percent / 100);
+    }
+    if (!/^\d+$/.test(normalized)) return NaN;
+    const numeric = Number(normalized);
+    return numeric;
   }
 
   async _rollAlternate(options = {}) {
@@ -2694,7 +3020,7 @@ export class FFXIVItem extends Item {
     }
     const manuallyAppliedEffects = Array.from(this.effects ?? []).filter((effect) => {
       const applyTo = String(effect.getFlag("ffxiv", "applyTo") || "target").trim().toLowerCase();
-      return !effect.disabled && applyTo !== "self_auto" && applyTo !== "automation";
+      return !effect.disabled && applyTo !== "self_auto" && applyTo !== "automation" && !this._getLinkedEffectBranchKey(effect);
     });
     if (manuallyAppliedEffects.length) {
       buttons += `<button class="ffxiv-apply-active-effects" data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent._id}" data-actor-uuid="${this.parent?.uuid ?? ""}">${game.i18n.localize("FFXIV.Abilities.ApplyActiveEffects")}</button>`;
@@ -2708,6 +3034,20 @@ export class FFXIVItem extends Item {
     }
     for (const option of this._getJobResourceBonusOptions()) {
       buttons += `<button class="ffxiv-roll-resource-bonus" data-resource-bonus="${option.key}" ${buttonData}>${option.buttonLabel}</button>`;
+    }
+    for (const branch of this._getAbilityBranchOptions()) {
+      if (branch.formula) {
+        buttons += `<button class="ffxiv-roll-ability-branch" data-ability-branch="${branch.key}" ${buttonData}>${branch.buttonLabel}</button>`;
+      }
+      if (branch.applyEffects) {
+        const label = branch.formula
+          ? `${branch.buttonLabel} ${game.i18n.localize("FFXIV.Abilities.Effects")}`
+          : branch.buttonLabel;
+        buttons += `<button class="ffxiv-apply-active-effects" data-effect-branch="${branch.key}" data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent._id}" data-actor-uuid="${this.parent?.uuid ?? ""}">${label}</button>`;
+      }
+      if (!branch.formula && !branch.applyEffects) {
+        buttons += `<button class="ffxiv-show-ability-branch" data-ability-branch="${branch.key}" ${buttonData}>${branch.buttonLabel}</button>`;
+      }
     }
     if (
       this.type != "trait" &&
@@ -2735,6 +3075,8 @@ export class FFXIVItem extends Item {
       normalized.directHitOption = dataset.directHitOption;
     if (dataset?.resourceBonus !== undefined)
       normalized.resourceBonus = dataset.resourceBonus;
+    if (dataset?.abilityBranch !== undefined)
+      normalized.abilityBranch = dataset.abilityBranch;
 
     const snapshot =
       dataset?.effectSnapshot ?? normalized.effectSnapshot ?? null;
@@ -3256,19 +3598,23 @@ export class FFXIVItem extends Item {
 
   async _applyEffectRules(trigger, context = {}) {
     const actor = this.parent;
-    if (actor?.documentName !== "Actor") return;
+    if (actor?.documentName !== "Actor") return [];
 
+    const results = [];
     for (const rule of this._getEffectRules()) {
       if (rule.trigger !== trigger) continue;
       if (!this._canApplyEffectRule(actor, rule, context)) continue;
-      await this._applyEffectRule(actor, rule, context);
+      const result = await this._applyEffectRule(actor, rule, context);
+      if (Array.isArray(result)) results.push(...result);
+      else if (result) results.push(result);
     }
+    return results;
   }
 
   async _applyDeferredHitThresholdRules(checkResult) {
     if (!checkResult?.deferredHitThresholdRules || checkResult.interrupted)
       return;
-    await this._applyEffectRules("hitThreshold", {
+    return this._applyEffectRules("hitThreshold", {
       d20Result: checkResult.d20Result,
       roll: checkResult.roll,
       directHitRoll: checkResult.directHitRoll,
@@ -3337,8 +3683,7 @@ export class FFXIVItem extends Item {
 
   async _applyEffectRule(actor, rule, context = {}) {
     if (rule.action === "resource") {
-      await this._applyJobResourceRule(actor, rule, context);
-      return;
+      return this._applyResourceRule(actor, rule, context);
     }
     if (rule.action === "remove") {
       await this._removeNamedEffects(actor, [rule]);
@@ -3353,31 +3698,199 @@ export class FFXIVItem extends Item {
     await this._grantNamedEffect(actor, rule, context);
   }
 
+  async _applyResourceRule(actor, rule, context = {}) {
+    const resource = String(rule?.resource ?? "").trim();
+    if (!resource) return null;
+
+    const actorResource = this._normalizeActorResource(resource);
+    if (actorResource) {
+      return this._applyActorResourceRule(actor, actorResource, rule, context);
+    }
+
+    return this._applyJobResourceRule(actor, rule, context);
+  }
+
+  _normalizeActorResource(resource) {
+    const key = normalizeJobResourceName(resource);
+    if (["hp", "health"].includes(key)) return "health";
+    if (["mp", "mana"].includes(key)) return "mana";
+    if (["barrier", "shield"].includes(key)) return "barrier";
+    return "";
+  }
+
+  async _applyActorResourceRule(actor, resource, rule, context = {}) {
+    const current = Number(actor.system?.[resource]?.value ?? 0);
+    const next = this._getNextActorResourceValue(
+      actor,
+      resource,
+      rule,
+      context,
+      Number.isFinite(current) ? current : 0,
+    );
+    if (next === current) return null;
+
+    await actor.update({ [`system.${resource}.value`]: next }, { render: false });
+    this._updateParentActorSheetResourceBars(resource);
+    return {
+      type: "actorResource",
+      actor,
+      resource,
+      operation: rule.operation,
+      current,
+      next,
+      delta: next - current,
+    };
+  }
+
+  _getNextActorResourceValue(actor, resource, rule, context, current) {
+    const amount = this._resolveActorResourceRuleAmount(actor, resource, rule, context);
+    let next = current;
+    if (rule.operation === "fill") {
+      next = this._getActorResourceCap(actor, resource, current);
+    } else if (rule.operation === "clear") {
+      next = 0;
+    } else if (rule.operation === "set") {
+      next = amount;
+    } else if (["consume", "subtract"].includes(rule.operation)) {
+      next = current - amount;
+    } else {
+      next = current + amount;
+    }
+
+    return this._clampActorResourceValue(actor, resource, next);
+  }
+
+  _resolveActorResourceRuleAmount(actor, resource, rule, context = {}) {
+    const amountText = String(rule?.amount ?? "").trim().toLowerCase();
+    if (amountText === "missing") {
+      const cap = this._getActorResourceCap(actor, resource);
+      const current = Number(actor.system?.[resource]?.value ?? 0);
+      return Math.max(cap - current, 0);
+    }
+    if (amountText === "spent") {
+      const key = normalizeJobResourceName(
+        String(rule?.spentResource || rule?.resource || "").trim(),
+      );
+      return Math.max(Number(context?.jobResourceCosts?.[key] ?? 0) || 0, 0);
+    }
+    if (["max", "full"].includes(amountText)) {
+      return this._getActorResourceCap(actor, resource);
+    }
+    return Math.max(Number.parseInt(rule?.amount, 10) || 1, 0);
+  }
+
+  _getActorResourceCap(actor, resource, fallback = 0) {
+    const max = Number(actor.system?.[resource]?.max);
+    if (Number.isFinite(max) && max > 0) return max;
+    if (resource === "mana") return 5;
+    return fallback;
+  }
+
+  _clampActorResourceValue(actor, resource, value) {
+    const next = Math.max(Math.floor(Number(value) || 0), 0);
+    if (resource === "barrier") return next;
+
+    const cap = this._getActorResourceCap(actor, resource, next);
+    return Math.min(next, cap);
+  }
+
   async _applyJobResourceRule(actor, rule, context = {}) {
     const resource = String(rule?.resource ?? "").trim();
-    if (!resource) return;
+    if (!resource) return null;
 
+    let result = null;
     if (rule.operation === "fill") {
-      await fillActorJobResource(actor, resource, { render: false });
-      return;
+      result = await fillActorJobResource(actor, resource, { render: false });
+      return this._formatJobResourceRuleResult(actor, resource, rule, result);
     }
     if (rule.operation === "clear") {
-      await setActorJobResourceCount(actor, resource, 0, { render: false });
-      return;
+      result = await setActorJobResourceCount(actor, resource, 0, { render: false });
+      return this._formatJobResourceRuleResult(actor, resource, rule, result);
     }
     if (rule.operation === "set") {
       const amount = this._resolveJobResourceRuleAmount(rule, context, 0);
-      await setActorJobResourceCount(actor, resource, amount, { render: false });
-      return;
+      result = await setActorJobResourceCount(actor, resource, amount, { render: false });
+      return this._formatJobResourceRuleResult(actor, resource, rule, result);
     }
 
     const amount = this._resolveJobResourceRuleAmount(rule, context, 1);
-    if (amount <= 0) return;
-    if (rule.operation === "consume") {
-      await applyActorJobResourceDelta(actor, resource, -amount, { render: false });
-      return;
+    if (amount <= 0) return null;
+    if (["consume", "subtract"].includes(rule.operation)) {
+      result = await applyActorJobResourceDelta(actor, resource, -amount, { render: false });
+      return this._formatJobResourceRuleResult(actor, resource, rule, result);
     }
-    await applyActorJobResourceDelta(actor, resource, amount, { render: false });
+    result = await applyActorJobResourceDelta(actor, resource, amount, { render: false });
+    return this._formatJobResourceRuleResult(actor, resource, rule, result);
+  }
+
+  _formatJobResourceRuleResult(actor, resource, rule, result) {
+    if (!result?.item) return null;
+    if (result.current === result.next) return null;
+    return {
+      type: "jobResource",
+      actor,
+      resource,
+      operation: rule.operation,
+      current: result.current,
+      next: result.next,
+      delta: result.next - result.current,
+    };
+  }
+
+  async _postEffectRuleResultsToChat(chatMessage, results) {
+    const resourceResults = (Array.isArray(results) ? results : [])
+      .filter((result) =>
+        result &&
+        (result.type === "actorResource" || result.type === "jobResource") &&
+        result.current !== result.next,
+      );
+    if (!chatMessage || !resourceResults.length) return;
+
+    const rows = resourceResults
+      .map((result) => {
+        const label = this._getResourceResultLabel(result);
+        const verb = this._getResourceResultVerb(result);
+        return `<li><strong>${result.actor?.name ?? this.parent?.name ?? ""}</strong>: ${verb} ${label} ${result.current} -> ${result.next}</li>`;
+      })
+      .join("");
+    if (!rows) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = String(chatMessage.content ?? "");
+    const content =
+      `<div class="ffxiv-apply-result"><ul class="ffxiv-resource-results">${rows}</ul></div>`;
+    const card = wrapper.querySelector(".item-card");
+    if (card) card.insertAdjacentHTML("afterend", content);
+    else wrapper.insertAdjacentHTML("beforeend", content);
+
+    await chatMessage.update({
+      content: wrapper.innerHTML,
+    }, { notify: true });
+  }
+
+  _getResourceResultLabel(result) {
+    if (result.type === "actorResource") {
+      if (result.resource === "health")
+        return game.i18n.localize("FFXIV.Health.long");
+      if (result.resource === "mana")
+        return game.i18n.localize("FFXIV.Mana.long");
+      if (result.resource === "barrier")
+        return game.i18n.localize("FFXIV.Health.barrier");
+    }
+    return String(result.resource ?? "").trim();
+  }
+
+  _getResourceResultVerb(result) {
+    if (["consume", "subtract", "clear"].includes(result.operation)) {
+      return game.i18n.localize("FFXIV.Chat.ResourceSpent");
+    }
+    if (result.resource === "health") {
+      return game.i18n.localize("FFXIV.Chat.ResourceHealed");
+    }
+    if (result.resource === "barrier") {
+      return game.i18n.localize("FFXIV.Chat.ResourceGranted");
+    }
+    return game.i18n.localize("FFXIV.Chat.ResourceRestored");
   }
 
   _resolveJobResourceRuleAmount(rule, context, fallback) {
@@ -3388,6 +3901,51 @@ export class FFXIVItem extends Item {
       return Math.max(Number(context?.jobResourceCosts?.[key] ?? 0) || 0, 0);
     }
     return Math.max(Number.parseInt(rule?.amount, 10) || fallback, 0);
+  }
+
+  _updateParentActorSheetResourceBars(resource) {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor") return;
+
+    const sheets = new Set();
+    if (actor.sheet?.rendered) sheets.add(actor.sheet);
+    for (const app of Object.values(ui.windows ?? {})) {
+      if (app?.actor?.id === actor.id && app.rendered) sheets.add(app);
+    }
+    for (const app of foundry.applications.instances?.values?.() ?? []) {
+      if (app?.actor?.id === actor.id && app.rendered) sheets.add(app);
+    }
+    if (!sheets.size) return;
+
+    for (const sheet of sheets) {
+      const scrollPositions = this._captureSheetElementScroll(sheet);
+      const root = sheet.element;
+      if (resource === "mana" && typeof sheet._updateManaBar === "function")
+        sheet._updateManaBar();
+      if ((resource === "health" || resource === "barrier") &&
+        typeof sheet._updateHealthBar === "function")
+        sheet._updateHealthBar();
+      if (root) this._syncActorResourceInputs(root, resource);
+      this._restoreSheetElementScroll(scrollPositions);
+    }
+  }
+
+  _syncActorResourceInputs(root, resource) {
+    const actor = this.parent;
+    const current = Math.max(Number(actor.system?.[resource]?.value ?? 0) || 0, 0);
+    const rawMax = Number(actor.system?.[resource]?.max);
+    const max = Number.isFinite(rawMax)
+      ? rawMax
+      : resource === "mana"
+        ? 5
+        : null;
+    root.querySelectorAll(`input[name="system.${resource}.value"]`).forEach((input) => {
+      input.value = String(current);
+    });
+    if (max === null) return;
+    root.querySelectorAll(`input[name="system.${resource}.max"]`).forEach((input) => {
+      input.value = String(max);
+    });
   }
 
   async _toggleNamedEffects(actor, rule) {
@@ -3605,10 +4163,11 @@ export class FFXIVItem extends Item {
     const normalizedKey = this._normalizeEffectKey(key);
     if (!normalizedKey) return false;
     if (Array.isArray(options?.effectSnapshot)) {
-      return options.effectSnapshot.some((effect) => {
+      const snapshotMatch = options.effectSnapshot.some((effect) => {
         if (!effect || effect.disabled) return false;
         return this._effectSatisfiesKey(effect, normalizedKey);
       });
+      if (snapshotMatch) return true;
     }
     return this._hasNamedEffect(actor, normalizedKey);
   }

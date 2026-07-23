@@ -50,7 +50,7 @@
           <strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{pet.system.pet_ability.condition}}
         </div>
       {{/if}}
-      {{#if pet.system.pet_ability.direct_hit }}
+      {{#if (hasContent pet.system.pet_ability.direct_hit) }}
         <div class="effect">
           <strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{pet.system.pet_ability.direct_hit}}
         </div>

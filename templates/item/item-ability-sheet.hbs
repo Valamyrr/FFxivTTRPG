@@ -180,21 +180,53 @@
                        placeholder="3" />
               </div>
             </div>
-            <div class="resource flex-group-center">
-              <label for="system.damage_modifier_mode" class="resource-label">
-                <span>
-                  {{ localize "FFXIV.Abilities.DamageModifierMode" }}
-                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.DamageModifierModeHint"}}
-                </span>
-              </label>
-              <div class="resource-content flexrow flex-center flex-between">
-                <select class="ffxiv-text-center damage-modifier-mode-select"
-                        name="system.damage_modifier_mode">
-                  <option value="auto" {{#if (eq item.system.damage_modifier_mode "auto")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAuto" }}</option>
-                  <option value="always" {{#if (eq item.system.damage_modifier_mode "always")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAlways" }}</option>
-                  <option value="never" {{#if (eq item.system.damage_modifier_mode "never")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierNever" }}</option>
-                </select>
+            <div class="ability-base-roll-conditional-row">
+              <div class="resource flex-group-center">
+                <label for="system.damage_modifier_mode" class="resource-label">
+                  <span>
+                    {{ localize "FFXIV.Abilities.DamageModifierMode" }}
+                    {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.DamageModifierModeHint"}}
+                  </span>
+                </label>
+                <div class="resource-content flexrow flex-center flex-between">
+                  <select class="ffxiv-text-center damage-modifier-mode-select"
+                          name="system.damage_modifier_mode">
+                    <option value="auto" {{#if (eq item.system.damage_modifier_mode "auto")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAuto" }}</option>
+                    <option value="always" {{#if (eq item.system.damage_modifier_mode "always")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAlways" }}</option>
+                    <option value="never" {{#if (eq item.system.damage_modifier_mode "never")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierNever" }}</option>
+                  </select>
+                </div>
               </div>
+              <div class="resource flex-group-center">
+                  <label for="flags.ffxiv.baseFormula.override.formula" class="resource-label">
+                    <span>
+                      {{ localize "FFXIV.Abilities.ConditionalBaseFormula" }}
+                      {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ConditionalBaseFormulaHint"}}
+                    </span>
+                  </label>
+                  <div class="resource-content flexrow flex-center flex-between">
+                    <input name="flags.ffxiv.baseFormula.override.formula"
+                           type="text"
+                           value="{{conditionalBaseFormula.formula}}"
+                           placeholder="3d6+4" />
+                  </div>
+              </div>
+                {{#if conditionalBaseFormula.hasFormula }}
+              <div class="resource flex-group-center">
+                  <label for="flags.ffxiv.baseFormula.override.threshold" class="resource-label">
+                    <span>
+                      {{ localize "FFXIV.Abilities.ConditionalBaseThreshold" }}
+                      {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ConditionalBaseThresholdHint"}}
+                    </span>
+                  </label>
+                  <div class="resource-content flexrow flex-center flex-between">
+                    <input name="flags.ffxiv.baseFormula.override.threshold"
+                           type="text"
+                           value="{{conditionalBaseFormula.threshold}}"
+                           placeholder="halfMax" />
+                  </div>
+              </div>
+                {{/if}}
             </div>
           </div>
         </section>
@@ -548,24 +580,16 @@
                   </option>
                 </select>
                 <div class="status-effect-duration-fields">
-                  <label>
-                    <span>{{localize "FFXIV.Abilities.StatusDurationTurns"}}</span>
-                    <input class="ffxiv-text-center status-effect-duration"
-                           data-index="{{index}}"
-                           data-field="turns"
-                           type="number"
-                           min="1"
-                           value="{{entry.duration.turns}}" />
-                  </label>
-                  <label>
-                    <span>{{localize "FFXIV.Abilities.StatusDurationRounds"}}</span>
-                    <input class="ffxiv-text-center status-effect-duration"
-                           data-index="{{index}}"
-                           data-field="rounds"
-                           type="number"
-                           min="1"
-                           value="{{entry.duration.rounds}}" />
-                  </label>
+                  <select class="ffxiv-text-center status-effect-duration status-effect-duration-unit"
+                          data-index="{{index}}">
+                    <option value="turns" {{#if (eq entry.durationUnit "turns")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusDurationTurns"}}</option>
+                    <option value="rounds" {{#if (eq entry.durationUnit "rounds")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusDurationRounds"}}</option>
+                  </select>
+                  <input class="ffxiv-text-center status-effect-duration status-effect-duration-value"
+                         data-index="{{index}}"
+                         type="number"
+                         min="1"
+                         value="{{entry.durationValue}}" />
                 </div>
                 {{#if ../itemEditMode}}
                   <button type="button" class="remove-status-effect" data-index="{{index}}">x</button>

@@ -2893,6 +2893,18 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   max-width: 50%;
   width: 50%;
 }
+.ffxiv.item .ability-base-roll-conditional-row {
+  display: grid;
+  gap: 8px;
+  grid-column: 1/-1;
+  grid-template-columns: minmax(150px, 0.85fr) minmax(220px, 1.25fr) minmax(130px, 0.75fr);
+  width: 100%;
+}
+.ffxiv.item .ability-base-roll-conditional-row .damage-modifier-mode-select {
+  flex: 1 1 auto;
+  max-width: none;
+  width: 100%;
+}
 .ffxiv.item .ability-form-grid textarea {
   min-height: 74px;
   resize: vertical;
@@ -3048,21 +3060,13 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item .status-effect-duration-fields {
   display: grid;
   gap: 4px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(4.75em, 1fr) minmax(3.5em, 0.65fr);
   min-width: 0;
 }
-.ffxiv.item .status-effect-duration-fields label {
-  display: grid;
-  gap: 2px;
+.ffxiv.item .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) .remove-status-effect {
+  justify-self: stretch;
   min-width: 0;
-}
-.ffxiv.item .status-effect-duration-fields span {
-  font-size: 0.75rem;
-  line-height: 1;
-  opacity: 0.78;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  width: 34px;
 }
 .ffxiv.item .ability-effect-name {
   align-items: center;
@@ -3198,7 +3202,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   display: none;
 }
 .ffxiv.item.item-locked .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
-  grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em;
+  grid-template-columns: minmax(8em, 1.4fr) minmax(5.75em, 0.8fr) minmax(3.5em, 0.45fr) minmax(7.5em, 0.95fr) minmax(6.75em, 0.85fr) minmax(8.5em, 1fr);
 }
 .ffxiv.item.item-locked .ability-linked-effect-list li {
   grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;
@@ -3216,7 +3220,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   display: block;
 }
 .ffxiv.item .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
-  grid-template-columns: minmax(7em, 1fr) 5.75em 3.5em 8.25em 5.25em 34px;
+  grid-template-columns: minmax(8em, 1.3fr) minmax(5.5em, 0.7fr) minmax(3.25em, 0.4fr) minmax(7em, 0.85fr) minmax(6.5em, 0.8fr) minmax(8.5em, 1fr) 34px;
 }
 .ffxiv.item .ability-linked-effect-list li {
   grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;

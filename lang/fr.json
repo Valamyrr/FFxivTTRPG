@@ -330,6 +330,10 @@
       "DamageModifierAuto": "Auto",
       "DamageModifierAlways": "Toujours",
       "DamageModifierNever": "Jamais",
+      "ConditionalBaseFormula": "Formule de base conditionnelle",
+      "ConditionalBaseFormulaHint": "<p>Formule de remplacement optionnelle pour l'effet de base.</p><p>Lorsque la cible sélectionnée respecte le seuil de PV, l'effet de base lance cette formule au lieu de la formule normale.</p><p>Laissez vide pour désactiver la formule conditionnelle.</p>",
+      "ConditionalBaseThreshold": "PV de la cible <= ",
+      "ConditionalBaseThresholdHint": "<p>Seuil de PV de la cible pour la formule de base conditionnelle.</p><p>Utilisez <code>halfMax</code>, <code>50%</code> ou un nombre entier de PV.</p>",
       "AdditionalFormula": "Formule Additionnelle",
       "AlternateFormula": "Formule Alternative",
       "DirectFormula": "Formule d'Attaque Directe",
@@ -526,6 +530,11 @@
       "RemoveExistingAbilitiesForJob": "{actor} possède {count} compétence(s) ou trait(s) manuel(s). Les retirer avant d'ajouter les entrées de {job}?",
       "ResetLimitationsTitle": "Réinitialiser les restrictions",
       "ResetLimitations": "Réinitialiser les restrictions de tous les acteurs?",
+      "CombatStartResetTitle": "Préparer le combat",
+      "CombatStartReset": "Comment actualiser les acteurs avant le début du combat?",
+      "CombatStartResetLimitations": "Utilisations",
+      "CombatStartResetFull": "Restauration",
+      "CombatStartResetNone": "Ignorer",
       "OK": "OK",
       "Yes": "Oui",
       "No": "Non"
@@ -621,7 +630,11 @@
       "HealNoun": "soin",
       "ApplyResult": "{type} {amount} appliqué à {count} cible(s).",
       "ApplyResultSingle": "{amount} {type} appliqué à {count} cible.",
-      "ApplyResultPlural": "{amount} {type} appliqué à {count} cibles."
+      "ApplyResultPlural": "{amount} {type} appliqué à {count} cibles.",
+      "ResourceGranted": "Accorde",
+      "ResourceHealed": "Restaure",
+      "ResourceRestored": "Restaure",
+      "ResourceSpent": "Dépense"
     },
     "Combat": {
       "AdventurerStep": "Étape des aventuriers",

@@ -77,7 +77,7 @@
               <strong>{{ localize "FFXIV.Abilities.Trigger" }}:</strong> {{{enriched.trigger}}}
             </div>
           {{/if}}
-          {{#if item.system.direct_hit }}
+          {{#if (hasContent item.system.direct_hit) }}
             <div class="effect">
               <strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{{enriched.direct_hit}}}
             </div>

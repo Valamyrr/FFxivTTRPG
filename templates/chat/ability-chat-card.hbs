@@ -74,7 +74,7 @@
             <strong>{{ localize "FFXIV.Abilities.Condition" }}:</strong> {{item.system.condition}}
           </div>
         {{/if}}
-        {{#if item.system.direct_hit }}
+        {{#if (hasContent item.system.direct_hit) }}
           <div class="effect">
             <strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{item.system.direct_hit}}
           </div>

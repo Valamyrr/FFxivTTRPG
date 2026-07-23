@@ -330,6 +330,10 @@
       "DamageModifierAuto": "Auto",
       "DamageModifierAlways": "Always",
       "DamageModifierNever": "Never",
+      "ConditionalBaseFormula": "Conditional Base Formula",
+      "ConditionalBaseFormulaHint": "<p>Optional replacement formula for the base effect.</p><p>When the selected target meets the HP threshold, the base effect rolls this formula instead of the normal base formula.</p><p>Leave blank to disable the conditional formula.</p>",
+      "ConditionalBaseThreshold": "Target HP <= ",
+      "ConditionalBaseThresholdHint": "<p>The target HP threshold for the conditional base formula.</p><p>Use <code>halfMax</code>, <code>50%</code>, or a whole HP number.</p>",
       "AdditionalFormula": "Additional Formula",
       "AlternateFormula": "Alternate Formula",
       "DirectFormula": "Direct Hit Formula",
@@ -533,6 +537,11 @@
       "RemoveExistingAbilitiesForJob": "{actor} has {count} existing manual ability or trait item(s). Remove them before adding entries from {job}?",
       "ResetLimitationsTitle": "Reset limitations",
       "ResetLimitations": "Reset limitations on all actors?",
+      "CombatStartResetTitle": "Prepare Combat",
+      "CombatStartReset": "How should actors be refreshed before combat starts?",
+      "CombatStartResetLimitations": "Reset Uses",
+      "CombatStartResetFull": "Full Restore",
+      "CombatStartResetNone": "Skip",
       "OK": "OK",
       "Yes": "Yes",
       "No": "No"
@@ -628,7 +637,11 @@
       "HealNoun": "healing",
       "ApplyResult": "Applied {type} {amount} to {count} target(s).",
       "ApplyResultSingle": "Applied {amount} {type} to {count} target.",
-      "ApplyResultPlural": "Applied {amount} {type} to {count} targets."
+      "ApplyResultPlural": "Applied {amount} {type} to {count} targets.",
+      "ResourceGranted": "Granted",
+      "ResourceHealed": "Restored",
+      "ResourceRestored": "Restored",
+      "ResourceSpent": "Spent"
     },
     "Combat": {
       "AdventurerStep": "Adventurer Step",
