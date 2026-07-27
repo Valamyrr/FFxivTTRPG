@@ -3060,7 +3060,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item .status-effect-duration-fields {
   display: grid;
   gap: 4px;
-  grid-template-columns: minmax(4.75em, 1fr) minmax(3.5em, 0.65fr);
+  grid-template-columns: minmax(5.65em, 1fr) minmax(3em, 0.5fr);
   min-width: 0;
 }
 .ffxiv.item .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) .remove-status-effect {
@@ -3202,7 +3202,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   display: none;
 }
 .ffxiv.item.item-locked .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
-  grid-template-columns: minmax(8em, 1.4fr) minmax(5.75em, 0.8fr) minmax(3.5em, 0.45fr) minmax(7.5em, 0.95fr) minmax(6.75em, 0.85fr) minmax(8.5em, 1fr);
+  grid-template-columns: minmax(8em, 1.4fr) minmax(5.75em, 0.8fr) minmax(3.5em, 0.45fr) minmax(7.5em, 0.95fr) minmax(6.75em, 0.85fr) minmax(9em, 1fr);
 }
 .ffxiv.item.item-locked .ability-linked-effect-list li {
   grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;
@@ -3220,7 +3220,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   display: block;
 }
 .ffxiv.item .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
-  grid-template-columns: minmax(8em, 1.3fr) minmax(5.5em, 0.7fr) minmax(3.25em, 0.4fr) minmax(7em, 0.85fr) minmax(6.5em, 0.8fr) minmax(8.5em, 1fr) 34px;
+  grid-template-columns: minmax(8em, 1.3fr) minmax(5.5em, 0.7fr) minmax(3.25em, 0.4fr) minmax(7em, 0.85fr) minmax(6.5em, 0.8fr) minmax(9em, 1fr) 34px;
 }
 .ffxiv.item .ability-linked-effect-list li {
   grid-template-columns: minmax(10em, 1fr) 8.75em 6.5em auto;

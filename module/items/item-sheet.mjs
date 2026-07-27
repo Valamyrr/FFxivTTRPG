@@ -1325,7 +1325,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       });
     }
     return entries.map((entry) => {
-      const duration = this._getStatusDurationForm(entry?.duration);
+      const duration = this._getStatusDurationForm(
+        entry?.duration,
+        entry?.durationUnit,
+      );
       return {
         id: entry?.id ?? "",
         action: entry?.action !== false,
@@ -1359,12 +1362,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : "";
   }
 
-  _getStatusDurationForm(duration) {
+  _getStatusDurationForm(duration, fallbackUnit = "turns") {
     const turns = this._normalizeStatusDuration(duration?.turns);
     if (turns) return { unit: "turns", value: turns };
     const rounds = this._normalizeStatusDuration(duration?.rounds);
     if (rounds) return { unit: "rounds", value: rounds };
-    return { unit: "turns", value: "" };
+    return { unit: this._normalizeStatusDurationUnit(fallbackUnit), value: "" };
   }
 
   _getCurrentStatusEffectEntries() {
@@ -1672,6 +1675,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _onChangeStatusEffect(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
     const index = Number(event.currentTarget.dataset.index);
     if (!Number.isInteger(index)) return;
 
@@ -1696,14 +1702,17 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     } else if (event.currentTarget.classList.contains("status-effect-apply-to")) {
       entries[index].applyTo = this._normalizeStatusApplyTo(event.currentTarget.value);
     } else if (event.currentTarget.classList.contains("status-effect-duration")) {
-      const current = this._getStatusDurationForm(entries[index].duration);
-      const unit = event.currentTarget.classList.contains("status-effect-duration-unit")
-        ? this._normalizeStatusDurationUnit(event.currentTarget.value)
-        : current.unit;
-      const rawValue = event.currentTarget.classList.contains("status-effect-duration-value")
-        ? event.currentTarget.value
-        : current.value;
+      const current = this._getStatusDurationForm(
+        entries[index].duration,
+        entries[index].durationUnit,
+      );
+      const fields = event.currentTarget.closest(".status-effect-duration-fields");
+      const unitInput = fields?.querySelector(".status-effect-duration-unit");
+      const valueInput = fields?.querySelector(".status-effect-duration-value");
+      const unit = this._normalizeStatusDurationUnit(unitInput?.value ?? current.unit);
+      const rawValue = valueInput?.value ?? current.value;
       const value = this._normalizeStatusDuration(rawValue);
+      entries[index].durationUnit = unit;
       if (value) entries[index].duration = { [unit]: value };
       else delete entries[index].duration;
     } else {
@@ -1746,6 +1755,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       stacks: 1,
       stackable: isStackableStatusEffect(defaultEffect),
       duration: {},
+      durationUnit: "turns",
     });
     this.item
       .update(

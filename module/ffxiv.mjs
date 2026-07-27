@@ -7808,17 +7808,16 @@ async function applyStatusEntryToActor(actor, entry) {
     let result;
     if (isAdditiveStackableStatusEffect(statusId)) {
       const delta = isActive ? stacks : -stacks;
-      result = await applyStatusEffectStackDelta(actor, statusId, delta, { origin, duration, ffxivSuppressStatusText: true });
+      result = await applyStatusEffectStackDelta(actor, statusId, delta, { origin, duration });
     } else {
       result = await applyStatusEffectStackValue(actor, statusId, isActive ? stacks : 0, {
         origin,
         duration,
-        ffxivSuppressStatusText: true,
       });
     }
     return result !== false;
   }
-  const result = await applyStatusEffectChange(actor, statusId, isActive, { origin, duration, ffxivSuppressStatusText: true });
+  const result = await applyStatusEffectChange(actor, statusId, isActive, { origin, duration });
   return result !== false;
 }
 

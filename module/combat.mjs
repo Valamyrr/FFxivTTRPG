@@ -17,6 +17,7 @@ import {
   TARGET_CLEAR_TIMINGS,
 } from "./helpers/target-selection.mjs";
 import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
+import { createChatMessage } from "./helpers/chat-message.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
 
@@ -740,7 +741,7 @@ export class FFXIVCombat extends Combat {
       return `<li><strong>${result.actor.name}</strong>: ${effectsText}(${resourceChanges.join(", ")})</li>`;
     }).join("");
 
-    await ChatMessage.create({
+    await createChatMessage({
       speaker: ChatMessage.getSpeaker({ scene: canvas?.scene }),
       flavor: game.i18n.format("FFXIV.Combat.StepEndStatusEffects", {
         step: stepLabel,

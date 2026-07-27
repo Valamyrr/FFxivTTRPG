@@ -43,6 +43,7 @@ import {
 } from "../helpers/target-selection.mjs";
 import { isAbilityAutomationEnabled } from "../helpers/automation.mjs";
 import { emitToActiveGM, getActiveGM } from "../helpers/socket.mjs";
+import { createChatMessage } from "../helpers/chat-message.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
   "consumable",
@@ -986,7 +987,7 @@ export class FFXIVItem extends Item {
     );
 
     if (this.type === "minion") {
-      await ChatMessage.create({
+      await createChatMessage({
         user,
         content,
         speaker,
@@ -1020,7 +1021,7 @@ export class FFXIVItem extends Item {
       }
     }
     content = content + this._getRollButtons();
-    const chatMessage = await ChatMessage.create({
+    const chatMessage = await createChatMessage({
       user: user,
       content: content,
       speaker: speaker,
@@ -2206,7 +2207,7 @@ export class FFXIVItem extends Item {
       rollHTML.append(this._getApplyButton(directHitResult.roll.result));
     }
 
-    await ChatMessage.create({
+    await createChatMessage({
       user,
       speaker,
       flavor: this._hasCheck()
@@ -2247,7 +2248,7 @@ export class FFXIVItem extends Item {
         autoFromHit: true,
       });
       if (directHitResult) {
-        await ChatMessage.create({
+        await createChatMessage({
           user: game.user.id,
           speaker,
           rolls: [directHitResult.roll],
@@ -2280,7 +2281,7 @@ export class FFXIVItem extends Item {
     if (!directHitResult) return;
     const speaker = ChatMessage.getSpeaker({ actor: this.parent });
     const user = game.user.id;
-    await ChatMessage.create({
+    await createChatMessage({
       user: user,
       speaker: speaker,
       rolls: [directHitResult.roll],
@@ -2448,7 +2449,7 @@ export class FFXIVItem extends Item {
     const roll = new Roll(bonus.formula, this.getRollData());
     await roll.evaluate();
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    await ChatMessage.create({
+    await createChatMessage({
       user,
       speaker,
       rolls: [roll],
@@ -2549,7 +2550,7 @@ export class FFXIVItem extends Item {
     const roll = new Roll(branch.formula, this.getRollData());
     await roll.evaluate();
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    await ChatMessage.create({
+    await createChatMessage({
       user: game.user.id,
       speaker,
       rolls: [roll],
@@ -2568,7 +2569,7 @@ export class FFXIVItem extends Item {
     const content = branch.description
       ? `<p>${branch.description}</p>`
       : `<p>${branch.name}</p>`;
-    await ChatMessage.create({
+    await createChatMessage({
       user: game.user.id,
       speaker: ChatMessage.getSpeaker({ actor: this.parent }),
       flavor: branch.name,
@@ -2817,7 +2818,7 @@ export class FFXIVItem extends Item {
     );
     await roll.evaluate();
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    await ChatMessage.create({
+    await createChatMessage({
       user: user,
       speaker: speaker,
       rolls: [roll],
@@ -2849,7 +2850,7 @@ export class FFXIVItem extends Item {
     );
     await roll.evaluate();
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    await ChatMessage.create({
+    await createChatMessage({
       user: user,
       speaker: speaker,
       rolls: [roll],
@@ -2884,7 +2885,7 @@ export class FFXIVItem extends Item {
     await roll.evaluate();
 
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    await ChatMessage.create({
+    await createChatMessage({
       user: user,
       speaker: speaker,
       rolls: [roll],
@@ -2995,7 +2996,7 @@ export class FFXIVItem extends Item {
     );
     await roll.evaluate();
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    await ChatMessage.create({
+    await createChatMessage({
       user: user,
       speaker: speaker,
       rolls: [roll],
