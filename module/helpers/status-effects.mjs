@@ -887,8 +887,8 @@ async function applyKnockedOutStatusEffect(
   return result;
 }
 
-async function getEffectSourceActor(effect) {
-  const origin = String(effect?.origin ?? "").trim();
+async function getStatusSourceActor(sourceReference) {
+  const origin = String(sourceReference ?? "").trim();
   if (!origin || origin.toLowerCase() === "none") return null;
 
   let source = null;
@@ -902,6 +902,29 @@ async function getEffectSourceActor(effect) {
   if (source?.parent?.documentName === "Actor") return source.parent;
   if (source?.actor?.documentName === "Actor") return source.actor;
   return null;
+}
+
+async function getEffectSourceActor(effect) {
+  return getStatusSourceActor(effect?.origin);
+}
+
+function getActorEnmityCheckPenalty(actor) {
+  let penalty = null;
+  const effects = Array.from(actor?.effects ?? []);
+  for (const item of actor?.items ?? []) {
+    for (const effect of item?.effects ?? []) {
+      if (effect.transfer === true) effects.push(effect);
+    }
+  }
+
+  for (const effect of effects) {
+    if (!effect || effect.disabled || effect.active === false) continue;
+    const value = Number(
+      foundry.utils.getProperty(effect, "flags.ffxiv.enmity.checkPenalty"),
+    );
+    if (Number.isFinite(value)) penalty = value;
+  }
+  return penalty;
 }
 
 function getActorsWithStatusEffects() {
@@ -1051,12 +1074,21 @@ export async function applyStatusEffectChange(
     );
   }
   if (normalizedStatusId === "enmity" && isActive && origin) {
+    const sourceActor = await getStatusSourceActor(origin);
+    const sourcePenalty = getActorEnmityCheckPenalty(sourceActor);
     const effect = await replaceNonStackableStatusEffect(actor, normalizedStatusId, {
       overlay,
       origin,
       duration,
       ffxivSuppressStatusText,
     });
+    const updates = {};
+    if (sourceActor?.uuid) {
+      updates["flags.ffxiv.enmity.sourceActorUuid"] = sourceActor.uuid;
+    }
+    if (sourcePenalty !== null) {
+      updates["flags.ffxiv.enmity.checkPenalty"] = sourcePenalty;
+    }
     const combat = game.combat;
     const combatant = combat?.combatant;
     if (effect && combat?.started && combatant) {
@@ -1067,12 +1099,13 @@ export async function applyStatusEffectChange(
           disposition === CONST.TOKEN_DISPOSITIONS.FRIENDLY
         ? 0
         : 1;
-      await effect.setFlag("ffxiv", "enmityPhase", {
+      updates["flags.ffxiv.enmityPhase"] = {
         combatId: String(combat.id ?? combat.uuid ?? ""),
         round: Number(combat.round ?? 0),
         step,
-      });
+      };
     }
+    if (effect && Object.keys(updates).length) await effect.update(updates, { render: false });
     return effect;
   }
   const result = await actor.toggleStatusEffect(normalizedStatusId, {
