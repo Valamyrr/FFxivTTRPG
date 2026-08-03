@@ -341,6 +341,11 @@
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 
+  &.actor.npc .actor-player-abilities .ability-details:not(:has(.detail)),
+  &.actor.npc .actor-player-abilities .ability-effects:not(:has(.effect)) {
+    display: none;
+  }
+
   &.actor:is(.character, .npc) .actor-player-abilities .effect {
     margin-bottom: 0.35em;
   }

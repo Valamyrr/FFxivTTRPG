@@ -386,6 +386,8 @@
     }
 
     &.item-modern-sheet .sheet-header h1.charname {
+      align-items: center;
+      display: flex;
       flex: 1 1 18em;
       line-height: 1.1;
       margin: 0;
@@ -402,14 +404,14 @@
     &.item-modern-sheet .sheet-header .item-delete {
       align-self: center;
       box-sizing: border-box;
-      flex: 0 0 34px;
-      height: 34px;
+      flex: 0 0 38px;
+      height: 38px;
       margin: 0;
-      max-height: 34px;
-      max-width: 34px;
-      min-height: 34px;
+      max-height: 38px;
+      max-width: 38px;
+      min-height: 38px;
       padding: 0;
-      width: 34px;
+      width: 38px;
     }
 
     &.item-modern-sheet > hr {
@@ -549,7 +551,8 @@
       padding-bottom: 6px;
     }
 
-    &.item-modern-sheet .resources {
+    &.item-modern-sheet .resources,
+    &.item-modern-sheet .ability-resources {
       margin-bottom: 10px;
     }
 
@@ -681,9 +684,9 @@
 
     .ability-base-roll-conditional-row {
       display: grid;
-      gap: 8px;
+      gap: 9px;
       grid-column: 1 / -1;
-      grid-template-columns: minmax(150px, 0.85fr) minmax(220px, 1.25fr) minmax(130px, 0.75fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       width: 100%;
     }
 
@@ -722,11 +725,11 @@
 
     .ability-formula-row {
       align-items: stretch;
-      display: inline-flex;
+      display: flex;
       gap: 0;
       justify-content: flex-start;
       max-width: 100%;
-      width: auto;
+      width: 100%;
     }
 
     .ability-formula-row .ffxiv-hidden {
@@ -742,8 +745,8 @@
 
     .ability-formula-row input,
     .ability-formula-row .item-locked-field:first-child {
-      flex-basis: 7.5em;
-      min-width: 7.5em;
+      flex: 1 1 auto;
+      min-width: 0;
       text-align: right;
     }
 
@@ -1080,6 +1083,10 @@
 
     .ability-linked-effect-list .ability-linked-effect-automation {
       grid-template-columns: minmax(10em, 1fr) 8.75em auto;
+    }
+
+    .status-effect-list li.status-effect-list-empty {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .ability-automation-list li {
@@ -1487,6 +1494,10 @@
 
       .ability-form-grid-2,
       .ability-form-grid-3 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ability-base-roll-conditional-row {
         grid-template-columns: minmax(0, 1fr);
       }
 

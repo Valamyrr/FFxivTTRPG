@@ -305,8 +305,9 @@ function normalizeLegacySubtractActiveEffectChangeArray(changes) {
   let normalized = null;
   changes.forEach((change, index) => {
     if (!change || typeof change !== "object") return;
+    const legacyMode = getLegacyActiveEffectChangeMode(change);
     if (
-      !isLegacySubtractActiveEffectChangeMode(change.mode) &&
+      !isLegacySubtractActiveEffectChangeMode(legacyMode) &&
       !isLegacySubtractActiveEffectChangeType(change.type)
     )
       return;
@@ -316,6 +317,18 @@ function normalizeLegacySubtractActiveEffectChangeArray(changes) {
     delete normalized[index].mode;
   });
   return normalized;
+}
+
+function getLegacyActiveEffectChangeMode(change) {
+  if (!change || typeof change !== "object") return undefined;
+  const sourceMode = change._source?.mode;
+  if (sourceMode !== undefined) return sourceMode;
+  return Object.getOwnPropertyDescriptor(change, "mode")?.value;
+}
+
+function getActiveEffectChangeType(change) {
+  if (!change || typeof change !== "object") return change;
+  return change.type ?? getLegacyActiveEffectChangeMode(change);
 }
 
 function isLegacySubtractActiveEffectChangeMode(mode) {
@@ -7732,9 +7745,7 @@ function getActorDamageEffectModifiers(actor, channel) {
 }
 
 function normalizeActiveEffectChangeMode(change) {
-  const rawMode = change && typeof change === "object"
-    ? change.type ?? change.mode
-    : change;
+  const rawMode = getActiveEffectChangeType(change);
   const mode = String(rawMode ?? "")
     .trim()
     .toLowerCase()

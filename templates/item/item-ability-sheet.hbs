@@ -114,37 +114,67 @@
           </header>
           <div class="ability-form-grid ability-form-grid-3 ability-info-grid">
             <div class="resource flex-group-center">
-              <label for="system.cost" class="resource-label">{{ localize "FFXIV.Abilities.Cost" }}</label>
+              <label for="system.cost" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Cost" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CostHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.cost" type="text" value="{{item.system.cost}}" />
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.trigger" class="resource-label">{{ localize "FFXIV.Abilities.Trigger" }}</label>
+              <label for="system.trigger" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Trigger" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.TriggerHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.trigger" type="text" value="{{item.system.trigger}}" />
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.condition" class="resource-label">{{ localize "FFXIV.Abilities.Condition" }}</label>
+              <label for="system.condition" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Condition" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ConditionHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.condition" type="text" value="{{item.system.condition}}" />
               </div>
             </div>
             <div class="resource flex-group-center ability-target-field">
-              <label for="system.target" class="resource-label">{{ localize "FFXIV.Abilities.Target" }}</label>
+              <label for="system.target" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Target" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.TargetHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.target" type="text" value="{{item.system.target}}" />
               </div>
             </div>
             <div class="resource flex-group-center ability-range-field">
-              <label for="system.range" class="resource-label">{{ localize "FFXIV.Abilities.Range" }}</label>
+              <label for="system.range" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Range" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.RangeHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.range" type="text" value="{{item.system.range}}" />
               </div>
             </div>
             <div class="resource flex-group-center ability-combo-field">
-              <label for="system.combo" class="resource-label">{{ localize "FFXIV.Abilities.Combo" }}</label>
+              <label for="system.combo" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Combo" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ComboHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.combo" type="text" value="{{item.system.combo}}" />
               </div>
@@ -164,20 +194,31 @@
           </header>
           <div class="ability-form-grid ability-form-grid-2">
             <div class="resource flex-group-center">
-              <label for="system.base_effect" class="resource-label">{{ localize "FFXIV.Abilities.BaseEffect" }}</label>
+              <label for="system.base_effect" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.BaseEffect" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.BaseEffectHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.base_effect"
                        type="text"
-                       value="{{item.system.base_effect}}" />
+                       value="{{item.system.base_effect}}"
+                       placeholder="{{localize 'FFXIV.Abilities.BaseEffectPlaceholder'}}" />
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.base_formula" class="resource-label">{{ localize "FFXIV.Abilities.BaseFormula" }}</label>
+              <label for="system.base_formula" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.BaseFormula" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.BaseFormulaHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.base_formula"
                        type="text"
                        value="{{item.system.base_formula}}"
-                       placeholder="3" />
+                       placeholder="{{localize 'FFXIV.Abilities.BaseFormulaPlaceholder'}}" />
               </div>
             </div>
             <div class="ability-base-roll-conditional-row">
@@ -208,7 +249,7 @@
                     <input name="flags.ffxiv.baseFormula.override.formula"
                            type="text"
                            value="{{conditionalBaseFormula.formula}}"
-                           placeholder="3d6+4" />
+                           placeholder="{{localize 'FFXIV.Abilities.ConditionalBaseFormulaPlaceholder'}}" />
                   </div>
               </div>
                 {{#if conditionalBaseFormula.hasFormula }}
@@ -223,7 +264,7 @@
                     <input name="flags.ffxiv.baseFormula.override.threshold"
                            type="text"
                            value="{{conditionalBaseFormula.threshold}}"
-                           placeholder="halfMax" />
+                           placeholder="{{localize 'FFXIV.Abilities.ConditionalBaseThresholdPlaceholder'}}" />
                   </div>
               </div>
                 {{/if}}
@@ -236,7 +277,12 @@
           </header>
           <div class="ability-form-grid ability-form-grid-2">
             <div class="resource flex-group-center">
-              <label for="system.check" class="resource-label">{{ localize "FFXIV.Abilities.Check" }}</label>
+              <label for="system.check" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Check" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CheckHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <select class="ffxiv-text-center" name="system.check">
                   <option value="{{localize "FFXIV.None"}}">{{localize "FFXIV.None"}}</option>
@@ -257,19 +303,32 @@
             </div>
             {{#if hasCheck }}
               <div class="resource flex-group-center">
-                <label for="system.challenge" class="resource-label">{{ localize "FFXIV.Abilities.Challenge" }}</label>
+                <label for="system.challenge" class="resource-label">
+                  <span>
+                    {{ localize "FFXIV.Abilities.Challenge" }}
+                    {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ChallengeHint"}}
+                  </span>
+                </label>
                 <div class="resource-content flexrow flex-center flex-between">
-                  <input name="system.challenge" type="text" value="{{item.system.challenge}}" />
+                  <input name="system.challenge"
+                         type="text"
+                         value="{{item.system.challenge}}"
+                         placeholder="{{localize 'FFXIV.Abilities.ChallengePlaceholder'}}" />
                 </div>
               </div>
             {{/if}}
             <div class="resource flex-group-center ability-form-span">
-              <label for="system.hit_formula" class="resource-label">{{ localize "FFXIV.Abilities.HitFormula" }}</label>
+              <label for="system.hit_formula" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.HitFormula" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.HitFormulaHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between ability-formula-row">
                 <input name="system.hit_formula"
                        type="text"
                        value="{{item.system.hit_formula}}"
-                       placeholder="1d20 + @str"
+                       placeholder="{{localize 'FFXIV.Abilities.HitFormulaPlaceholder'}}"
                        data-formula-source="hit" />
                 <select class="ffxiv-text-center {{#unless (hasContent item.system.hit_formula)}}ffxiv-hidden{{/unless}}"
                         name="system.hit_formula_attribute"
@@ -293,20 +352,31 @@
           </header>
           <div class="ability-form-grid ability-form-grid-2">
             <div class="resource flex-group-center">
-              <label for="system.direct_hit" class="resource-label">{{ localize "FFXIV.Abilities.DirectHit" }}</label>
+              <label for="system.direct_hit" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.DirectHit" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.DirectHitHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.direct_hit"
                        type="text"
-                       value="{{item.system.direct_hit}}" />
+                       value="{{item.system.direct_hit}}"
+                       placeholder="{{localize 'FFXIV.Abilities.DirectHitPlaceholder'}}" />
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.direct_formula" class="resource-label">{{ localize "FFXIV.Abilities.AdditionalFormula" }}</label>
+              <label for="system.direct_formula" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.AdditionalFormula" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.DirectFormulaHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between ability-formula-row">
                 <input name="system.direct_formula"
                        type="text"
                        value="{{item.system.direct_formula}}"
-                       placeholder="3 + 1d6 + @dmg"
+                       placeholder="{{localize 'FFXIV.Abilities.DirectFormulaPlaceholder'}}"
                        data-formula-source="direct" />
                 <select class="ffxiv-text-center {{#unless (hasContent item.system.direct_formula)}}ffxiv-hidden{{/unless}}"
                         name="system.direct_formula_attribute"
@@ -330,11 +400,17 @@
           </header>
           <div class="ability-form-grid ability-form-grid-2">
             <div class="resource flex-group-center">
-              <label for="system.alternate_formula" class="resource-label">{{ localize "FFXIV.Abilities.AlternateFormula" }}</label>
+              <label for="system.alternate_formula" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.AlternateFormula" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AlternateFormulaHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between ability-formula-row">
                 <input name="system.alternate_formula"
                        type="text"
                        value="{{item.system.alternate_formula}}"
+                       placeholder="{{localize 'FFXIV.Abilities.AlternateFormulaPlaceholder'}}"
                        data-formula-source="alternate" />
                 <select class="ffxiv-text-center {{#unless (hasContent item.system.alternate_formula)}}ffxiv-hidden{{/unless}}"
                         name="system.alternate_formula_attribute"
@@ -352,12 +428,16 @@
             </div>
             <div class="resource flex-group-center">
               <label for="system.alternate_formula_critical" class="resource-label">
-                {{ localize "FFXIV.Abilities.AlternateFormulaCritical" }}
+                <span>
+                  {{ localize "FFXIV.Abilities.AlternateFormulaCritical" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AlternateFormulaCriticalHint"}}
+                </span>
               </label>
               <div class="resource-content flexrow flex-center flex-between ability-formula-row">
                 <input name="system.alternate_formula_critical"
                        type="text"
                        value="{{item.system.alternate_formula_critical}}"
+                       placeholder="{{localize 'FFXIV.Abilities.AlternateFormulaCriticalPlaceholder'}}"
                        data-formula-source="alternate-critical" />
                 <select class="ffxiv-text-center {{#unless (hasContent item.system.alternate_formula_critical)}}ffxiv-hidden{{/unless}}"
                         name="system.alternate_formula_critical_attribute"
@@ -377,7 +457,7 @@
         </section>
       </div>
     </div>
-    <div class="tab resources" data-group="primary" data-tab="resources">
+    <div class="tab ability-resources" data-group="primary" data-tab="resources">
       <div class="attributes item-details-card ability-sheet-card">
         <section class="ability-sheet-panel">
           <header class="ability-panel-header">
@@ -385,7 +465,12 @@
           </header>
           <div class="ability-form-grid ability-form-grid-2">
             <div class="resource flex-group-center">
-              <label for="system.hpcost" class="resource-label">{{ localize "FFXIV.Abilities.HPCost" }}</label>
+              <label for="system.hpcost" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.HPCost" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.HPCostHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.hpcost"
                        type="number"
@@ -395,7 +480,12 @@
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.mpcost" class="resource-label">{{ localize "FFXIV.Abilities.MPCost" }}</label>
+              <label for="system.mpcost" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.MPCost" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.MPCostHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.mpcost"
                        type="number"
@@ -405,7 +495,12 @@
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.limitations" class="resource-label">{{ localize "FFXIV.Abilities.LimitationsDescription" }}</label>
+              <label for="system.limitations" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.LimitationsDescription" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.LimitationsDescriptionHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.limitations"
                        type="text"
@@ -413,7 +508,12 @@
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.job_resources_max" class="resource-label">{{ localize "FFXIV.Abilities.Limitations_max" }}</label>
+              <label for="system.job_resources_max" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Limitations_max" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.LimitationsMaxHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.job_resources_max"
                        type="number"
@@ -434,13 +534,23 @@
           </header>
           <div class="ability-form-grid ability-form-grid-2">
             <div class="resource flex-group-center">
-              <label for="system.origin" class="resource-label">{{ localize "FFXIV.Abilities.MarkerOrigin" }}</label>
+              <label for="system.origin" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.MarkerOrigin" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.MarkerOriginHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.origin" type="text" value="{{item.system.origin}}" />
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.marker_trigger" class="resource-label">{{ localize "FFXIV.Abilities.MarkerTrigger" }}</label>
+              <label for="system.marker_trigger" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.MarkerTrigger" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.MarkerTriggerHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.marker_trigger"
                        type="text"
@@ -448,7 +558,12 @@
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.marker_area" class="resource-label">{{ localize "FFXIV.Abilities.MarkerArea" }}</label>
+              <label for="system.marker_area" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.MarkerArea" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.MarkerAreaHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.marker_area"
                        type="text"
@@ -456,7 +571,12 @@
               </div>
             </div>
             <div class="resource flex-group-center">
-              <label for="system.marker_effect" class="resource-label">{{ localize "FFXIV.Abilities.MarkerEffect" }}</label>
+              <label for="system.marker_effect" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.MarkerEffect" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.MarkerEffectHint"}}
+                </span>
+              </label>
               <div class="resource-content flexrow flex-center flex-between">
                 <input name="system.marker_effect"
                        type="text"
@@ -597,6 +717,9 @@
                 {{/if}}
               </li>
             {{/each}}
+            {{#unless itemStatusEffects.length}}
+              <li class="status-effect-list-empty">{{localize "FFXIV.CharacterSheet.NoEffects"}}</li>
+            {{/unless}}
           </ul>
         </div>
         <hr>
@@ -648,7 +771,7 @@
               </li>
             {{/each}}
             {{#unless abilityLinkedEffects.length}}
-              <li>{{localize "FFXIV.CharacterSheet.NoEffects"}}</li>
+              <li class="status-effect-list-empty">{{localize "FFXIV.CharacterSheet.NoEffects"}}</li>
             {{/unless}}
           </ul>
         </div>

@@ -1650,6 +1650,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     delete itemData.system['preserveScroll'];
 
     const [item] = await this.actor.createEmbeddedDocuments("Item", [itemData], { render: false });
+    if (this.actor.type === "npc" && ["ability", "trait"].includes(item?.type)) {
+      this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+    }
     await this.render({ force: true });
     if (data.openSheet === "true" || data.openSheet === true) {
       await item?.sheet?.render({ force: true });

@@ -919,9 +919,17 @@ function getActorEnmityCheckPenalty(actor) {
 
   for (const effect of effects) {
     if (!effect || effect.disabled || effect.active === false) continue;
-    const value = Number(
-      foundry.utils.getProperty(effect, "flags.ffxiv.enmity.checkPenalty"),
+    const rawValue = foundry.utils.getProperty(
+      effect,
+      "flags.ffxiv.enmity.checkPenalty",
     );
+    if (
+      rawValue === null ||
+      rawValue === undefined ||
+      String(rawValue).trim() === ""
+    )
+      continue;
+    const value = Number(rawValue);
     if (Number.isFinite(value)) penalty = value;
   }
   return penalty;
@@ -1078,7 +1086,7 @@ export async function applyStatusEffectChange(
     const sourcePenalty = getActorEnmityCheckPenalty(sourceActor);
     const effect = await replaceNonStackableStatusEffect(actor, normalizedStatusId, {
       overlay,
-      origin,
+      origin: sourceActor?.uuid ?? origin,
       duration,
       ffxivSuppressStatusText,
     });

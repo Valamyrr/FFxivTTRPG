@@ -642,7 +642,9 @@ export class FFXIVCombat extends Combat {
 
   _normalizeActiveEffectChangeMode(change) {
     const rawMode = change && typeof change === "object"
-      ? change.type ?? change.mode
+      ? change.type ??
+        change._source?.mode ??
+        Object.getOwnPropertyDescriptor(change, "mode")?.value
       : change;
     const mode = String(rawMode ?? "")
       .trim()
