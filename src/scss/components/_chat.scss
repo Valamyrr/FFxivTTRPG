@@ -167,6 +167,22 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
   }
 
+  :is(.chat-ffxiv .message-content, .chat-ffxiv.message-content) .ffxiv-chat-buttons {
+    align-items: stretch;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+
+  :is(.chat-ffxiv .message-content, .chat-ffxiv.message-content) .ffxiv-chat-buttons button {
+    flex: 1 1 120px;
+    height: auto;
+    line-height: 1.15;
+    min-width: 0;
+    padding: 5px 8px;
+    white-space: normal;
+  }
+
   :is(.chat-ffxiv .message-content, .chat-ffxiv.message-content) button.ffxiv-apply-dmg {
     color: #fff7fa;
   }

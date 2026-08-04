@@ -77,6 +77,14 @@
                    value="{{item.system.job_resources_max}}" />
           </div>
         </div>
+        <div class="resource flex-group-center">
+          <label for="flags.ffxiv.jobResource.name" class="resource-label">{{ localize "FFXIV.Abilities.JobResourceName" }}</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input name="flags.ffxiv.jobResource.name"
+                   type="text"
+                   value="{{flags.ffxiv.jobResource.name}}" />
+          </div>
+        </div>
       </div>
       <hr>
       {{! Modifiers}}

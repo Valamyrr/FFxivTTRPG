@@ -2158,7 +2158,7 @@ export class FFXIVItem extends Item {
       : null;
     const buttonData = this._getChatButtonData();
 
-    let extraButtons = "<div style='display:flex;flex-wrap: wrap;'>";
+    let extraButtons = '<div class="ffxiv-chat-buttons">';
     if (this._hasDirectRoll() && !autoDirectHit) {
       extraButtons += `<button class="ffxiv-roll-direct" ${buttonData}>${game.i18n.localize("FFXIV.Chat.RollDirectHitFormula")}</button>`;
       extraButtons += `<button class="ffxiv-roll-critical" ${buttonData}>${game.i18n.localize("FFXIV.Chat.RollCriticalHitFormula")}</button>`;
@@ -2434,10 +2434,13 @@ export class FFXIVItem extends Item {
     const bonus = this._getJobResourceBonusOption(options.resourceBonus, {
       checkResource: false,
     });
-    if (!bonus) return;
+    if (!bonus) {
+      ui.notifications.warn(`${this.name}: job resource bonus unavailable.`);
+      return this._playErrorSound();
+    }
     if (getActorJobResourceCount(this.parent, bonus.resource) < bonus.amount) {
       ui.notifications.warn(`${this.name}: requires ${bonus.amount} ${bonus.resource}.`);
-      return;
+      return this._playErrorSound();
     }
 
     await applyActorJobResourceDelta(this.parent, bonus.resource, -bonus.amount, {
@@ -3006,7 +3009,7 @@ export class FFXIVItem extends Item {
   }
 
   _getRollButtons() {
-    let buttons = "<div style='display:flex;flex-wrap: wrap;'>";
+    let buttons = '<div class="ffxiv-chat-buttons">';
     const buttonData = this._getChatButtonData();
     if (this._hasFormula(this.system.alternate_formula))
       buttons += `<button class="ffxiv-roll-alternate" ${buttonData}>${game.i18n.localize("FFXIV.Chat.RollAlternateFormula")}</button>`;
@@ -3065,10 +3068,9 @@ export class FFXIVItem extends Item {
   }
 
   _normalizeRollOptions(options = {}) {
-    const isEvent = typeof Event !== "undefined" && options instanceof Event;
-    const dataset = isEvent ? options.currentTarget?.dataset : null;
+    const dataset = options?.currentTarget?.dataset ?? null;
     const normalized =
-      options && typeof options === "object" && !isEvent ? { ...options } : {};
+      options && typeof options === "object" && !dataset ? { ...options } : {};
 
     if (dataset?.critical !== undefined)
       normalized.critical = dataset.critical === "true";
@@ -4853,7 +4855,7 @@ export class FFXIVItem extends Item {
   }
 
   _getApplyButton(result) {
-    let buttons = "<div style='display:flex;flex-wrap: wrap;'>";
+    let buttons = '<div class="ffxiv-chat-buttons">';
     const buttonData = this._getChatButtonData();
     buttons += `<button class="ffxiv-apply-dmg" ${buttonData} data-damage="${result}">${game.i18n.localize("FFXIV.Chat.Damage")}</button>`;
     buttons += `<button class="ffxiv-apply-heal" ${buttonData} data-heal="${result}">${game.i18n.localize("FFXIV.Chat.Heal")}</button>`;

@@ -211,6 +211,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.itemStatusEffects = this._getStatusEffectEntries(itemData.system);
     context.effectRequirementEntries = this._getEffectRequirementEntries(itemData.system);
     context.effectRuleEntries = this._getEffectRuleEntries(itemData.system);
+    context.jobResourceBonusEntries = this._getJobResourceBonusEntries(itemData.flags);
     context.conditionalBaseFormula = this._getConditionalBaseFormulaEntry(itemData.flags);
     context.cssClass = this._getSheetClasses().join(" ");
     context.editable =
@@ -1384,6 +1385,168 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return this._getEffectRulesFrom(this.item.system, { includeDrafts: true });
   }
 
+  _toArray(value) {
+    if (Array.isArray(value)) return value;
+    return value === undefined || value === null || value === "" ? [] : [value];
+  }
+
+  _getJobResourceBonusEntries(flags) {
+    const jobResource = foundry.utils.getProperty(flags, "ffxiv.jobResource") ?? {};
+    const data = jobResource.bonus ?? jobResource.bonuses;
+    if (!data || typeof data !== "object") return [];
+
+    let entries;
+    if (Array.isArray(data)) {
+      entries = data;
+    } else if (
+      data.key ||
+      data.name ||
+      data.resource ||
+      data.resourceName ||
+      data.formula ||
+      data.rollFormula
+    ) {
+      entries = [data];
+    } else {
+      entries = Object.values(data);
+    }
+
+    return entries
+      .filter((entry) => entry && typeof entry === "object")
+      .map((entry, index) => ({
+        index,
+        key: String(entry.key ?? ""),
+        name: String(entry.name ?? ""),
+        buttonLabel: String(entry.buttonLabel ?? ""),
+        resource: String(entry.resource ?? entry.resourceName ?? ""),
+        amount: Math.max(Number.parseInt(entry.amount ?? entry.cost, 10) || 1, 1),
+        formula: String(entry.formula ?? entry.rollFormula ?? ""),
+        upgrades: [
+          ...this._toArray(entry.formulaByLevel),
+          ...this._toArray(entry.formulaUpgrades),
+        ]
+          .filter((upgrade) => upgrade && typeof upgrade === "object")
+          .map((upgrade, upgradeIndex) => ({
+            index: upgradeIndex,
+            minLevel: upgrade.minLevel ?? "",
+            formula: String(upgrade.formula ?? upgrade.rollFormula ?? ""),
+          })),
+      }));
+  }
+
+  _getCurrentJobResourceBonuses() {
+    return this._getJobResourceBonusEntries(this.item.flags).map((entry) => ({
+      key: entry.key,
+      name: entry.name,
+      buttonLabel: entry.buttonLabel,
+      resource: entry.resource,
+      amount: entry.amount,
+      formula: entry.formula,
+      formulaByLevel: entry.upgrades.map((upgrade) => ({
+        minLevel: upgrade.minLevel,
+        formula: upgrade.formula,
+      })),
+    }));
+  }
+
+  async _updateJobResourceBonuses(entries) {
+    const update = { "flags.ffxiv.jobResource.-=bonuses": null };
+    if (entries.length) {
+      update["flags.ffxiv.jobResource.bonus"] =
+        entries.length === 1 ? entries[0] : entries;
+    } else {
+      update["flags.ffxiv.jobResource.-=bonus"] = null;
+    }
+    this._captureSheetScroll();
+    await this.item.update(update, { render: false });
+    await this.render({ force: true });
+  }
+
+  _onChangeJobResourceBonus(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+    const field = String(event.currentTarget.dataset.field ?? "");
+    if (!field) return;
+
+    const entries = this._getCurrentJobResourceBonuses();
+    if (!entries[index]) return;
+    const value = this._getAutomationFieldValue(event.currentTarget);
+    entries[index][field] = field === "amount"
+      ? Math.max(Number.parseInt(value, 10) || 1, 1)
+      : value;
+    this._updateJobResourceBonuses(entries).catch((err) =>
+      ui.notifications.error(err, { console: true }),
+    );
+  }
+
+  _onChangeJobResourceBonusUpgrade(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const upgradeIndex = Number(event.currentTarget.dataset.upgradeIndex);
+    if (!Number.isInteger(index) || !Number.isInteger(upgradeIndex)) return;
+    const field = String(event.currentTarget.dataset.field ?? "");
+    if (!field) return;
+
+    const entries = this._getCurrentJobResourceBonuses();
+    const upgrade = entries[index]?.formulaByLevel?.[upgradeIndex];
+    if (!upgrade) return;
+    const value = this._getAutomationFieldValue(event.currentTarget);
+    upgrade[field] = field === "minLevel" && value !== ""
+      ? Number.parseInt(value, 10)
+      : value;
+    this._updateJobResourceBonuses(entries).catch((err) =>
+      ui.notifications.error(err, { console: true }),
+    );
+  }
+
+  _onAddJobResourceBonus() {
+    const entries = this._getCurrentJobResourceBonuses();
+    entries.push({
+      key: "",
+      name: "",
+      buttonLabel: "",
+      resource: "",
+      amount: 1,
+      formula: "",
+      formulaByLevel: [],
+    });
+    this._updateJobResourceBonuses(entries).catch((err) =>
+      ui.notifications.error(err, { console: true }),
+    );
+  }
+
+  _onRemoveJobResourceBonus(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+    const entries = this._getCurrentJobResourceBonuses();
+    entries.splice(index, 1);
+    this._updateJobResourceBonuses(entries).catch((err) =>
+      ui.notifications.error(err, { console: true }),
+    );
+  }
+
+  _onAddJobResourceBonusUpgrade(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index)) return;
+    const entries = this._getCurrentJobResourceBonuses();
+    if (!entries[index]) return;
+    entries[index].formulaByLevel.push({ minLevel: "", formula: "" });
+    this._updateJobResourceBonuses(entries).catch((err) =>
+      ui.notifications.error(err, { console: true }),
+    );
+  }
+
+  _onRemoveJobResourceBonusUpgrade(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const upgradeIndex = Number(event.currentTarget.dataset.upgradeIndex);
+    if (!Number.isInteger(index) || !Number.isInteger(upgradeIndex)) return;
+    const entries = this._getCurrentJobResourceBonuses();
+    if (!entries[index]) return;
+    entries[index].formulaByLevel.splice(upgradeIndex, 1);
+    this._updateJobResourceBonuses(entries).catch((err) =>
+      ui.notifications.error(err, { console: true }),
+    );
+  }
+
   _getEffectRulesFrom(system, { includeDrafts = false } = {}) {
     const rules = Array.isArray(system.effect_rules)
       ? foundry.utils.deepClone(system.effect_rules)
@@ -2086,6 +2249,16 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     );
     html.on(
       "change.ffxivItemSheet",
+      ".job-resource-bonus-field",
+      this._onChangeJobResourceBonus.bind(this),
+    );
+    html.on(
+      "change.ffxivItemSheet",
+      ".job-resource-bonus-upgrade-field",
+      this._onChangeJobResourceBonusUpgrade.bind(this),
+    );
+    html.on(
+      "change.ffxivItemSheet",
       ".ability-effect-scope",
       this._onChangeAbilityEffectScope.bind(this),
     );
@@ -2133,6 +2306,26 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       "click.ffxivItemSheet",
       ".add-effect-rule",
       this._onAddEffectRule.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".add-job-resource-bonus",
+      this._onAddJobResourceBonus.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".remove-job-resource-bonus",
+      this._onRemoveJobResourceBonus.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".add-job-resource-bonus-upgrade",
+      this._onAddJobResourceBonusUpgrade.bind(this),
+    );
+    html.on(
+      "click.ffxivItemSheet",
+      ".remove-job-resource-bonus-upgrade",
+      this._onRemoveJobResourceBonusUpgrade.bind(this),
     );
     html.on(
       "click.ffxivItemSheet",

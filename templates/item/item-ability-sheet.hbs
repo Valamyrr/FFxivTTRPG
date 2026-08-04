@@ -1062,6 +1062,133 @@
             {{/unless}}
           </ul>
         </div>
+        <hr>
+        <div class="status-effects-editor ability-automation-editor">
+          <div class="status-effects-header">
+            <label class="resource-label">{{ localize "FFXIV.Abilities.JobResourceBonuses" }}</label>
+            {{#if itemEditMode}}
+            <button type="button" class="add-job-resource-bonus">+</button>
+            {{/if}}
+          </div>
+          <ul class="status-effect-list ability-automation-list ability-automation-edit-list">
+            {{#each jobResourceBonusEntries as |entry index|}}
+              <li>
+                <details class="ability-automation-entry" open>
+                  <summary>
+                    <span class="ability-automation-text">
+                      {{#if entry.name}}{{entry.name}}{{else}}{{localize "FFXIV.Abilities.JobResourceBonus"}}{{/if}}
+                    </span>
+                  </summary>
+                  <div class="ability-automation-fields">
+                    <label>
+                      <span>{{localize "FFXIV.Abilities.JobResourceBonusKey"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.JobResourceBonusKeyHint"}}</span>
+                      <input class="job-resource-bonus-field"
+                             data-index="{{index}}"
+                             data-field="key"
+                             type="text"
+                             value="{{entry.key}}" />
+                    </label>
+                    <label>
+                      <span>{{localize "FFXIV.Abilities.AutomationName"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.JobResourceBonusNameHint"}}</span>
+                      <input class="job-resource-bonus-field"
+                             data-index="{{index}}"
+                             data-field="name"
+                             type="text"
+                             value="{{entry.name}}" />
+                    </label>
+                    <label>
+                      <span>{{localize "FFXIV.Abilities.JobResourceBonusButtonLabel"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.JobResourceBonusButtonLabelHint"}}</span>
+                      <input class="job-resource-bonus-field"
+                             data-index="{{index}}"
+                             data-field="buttonLabel"
+                             type="text"
+                             value="{{entry.buttonLabel}}" />
+                    </label>
+                    <label>
+                      <span>{{localize "FFXIV.Abilities.AutomationResourceName"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.JobResourceBonusResourceHint"}}</span>
+                      <input class="job-resource-bonus-field"
+                             data-index="{{index}}"
+                             data-field="resource"
+                             type="text"
+                             value="{{entry.resource}}" />
+                    </label>
+                    <label>
+                      <span>{{localize "FFXIV.Abilities.AutomationAmount"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.JobResourceBonusAmountHint"}}</span>
+                      <input class="job-resource-bonus-field"
+                             data-index="{{index}}"
+                             data-field="amount"
+                             type="number"
+                             min="1"
+                             value="{{entry.amount}}" />
+                    </label>
+                    <label>
+                      <span>{{localize "FFXIV.Abilities.JobResourceBonusFormula"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.JobResourceBonusFormulaHint"}}</span>
+                      <input class="job-resource-bonus-field"
+                             data-index="{{index}}"
+                             data-field="formula"
+                             type="text"
+                             value="{{entry.formula}}" />
+                    </label>
+                  </div>
+                  <div class="status-effects-header">
+                    <label class="resource-label">{{localize "FFXIV.Abilities.JobResourceBonusUpgrades"}}</label>
+                    {{#if ../itemEditMode}}
+                    <button type="button"
+                            class="add-job-resource-bonus-upgrade"
+                            data-index="{{index}}">+</button>
+                    {{/if}}
+                  </div>
+                  <ul class="status-effect-list ability-automation-list ability-automation-edit-list">
+                    {{#each entry.upgrades as |upgrade upgradeIndex|}}
+                      <li>
+                        <div class="ability-automation-fields">
+                          <label>
+                            <span>{{localize "FFXIV.Abilities.JobResourceBonusMinLevel"}}</span>
+                            <input class="job-resource-bonus-upgrade-field"
+                                   data-index="{{index}}"
+                                   data-upgrade-index="{{upgradeIndex}}"
+                                   data-field="minLevel"
+                                   type="number"
+                                   min="0"
+                                   value="{{upgrade.minLevel}}" />
+                          </label>
+                          <label>
+                            <span>{{localize "FFXIV.Abilities.JobResourceBonusFormula"}}</span>
+                            <input class="job-resource-bonus-upgrade-field"
+                                   data-index="{{index}}"
+                                   data-upgrade-index="{{upgradeIndex}}"
+                                   data-field="formula"
+                                   type="text"
+                                   value="{{upgrade.formula}}" />
+                          </label>
+                        </div>
+                        {{#if ../../itemEditMode}}
+                        <button type="button"
+                                class="remove-job-resource-bonus-upgrade"
+                                data-index="{{index}}"
+                                data-upgrade-index="{{upgradeIndex}}">x</button>
+                        {{/if}}
+                      </li>
+                    {{/each}}
+                    {{#unless entry.upgrades.length}}
+                      <li>
+                        <span class="ability-automation-text">{{localize "FFXIV.Abilities.JobResourceBonusUpgradesNone"}}</span>
+                      </li>
+                    {{/unless}}
+                  </ul>
+                </details>
+                {{#if ../itemEditMode}}
+                <button type="button" class="remove-job-resource-bonus" data-index="{{index}}">x</button>
+                {{/if}}
+              </li>
+            {{/each}}
+            {{#unless jobResourceBonusEntries.length}}
+              <li>
+                <span class="ability-automation-text">{{localize "FFXIV.Abilities.JobResourceBonusesNone"}}</span>
+              </li>
+            {{/unless}}
+          </ul>
+        </div>
       </div>
     </div>
   </section>
