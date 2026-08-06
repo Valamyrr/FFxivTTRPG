@@ -561,10 +561,13 @@
       "soundNotificationFFXIV_Hint": "Sélectionner un fichier son à jouer lorsque l'événement est activé. Laisser vide pour utiliser la valeur par défaut lorsqu'elle existe.",
       "soundNotificationFFXIV_deleteItem": "Son de suppression d'objet",
       "soundNotificationFFXIV_moveItem": "Son de déplacement d'objet",
+      "soundNotificationFFXIV_changeGearSet": "Son de changement de tenue",
       "soundNotificationFFXIV_enterChat": "Son d'arrivée d'un joueur",
+      "soundNotificationFFXIV_enterInstance": "Son d'entrée en instance",
       "soundNotificationFFXIV_openSheet": "Son d'ouverture de feuille",
       "soundNotificationFFXIV_closeSheet": "Son de fermeture de feuille",
       "soundNotificationFFXIV_critical": "Son de coup critique",
+      "soundNotificationFFXIV_limitBreakUnlocked": "Son de Transcendance débloquée",
       "soundNotificationFFXIV_limitBreakCharged": "Son de Transcendance chargée",
       "soundNotificationFFXIV_limitBreakActivated": "Son de Transcendance activée",
       "soundNotificationFFXIV_enmity": "Son d'inimitié",
@@ -598,7 +601,9 @@
     "LimitBreak": {
       "Activate": "Activer la Transcendance",
       "Control": "Accorder des Transcendances",
-      "Segments": "Segments"
+      "Segments": "Segments",
+      "StartEmpty": "Jauge vide au départ",
+      "StartEmptyHint": "Active la jauge de Transcendance avec tous ses segments vides."
     },
     "Controls": {
       "FFXIVTools": "Outils FF XIV",

@@ -561,10 +561,13 @@
       "soundNotificationFFXIV_Hint": "Select a sound file to play when this event is triggered. Leave empty to use the default where one exists.",
       "soundNotificationFFXIV_deleteItem": "Delete Item Sound",
       "soundNotificationFFXIV_moveItem": "Move Item Sound",
+      "soundNotificationFFXIV_changeGearSet": "Change Gear Set Sound",
       "soundNotificationFFXIV_enterChat": "Player Join Sound",
+      "soundNotificationFFXIV_enterInstance": "Enter Instance Sound",
       "soundNotificationFFXIV_openSheet": "Open Sheet Sound",
       "soundNotificationFFXIV_closeSheet": "Close Sheet Sound",
       "soundNotificationFFXIV_critical": "Critical Hit Sound",
+      "soundNotificationFFXIV_limitBreakUnlocked": "Limit Break Unlocked Sound",
       "soundNotificationFFXIV_limitBreakCharged": "Limit Break Charged Sound",
       "soundNotificationFFXIV_limitBreakActivated": "Limit Break Activated Sound",
       "soundNotificationFFXIV_enmity": "Enmity Sound",
@@ -598,7 +601,9 @@
     "LimitBreak": {
       "Activate": "Activate Limit Break",
       "Control": "Grant Limit Breaks",
-      "Segments": "Segments"
+      "Segments": "Segments",
+      "StartEmpty": "Start Empty",
+      "StartEmptyHint": "Activate the Limit Break gauge with all segments empty."
     },
     "Controls": {
       "FFXIVTools": "FF XIV Tools",

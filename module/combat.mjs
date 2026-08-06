@@ -20,6 +20,24 @@ import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
 import { createChatMessage } from "./helpers/chat-message.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
+const ENTER_INSTANCE_SOUND = "systems/ffxiv/assets/sfx/ffxiv-enter-instance.ogg";
+
+function playEnterInstanceSound() {
+  const configured = game.settings.get(
+    "ffxiv",
+    "soundNotificationFFXIV_enterInstance",
+  );
+  const src = configured || ENTER_INSTANCE_SOUND;
+  if (!game.settings.get("ffxiv", "soundNotificationFFXIV") || !src) return;
+
+  foundry.audio.AudioHelper.play({
+    src,
+    channel: "interface",
+    volume: 1,
+    autoplay: true,
+    loop: false,
+  }, true);
+}
 
 const STEP_END_STATUS_ICONS = {
   dot: "systems/ffxiv/assets/effects/dot.webp",
@@ -45,6 +63,7 @@ export class FFXIVCombat extends Combat {
       else if (resetMode === "limitations") await this._resetActorLimitations();
       await this._resetEncounterStatusFlags();
       const startedCombat = await super.startCombat();
+      if (game.user?.isGM) playEnterInstanceSound();
       if (resetMode !== "full") await this._applyStartingMpOverrides();
       await this._applyEncounterStartJobAutomation();
       return startedCombat;

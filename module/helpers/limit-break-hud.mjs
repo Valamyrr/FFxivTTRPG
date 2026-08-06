@@ -2,6 +2,7 @@ const TEMPLATE = "systems/ffxiv/templates/actor/parts/actor-limitbreak-gauge.hbs
 const HUD_ID = "ffxiv-limit-break-hud";
 const LIMIT_BREAK_SOUND_VOLUME = 0.4;
 const DEFAULT_SOUNDS = {
+  soundNotificationFFXIV_limitBreakUnlocked: "systems/ffxiv/assets/sfx/ffxiv-limit-break-unlocked.ogg",
   soundNotificationFFXIV_limitBreakCharged: "systems/ffxiv/assets/sfx/ffxiv-limit-break-charged.ogg",
   soundNotificationFFXIV_limitBreakActivated: "systems/ffxiv/assets/sfx/ffxiv-limit-break-activated.ogg",
 };
@@ -93,14 +94,16 @@ export function playLimitBreakActivatedSound() {
   playLimitBreakSound("soundNotificationFFXIV_limitBreakActivated", true);
 }
 
-export async function activateLimitBreakGauge(max) {
+export async function activateLimitBreakGauge(max, startEmpty = false) {
   if (!game.user?.isGM) return false;
 
-  const value = Math.max(1, Math.min(10, Number(max) || getLimitBreakMax()));
-  await game.settings.set("ffxiv", "limitBreakMax", value);
-  await game.settings.set("ffxiv", "limitBreakValue", value);
+  const maximum = Math.max(1, Math.min(10, Number(max) || getLimitBreakMax()));
+  await game.settings.set("ffxiv", "limitBreakMax", maximum);
+  await game.settings.set("ffxiv", "limitBreakValue", startEmpty ? 0 : maximum);
   await game.settings.set("ffxiv", "limitBreakActive", true);
-  playLimitBreakSound("soundNotificationFFXIV_limitBreakCharged", true);
+  if (!startEmpty) {
+    playLimitBreakSound("soundNotificationFFXIV_limitBreakCharged", true);
+  }
   return true;
 }
 
@@ -221,6 +224,12 @@ async function onLimitBreakControl(event) {
   value = Math.max(0, Math.min(max, Number.isFinite(value) ? value : current));
   if (value === current) return;
   await game.settings.set("ffxiv", "limitBreakValue", value);
+  playLimitBreakSound(
+    value === max
+      ? "soundNotificationFFXIV_limitBreakCharged"
+      : "soundNotificationFFXIV_limitBreakUnlocked",
+    true,
+  );
 }
 
 export async function renderLimitBreakHud() {

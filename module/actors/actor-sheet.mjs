@@ -50,6 +50,7 @@ const EDIT_MODE_ACTOR_TYPES = new Set(["character", "npc", "pet"]);
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem: "systems/ffxiv/assets/sfx/ffxiv-close-window.ogg",
   soundNotificationFFXIV_moveItem: "systems/ffxiv/assets/sfx/ffxiv-obtain-item.ogg",
+  soundNotificationFFXIV_changeGearSet: "systems/ffxiv/assets/sfx/ffxiv-change-gear-set.ogg",
   soundNotificationFFXIV_openSheet: "systems/ffxiv/assets/sfx/ffxiv-switch-target.ogg",
   soundNotificationFFXIV_closeSheet: "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
 };
@@ -2316,6 +2317,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ffxivSkipAutoJobAssignment: true
     });
     await job?._assignJob?.({ render: false });
+    if (job) this._playConfiguredSound("soundNotificationFFXIV_changeGearSet");
     this._enrichedCache = null;
     await this.render({ force: true });
     await this._refreshAbilitiesPanel();

@@ -5415,23 +5415,29 @@ async function toggleLimitBreakGauge() {
     return;
   }
 
-  const max = await promptLimitBreakMax();
-  if (!max) {
+  const options = await promptLimitBreakOptions();
+  if (!options) {
     refreshSceneControls();
     return;
   }
 
-  await activateLimitBreakGauge(max);
+  await activateLimitBreakGauge(options.max, options.startEmpty);
   refreshSceneControls();
 }
 
-async function promptLimitBreakMax() {
+async function promptLimitBreakOptions() {
   let max = getLimitBreakMax();
+  let startEmpty = false;
   const content = `
     <form class="ffxiv-limit-break-dialog">
       <div class="form-group">
         <label for="ffxiv-limit-break-max">${game.i18n.localize("FFXIV.LimitBreak.Segments")}</label>
         <input id="ffxiv-limit-break-max" type="number" name="max" min="1" max="10" step="1" value="${max}">
+      </div>
+      <div class="form-group">
+        <label for="ffxiv-limit-break-empty">${game.i18n.localize("FFXIV.LimitBreak.StartEmpty")}</label>
+        <input id="ffxiv-limit-break-empty" type="checkbox" name="startEmpty">
+        <p class="hint">${game.i18n.localize("FFXIV.LimitBreak.StartEmptyHint")}</p>
       </div>
     </form>`;
 
@@ -5462,11 +5468,18 @@ async function promptLimitBreakMax() {
       input?.addEventListener("input", () => {
         max = Number(input.value) || max;
       });
+      const emptyInput = root?.querySelector?.("input[name='startEmpty']");
+      emptyInput?.addEventListener("change", () => {
+        startEmpty = emptyInput.checked;
+      });
     },
   });
 
   if (!confirmed) return null;
-  return Math.max(1, Math.min(10, Number(max) || 3));
+  return {
+    max: Math.max(1, Math.min(10, Number(max) || 3)),
+    startEmpty,
+  };
 }
 
 function refreshSceneControls() {
