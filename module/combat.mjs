@@ -18,6 +18,7 @@ import {
 } from "./helpers/target-selection.mjs";
 import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
 import { createChatMessage } from "./helpers/chat-message.mjs";
+import { broadcastDutyCommenced } from "./helpers/duty-commenced.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
 const ENTER_INSTANCE_SOUND = "systems/ffxiv/assets/sfx/ffxiv-enter-instance.ogg";
@@ -63,7 +64,10 @@ export class FFXIVCombat extends Combat {
       else if (resetMode === "limitations") await this._resetActorLimitations();
       await this._resetEncounterStatusFlags();
       const startedCombat = await super.startCombat();
-      if (game.user?.isGM) playEnterInstanceSound();
+      if (game.user?.isGM) {
+        playEnterInstanceSound();
+        broadcastDutyCommenced();
+      }
       if (resetMode !== "full") await this._applyStartingMpOverrides();
       await this._applyEncounterStartJobAutomation();
       return startedCombat;

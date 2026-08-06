@@ -698,6 +698,7 @@
       "ResourceSpent": "Spent"
     },
     "Combat": {
+      "DutyCommenced": "DUTY COMMENCED",
       "AdventurerStep": "Adventurer Step",
       "EnemyStep": "Enemy Step",
       "StepEnd": "End of {step}",

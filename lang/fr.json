@@ -698,6 +698,7 @@
       "ResourceSpent": "Dépense"
     },
     "Combat": {
+      "DutyCommenced": "MISSION COMMENCÉE",
       "AdventurerStep": "Étape des aventuriers",
       "EnemyStep": "Étape des ennemis",
       "StepEnd": "Fin de {step}",

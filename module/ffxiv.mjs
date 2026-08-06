@@ -19,6 +19,7 @@ import {
   isLimitBreakActive,
 } from "./helpers/limit-break-hud.mjs";
 import { initHudResources } from "./helpers/hud-resources.mjs";
+import { initDutyCommenced } from "./helpers/duty-commenced.mjs";
 
 import { SettingsHelpers } from "./helpers/settings.mjs";
 import {
@@ -1147,6 +1148,7 @@ Hooks.once("ready", function () {
   initHotbar();
   initLimitBreakHud();
   initHudResources();
+  initDutyCommenced();
   configureCombatTrackedResource().catch((error) => {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);
   });

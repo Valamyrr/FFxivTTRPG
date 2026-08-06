@@ -1092,6 +1092,278 @@ body.ffxiv-hotbar-tooltip-visible #tooltip {
     font-size: 10px;
   }
 }
+#ffxiv-duty-commenced {
+  animation: ffxiv-duty-commenced-lifetime 4.4s linear forwards;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: fixed;
+  z-index: 100000;
+}
+
+.ffxiv-duty-commenced-banner {
+  height: clamp(92px, 12vw, 150px);
+  left: 50%;
+  position: absolute;
+  top: clamp(110px, 24vh, 270px);
+  transform: translateX(-50%);
+  width: min(94vw, 1180px);
+}
+
+.ffxiv-duty-commenced-text {
+  align-items: center;
+  animation: ffxiv-duty-commenced-text 4.4s cubic-bezier(0.19, 0.72, 0.24, 1) forwards;
+  background: linear-gradient(180deg, #fff9cf 0%, #ffe78a 25%, #e5a837 52%, #fff0a6 73%, #a55d17 100%);
+  background-clip: text;
+  color: transparent;
+  display: flex;
+  filter: drop-shadow(0 2px 1px rgba(46, 22, 0, 0.95));
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-size: clamp(1.8rem, 5.2vw, 5rem);
+  font-weight: 500;
+  inset: 0;
+  justify-content: center;
+  letter-spacing: 0.075em;
+  line-height: 1;
+  position: absolute;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ffxiv-duty-commenced-text::before {
+  color: #ffc64b;
+  content: attr(data-text);
+  filter: blur(10px);
+  inset: 0;
+  opacity: 0.72;
+  position: absolute;
+  text-shadow: 0 0 24px #ffb52e;
+  z-index: -1;
+}
+
+.ffxiv-duty-commenced-rule {
+  animation: ffxiv-duty-commenced-rule 4.4s ease-out forwards;
+  background: linear-gradient(90deg, transparent, rgba(203, 126, 25, 0.15) 18%, #ffe69a 82%, #fffbd4);
+  box-shadow: 0 0 5px rgba(255, 184, 53, 0.9);
+  height: 1px;
+  position: absolute;
+  top: 50%;
+  width: 48%;
+}
+
+.ffxiv-duty-commenced-rule.left {
+  left: 0;
+  transform-origin: right center;
+}
+
+.ffxiv-duty-commenced-rule.right {
+  background: linear-gradient(270deg, transparent, rgba(203, 126, 25, 0.15) 18%, #ffe69a 82%, #fffbd4);
+  right: 0;
+  transform-origin: left center;
+}
+
+.ffxiv-duty-commenced-flare {
+  animation: ffxiv-duty-commenced-flare 4.4s ease-out forwards;
+  background: #fffbd7;
+  border-radius: 50%;
+  box-shadow: 0 0 5px 2px #fffbd7, 0 0 18px 8px #ffd25b, 0 0 48px 16px rgba(232, 136, 27, 0.72);
+  height: 6px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 6px;
+}
+
+.ffxiv-duty-commenced-flare::before,
+.ffxiv-duty-commenced-flare::after {
+  background: linear-gradient(transparent, #fff6c2, transparent);
+  content: "";
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.ffxiv-duty-commenced-flare::before {
+  height: clamp(70px, 11vw, 140px);
+  width: 1px;
+}
+
+.ffxiv-duty-commenced-flare::after {
+  height: 1px;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  width: clamp(80px, 14vw, 180px);
+}
+
+.ffxiv-duty-commenced-sparks {
+  inset: 0;
+  position: absolute;
+}
+
+.ffxiv-duty-commenced-sparks i {
+  animation: ffxiv-duty-commenced-spark 1.8s ease-out forwards;
+  background: #fff7bc;
+  box-shadow: 0 0 7px 2px #f6b533;
+  height: 3px;
+  left: 50%;
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  transform: rotate(45deg);
+  width: 3px;
+}
+
+.ffxiv-duty-commenced-sparks i:nth-child(1) {
+  --spark-x: -31vw;
+  --spark-y: -34px;
+  animation-delay: 0.28s;
+}
+
+.ffxiv-duty-commenced-sparks i:nth-child(2) {
+  --spark-x: -22vw;
+  --spark-y: 43px;
+  animation-delay: 0.38s;
+}
+
+.ffxiv-duty-commenced-sparks i:nth-child(3) {
+  --spark-x: -12vw;
+  --spark-y: -55px;
+  animation-delay: 0.22s;
+}
+
+.ffxiv-duty-commenced-sparks i:nth-child(4) {
+  --spark-x: -7vw;
+  --spark-y: 51px;
+  animation-delay: 0.46s;
+}
+
+.ffxiv-duty-commenced-sparks i:nth-child(5) {
+  --spark-x: 9vw;
+  --spark-y: -48px;
+  animation-delay: 0.35s;
+}
+
+.ffxiv-duty-commenced-sparks i:nth-child(6) {
+  --spark-x: 16vw;
+  --spark-y: 56px;
+  animation-delay: 0.24s;
+}
+
+.ffxiv-duty-commenced-sparks i:nth-child(7) {
+  --spark-x: 25vw;
+  --spark-y: -39px;
+  animation-delay: 0.43s;
+}
+
+.ffxiv-duty-commenced-sparks i:nth-child(8) {
+  --spark-x: 33vw;
+  --spark-y: 31px;
+  animation-delay: 0.31s;
+}
+
+@keyframes ffxiv-duty-commenced-lifetime {
+  0%, 96% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes ffxiv-duty-commenced-text {
+  0% {
+    filter: blur(9px) brightness(2.4) drop-shadow(0 0 14px #ffc448);
+    opacity: 0;
+    transform: scaleX(0.42) scaleY(1.22);
+  }
+  11% {
+    opacity: 1;
+  }
+  19% {
+    filter: blur(0) brightness(1.75) drop-shadow(0 2px 1px rgba(46, 22, 0, 0.95));
+    transform: scaleX(1.025) scaleY(1);
+  }
+  27%, 73% {
+    filter: blur(0) brightness(1) drop-shadow(0 2px 1px rgba(46, 22, 0, 0.95));
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    filter: blur(2px) brightness(0.82) drop-shadow(0 2px 1px rgba(46, 22, 0, 0.95));
+    opacity: 0;
+    transform: scale(1.07) translateY(-8px);
+  }
+}
+@keyframes ffxiv-duty-commenced-rule {
+  0%, 7% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  20%, 70% {
+    opacity: 0.9;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+@keyframes ffxiv-duty-commenced-flare {
+  0%, 5% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(45deg) scale(0.1);
+  }
+  13% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(45deg) scale(1.5);
+  }
+  27% {
+    opacity: 0.68;
+    transform: translate(-50%, -50%) rotate(45deg) scale(0.72);
+  }
+  72% {
+    opacity: 0.32;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(45deg) scale(0.2);
+  }
+}
+@keyframes ffxiv-duty-commenced-spark {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(45deg) scale(0.4);
+  }
+  16% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--spark-x), var(--spark-y)) rotate(225deg) scale(0.1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #ffxiv-duty-commenced {
+    animation-duration: 2.8s;
+  }
+  .ffxiv-duty-commenced-text {
+    animation: ffxiv-duty-commenced-text-reduced 2.8s ease forwards;
+  }
+  .ffxiv-duty-commenced-rule,
+  .ffxiv-duty-commenced-flare,
+  .ffxiv-duty-commenced-sparks {
+    display: none;
+  }
+}
+@keyframes ffxiv-duty-commenced-text-reduced {
+  0%, 100% {
+    opacity: 0;
+  }
+  12%, 78% {
+    opacity: 1;
+    transform: none;
+  }
+}
 #combat-tracker .ffxiv-combat-step-indicator,
 .combat-tracker .ffxiv-combat-step-indicator {
   display: flex;
