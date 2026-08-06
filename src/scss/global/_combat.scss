@@ -44,10 +44,13 @@
 }
 
 .ffxiv-duty-commenced-text::before {
+  align-items: center;
   color: #ffc64b;
   content: attr(data-text);
+  display: flex;
   filter: blur(10px);
   inset: 0;
+  justify-content: center;
   opacity: 0.72;
   position: absolute;
   text-shadow: 0 0 24px #ffb52e;
