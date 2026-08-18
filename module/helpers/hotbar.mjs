@@ -15,6 +15,8 @@ let hotbarAbilityTooltip = null;
 let hotbarAbilityTooltipTimer = null;
 let hotbarAbilityTooltipSlot = null;
 let suppressHotbarRender = false;
+let coreHotbarRoutingInstalled = false;
+const routedCoreHotbarActions = new WeakSet();
 const HOTBAR_COLLISION_SELECTORS = [
   "#overflow",
   ".overflow",
@@ -2063,6 +2065,7 @@ export function renderFFXIVHotbar(app, html) {
 }
 
 export function initHotbar() {
+  routeCoreHotbarKeybindings();
   Hooks.on("renderHotbar", renderFFXIVHotbar);
   Hooks.on("renderApplicationV2", (app, html) => {
     if (app?.id === "hotbar") renderFFXIVHotbar(app, html);
@@ -2103,21 +2106,40 @@ export function initHotbar() {
   renderFFXIVHotbar();
 }
 
+function routeCoreHotbarKeybindings() {
+  for (const actions of game.keybindings.activeKeys.values()) {
+    for (const action of actions) {
+      const index = HOTBAR_KEYS.slice(0, 10).findIndex(
+        (key) => action.action === `core.executeMacro${key.label}`,
+      );
+      if (index < 0 || routedCoreHotbarActions.has(action)) continue;
+
+      const onDown = action.onDown;
+      action.onDown = function (context) {
+        if (getActiveHotbarActor()) return executeCyclingPageKey(index);
+        return onDown.call(this, context);
+      };
+      routedCoreHotbarActions.add(action);
+    }
+  }
+}
+
+function installCoreHotbarRouting() {
+  if (coreHotbarRoutingInstalled) return;
+
+  const initialize = game.keybindings.initialize;
+  game.keybindings.initialize = function (...args) {
+    const result = initialize.apply(this, args);
+    routeCoreHotbarKeybindings();
+    return result;
+  };
+  coreHotbarRoutingInstalled = true;
+}
+
 export function registerHotbarKeybindings() {
+  installCoreHotbarRouting();
   const { SHIFT, CONTROL } =
     foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS;
-
-  for (const [index, key] of HOTBAR_KEYS.slice(0, 10).entries()) {
-    const action = game.keybindings.actions.get(
-      `core.executeMacro${key.label}`,
-    );
-    if (!action) continue;
-    const onDown = action.onDown;
-    action.onDown = (context) => {
-      if (getActiveHotbarActor()) return executeCyclingPageKey(index);
-      return onDown(context);
-    };
-  }
 
   for (const index of [10, 11]) {
     const key = HOTBAR_KEYS[index];
