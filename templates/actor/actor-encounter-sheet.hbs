@@ -1,0 +1,91 @@
+<div class="{{cssClass}} encounter flexcol">
+  {{#if editable}}
+    <button type="button"
+            class="actor-edit-toggle encounter-edit-toggle {{#if actorEditMode}}active{{/if}}"
+            aria-label="{{localize 'FFXIV.CharacterSheet.EditSheet'}}"
+            aria-pressed="{{#if actorEditMode}}true{{else}}false{{/if}}"
+            title="{{#if actorEditMode}}{{localize 'FFXIV.CharacterSheet.LockSheet'}}{{else}}{{localize 'FFXIV.CharacterSheet.EditSheet'}}{{/if}}">
+      <i class="fa-solid {{#if actorEditMode}}fa-lock-open{{else}}fa-lock{{/if}}"></i>
+    </button>
+  {{/if}}
+  <header class="encounter-header">
+    <img class="profile-img actor-avatar"
+         src="{{actor.img}}"
+         {{#if actorEditMode}}data-edit="img"{{/if}}
+         title="{{actor.name}}"
+         alt="{{actor.name}}" />
+    <div class="encounter-heading">
+      {{#if actorEditMode}}
+        <input name="name" type="text" value="{{actor.name}}" placeholder="{{localize 'FFXIV.Name'}}" />
+      {{else}}
+        <h1>{{actor.name}}</h1>
+      {{/if}}
+    </div>
+  </header>
+
+  <section class="encounter-content">
+    <div class="encounter-panel encounter-tactics">
+      <h2>{{localize "FFXIV.Encounter.Tactics"}}</h2>
+      {{#if actorEditMode}}
+        <prose-mirror name="system.tactics" value="{{source.tactics}}" document-uuid="{{actor.uuid}}" class="sized"></prose-mirror>
+      {{else}}
+        <div class="encounter-tactics-content">
+          {{#if enriched.tactics}}
+            {{{enriched.tactics}}}
+          {{else}}
+            <p class="encounter-empty">{{localize "FFXIV.Encounter.EmptyTactics"}}</p>
+          {{/if}}
+        </div>
+      {{/if}}
+    </div>
+
+    <div class="encounter-panel encounter-roster">
+      <h2>{{localize "FFXIV.Encounter.Roster"}}</h2>
+      <label class="encounter-hidden-toggle" title="{{localize 'FFXIV.Encounter.SpawnHiddenHint'}}">
+        <span class="encounter-hidden-control">
+          <input type="checkbox"
+                 name="system.spawn_hidden"
+                 {{#if system.spawn_hidden}}checked{{/if}}
+                 {{#unless actorEditMode}}disabled{{/unless}} />
+          <span class="checkmark"></span>
+        </span>
+        <span>{{localize "FFXIV.Encounter.SpawnHidden"}}</span>
+      </label>
+      {{#unless encounterMembers.length}}
+        <p class="encounter-help">{{localize "FFXIV.Encounter.RosterHint"}}</p>
+      {{/unless}}
+      <ol class="encounter-member-list">
+        {{#each encounterMembers as |member|}}
+          <li class="encounter-member {{#unless member.available}}unavailable{{/unless}}">
+            <button type="button"
+                    class="encounter-member-open"
+                    data-index="{{member.index}}"
+                    data-available="{{member.available}}"
+                    draggable="true"
+                    title="{{localize 'FFXIV.Encounter.OpenMember'}}">
+              <img src="{{member.img}}" alt="" />
+              <span>{{member.name}}</span>
+            </button>
+            {{#if ../actorEditMode}}
+              <input class="encounter-member-quantity"
+                     data-index="{{member.index}}"
+                     type="number"
+                     min="1"
+                     step="1"
+                     value="{{member.quantity}}"
+                     aria-label="{{localize 'FFXIV.Encounter.Quantity'}}"
+                     title="{{localize 'FFXIV.Encounter.Quantity'}}" />
+              <button type="button" class="encounter-member-remove" data-index="{{member.index}}" title="{{localize 'FFXIV.Encounter.RemoveMember'}}">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
+            {{else}}
+              <span class="encounter-member-count">x{{member.quantity}}</span>
+            {{/if}}
+          </li>
+        {{else}}
+          <li class="encounter-empty">{{localize "FFXIV.Encounter.EmptyRoster"}}</li>
+        {{/each}}
+      </ol>
+    </div>
+  </section>
+</div>

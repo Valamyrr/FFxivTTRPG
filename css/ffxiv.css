@@ -1976,6 +1976,312 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   padding: 0;
   width: 34px;
 }
+.ffxiv.actor.encounter .encounter-header {
+  align-items: center;
+  display: grid;
+  flex: 0 0 auto;
+  gap: 12px;
+  grid-template-columns: 72px minmax(0, 1fr) 34px;
+  padding: 12px;
+}
+.ffxiv.actor.encounter .encounter-header .profile-img {
+  border: 1px solid rgba(216, 188, 112, 0.55);
+  border-radius: 6px;
+  height: 72px;
+  object-fit: cover;
+  width: 72px;
+}
+.ffxiv.actor.encounter .encounter-heading {
+  align-items: center;
+  align-self: center;
+  display: flex;
+  height: 32px;
+  min-width: 0;
+  text-align: left;
+}
+.ffxiv.actor.encounter .encounter-heading h1,
+.ffxiv.actor.encounter .encounter-heading input {
+  font-family: "Cinzel", serif;
+  font-size: 24px;
+  font-weight: 600;
+  height: 32px;
+  letter-spacing: 0.01em;
+  line-height: 32px;
+  margin: 0;
+  min-height: 32px;
+  width: 100%;
+}
+.ffxiv.actor.encounter .encounter-heading h1 {
+  border: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ffxiv.actor.encounter .encounter-heading input {
+  background: rgba(0, 0, 0, 0.22) !important;
+  border: 0 !important;
+  box-shadow: inset 0 0 0 1px rgba(216, 188, 112, 0.55) !important;
+  box-sizing: border-box;
+  padding: 0 !important;
+  text-align: left !important;
+}
+.ffxiv.actor.encounter .encounter-edit-toggle {
+  align-items: center;
+  align-self: flex-end;
+  background: rgba(12, 12, 12, 0.92);
+  border: 1px solid rgba(216, 188, 112, 0.58);
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
+  display: flex;
+  flex: 0 0 34px;
+  height: 34px;
+  justify-content: center;
+  line-height: 1;
+  margin: 10px 12px -44px auto;
+  padding: 0;
+  position: sticky;
+  right: 12px;
+  top: 10px;
+  width: 34px;
+  z-index: 20;
+}
+.ffxiv.actor.encounter .encounter-edit-toggle.active {
+  background: rgba(49, 44, 28, 0.96);
+  border-color: rgba(225, 190, 95, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.12), 0 2px 8px rgba(0, 0, 0, 0.42);
+}
+.ffxiv.actor.encounter .encounter-content {
+  align-items: stretch;
+  display: grid;
+  flex: 1 0 auto;
+  gap: 12px;
+  grid-template-columns: minmax(300px, 1.2fr) minmax(250px, 0.8fr);
+  min-height: 0;
+  overflow: visible;
+  padding: 0 12px 12px;
+}
+.ffxiv.actor.encounter .encounter-panel {
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(216, 188, 112, 0.3);
+  border-radius: 6px;
+  min-height: 0;
+  padding: 12px;
+}
+.ffxiv.actor.encounter .encounter-panel h2 {
+  border-bottom: 1px solid rgba(216, 188, 112, 0.3);
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+}
+.ffxiv.actor.encounter .encounter-roster {
+  align-self: start;
+}
+.ffxiv.actor.encounter .encounter-hidden-toggle {
+  align-items: center;
+  background: rgba(20, 20, 24, 0.32);
+  border: 1px solid rgba(233, 199, 112, 0.52);
+  border-radius: 999px;
+  color: #efd699;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 5px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0;
+  min-height: 24px;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  width: fit-content;
+}
+.ffxiv.actor.encounter .encounter-hidden-control {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  position: relative;
+  height: 16px;
+  justify-content: center;
+  width: 16px;
+}
+.ffxiv.actor.encounter .encounter-hidden-toggle .encounter-hidden-control input[type=checkbox] {
+  appearance: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  filter: none !important;
+  height: 16px !important;
+  inset: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  opacity: 0 !important;
+  outline: 0 !important;
+  padding: 0 !important;
+  position: absolute !important;
+  transform: none !important;
+  width: 16px !important;
+  z-index: 1 !important;
+}
+.ffxiv.actor.encounter .encounter-hidden-toggle .encounter-hidden-control input[type=checkbox]::before,
+.ffxiv.actor.encounter .encounter-hidden-toggle .encounter-hidden-control input[type=checkbox]::after {
+  content: none !important;
+  display: none !important;
+}
+.ffxiv.actor.encounter .encounter-hidden-toggle .checkmark {
+  align-items: center !important;
+  background: rgba(8, 8, 8, 0.74) !important;
+  border: 1px solid rgba(225, 190, 95, 0.42) !important;
+  border-radius: 4px !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 236, 174, 0.07), 0 1px 2px rgba(0, 0, 0, 0.32) !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  height: 16px !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  min-height: 16px !important;
+  min-width: 16px !important;
+  outline: 0 !important;
+  pointer-events: none !important;
+  position: relative !important;
+  width: 16px !important;
+}
+.ffxiv.actor.encounter .encounter-hidden-toggle input[type=checkbox]:checked + .checkmark {
+  background: linear-gradient(180deg, #f7d979 0%, #c18427 100%) !important;
+  border-color: rgba(255, 232, 153, 0.82) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 249, 207, 0.26), 0 0 5px rgba(202, 137, 39, 0.42) !important;
+}
+.ffxiv.actor.encounter .encounter-hidden-toggle input[type=checkbox]:checked + .checkmark::after {
+  background: rgba(39, 24, 6, 0.88) !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  content: "" !important;
+  display: block !important;
+  height: 6px !important;
+  transform: none !important;
+  width: 6px !important;
+}
+.ffxiv.actor.encounter .encounter-hidden-toggle input[type=checkbox]:disabled {
+  cursor: default !important;
+}
+.ffxiv.actor.encounter .encounter-hidden-toggle:has(input:disabled) {
+  cursor: default;
+  opacity: 0.68;
+}
+.ffxiv.actor.encounter .encounter-help,
+.ffxiv.actor.encounter .encounter-empty {
+  opacity: 0.68;
+}
+.ffxiv.actor.encounter .encounter-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  margin: 10px 0 0;
+  min-height: 156px;
+  padding: 0;
+}
+.ffxiv.actor.encounter .encounter-member {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  height: 48px;
+  padding: 5px;
+}
+.ffxiv.actor.encounter .encounter-member.unavailable {
+  opacity: 0.5;
+}
+.ffxiv.actor.encounter .encounter-member-open {
+  align-items: center;
+  background: none;
+  border: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+.ffxiv.actor.encounter .encounter-member-open[draggable=true] {
+  cursor: grab;
+}
+.ffxiv.actor.encounter .encounter-member-open[draggable=true]:active {
+  cursor: grabbing;
+}
+.ffxiv.actor.encounter .encounter-member.unavailable .encounter-member-open {
+  cursor: not-allowed;
+}
+.ffxiv.actor.encounter .encounter-member-open img {
+  border: 0;
+  height: 38px;
+  object-fit: cover;
+  width: 38px;
+}
+.ffxiv.actor.encounter .encounter-member-open span {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ffxiv.actor.encounter .encounter-member-quantity {
+  width: 52px;
+}
+.ffxiv.actor.encounter .encounter-member-remove {
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  width: 30px;
+}
+.ffxiv.actor.encounter .encounter-member-count {
+  padding-right: 8px;
+}
+.ffxiv.actor.encounter .encounter-tactics prose-mirror,
+.ffxiv.actor.encounter .encounter-tactics .editor.prosemirror {
+  box-sizing: border-box;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 320px;
+  overflow: visible !important;
+}
+.ffxiv.actor.encounter .encounter-tactics .editor.prosemirror.sized {
+  flex: 0 0 auto;
+  overflow: visible !important;
+}
+.ffxiv.actor.encounter .encounter-tactics .editor.prosemirror .editor-container {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 280px;
+  overflow: visible !important;
+  resize: none;
+}
+.ffxiv.actor.encounter .encounter-tactics .editor.prosemirror .editor-content {
+  box-sizing: border-box;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 280px;
+  overflow: visible !important;
+  position: static !important;
+}
+.ffxiv.actor.encounter .encounter-tactics-content {
+  min-height: 320px;
+}
+@media (max-width: 720px) {
+  .ffxiv.actor.encounter .encounter-content {
+    grid-template-columns: 1fr;
+  }
+}
 .ffxiv.actor.npc .sheet-npc-header .charname h1 input {
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(216, 188, 112, 0.55);
@@ -3082,6 +3388,11 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item.item-modern-sheet .tags-container {
   min-width: 0;
 }
+.ffxiv.item.item-modern-sheet autocomplete-tags {
+  min-width: 0;
+  text-align: left;
+  width: 100%;
+}
 .ffxiv.item.item-modern-sheet .tag-list {
   list-style: none;
   margin: 0;
@@ -3156,6 +3467,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   width: 100%;
 }
 .ffxiv.item .ability-form-grid input,
+.ffxiv.item .ability-form-grid formula-input,
 .ffxiv.item .ability-form-grid select,
 .ffxiv.item .ability-form-grid textarea {
   border: 1px solid rgba(216, 188, 112, 0.22);
@@ -3168,19 +3480,32 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   text-align: left;
   width: 100%;
 }
+.ffxiv.item .ability-form-grid formula-input {
+  display: flex;
+  padding: 0;
+}
+.ffxiv.item .ability-form-grid formula-input input {
+  border: 0;
+  box-shadow: none;
+}
+.ffxiv.item .ability-sheet-card .ability-form-grid input,
+.ffxiv.item .ability-sheet-card .ability-form-grid textarea,
+.ffxiv.item .ability-sheet-card .ability-tags-editor autocomplete-tags > input {
+  border: 1px solid rgba(216, 188, 112, 0.22);
+  outline: 1px solid transparent;
+  transition: outline-color 0.5s;
+}
+.ffxiv.item .ability-sheet-card .ability-form-grid input:focus,
+.ffxiv.item .ability-sheet-card .ability-form-grid textarea:focus,
+.ffxiv.item .ability-sheet-card .ability-tags-editor autocomplete-tags > input:focus {
+  outline: 2px solid var(--input-focus-outline-color);
+  outline-offset: -2px;
+}
+.ffxiv.item .ability-sheet-card .ability-form-grid formula-input input {
+  border: 0;
+  outline: 0;
+}
 .ffxiv.item .ability-form-grid select.damage-modifier-mode-select {
-  flex: 0 0 50%;
-  max-width: 50%;
-  width: 50%;
-}
-.ffxiv.item .ability-base-roll-conditional-row {
-  display: grid;
-  gap: 9px;
-  grid-column: 1/-1;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 100%;
-}
-.ffxiv.item .ability-base-roll-conditional-row .damage-modifier-mode-select {
   flex: 1 1 auto;
   max-width: none;
   width: 100%;
@@ -3188,6 +3513,50 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item .ability-form-grid textarea {
   min-height: 74px;
   resize: vertical;
+}
+.ffxiv.item .ability-effect-field {
+  grid-column: 1/-1;
+}
+.ffxiv.item .sheet-body .editor.prosemirror.ability-effect-editor {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+  resize: none;
+  width: 100%;
+}
+.ffxiv.item .sheet-body .editor.prosemirror.ability-effect-editor .menu-container {
+  min-width: 0;
+  overflow: hidden;
+}
+.ffxiv.item .sheet-body .editor.prosemirror.ability-effect-editor menu {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.ffxiv.item .sheet-body .editor.prosemirror.ability-effect-editor .editor-container {
+  flex: 0 0 auto;
+  min-height: calc(1.5em + 20px);
+  overflow: visible;
+  resize: none;
+}
+.ffxiv.item .sheet-body .editor.prosemirror.ability-effect-editor .editor-content {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  min-height: calc(1.5em + 20px);
+  overflow: visible;
+}
+.ffxiv.item .ability-effect-readonly {
+  min-height: 74px;
+  width: 100%;
+}
+.ffxiv.item .ability-effect-readonly > :first-child {
+  margin-top: 0;
+}
+.ffxiv.item .ability-effect-readonly > :last-child {
+  margin-bottom: 0;
 }
 .ffxiv.item .ability-info-grid .ability-target-field,
 .ffxiv.item .ability-info-grid .ability-range-field,
@@ -3210,7 +3579,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item .ability-formula-row {
   align-items: stretch;
   display: flex;
-  gap: 0;
+  gap: 6px;
   justify-content: flex-start;
   max-width: 100%;
   width: 100%;
@@ -3219,12 +3588,14 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   display: none;
 }
 .ffxiv.item .ability-formula-row input,
+.ffxiv.item .ability-formula-row > formula-input,
 .ffxiv.item .ability-formula-row select,
 .ffxiv.item .ability-formula-row .item-locked-field {
   flex: 0 1 auto;
   width: auto;
 }
 .ffxiv.item .ability-formula-row input,
+.ffxiv.item .ability-formula-row > formula-input,
 .ffxiv.item .ability-formula-row .item-locked-field:first-child {
   flex: 1 1 auto;
   min-width: 0;
@@ -3235,17 +3606,6 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   flex-basis: 11em;
   min-width: 11em;
   text-align: left;
-}
-.ffxiv.item .ability-formula-row input:not(:last-child),
-.ffxiv.item .ability-formula-row .item-locked-field:first-child:not(:last-child) {
-  border-bottom-right-radius: 0;
-  border-right: 0;
-  border-top-right-radius: 0;
-}
-.ffxiv.item .ability-formula-row select,
-.ffxiv.item .ability-formula-row .item-locked-field + .item-locked-field {
-  border-bottom-left-radius: 0;
-  border-top-left-radius: 0;
 }
 .ffxiv.item.item-locked .ability-formula-row .item-locked-field {
   flex: 0 0 auto;
@@ -3263,37 +3623,36 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   flex-basis: auto;
   min-width: 0;
 }
-.ffxiv.item .ability-tags-editor .tag-list {
+.ffxiv.item .ability-tags-editor {
+  align-items: start;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12em, max-content));
   gap: 6px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  grid-template-columns: 9em minmax(0, 1fr);
 }
-.ffxiv.item .ability-tags-editor .tag-list li {
-  align-items: center;
-  display: grid;
-  grid-template-columns: minmax(11em, 1fr) 28px;
-  gap: 2px;
-  min-width: 0;
-}
-.ffxiv.item .ability-tags-editor .tag-list li:first-child {
-  grid-template-columns: minmax(11em, 1fr);
-}
-.ffxiv.item .ability-tags-editor select {
+.ffxiv.item .ability-tags-editor select,
+.ffxiv.item .ability-tags-editor autocomplete-tags {
   min-width: 0;
   width: 100%;
 }
-.ffxiv.item .ability-tags-editor .remove-tag {
-  align-items: center;
-  display: inline-flex;
-  height: 26px;
-  justify-content: center;
-  line-height: 1;
+.ffxiv.item .ability-tags-editor > autocomplete-tags:only-child {
+  grid-column: 1/-1;
+}
+.ffxiv.item .ability-tags-editor .ffxiv-action-tags {
+  align-items: start;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(12em, 1fr) auto;
+}
+.ffxiv.item .ability-tags-editor .ffxiv-action-tags > .tags {
+  grid-column: 2;
+  grid-row: 1;
+  max-width: 100%;
+}
+.ffxiv.item .ability-tags-editor .ffxiv-action-tags > input {
+  grid-column: 1;
+  grid-row: 1;
   margin: 0;
-  padding: 0;
-  width: 28px;
+  min-width: 12em;
 }
 .ffxiv.item .status-effects-editor {
   border: 1px solid rgba(216, 188, 112, 0.35);
@@ -3481,6 +3840,32 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item.item-locked .ability-panel-header .add-tag {
   display: none;
 }
+.ffxiv.item.item-locked .ability-tags-editor .item-locked-tag-list {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-height: 0;
+  padding: 0;
+  width: 100%;
+}
+.ffxiv.item.item-locked .ability-tags-editor .item-locked-tag-list .tag {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(225, 190, 95, 0.38);
+  border-radius: 999px;
+  color: var(--text-color-strong);
+  display: inline-flex;
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 3px 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .ffxiv.item.item-locked .status-effect-list:not(.ability-linked-effect-list):not(.ability-automation-list) li {
   grid-template-columns: minmax(8em, 1.4fr) minmax(5.75em, 0.8fr) minmax(3.5em, 0.45fr) minmax(7.5em, 0.95fr) minmax(6.75em, 0.85fr) minmax(9em, 1fr);
 }
@@ -3573,6 +3958,11 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item .ability-marker-entry-heading h3 {
   font-weight: 700;
   margin: 0;
+}
+.ffxiv.item .ability-marker-list-heading h3 {
+  font-family: "Roboto", sans-serif;
+  font-size: 15px;
+  line-height: 1.2;
 }
 .ffxiv.item .ability-marker-list-heading button,
 .ffxiv.item .ability-marker-entry-heading button {
@@ -3862,7 +4252,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   .ffxiv.item .ability-form-grid-3 {
     grid-template-columns: minmax(0, 1fr);
   }
-  .ffxiv.item .ability-base-roll-conditional-row {
+  .ffxiv.item .ability-tags-editor {
     grid-template-columns: minmax(0, 1fr);
   }
   .ffxiv.item .ability-form-span,
@@ -4149,6 +4539,20 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   flex: 0 0 auto;
 }
 
+.application.ffxiv.actor:has(.ffxiv.actor.encounter) {
+  min-height: 420px !important;
+}
+.application.ffxiv.actor:has(.ffxiv.actor.encounter) > .window-content {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.application.ffxiv.actor:has(.ffxiv.actor.encounter) > .window-content > .ffxiv.actor.encounter {
+  height: auto;
+  max-height: none;
+  min-height: 100%;
+  overflow: visible;
+}
+
 .ffxiv .popout-editor-window,
 .ffxiv .popout-editor-window .sheet-body,
 .ffxiv .popout-editor-window textarea {
@@ -4258,6 +4662,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   border-bottom: 1px solid rgba(216, 188, 112, 0.42);
   box-shadow: none;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   grid-column: 2;
   justify-content: space-between;
@@ -4274,7 +4679,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 
 :is(.chat-ffxiv .item-card, .chat-ffxiv.item-card) .item-dialog-name {
   display: block;
-  flex: 1 1 auto;
+  flex: 1 1 120px;
   font-size: 1.15em;
   font-weight: 700;
   line-height: 1.2;
@@ -4284,8 +4689,11 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 
 :is(.chat-ffxiv .item-card, .chat-ffxiv.item-card) .item-dialog-right {
   display: block;
+  flex: 0 0 auto;
   float: none;
-  max-width: 50%;
+  margin-left: auto;
+  max-width: 100%;
+  min-width: 0;
 }
 
 :is(.chat-ffxiv .item-card, .chat-ffxiv.item-card) .item-dialog-tags {
@@ -4305,7 +4713,11 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   font-size: 10px;
   font-style: normal;
   line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
   padding: 3px 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :is(.chat-ffxiv .item-card, .chat-ffxiv.item-card) .item-dialog-details,
@@ -4350,7 +4762,14 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 :is(.chat-ffxiv .item-card, .chat-ffxiv.item-card) .effect {
   display: block;
   margin: 0;
+  max-width: 100%;
   min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+:is(.chat-ffxiv .item-card, .chat-ffxiv.item-card) .effect img {
+  height: auto;
+  max-width: 100%;
 }
 
 :is(.chat-ffxiv .item-card, .chat-ffxiv.item-card) .item-dialog-description {

@@ -38,7 +38,7 @@
       {{else}}
         {{#if item.system.base_effect }}
           <div class="effect">
-            <strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{item.system.base_effect}}
+            <strong>{{ localize "FFXIV.Abilities.BaseEffect" }}:</strong> {{{item.system.base_effect}}}
           </div>
         {{/if}}
         {{#if item.system.target }}
@@ -76,7 +76,7 @@
         {{/if}}
         {{#if (hasContent item.system.direct_hit) }}
           <div class="effect">
-            <strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{item.system.direct_hit}}
+            <strong>{{ localize "FFXIV.Abilities.DirectHit" }}:</strong> {{{item.system.direct_hit}}}
           </div>
         {{/if}}
         {{#if item.system.marker_trigger }}

@@ -3,6 +3,7 @@
     "Name": "Name",
     "Level": "Level",
     "Class": "Job",
+    "Maximum": "Maximum",
     "Health": {
       "long": "Health",
       "abbrv": "HP",
@@ -204,7 +205,25 @@
     "ActorType": {
       "character": "Character",
       "npc": "NPC",
+      "encounter": "Encounter",
       "pet": "Pet"
+    },
+    "Encounter": {
+      "Roster": "Roster",
+      "RosterHint": "Drag actors here to add them. Drag this encounter onto a scene to place the whole group.",
+      "Quantity": "Quantity",
+      "Tactics": "Tactics",
+      "SpawnHidden": "Spawn actors hidden",
+      "SpawnHiddenHint": "Place every actor in this encounter as a hidden token.",
+      "OpenMember": "Open actor",
+      "RemoveMember": "Remove actor",
+      "EmptyRoster": "No actors have been added to this encounter.",
+      "EmptyTactics": "No tactics have been recorded for this encounter.",
+      "EmptyPlacement": "This encounter has no available actors to place.",
+      "CannotNestEncounter": "Encounters cannot be added to other encounters.",
+      "MissingMember": "This actor no longer exists and cannot be opened or placed. Remove it from the roster.",
+      "PlacementFailed": "Failed to place the encounter. See console for details.",
+      "Placed": "Placed {count} actors from {name}."
     },
     "Roles": {
       "DPS": "DPS",
@@ -609,6 +628,12 @@
       "FFXIVTools": "FF XIV Tools",
       "Soundboard": "Soundboard"
     },
+    "Keybindings": {
+      "RotateRegionMarkerClockwise": "Rotate Region Marker Clockwise",
+      "RotateRegionMarkerClockwiseHint": "Rotate an active FFXIV region marker placement clockwise by one grid-facing step.",
+      "RotateRegionMarkerCounterclockwise": "Rotate Region Marker Counterclockwise",
+      "RotateRegionMarkerCounterclockwiseHint": "Rotate an active FFXIV region marker placement counterclockwise by one grid-facing step."
+    },
     "Notifications": {
       "NoTarget": "No target selected.",
       "TargetWarningTitle": "Target Selection Warning",
@@ -746,6 +771,9 @@
       },
       "Instructions": {
         "ClickToPlace": "Move the preview, then click on the canvas to place the marker. Right-click to cancel.",
+        "RegionClickToPlace": "Move the preview, use {clockwise} to rotate clockwise or {counterclockwise} to rotate counterclockwise by one grid-facing step, then click on the canvas to place the marker. Right-click to cancel.",
+        "RegionClickToken": "Use {clockwise} to rotate clockwise or {counterclockwise} to rotate counterclockwise by one grid-facing step, then click a token to bind the targeted marker. Right-click to cancel.",
+        "Unbound": "Unbound",
         "ClickToken": "Click a token to bind the targeted marker. Right-click to cancel.",
         "RequestSent": "Marker placement sent to the GM."
       },

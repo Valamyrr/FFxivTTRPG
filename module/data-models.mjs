@@ -760,6 +760,43 @@ class NpcActorData extends foundry.abstract.TypeDataModel {
   }
 }
 
+class EncounterActorData extends foundry.abstract.TypeDataModel {
+  static defineSchema() {
+    return {
+      tactics: new fields.HTMLField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      spawn_hidden: new fields.BooleanField({ required: false, initial: true }),
+      members: new fields.ArrayField(
+        new fields.SchemaField({
+          uuid: new fields.StringField({
+            required: true,
+            blank: false,
+          }),
+          name: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          img: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "icons/svg/mystery-man.svg",
+          }),
+          quantity: new fields.NumberField({
+            required: true,
+            integer: true,
+            min: 1,
+            initial: 1,
+          }),
+        }),
+      ),
+    };
+  }
+}
+
 class PetActorData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
@@ -829,6 +866,16 @@ class AbilityItemData extends foundry.abstract.TypeDataModel {
     return {
       ...buildItemFields(),
       ...buildAbilityFields(),
+      base_effect: new fields.HTMLField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      direct_hit: new fields.HTMLField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
       summon_actors: buildActorGrantField(),
     };
   }
@@ -1041,6 +1088,7 @@ export function registerDataModels() {
   Object.assign(CONFIG.Actor.dataModels, {
     "ffxiv.character": CharacterActorData,
     "ffxiv.npc": NpcActorData,
+    "ffxiv.encounter": EncounterActorData,
     "ffxiv.pet": PetActorData,
   });
 

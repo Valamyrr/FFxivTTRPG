@@ -143,22 +143,12 @@
     </div>
     <div class="tags-container">
       <label for="system.tags" class="resource-label">{{ localize "FFXIV.Item.JobRequirement" }}</label>
-      <button type="button" class="add-class">+</button>
-      <ul class="tag-list">
-        {{#each system.classes as |class index| }}
-          <li>
-            <select class="ffxiv-text-center select-classes">
-              <option value="" {{#if (eq "" class) }}selected {{/if }}>{{ localize "FFXIV.None" }}
-              </option>
-              {{#each ../settings.jobsAbbrv as |c| }}
-                <option value="{{c}}" {{#if (eq c class) }}selected {{/if }}>{{ localize c }}
-                </option>
-              {{/each}}
-            </select>
-            <button type="button" class="remove-class" data-index="{{index}}">x</button>
-          </li>
+      <autocomplete-tags name="system.classes"
+                         placeholder="{{localize 'FFXIV.Item.JobRequirement'}}">
+        {{#each classOptions as |job|}}
+          <option value="{{job.value}}" {{#if job.selected}}selected{{/if}}>{{job.label}}</option>
         {{/each}}
-      </ul>
+      </autocomplete-tags>
     </div>
     <div class="tags-container">
       <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label>

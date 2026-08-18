@@ -36,26 +36,7 @@
       <div class="pet-attributes-container">
         <div class="tags-container">
           <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label>
-          <button type="button" class="add-tag">+</button>
-          <ul class="tag-list">
-            {{#each customTags as |entry| }}
-              <li>
-                <select class="ffxiv-text-center select-tags"
-                        data-index="{{entry.index}}">
-                  {{#each entry.options as |t| }}
-                    <option value="{{t.label}}" {{#if t.selected}}selected{{/if}} {{#if t.disabled}}disabled{{/if}}>{{ localize t.label }}
-                    </option>
-                  {{/each}}
-                </select>
-                <button type="button"
-                        class="remove-tag"
-                        data-index="{{entry.index}}"
-                        aria-label="{{localize 'FFXIV.Item.Delete'}}">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
-              </li>
-            {{/each}}
-          </ul>
+          {{> "systems/ffxiv/templates/item/parts/action-tags.hbs"}}
         </div>
         <div class="s-attribute-card">
           <div class="s-attribute-header">
@@ -157,9 +138,9 @@
         <div class="resource flex-group-center">
           <label for="system.hit_formula" class="resource-label">{{ localize "FFXIV.Abilities.HitFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.hit_formula"
-                   type="text"
-                   value="{{item.system.hit_formula}}" />
+            <formula-input name="system.hit_formula"
+                           context="ffxiv-ability"
+                           value="{{item.system.hit_formula}}"></formula-input>
           </div>
         </div>
       </div>
@@ -175,9 +156,9 @@
         <div class="resource flex-group-center">
           <label for="system.base_formula" class="resource-label">{{ localize "FFXIV.Abilities.BaseFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.base_formula"
-                   type="text"
-                   value="{{item.system.base_formula}}" />
+            <formula-input name="system.base_formula"
+                           context="ffxiv-ability"
+                           value="{{item.system.base_formula}}"></formula-input>
           </div>
         </div>
         <div class="resource flex-group-center">
@@ -191,9 +172,9 @@
         <div class="resource flex-group-center">
           <label for="system.direct_formula" class="resource-label">{{ localize "FFXIV.Abilities.DirectFormula" }}</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.direct_formula"
-                   type="text"
-                   value="{{item.system.direct_formula}}" />
+            <formula-input name="system.direct_formula"
+                           context="ffxiv-ability"
+                           value="{{item.system.direct_formula}}"></formula-input>
           </div>
         </div>
         <div class="resource flex-group-center combo-resource">

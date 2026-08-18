@@ -45,7 +45,7 @@ const ENTER_COMMIT_FIELDS = new Set([
   "system.barrier.value",
   "system.barrier.max",
 ]);
-const EDIT_MODE_ACTOR_TYPES = new Set(["character", "npc", "pet"]);
+const EDIT_MODE_ACTOR_TYPES = new Set(["character", "npc", "pet", "encounter"]);
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem: "systems/ffxiv/assets/sfx/ffxiv-close-window.ogg",
@@ -53,6 +53,7 @@ const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_changeGearSet: "systems/ffxiv/assets/sfx/ffxiv-change-gear-set.ogg",
   soundNotificationFFXIV_openSheet: "systems/ffxiv/assets/sfx/ffxiv-switch-target.ogg",
   soundNotificationFFXIV_closeSheet: "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
+  soundNotificationFFXIV_error: "systems/ffxiv/assets/sfx/ffxiv-error.ogg",
 };
 
 const DEFAULT_ATTRIBUTE_ICONS = {
@@ -77,6 +78,7 @@ const CHARACTER_TABS = Object.keys(CHARACTER_TAB_PARTIALS);
 const ACTOR_ENRICHED_FIELDS = {
   roleplay: ["profile_trait.effect", "biography"],
   companions: ["traits"],
+  encounter: ["tactics"],
 };
 
 const ITEM_ENRICHED_FIELDS = {
@@ -231,6 +233,26 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
     }
 
+    if (actorData.type === "encounter") {
+      const members = actorData.system.members ?? [];
+      const actorsByUuid = new Map(
+        await Promise.all(
+          [...new Set(members.map((member) => member.uuid).filter(Boolean))]
+            .map(async (uuid) => [uuid, await fromUuid(uuid)]),
+        ),
+      );
+      context.encounterMembers = members.map((member, index) => {
+        const actor = actorsByUuid.get(member.uuid);
+        return {
+          ...member,
+          index,
+          available: actor?.documentName === "Actor" && actor.type !== "encounter",
+          name: actor?.name ?? member.name,
+          img: actor?.img ?? member.img,
+        };
+      });
+    }
+
     if (!skipEnrichment) {
       await this._prepareEnrichedContext(context, renderedTabs);
       this._cacheEnrichedContext(context);
@@ -260,6 +282,16 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const rollData = this.actor.getRollData();
     const actorTabs = this.actor.type === "character" ? renderedTabs : new Set(CHARACTER_TABS);
+
+    if (this.actor.type === "encounter") {
+      context.enriched = await this.constructor.enrichStringFields(
+        this.actor.system,
+        ACTOR_ENRICHED_FIELDS.encounter,
+        rollData,
+        this.actor,
+      );
+      return;
+    }
 
     if (actorTabs.has("roleplay")) {
       context.enriched = {
@@ -647,6 +679,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         await this._refreshRoleplayPanel();
         this._restoreSheetScroll();
       }
+      if (this.actor.type === "encounter" && fieldName === "system.spawn_hidden") {
+        this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+      }
     }).catch(err => ui.notifications.error(err, { console: true }));
   }
 
@@ -739,6 +774,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       if (Number.isFinite(currentHeight) && Math.abs(currentHeight - defaultHeight) < 1) {
         this.setPosition({ height: 830 });
       }
+    } else if (this.actor?.type === "encounter") {
+      const defaultHeight = Number(this.constructor.DEFAULT_OPTIONS?.position?.height ?? 735);
+      const currentHeight = Number(this.position?.height);
+      if (Number.isFinite(currentHeight) && Math.abs(currentHeight - defaultHeight) < 1) {
+        this.setPosition({ height: 520 });
+      }
     }
     this._playConfiguredSound("soundNotificationFFXIV_openSheet");
   }
@@ -819,11 +860,22 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     if (!EDIT_MODE_ACTOR_TYPES.has(this.actor.type) || !this.document.isOwner) return;
     if (!this._pendingSheetScrollPositions?.length) this._captureSheetScroll();
-    await this._saveProseMirrorEditors();
+    this._suppressProseMirrorSaveSound = true;
+    try {
+      await this._saveProseMirrorEditors();
+    } finally {
+      this._suppressProseMirrorSaveSound = false;
+    }
     this.actorEditMode = !this.actorEditMode;
-    const skipEnrichment = this.actorEditMode || this.tabGroups?.primary !== "roleplay";
+    const skipEnrichment = this.actorEditMode
+      || (this.actor.type === "character" && this.tabGroups?.primary !== "roleplay");
     await this.render({ force: true, ffxivSkipEnrichment: skipEnrichment });
     this._restoreSheetScroll();
+    if (this.actor.type === "encounter") {
+      this._playConfiguredSound(this.actorEditMode
+        ? "soundNotificationFFXIV_openSheet"
+        : "soundNotificationFFXIV_closeSheet");
+    }
   }
 
   _renderWithoutEnrichment(options = {}) {
@@ -1457,6 +1509,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   activateListeners(html) {
     debugLog("Listeners activated for:", this.actor.name);
     html.off(".ffxivActorSheet");
+    html.on("save.ffxivActorSheet", "prose-mirror", this._onSaveProseMirror.bind(this));
 
     html.find("input, textarea").off("keydown.ffxivActorSheet").on("keydown.ffxivActorSheet", (event) => {
       if (event.key === "Enter") {
@@ -1485,9 +1538,14 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     html.on('click.ffxivActorSheet', '.companions-sub-tabs .companions-sub-tab', this._displayCompanionTab.bind(this));
     html.on('click.ffxivActorSheet', '.actor-edit-toggle', this._toggleActorEditMode.bind(this));
     html.on('click.ffxivActorSheet', '.actor-avatar', this._onActorAvatarClick.bind(this));
+    html.on('click.ffxivActorSheet', '.encounter-member-open', this._onOpenEncounterMember.bind(this));
+    html.on('dragstart.ffxivActorSheet', '.encounter-member-open', this._onDragEncounterMember.bind(this));
     this._activateAbilityQuickTabs();
 
     if (!this.document.isOwner) return;
+
+    html.on('click.ffxivActorSheet', '.encounter-member-remove', this._onRemoveEncounterMember.bind(this));
+    html.on('change.ffxivActorSheet', '.encounter-member-quantity', this._onChangeEncounterMemberQuantity.bind(this));
 
     // Add Inventory Item
     html.on('click.ffxivActorSheet', '.item-create', this._onItemCreate.bind(this));
@@ -2157,6 +2215,18 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll(".editor-content[data-edit]").forEach(div => this._activateEditor?.(div));
   }
 
+  _onSaveProseMirror(event) {
+    if (this._suppressProseMirrorSaveSound) return;
+    const editor = event.currentTarget;
+    const field = editor.getAttribute("name");
+    if (!field || editor.value === undefined) return;
+    if (foundry.utils.getProperty(this.actor, field) === editor.value) return;
+    const now = Date.now();
+    if ((now - (this._lastProseMirrorSaveSound ?? 0)) < 150) return;
+    this._lastProseMirrorSaveSound = now;
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+  }
+
   async _saveProseMirrorEditors() {
     const editors = Array.from(this.element?.querySelectorAll("prose-mirror") ?? []);
     const updateData = {};
@@ -2635,12 +2705,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         return getAbilitySubtype(i) === abilityType;
       });
     const allAbilities = allAbilityItems.map(i => i.id);
+    const allAbilityIds = new Set(allAbilities);
 
-    abilityOrder[abilityType] = abilityOrder[abilityType].filter(id => allAbilities.includes(id)); //redefinition to avoid issues with deleted abilities
+    abilityOrder[abilityType] = abilityOrder[abilityType].filter(id => allAbilityIds.has(id)); //redefinition to avoid issues with deleted abilities
+    const orderedAbilityIds = new Set(abilityOrder[abilityType]);
 
     allAbilities.forEach(id => { // add new items
-      if (!abilityOrder[abilityType].includes(id)) {
+      if (!orderedAbilityIds.has(id)) {
         abilityOrder[abilityType].push(id);
+        orderedAbilityIds.add(id);
       }
     });
 
@@ -2698,11 +2771,14 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (petOrder.constructor.name == "Object") petOrder = []
 
     const allPets = actor.system.pets;
-    petOrder = petOrder.filter(id => allPets.includes(id));
+    const allPetIds = new Set(allPets);
+    petOrder = petOrder.filter(id => allPetIds.has(id));
+    const orderedPetIds = new Set(petOrder);
 
     allPets.forEach(id => { // add new items
-      if (!petOrder.includes(id)) {
+      if (!orderedPetIds.has(id)) {
         petOrder.push(id);
+        orderedPetIds.add(id);
       }
     });
 
@@ -2725,7 +2801,34 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const data = await foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
     // Handle dropping an Actor
     if (data?.type === "Actor") {
-      const droppedActor = game.actors.get(data.uuid.split(".")[1]);
+      const droppedActor = data.uuid ? await fromUuid(data.uuid) : game.actors.get(data.id);
+      if (this.actor.type === "encounter") {
+        if (droppedActor?.documentName === "Actor" && droppedActor.type === "encounter") {
+          this._notifyEncounterError("FFXIV.Encounter.CannotNestEncounter");
+          return;
+        }
+        if (!this._isActorEditMode()) {
+          this._notifyActorSheetLocked();
+          return;
+        }
+        if (!droppedActor || droppedActor.documentName !== "Actor" || droppedActor.type === "encounter") return;
+        const members = foundry.utils.deepClone(this.actor.system.members ?? []);
+        const existing = members.find((member) => member.uuid === droppedActor.uuid);
+        if (existing) {
+          existing.quantity = Math.max(1, Number(existing.quantity) || 1) + 1;
+        } else {
+          members.push({
+            uuid: droppedActor.uuid,
+            name: droppedActor.name,
+            img: droppedActor.img,
+            quantity: 1,
+          });
+        }
+        await this._saveProseMirrorEditors();
+        await this.actor.update({ "system.members": members });
+        this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+        return;
+      }
       if (!droppedActor || droppedActor.type !== "pet") return;
 
       const pets = foundry.utils.duplicate(this.actor.system.pets || []);
@@ -2811,6 +2914,69 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     // Default behavior for other drops (like items)
     return super._onDrop(event);
+  }
+
+  async _onOpenEncounterMember(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const member = this.actor.system.members?.[Number(event.currentTarget.dataset.index)];
+    const actor = member?.uuid ? await fromUuid(member.uuid) : null;
+    if (!actor || actor.documentName !== "Actor" || actor.type === "encounter") {
+      this._notifyEncounterError("FFXIV.Encounter.MissingMember");
+      return;
+    }
+    actor.sheet?.render({ force: true });
+  }
+
+  _onDragEncounterMember(event) {
+    event.stopPropagation();
+    if (event.currentTarget.dataset.available !== "true") {
+      event.preventDefault();
+      this._notifyEncounterError("FFXIV.Encounter.MissingMember");
+      return;
+    }
+    const member = this.actor.system.members?.[Number(event.currentTarget.dataset.index)];
+    const dataTransfer = event.originalEvent?.dataTransfer ?? event.dataTransfer;
+    if (!member?.uuid || !dataTransfer) return;
+    dataTransfer.setData("text/plain", JSON.stringify({
+      type: "Actor",
+      uuid: member.uuid,
+      hidden: Boolean(this.actor.system.spawn_hidden),
+      ffxivEncounterMember: true,
+    }));
+    dataTransfer.effectAllowed = "copy";
+  }
+
+  _notifyEncounterError(message) {
+    const now = Date.now();
+    if ((now - (this._lastEncounterError ?? 0)) < 500) return;
+    this._lastEncounterError = now;
+    this._playConfiguredSound("soundNotificationFFXIV_error");
+    ui.notifications.error(game.i18n.localize(message));
+  }
+
+  async _onRemoveEncounterMember(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this._isActorEditMode()) return this._notifyActorSheetLocked();
+    const members = foundry.utils.deepClone(this.actor.system.members ?? []);
+    members.splice(Number(event.currentTarget.dataset.index), 1);
+    await this._saveProseMirrorEditors();
+    await this.actor.update({ "system.members": members });
+    this._playConfiguredSound("soundNotificationFFXIV_deleteItem");
+  }
+
+  async _onChangeEncounterMemberQuantity(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this._isActorEditMode()) return this._notifyActorSheetLocked();
+    const members = foundry.utils.deepClone(this.actor.system.members ?? []);
+    const member = members[Number(event.currentTarget.dataset.index)];
+    if (!member) return;
+    member.quantity = Math.max(1, Number.parseInt(event.currentTarget.value, 10) || 1);
+    await this._saveProseMirrorEditors();
+    await this.actor.update({ "system.members": members });
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
   }
 
   _isManualAbilityDrop(item) {

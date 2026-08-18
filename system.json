@@ -35,11 +35,14 @@
       "npc": {
         "htmlFields": ["biography"]
       },
+      "encounter": {
+        "htmlFields": ["tactics"]
+      },
       "pet": {}
     },
     "Item": {
       "ability": {
-        "htmlFields": ["description"]
+        "htmlFields": ["description", "base_effect", "direct_hit"]
       },
       "consumable": {
         "htmlFields": ["description"]
@@ -51,13 +54,13 @@
         "htmlFields": ["description"]
       },
       "primary_ability": {
-        "htmlFields": ["description"]
+        "htmlFields": ["description", "base_effect", "direct_hit"]
       },
       "secondary_ability": {
-        "htmlFields": ["description"]
+        "htmlFields": ["description", "base_effect", "direct_hit"]
       },
       "instant_ability": {
-        "htmlFields": ["description"]
+        "htmlFields": ["description", "base_effect", "direct_hit"]
       },
       "trait": {
         "htmlFields": ["description"]

@@ -172,6 +172,22 @@
   @include effects.styles;
 }
 
+.application.ffxiv.actor:has(.ffxiv.actor.encounter) {
+  min-height: 420px !important;
+
+  > .window-content {
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    > .ffxiv.actor.encounter {
+      height: auto;
+      max-height: none;
+      min-height: 100%;
+      overflow: visible;
+    }
+  }
+}
+
 @include meta.load-css("components/editor");
 @include meta.load-css("global/utilities");
 @include chat.styles;

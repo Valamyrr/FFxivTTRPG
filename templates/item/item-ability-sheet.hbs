@@ -58,54 +58,15 @@
         <section class="ability-sheet-panel">
           <header class="ability-panel-header">
             <h2>{{localize "FFXIV.Tags.Tags"}}</h2>
-            <button type="button" class="add-tag" aria-label="{{localize 'FFXIV.Tags.Tags'}}">
-              <i class="fa-solid fa-plus"></i>
-            </button>
           </header>
           <div class="tags-container ability-tags-editor">
-            <ul class="tag-list">
-              <li>
-                <select class="ffxiv-text-center select-subtype-tag" data-index="0">
-                  <option value="FFXIV.Tags.Primary"
-                          {{#if (isAbilitySubtype item "primary_ability") }}
-                          selected
-                          {{/if}}>{{localize "FFXIV.Tags.Primary"}}
-                  </option>
-                  <option value="FFXIV.Tags.Secondary"
-                          {{#if (isAbilitySubtype item "secondary_ability") }}
-                          selected
-                          {{/if}}>{{localize "FFXIV.Tags.Secondary"}}
-                  </option>
-                  <option value="FFXIV.Tags.Instant"
-                          {{#if (isAbilitySubtype item "instant_ability") }}
-                          selected
-                          {{/if}}>{{localize "FFXIV.Tags.Instant"}}
-                  </option>
-                  <option value="Limit Break"
-                          {{#if (isAbilitySubtype item "limit_break") }}
-                          selected
-                          {{/if}}>{{localize "FFXIV.ItemType.limit_break"}}
-                  </option>
-                </select>
-              </li>
-              {{#each customTags as |entry| }}
-                <li>
-                  <select class="ffxiv-text-center select-tags"
-                          data-index="{{entry.index}}">
-                    {{#each entry.options as |t| }}
-                      <option value="{{t.label}}" {{#if t.selected}}selected{{/if}} {{#if t.disabled}}disabled{{/if}}>{{ localize t.label }}
-                      </option>
-                    {{/each}}
-                  </select>
-                  <button type="button"
-                          class="remove-tag"
-                          data-index="{{entry.index}}"
-                          aria-label="{{localize 'FFXIV.Item.Delete'}}">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
-                </li>
-              {{/each}}
-            </ul>
+            <select class="ffxiv-text-center select-subtype-tag" data-index="0">
+              <option value="FFXIV.Tags.Primary" {{#if (isAbilitySubtype item "primary_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Primary"}}</option>
+              <option value="FFXIV.Tags.Secondary" {{#if (isAbilitySubtype item "secondary_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Secondary"}}</option>
+              <option value="FFXIV.Tags.Instant" {{#if (isAbilitySubtype item "instant_ability")}}selected{{/if}}>{{localize "FFXIV.Tags.Instant"}}</option>
+              <option value="Limit Break" {{#if (isAbilitySubtype item "limit_break")}}selected{{/if}}>{{localize "FFXIV.ItemType.limit_break"}}</option>
+            </select>
+            {{> "systems/ffxiv/templates/item/parts/action-tags.hbs"}}
           </div>
         </section>
         <section class="ability-sheet-panel">
@@ -193,7 +154,7 @@
             <h2>{{localize "FFXIV.Abilities.BaseEffectRoll"}}</h2>
           </header>
           <div class="ability-form-grid ability-form-grid-2">
-            <div class="resource flex-group-center">
+            <div class="resource flex-group-center ability-effect-field">
               <label for="system.base_effect" class="resource-label">
                 <span>
                   {{ localize "FFXIV.Abilities.BaseEffect" }}
@@ -201,10 +162,18 @@
                 </span>
               </label>
               <div class="resource-content flexrow flex-center flex-between">
-                <input name="system.base_effect"
-                       type="text"
-                       value="{{item.system.base_effect}}"
-                       placeholder="{{localize 'FFXIV.Abilities.BaseEffectPlaceholder'}}" />
+                {{#if itemEditMode}}
+                  <div class="ability-effect-editor-placeholder"
+                       data-name="system.base_effect"
+                       data-value="{{source.base_effect}}"
+                       data-document-uuid="{{item.uuid}}"></div>
+                {{else}}
+                  {{#if (hasContent enriched.base_effect)}}
+                    <div class="item-locked-field item-locked-field-block ability-effect-readonly">{{{enriched.base_effect}}}</div>
+                  {{else}}
+                    <span class="item-locked-field item-locked-field-empty">{{localize "FFXIV.None"}}</span>
+                  {{/if}}
+                {{/if}}
               </div>
             </div>
             <div class="resource flex-group-center">
@@ -215,60 +184,58 @@
                 </span>
               </label>
               <div class="resource-content flexrow flex-center flex-between">
-                <input name="system.base_formula"
-                       type="text"
-                       value="{{item.system.base_formula}}"
-                       placeholder="{{localize 'FFXIV.Abilities.BaseFormulaPlaceholder'}}" />
+                <formula-input name="system.base_formula"
+                               context="ffxiv-ability"
+                               value="{{item.system.base_formula}}"
+                               placeholder="{{localize 'FFXIV.Abilities.BaseFormulaPlaceholder'}}"></formula-input>
               </div>
             </div>
-            <div class="ability-base-roll-conditional-row">
+            <div class="resource flex-group-center">
+              <label for="system.damage_modifier_mode" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.DamageModifierMode" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.DamageModifierModeHint"}}
+                </span>
+              </label>
+              <div class="resource-content flexrow flex-center flex-between">
+                <select class="ffxiv-text-center damage-modifier-mode-select"
+                        name="system.damage_modifier_mode">
+                  <option value="auto" {{#if (eq item.system.damage_modifier_mode "auto")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAuto" }}</option>
+                  <option value="always" {{#if (eq item.system.damage_modifier_mode "always")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAlways" }}</option>
+                  <option value="never" {{#if (eq item.system.damage_modifier_mode "never")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierNever" }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="resource flex-group-center">
+              <label for="flags.ffxiv.baseFormula.override.formula" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.ConditionalBaseFormula" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ConditionalBaseFormulaHint"}}
+                </span>
+              </label>
+              <div class="resource-content flexrow flex-center flex-between">
+                <formula-input name="flags.ffxiv.baseFormula.override.formula"
+                               context="ffxiv-ability"
+                               value="{{conditionalBaseFormula.formula}}"
+                               placeholder="{{localize 'FFXIV.Abilities.ConditionalBaseFormulaPlaceholder'}}"></formula-input>
+              </div>
+            </div>
+            {{#if conditionalBaseFormula.hasFormula }}
               <div class="resource flex-group-center">
-                <label for="system.damage_modifier_mode" class="resource-label">
+                <label for="flags.ffxiv.baseFormula.override.threshold" class="resource-label">
                   <span>
-                    {{ localize "FFXIV.Abilities.DamageModifierMode" }}
-                    {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.DamageModifierModeHint"}}
+                    {{ localize "FFXIV.Abilities.ConditionalBaseThreshold" }}
+                    {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ConditionalBaseThresholdHint"}}
                   </span>
                 </label>
                 <div class="resource-content flexrow flex-center flex-between">
-                  <select class="ffxiv-text-center damage-modifier-mode-select"
-                          name="system.damage_modifier_mode">
-                    <option value="auto" {{#if (eq item.system.damage_modifier_mode "auto")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAuto" }}</option>
-                    <option value="always" {{#if (eq item.system.damage_modifier_mode "always")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierAlways" }}</option>
-                    <option value="never" {{#if (eq item.system.damage_modifier_mode "never")}}selected{{/if}}>{{ localize "FFXIV.Abilities.DamageModifierNever" }}</option>
-                  </select>
+                  <input name="flags.ffxiv.baseFormula.override.threshold"
+                         type="text"
+                         value="{{conditionalBaseFormula.threshold}}"
+                         placeholder="{{localize 'FFXIV.Abilities.ConditionalBaseThresholdPlaceholder'}}" />
                 </div>
               </div>
-              <div class="resource flex-group-center">
-                  <label for="flags.ffxiv.baseFormula.override.formula" class="resource-label">
-                    <span>
-                      {{ localize "FFXIV.Abilities.ConditionalBaseFormula" }}
-                      {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ConditionalBaseFormulaHint"}}
-                    </span>
-                  </label>
-                  <div class="resource-content flexrow flex-center flex-between">
-                    <input name="flags.ffxiv.baseFormula.override.formula"
-                           type="text"
-                           value="{{conditionalBaseFormula.formula}}"
-                           placeholder="{{localize 'FFXIV.Abilities.ConditionalBaseFormulaPlaceholder'}}" />
-                  </div>
-              </div>
-                {{#if conditionalBaseFormula.hasFormula }}
-              <div class="resource flex-group-center">
-                  <label for="flags.ffxiv.baseFormula.override.threshold" class="resource-label">
-                    <span>
-                      {{ localize "FFXIV.Abilities.ConditionalBaseThreshold" }}
-                      {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ConditionalBaseThresholdHint"}}
-                    </span>
-                  </label>
-                  <div class="resource-content flexrow flex-center flex-between">
-                    <input name="flags.ffxiv.baseFormula.override.threshold"
-                           type="text"
-                           value="{{conditionalBaseFormula.threshold}}"
-                           placeholder="{{localize 'FFXIV.Abilities.ConditionalBaseThresholdPlaceholder'}}" />
-                  </div>
-              </div>
-                {{/if}}
-            </div>
+            {{/if}}
           </div>
         </section>
         <section class="ability-sheet-panel">
@@ -325,11 +292,11 @@
                 </span>
               </label>
               <div class="resource-content flexrow flex-center flex-between ability-formula-row">
-                <input name="system.hit_formula"
-                       type="text"
-                       value="{{item.system.hit_formula}}"
-                       placeholder="{{localize 'FFXIV.Abilities.HitFormulaPlaceholder'}}"
-                       data-formula-source="hit" />
+                <formula-input name="system.hit_formula"
+                               context="ffxiv-ability"
+                               value="{{item.system.hit_formula}}"
+                               placeholder="{{localize 'FFXIV.Abilities.HitFormulaPlaceholder'}}"
+                               data-formula-source="hit"></formula-input>
                 <select class="ffxiv-text-center {{#unless (hasContent item.system.hit_formula)}}ffxiv-hidden{{/unless}}"
                         name="system.hit_formula_attribute"
                         data-formula-target="hit">
@@ -351,7 +318,7 @@
             <h2>{{localize "FFXIV.Abilities.DirectHitRoll"}}</h2>
           </header>
           <div class="ability-form-grid ability-form-grid-2">
-            <div class="resource flex-group-center">
+            <div class="resource flex-group-center ability-effect-field">
               <label for="system.direct_hit" class="resource-label">
                 <span>
                   {{ localize "FFXIV.Abilities.DirectHit" }}
@@ -359,13 +326,21 @@
                 </span>
               </label>
               <div class="resource-content flexrow flex-center flex-between">
-                <input name="system.direct_hit"
-                       type="text"
-                       value="{{item.system.direct_hit}}"
-                       placeholder="{{localize 'FFXIV.Abilities.DirectHitPlaceholder'}}" />
+                {{#if itemEditMode}}
+                  <div class="ability-effect-editor-placeholder"
+                       data-name="system.direct_hit"
+                       data-value="{{source.direct_hit}}"
+                       data-document-uuid="{{item.uuid}}"></div>
+                {{else}}
+                  {{#if (hasContent enriched.direct_hit)}}
+                    <div class="item-locked-field item-locked-field-block ability-effect-readonly">{{{enriched.direct_hit}}}</div>
+                  {{else}}
+                    <span class="item-locked-field item-locked-field-empty">{{localize "FFXIV.None"}}</span>
+                  {{/if}}
+                {{/if}}
               </div>
             </div>
-            <div class="resource flex-group-center">
+            <div class="resource flex-group-center ability-form-span">
               <label for="system.direct_formula" class="resource-label">
                 <span>
                   {{ localize "FFXIV.Abilities.AdditionalFormula" }}
@@ -373,11 +348,11 @@
                 </span>
               </label>
               <div class="resource-content flexrow flex-center flex-between ability-formula-row">
-                <input name="system.direct_formula"
-                       type="text"
-                       value="{{item.system.direct_formula}}"
-                       placeholder="{{localize 'FFXIV.Abilities.DirectFormulaPlaceholder'}}"
-                       data-formula-source="direct" />
+                <formula-input name="system.direct_formula"
+                               context="ffxiv-ability"
+                               value="{{item.system.direct_formula}}"
+                               placeholder="{{localize 'FFXIV.Abilities.DirectFormulaPlaceholder'}}"
+                               data-formula-source="direct"></formula-input>
                 <select class="ffxiv-text-center {{#unless (hasContent item.system.direct_formula)}}ffxiv-hidden{{/unless}}"
                         name="system.direct_formula_attribute"
                         data-formula-target="direct">
@@ -407,11 +382,11 @@
                 </span>
               </label>
               <div class="resource-content flexrow flex-center flex-between ability-formula-row">
-                <input name="system.alternate_formula"
-                       type="text"
-                       value="{{item.system.alternate_formula}}"
-                       placeholder="{{localize 'FFXIV.Abilities.AlternateFormulaPlaceholder'}}"
-                       data-formula-source="alternate" />
+                <formula-input name="system.alternate_formula"
+                               context="ffxiv-ability"
+                               value="{{item.system.alternate_formula}}"
+                               placeholder="{{localize 'FFXIV.Abilities.AlternateFormulaPlaceholder'}}"
+                               data-formula-source="alternate"></formula-input>
                 <select class="ffxiv-text-center {{#unless (hasContent item.system.alternate_formula)}}ffxiv-hidden{{/unless}}"
                         name="system.alternate_formula_attribute"
                         data-formula-target="alternate">
@@ -434,11 +409,11 @@
                 </span>
               </label>
               <div class="resource-content flexrow flex-center flex-between ability-formula-row">
-                <input name="system.alternate_formula_critical"
-                       type="text"
-                       value="{{item.system.alternate_formula_critical}}"
-                       placeholder="{{localize 'FFXIV.Abilities.AlternateFormulaCriticalPlaceholder'}}"
-                       data-formula-source="alternate-critical" />
+                <formula-input name="system.alternate_formula_critical"
+                               context="ffxiv-ability"
+                               value="{{item.system.alternate_formula_critical}}"
+                               placeholder="{{localize 'FFXIV.Abilities.AlternateFormulaCriticalPlaceholder'}}"
+                               data-formula-source="alternate-critical"></formula-input>
                 <select class="ffxiv-text-center {{#unless (hasContent item.system.alternate_formula_critical)}}ffxiv-hidden{{/unless}}"
                         name="system.alternate_formula_critical_attribute"
                         data-formula-target="alternate-critical">
@@ -1123,11 +1098,11 @@
                     </label>
                     <label>
                       <span>{{localize "FFXIV.Abilities.JobResourceBonusFormula"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.JobResourceBonusFormulaHint"}}</span>
-                      <input class="job-resource-bonus-field"
-                             data-index="{{index}}"
-                             data-field="formula"
-                             type="text"
-                             value="{{entry.formula}}" />
+                      <formula-input class="job-resource-bonus-field"
+                                     context="ffxiv-ability"
+                                     data-index="{{index}}"
+                                     data-field="formula"
+                                     value="{{entry.formula}}"></formula-input>
                     </label>
                   </div>
                   <div class="status-effects-header">
@@ -1154,12 +1129,12 @@
                           </label>
                           <label>
                             <span>{{localize "FFXIV.Abilities.JobResourceBonusFormula"}}</span>
-                            <input class="job-resource-bonus-upgrade-field"
-                                   data-index="{{index}}"
-                                   data-upgrade-index="{{upgradeIndex}}"
-                                   data-field="formula"
-                                   type="text"
-                                   value="{{upgrade.formula}}" />
+                            <formula-input class="job-resource-bonus-upgrade-field"
+                                           context="ffxiv-ability"
+                                           data-index="{{index}}"
+                                           data-upgrade-index="{{upgradeIndex}}"
+                                           data-field="formula"
+                                           value="{{upgrade.formula}}"></formula-input>
                           </label>
                         </div>
                         {{#if ../../itemEditMode}}

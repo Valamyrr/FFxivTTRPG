@@ -1,0 +1,7 @@
+<autocomplete-tags class="ffxiv-action-tags"
+                   name="system.tags"
+                   placeholder="{{localize 'FFXIV.Tags.Tags'}}">
+  {{#each tagOptions as |tag|}}
+    <option value="{{tag.value}}" {{#if tag.selected}}selected{{/if}}>{{tag.label}}</option>
+  {{/each}}
+</autocomplete-tags>

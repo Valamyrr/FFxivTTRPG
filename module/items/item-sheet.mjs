@@ -136,8 +136,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
 
     if (this.item.type == "ability") {
-      const subtype = getAbilitySubtype(this.item);
-      if (subtype === "limit_break") return `${path}/item-limitbreak-sheet.hbs`;
       return `${path}/item-ability-sheet.hbs`;
     }
     if (
@@ -224,7 +222,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ? getAbilitySubtype(this.item)
         : this.item.type;
     context.bakedActionTag = this._getBakedActionTag(actionType);
-    context.customTags = this._getCustomActionTags(itemData.system.tags);
+    context.tagOptions = this._getTagOptions(itemData.system.tags);
     if (this._hasSummonActorSupport()) {
       context.system.summon_actors = this._getSummonActorEntries(
         itemData.system.summon_actors,
@@ -326,6 +324,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.settings = {
       jobsAbbrv: game.settings.get("ffxiv", "jobsAbbrv").split(","),
     };
+    const selectedClasses = new Set(context.system.classes ?? []);
+    const classChoices = [
+      ...new Set([...context.settings.jobsAbbrv, ...selectedClasses]),
+    ].filter(Boolean);
+    context.classOptions = classChoices.map((job) => ({
+      value: job,
+      label: game.i18n.localize(job),
+      selected: selectedClasses.has(job),
+    }));
 
     // Prepare active effects for easier access
     context.effects = prepareActiveEffectCategories(this.item.effects);
@@ -438,6 +445,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   /** @override */
   async _preClose(options) {
+    await this._saveProseMirrorEditors();
     await super._preClose(options);
     this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
   }
@@ -492,7 +500,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!EDIT_MODE_ITEM_TYPES.has(this.item.type) || !this.document.isOwner || this._isCompendiumLocked() || this._isReadOnlyItemSheet()) return;
     this._captureSheetScroll();
     this._captureAutomationExpansion();
-    await this._saveProseMirrorEditors();
+    this._suppressProseMirrorSaveSound = true;
+    try {
+      await this._saveProseMirrorEditors();
+    } finally {
+      this._suppressProseMirrorSaveSound = false;
+    }
     this.itemEditMode = !this.itemEditMode;
     await this.render({ force: true });
   }
@@ -645,8 +658,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (editing) return;
     sheet
-      .querySelectorAll("input, select, textarea")
-      .forEach((control) => this._replaceLockedItemField(control));
+      .querySelectorAll("formula-input, autocomplete-tags, input, select, textarea")
+      .forEach((control) => {
+        const customElement = control.closest("formula-input, autocomplete-tags");
+        if (customElement && customElement !== control) return;
+        this._replaceLockedItemField(control);
+      });
     sheet
       .querySelectorAll("button")
       .forEach((control) => {
@@ -673,6 +690,23 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       display = preview?.cloneNode(true);
       preview?.remove();
     }
+    if (control.closest(".ability-tags-editor")) {
+      const values = control instanceof HTMLSelectElement
+        ? Array.from(control.selectedOptions, (option) => option.textContent)
+        : Array.isArray(control.value)
+          ? control.value.map((value) => game.i18n.localize(value))
+          : [];
+      display = document.createElement("div");
+      display.classList.add("item-locked-tag-list");
+      for (const value of values) {
+        const label = String(value ?? "").trim();
+        if (!label) continue;
+        const tag = document.createElement("span");
+        tag.classList.add("tag");
+        tag.textContent = label;
+        display.append(tag);
+      }
+    }
     display ??= document.createElement(control instanceof HTMLTextAreaElement ? "div" : "span");
     display.classList.add("item-locked-field");
     if (control instanceof HTMLTextAreaElement) display.classList.add("item-locked-field-block");
@@ -689,6 +723,10 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _getLockedItemFieldText(control) {
+    if (Array.isArray(control.value)) {
+      const values = control.value.map((value) => game.i18n.localize(value));
+      return values.join(", ") || game.i18n.localize("FFXIV.None");
+    }
     if (control instanceof HTMLSelectElement) {
       const values = Array.from(control.selectedOptions)
         .map((option) => {
@@ -718,8 +756,19 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!event.target?.name) return;
 
     event.preventDefault();
+    let value = this._getChangedFieldValue(event.target);
+    if (
+      event.target.name === "system.tags" &&
+      ["ability", "primary_ability", "secondary_ability", "instant_ability"].includes(this.item.type)
+    ) {
+      value = ensureAbilitySubtypeTags(
+        value,
+        getAbilitySubtype(this.item) || "primary_ability",
+        { canonicalizeSubtypeTag: true },
+      );
+    }
     const updateData = this._getConditionalBaseFormulaUpdate(event.target) ?? {
-      [event.target.name]: this._getChangedFieldValue(event.target),
+      [event.target.name]: value,
     };
     const render =
       event.target.name === "name" ||
@@ -804,6 +853,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _getChangedFieldValue(target) {
     if (target.type === "checkbox") return target.checked;
+    if (Array.isArray(target.value)) return target.value;
     if (target.multiple)
       return Array.from(target.selectedOptions).map((option) => option.value);
 
@@ -878,6 +928,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _getCustomActionTags(tags) {
+    const hasBakedSubtype = [
+      "ability",
+      "primary_ability",
+      "secondary_ability",
+      "instant_ability",
+      "limit_break",
+    ].includes(this.item.type);
     const bakedTagNames = [
       "Primary",
       "Secondary",
@@ -895,6 +952,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         .toLowerCase()
         .replace(/[^a-z0-9]/g, "");
     const isBakedTag = (tag) => {
+      if (!hasBakedSubtype) return false;
       const normalized = normalize(tag);
       const localized = normalize(game.i18n.localize(String(tag ?? "")));
       return bakedTagNames.some((name) => {
@@ -928,6 +986,53 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           };
         }),
       }));
+  }
+
+  _getTagOptions(tags) {
+    const selectedTags = this._getCustomActionTags(tags).map(({ tag }) => tag);
+    const selectedKeys = new Set(
+      selectedTags.map((tag) => this._getTagComparisonKey(tag)),
+    );
+    const hasBakedSubtype = [
+      "ability",
+      "primary_ability",
+      "secondary_ability",
+      "instant_ability",
+      "limit_break",
+    ].includes(this.item.type);
+    const subtypeKeys = new Set(
+      (hasBakedSubtype
+        ? [
+            "FFXIV.Tags.Primary",
+            "FFXIV.Tags.Secondary",
+            "FFXIV.Tags.Instant",
+            "FFXIV.ItemType.limit_break",
+            "Limit Break",
+            "Limit-Break",
+          ]
+        : []
+      ).map((tag) => this._getTagComparisonKey(tag)),
+    );
+    const options = new Map();
+
+    for (const option of Object.values(this._getTagPool())) {
+      const value = String(option?.label ?? "").trim();
+      const key = this._getTagComparisonKey(value);
+      if (key && !subtypeKeys.has(key) && !options.has(key)) {
+        options.set(key, value);
+      }
+    }
+    for (const tag of selectedTags) {
+      const value = String(tag ?? "").trim();
+      const key = this._getTagComparisonKey(value);
+      if (key && !options.has(key)) options.set(key, value);
+    }
+
+    return Array.from(options, ([key, value]) => ({
+      value,
+      label: game.i18n.localize(value),
+      selected: selectedKeys.has(key),
+    }));
   }
 
   _getTagPool() {
@@ -2028,6 +2133,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @override */
   activateListeners(html) {
     html.off(".ffxivItemSheet");
+    html.on("save.ffxivItemSheet", "prose-mirror", this._onSaveProseMirror.bind(this));
 
     const storedMarkers =
       Array.isArray(this.item.system.markers) && this.item.system.markers.length
@@ -2166,28 +2272,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     );
 
     //Tags
-    html.on("change.ffxivItemSheet", ".select-tags", (event) => {
-      const index = Number(
-        event.currentTarget.dataset.index ??
-          $(event.currentTarget).closest("li").index(),
-      );
-      const value = $(event.currentTarget).val();
-      const tags = Array.isArray(this.item.system.tags)
-        ? [...this.item.system.tags]
-        : [];
-      const valueKey = this._getTagComparisonKey(value);
-      const isDuplicate = tags.some(
-        (tag, tagIndex) =>
-          tagIndex !== index &&
-          this._getTagComparisonKey(tag) === valueKey,
-      );
-      if (isDuplicate) {
-        event.currentTarget.value = tags[index] ?? "";
-        return;
-      }
-      tags[index] = value;
-      this.item.update({ "system.tags": tags });
-    });
     html.on("change.ffxivItemSheet", ".select-subtype-tag", (event) => {
       const value = $(event.currentTarget).val();
       const tags = Array.isArray(this.item.system.tags)
@@ -2202,36 +2286,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         .update({ "system.tags": normalized }, { render: false })
         .then(() => this.render({ force: true }));
     });
-    html.on("click.ffxivItemSheet", ".remove-tag", (event) => {
-      const index = event.currentTarget.dataset.index;
-      const tags = this.item.system.tags || [];
-      tags.splice(index, 1); // Remove the tag at the specified index
-      this.item.update({ "system.tags": tags });
-      this.render(); // Re-render to show the updated fields
-    });
-    html.on("click.ffxivItemSheet", ".add-tag", () => {
-      const tags = Array.isArray(this.item.system.tags)
-        ? [...this.item.system.tags]
-        : [];
-
-      const tagPool = this._getTagPool();
-      const existingTags = new Set(
-        tags.map((tag) => this._getTagComparisonKey(tag)),
-      );
-      const defaultTag =
-        Object.values(tagPool)
-          .map((tag) => tag?.label)
-          .find(
-            (tag) =>
-              tag && !existingTags.has(this._getTagComparisonKey(tag)),
-          ) ?? "";
-      if (defaultTag) {
-        tags.push(defaultTag);
-        this.item.update({ "system.tags": tags });
-        this.render();
-      }
-    });
-
     html.on(
       "change.ffxivItemSheet",
       ".status-effect-id, .status-effect-action, .status-effect-apply-mode, .status-effect-apply-to, .status-effect-stacks, .status-effect-duration",
@@ -2342,30 +2396,6 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ".remove-effect-rule",
       this._onRemoveEffectRule.bind(this),
     );
-
-    //Gear Classes, similar as tags
-    if (this.item.type == "gear") {
-      html.on("change.ffxivItemSheet", ".select-classes", (event) => {
-        const index = $(event.currentTarget).closest("li").index();
-        const value = $(event.currentTarget).val();
-        const classes = this.item.system.classes || [];
-        classes[index] = value;
-        this.item.update({ "system.classes": classes });
-      });
-      html.on("click.ffxivItemSheet", ".remove-class", (event) => {
-        const index = event.currentTarget.dataset.index;
-        const classes = this.item.system.classes || [];
-        classes.splice(index, 1);
-        this.item.update({ "system.classes": classes });
-        this.render();
-      });
-      html.on("click.ffxivItemSheet", ".add-class", () => {
-        const classes = this.item.system.classes || [];
-        classes.push("");
-        this.item.update({ "system.classes": classes });
-        this.render();
-      });
-    }
 
     if (this.item.type == "job") {
       html.on(
@@ -2562,6 +2592,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         panel.classList.toggle("active", active);
         panel.style.display = active ? "" : "none";
       });
+      this._activateAbilityEffectEditors(
+        tabs.find((panel) => panel.dataset.tab === tab),
+      );
     };
 
     this._tabController?.abort();
@@ -2579,6 +2612,19 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     });
 
     activate(initial);
+  }
+
+  _activateAbilityEffectEditors(panel) {
+    panel
+      ?.querySelectorAll(".ability-effect-editor-placeholder")
+      .forEach((placeholder) => {
+        const editor = document.createElement("prose-mirror");
+        editor.classList.add("ability-effect-editor");
+        editor.name = placeholder.dataset.name;
+        editor.dataset.documentUuid = placeholder.dataset.documentUuid;
+        editor.value = placeholder.dataset.value ?? "";
+        placeholder.replaceWith(editor);
+      });
   }
 
   async _rollItem(event) {
@@ -2774,6 +2820,18 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.element
       .querySelectorAll(".editor-content[data-edit]")
       .forEach((div) => this._activateEditor?.(div));
+  }
+
+  _onSaveProseMirror(event) {
+    if (this._suppressProseMirrorSaveSound) return;
+    const editor = event.currentTarget;
+    const field = editor.getAttribute("name");
+    if (!field || editor.value === undefined) return;
+    if (foundry.utils.getProperty(this.item, field) === editor.value) return;
+    const now = Date.now();
+    if ((now - (this._lastProseMirrorSaveSound ?? 0)) < 150) return;
+    this._lastProseMirrorSaveSound = now;
+    this._playConfiguredSound("soundNotificationFFXIV_moveItem");
   }
 
   async _saveProseMirrorEditors() {

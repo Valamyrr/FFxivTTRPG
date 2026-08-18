@@ -3,6 +3,7 @@
     "Name": "Nom",
     "Level": "Niveau",
     "Class": "Job",
+    "Maximum": "Maximum",
     "Health": {
       "long": "Points de vie",
       "abbrv": "PV",
@@ -204,7 +205,25 @@
     "ActorType": {
       "character": "Personnage",
       "npc": "PNJ",
+      "encounter": "Rencontre",
       "pet": "Familier"
+    },
+    "Encounter": {
+      "Roster": "Groupe",
+      "RosterHint": "Déposez des acteurs ici pour les ajouter. Déposez cette rencontre sur une scène pour placer le groupe entier.",
+      "Quantity": "Quantité",
+      "Tactics": "Tactiques",
+      "SpawnHidden": "Placer les acteurs masqués",
+      "SpawnHiddenHint": "Place chaque acteur de cette rencontre sous forme de token masqué.",
+      "OpenMember": "Ouvrir l'acteur",
+      "RemoveMember": "Retirer l'acteur",
+      "EmptyRoster": "Aucun acteur n'a été ajouté à cette rencontre.",
+      "EmptyTactics": "Aucune tactique n'a été indiquée pour cette rencontre.",
+      "EmptyPlacement": "Cette rencontre ne contient aucun acteur disponible à placer.",
+      "CannotNestEncounter": "Une rencontre ne peut pas être ajoutée à une autre rencontre.",
+      "MissingMember": "Cet acteur n'existe plus et ne peut être ni ouvert ni placé. Retirez-le du groupe.",
+      "PlacementFailed": "Échec du placement de la rencontre. Consultez la console pour les détails.",
+      "Placed": "{count} acteurs de {name} ont été placés."
     },
     "Roles": {
       "DPS": "DPS",
@@ -609,6 +628,12 @@
       "FFXIVTools": "Outils FF XIV",
       "Soundboard": "Bruitages"
     },
+    "Keybindings": {
+      "RotateRegionMarkerClockwise": "Faire pivoter le marqueur de région dans le sens horaire",
+      "RotateRegionMarkerClockwiseHint": "Fait pivoter le placement actif d'un marqueur de région FFXIV d'un cran de grille dans le sens horaire.",
+      "RotateRegionMarkerCounterclockwise": "Faire pivoter le marqueur de région dans le sens antihoraire",
+      "RotateRegionMarkerCounterclockwiseHint": "Fait pivoter le placement actif d'un marqueur de région FFXIV d'un cran de grille dans le sens antihoraire."
+    },
     "Notifications": {
       "NoTarget": "Aucune cible sélectionnée.",
       "TargetWarningTitle": "Avertissement de ciblage",
@@ -746,6 +771,9 @@
       },
       "Instructions": {
         "ClickToPlace": "Déplacez l'aperçu, puis cliquez sur la scène pour placer le marqueur. Clic droit pour annuler.",
+        "RegionClickToPlace": "Déplacez l'aperçu, utilisez {clockwise} pour le faire pivoter dans le sens horaire ou {counterclockwise} dans le sens antihoraire d'un cran de grille, puis cliquez sur la scène pour placer le marqueur. Clic droit pour annuler.",
+        "RegionClickToken": "Utilisez {clockwise} pour le faire pivoter dans le sens horaire ou {counterclockwise} dans le sens antihoraire d'un cran de grille, puis cliquez sur un token pour lier le marqueur ciblé. Clic droit pour annuler.",
+        "Unbound": "Non assigné",
         "ClickToken": "Cliquez sur un token pour lier le marqueur ciblé. Clic droit pour annuler.",
         "RequestSent": "Placement du marqueur envoyé au MJ."
       },

@@ -1451,11 +1451,6 @@ function executeCyclingPageKey(keyIndex) {
   return true;
 }
 
-function executeActorCyclingPageKey(keyIndex) {
-  if (!getActiveHotbarActor()) return false;
-  return executeCyclingPageKey(keyIndex);
-}
-
 function getBinding(namespace, action) {
   try {
     return game.keybindings.get(namespace, action)?.[0] ?? null;
@@ -1464,18 +1459,11 @@ function getBinding(namespace, action) {
   }
 }
 
-function getBindingForSlot(page, keyIndex, primary = false, actor = false) {
-  if (actor && primary) {
-    const binding = `slot${keyIndex + 1}`;
-    return getBinding(
-      "ffxiv",
-      keyIndex < 10 ? `executeActorHotbar1${binding}` : `executeHotbar1${binding}`,
-    );
-  }
-
-  if (primary && keyIndex < 10) {
-    const number = HOTBAR_KEYS[keyIndex].label;
-    return getBinding("core", `executeMacro${number}`);
+function getBindingForSlot(page, keyIndex, primary = false) {
+  if (primary) {
+    if (keyIndex < 10)
+      return getBinding("core", `executeMacro${HOTBAR_KEYS[keyIndex].label}`);
+    return getBinding("ffxiv", `executeHotbar1slot${keyIndex + 1}`);
   }
 
   const hotbar = primary ? 1 : page;
@@ -1570,7 +1558,6 @@ function updateHotbarStack(hotbar, app) {
 
 function updateHotbarSlotLabels(hotbar, app) {
   const currentPage = getPageNumber(hotbar, app);
-  const actor = !!getActiveHotbarActor();
   for (const [index, slot] of getHotbarSlots(hotbar).entries()) {
     slot.classList.add("ffxiv-hotbar-slot");
 
@@ -1584,7 +1571,7 @@ function updateHotbarSlotLabels(hotbar, app) {
       slot.append(label);
     }
 
-    const binding = getBindingForSlot(page, keyIndex, primary, actor);
+    const binding = getBindingForSlot(page, keyIndex, primary);
     const fallback = !primary && page >= 4 ? "" : HOTBAR_KEYS[keyIndex]?.label ?? "";
     setKeyLabel(label, binding, fallback);
   }
@@ -2119,35 +2106,42 @@ export function initHotbar() {
 export function registerHotbarKeybindings() {
   const { SHIFT, CONTROL } =
     foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS;
-  for (const [index, key] of HOTBAR_KEYS.entries()) {
+
+  for (const [index, key] of HOTBAR_KEYS.slice(0, 10).entries()) {
+    const action = game.keybindings.actions.get(
+      `core.executeMacro${key.label}`,
+    );
+    if (!action) continue;
+    const onDown = action.onDown;
+    action.onDown = (context) => {
+      if (getActiveHotbarActor()) return executeCyclingPageKey(index);
+      return onDown(context);
+    };
+  }
+
+  for (const index of [10, 11]) {
+    const key = HOTBAR_KEYS[index];
     const binding = `slot${index + 1}`;
-    game.keybindings.register("ffxiv", `executeActorHotbar1${binding}`, {
-      name: `Selected Actor Hotbar 1: ${key.label}`,
-      editable: index >= 10 ? [] : [{ key: key.code }],
-      onDown: () => executeActorCyclingPageKey(index),
+    game.keybindings.register("ffxiv", `executeHotbar1${binding}`, {
+      name: `Hotbar 1: ${key.label}`,
+      editable: [{ key: key.code }],
+      onDown: () => executeCyclingPageKey(index),
       precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY,
     });
+  }
 
-    if (index >= 10)
-      game.keybindings.register("ffxiv", `executeHotbar1${binding}`, {
-        name: `Hotbar 1: ${key.label}`,
-        editable: [{ key: key.code }],
-        onDown: () => executeCyclingPageKey(index),
-        precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
+  for (const { page, modifier } of [
+    { page: 2, modifier: CONTROL },
+    { page: 3, modifier: SHIFT },
+  ]) {
+    for (const [index, key] of HOTBAR_KEYS.entries()) {
+      const binding = `slot${index + 1}`;
+      game.keybindings.register("ffxiv", `executeHotbar${page}${binding}`, {
+        name: `Hotbar ${page}: ${key.label}`,
+        editable: [{ key: key.code, modifiers: [modifier] }],
+        onDown: () => executePageKey(page, index),
+        precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY,
       });
-
-    game.keybindings.register("ffxiv", `executeHotbar2${binding}`, {
-      name: `Hotbar 2: ${key.label}`,
-      editable: [{ key: key.code, modifiers: [CONTROL] }],
-      onDown: () => executePageKey(2, index),
-      precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
-    });
-
-    game.keybindings.register("ffxiv", `executeHotbar3${binding}`, {
-      name: `Hotbar 3: ${key.label}`,
-      editable: [{ key: key.code, modifiers: [SHIFT] }],
-      onDown: () => executePageKey(3, index),
-      precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
-    });
+    }
   }
 }

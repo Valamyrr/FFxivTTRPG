@@ -2,6 +2,7 @@
 import { FFXIVActor } from "./actors/actor.mjs";
 import { FFXIVCombat, getTurnStep } from "./combat.mjs";
 import { FFXIVItem } from "./items/item.mjs";
+import { FFXIVActiveEffect } from "./active-effect.mjs";
 import { registerDataModels } from "./data-models.mjs";
 // Import sheet classes.
 import { FFXIVActorSheet } from "./actors/actor-sheet.mjs";
@@ -60,6 +61,7 @@ import {
 } from "./helpers/summons.mjs";
 import { initHotbar, registerHotbarKeybindings } from "./helpers/hotbar.mjs";
 import { emitToActiveGM, getActiveGM } from "./helpers/socket.mjs";
+import { registerFormulaEditorContexts } from "./helpers/formula-editor.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -75,6 +77,7 @@ Hooks.once("init", function () {
     default: {},
   });
   registerHotbarKeybindings();
+  registerMarkerPlacementKeybindings();
   // Add utility classes to the global game object so that they're more easily
   // accessible in global contexts.
   game.ffxivttrpg = {
@@ -128,6 +131,8 @@ Hooks.once("init", function () {
   CONFIG.Actor.documentClass = FFXIVActor;
   CONFIG.Combat.documentClass = FFXIVCombat;
   CONFIG.Item.documentClass = FFXIVItem;
+  CONFIG.ActiveEffect.documentClass = FFXIVActiveEffect;
+  registerFormulaEditorContexts();
 
   // Active Effects are never copied to the Actor,
   // but will still apply to the Actor from within the Item
@@ -144,7 +149,7 @@ Hooks.once("init", function () {
   );
 
   DocumentSheetConfig.registerSheet(Actor, "ffxiv", FFXIVActorSheet, {
-    types: ["character", "pet", "npc"],
+    types: ["character", "pet", "npc", "encounter"],
     makeDefault: true,
     label: "FFXIV.SheetLabels.Actor",
   });
@@ -173,6 +178,7 @@ Hooks.once("init", function () {
   CONFIG.Actor.typeLabels = {
     character: game.i18n.localize("FFXIV.ActorType.character"),
     npc: game.i18n.localize("FFXIV.ActorType.npc"),
+    encounter: game.i18n.localize("FFXIV.ActorType.encounter"),
     pet: game.i18n.localize("FFXIV.ActorType.pet"),
   };
 
@@ -1166,6 +1172,7 @@ Hooks.once("ready", function () {
   installActorSheetActiveEffectRefresh();
   installActiveEffectStatusDuplicateControls();
   installGlobalArtworkRotationLock();
+  installEncounterActorPlacement();
   applyGlobalArtworkRotationLock().catch((error) => {
     debugError("FFXIV | Failed to apply global artwork rotation lock:", error);
   });
@@ -1657,6 +1664,115 @@ function installGlobalArtworkRotationLock() {
     if (foundry.utils.getProperty(data, "lockRotation") === true) return;
     tokenDocument.updateSource({ lockRotation: true });
   });
+}
+
+function installEncounterActorPlacement() {
+  if (globalThis.__ffxivEncounterActorPlacementInstalled) return;
+  globalThis.__ffxivEncounterActorPlacementInstalled = true;
+
+  Hooks.on("dropCanvasData", (_canvas, data) => {
+    if (data?.type !== "Actor" || !data.uuid) return;
+    if (data.ffxivEncounterMember === true) {
+      placeEncounterMemberFromDrop(data).catch((error) => {
+        debugError("FFXIV | Encounter member placement failed:", error);
+        ui.notifications.error(game.i18n.localize("FFXIV.Encounter.PlacementFailed"));
+      });
+      return false;
+    }
+    const actor = fromUuidSync(data.uuid);
+    if (actor?.documentName !== "Actor" || actor.type !== "encounter") return;
+    placeEncounterActor(actor, data).catch((error) => {
+      debugError("FFXIV | Encounter placement failed:", error);
+      ui.notifications.error(game.i18n.localize("FFXIV.Encounter.PlacementFailed"));
+    });
+    return false;
+  });
+}
+
+async function placeEncounterMemberFromDrop(position) {
+  const actor = await fromUuid(position.uuid);
+  if (actor?.documentName !== "Actor" || actor.type === "encounter") return;
+  await placeEncounterMember(actor, position);
+}
+
+async function placeEncounterMember(actor, position) {
+  const scene = canvas.scene;
+  if (!scene) return;
+
+  const token = await actor.getTokenDocument({ hidden: Boolean(position.hidden) });
+  const gridSizeX = canvas.grid.sizeX || canvas.grid.size;
+  const gridSizeY = canvas.grid.sizeY || canvas.grid.size;
+  const tokenData = token.toObject();
+  const x = Number(position.x);
+  const y = Number(position.y);
+  delete tokenData._id;
+  if (Number.isFinite(x)) tokenData.x = Math.round(x / gridSizeX) * gridSizeX;
+  if (Number.isFinite(y)) tokenData.y = Math.round(y / gridSizeY) * gridSizeY;
+  if (Number.isFinite(position.elevation)) tokenData.elevation = position.elevation;
+
+  await scene.createEmbeddedDocuments("Token", [tokenData]);
+}
+
+async function placeEncounterActor(encounter, position) {
+  const scene = canvas.scene;
+  if (!scene) return;
+
+  const actors = [];
+  const members = encounter.system.members ?? [];
+  const actorsByUuid = new Map(
+    await Promise.all(
+      [...new Set(members.map((member) => member.uuid).filter(Boolean))]
+        .map(async (uuid) => [uuid, await fromUuid(uuid)]),
+    ),
+  );
+  for (const member of members) {
+    const actor = actorsByUuid.get(member.uuid);
+    if (actor?.documentName !== "Actor" || actor.type === "encounter") continue;
+    const quantity = Math.max(1, Number.parseInt(member.quantity, 10) || 1);
+    for (let index = 0; index < quantity; index++) actors.push(actor);
+  }
+
+  if (!actors.length) {
+    ui.notifications.warn(game.i18n.localize("FFXIV.Encounter.EmptyPlacement"));
+    return;
+  }
+
+  const tokenDocuments = await Promise.all(
+    actors.map((actor) => actor.getTokenDocument({ hidden: encounter.system.spawn_hidden })),
+  );
+  const gridSizeX = canvas.grid.sizeX || canvas.grid.size;
+  const gridSizeY = canvas.grid.sizeY || canvas.grid.size;
+  const cellWidth = Math.max(
+    gridSizeX,
+    ...tokenDocuments.map((token) => (Number(token.width) || 1) * gridSizeX),
+  );
+  const cellHeight = Math.max(
+    gridSizeY,
+    ...tokenDocuments.map((token) => (Number(token.height) || 1) * gridSizeY),
+  );
+  const columns = Math.ceil(Math.sqrt(tokenDocuments.length));
+  const rows = Math.ceil(tokenDocuments.length / columns);
+  const originX = Number(position.x) - ((columns - 1) * cellWidth) / 2;
+  const originY = Number(position.y) - ((rows - 1) * cellHeight) / 2;
+
+  const tokenData = tokenDocuments.map((token, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const data = token.toObject();
+    delete data._id;
+    data.x = Math.round((originX + column * cellWidth) / gridSizeX) * gridSizeX;
+    data.y = Math.round((originY + row * cellHeight) / gridSizeY) * gridSizeY;
+    if (Number.isFinite(position.elevation)) data.elevation = position.elevation;
+    return data;
+  });
+
+  await scene.createEmbeddedDocuments("Token", tokenData);
+  ui.notifications.info(
+    game.i18n.format("FFXIV.Encounter.Placed", {
+      count: tokenData.length,
+      name: encounter.name,
+    }),
+  );
 }
 
 async function applyGlobalArtworkRotationLock() {
@@ -4877,17 +4993,20 @@ function renderCombatTrackerStatusStacks(app, html) {
   const combat = app?.viewed ?? app?.combat ?? game.combat;
   if (!combat?.combatants?.size) return;
 
+  const statusEffects = new Map(
+    (CONFIG.statusEffects ?? []).map((effect) => [effect.id, effect]),
+  );
   const combatantElements = element.querySelectorAll("[data-combatant-id]");
   for (const combatantElement of combatantElements) {
     const combatant = combat.combatants.get(
       combatantElement.dataset.combatantId,
     );
     if (!combatant?.actor) continue;
-    decorateCombatantStatusStacks(combatantElement, combatant.actor);
+    decorateCombatantStatusStacks(combatantElement, combatant.actor, statusEffects);
   }
 }
 
-function decorateCombatantStatusStacks(combatantElement, actor) {
+function decorateCombatantStatusStacks(combatantElement, actor, statusEffects) {
   const effects = combatantElement.querySelector(
     ".token-effects, .combatant-effects, .effects",
   );
@@ -4897,13 +5016,11 @@ function decorateCombatantStatusStacks(combatantElement, actor) {
     .querySelectorAll(".ffxiv-combat-status-stack")
     .forEach((counter) => counter.remove());
 
-  const statusEffects = new Map(
-    (CONFIG.statusEffects ?? []).map((effect) => [effect.id, effect]),
-  );
+  const icons = Array.from(effects.querySelectorAll("img"));
   for (const statusId of actor.statuses ?? []) {
     if (!isStackableStatusEffect(statusId)) continue;
     const status = statusEffects.get(statusId);
-    const icon = getCombatTrackerStatusIcon(effects, statusId, status);
+    const icon = getCombatTrackerStatusIcon(icons, statusId, status);
     if (!(icon instanceof HTMLImageElement)) continue;
     const label = game.i18n.localize(status?.name ?? status?.label ?? statusId);
     const count = getStatusStackCount(actor, statusId);
@@ -4933,8 +5050,7 @@ function decorateCombatantStatusStacks(combatantElement, actor) {
   }
 }
 
-function getCombatTrackerStatusIcon(effects, statusId, status) {
-  const icons = Array.from(effects.querySelectorAll("img"));
+function getCombatTrackerStatusIcon(icons, statusId, status) {
   return icons.find((icon) => {
     const iconStatusId = String(
       icon.dataset.statusId ?? icon.dataset.status ?? "",
@@ -5243,6 +5359,40 @@ const FFXIV_MARKER_SOCKET_TYPE = "placeMarkerTile";
 const FFXIV_REGION_MARKER_OVERLAY = Symbol("ffxivRegionMarkerOverlay");
 const FFXIV_REGION_MARKER_MASK = Symbol("ffxivRegionMarkerMask");
 const markerDialogs = new WeakSet();
+let activeRegionMarkerRotation = null;
+
+function registerMarkerPlacementKeybindings() {
+  const { SHIFT } = foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS;
+  game.keybindings.register("ffxiv", "rotateRegionMarkerClockwise", {
+    name: "FFXIV.Keybindings.RotateRegionMarkerClockwise",
+    hint: "FFXIV.Keybindings.RotateRegionMarkerClockwiseHint",
+    editable: [{ key: "KeyR" }],
+    onDown: () => activeRegionMarkerRotation?.(1) ?? false,
+    precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY,
+  });
+  game.keybindings.register("ffxiv", "rotateRegionMarkerCounterclockwise", {
+    name: "FFXIV.Keybindings.RotateRegionMarkerCounterclockwise",
+    hint: "FFXIV.Keybindings.RotateRegionMarkerCounterclockwiseHint",
+    editable: [{ key: "KeyR", modifiers: [SHIFT] }],
+    onDown: () => activeRegionMarkerRotation?.(-1) ?? false,
+    precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY,
+  });
+}
+
+function formatMarkerPlacementKeybinding(action) {
+  const binding = game.keybindings.get("ffxiv", action)?.[0];
+  if (!binding)
+    return game.i18n.localize("FFXIV.MarkerPlacement.Instructions.Unbound");
+  const KeyboardManager = foundry.helpers.interaction.KeyboardManager;
+  const key = binding.logicalKey ?? binding.key;
+  const parts = (binding.modifiers ?? []).flatMap((modifier) =>
+    KeyboardManager.MODIFIER_CODES[modifier]?.includes(key)
+      ? []
+      : [KeyboardManager.getKeycodeDisplayString(modifier)],
+  );
+  parts.push(KeyboardManager.getKeycodeDisplayString(key));
+  return parts.join(" + ");
+}
 
 Hooks.on("drawRegion", (region) => {
   drawRegionMarkerOverlay(region);
@@ -5631,21 +5781,33 @@ async function openRegionMarkerPlacementTool(assignedMarker = null) {
     color,
     shape: placementShape,
   });
-
   try {
     ui.notifications.info(
-      game.i18n.localize(
+      game.i18n.format(
         marker.targeted
-          ? "FFXIV.MarkerPlacement.Instructions.ClickToken"
-          : "FFXIV.MarkerPlacement.Instructions.ClickToPlace",
+          ? "FFXIV.MarkerPlacement.Instructions.RegionClickToken"
+          : "FFXIV.MarkerPlacement.Instructions.RegionClickToPlace",
+        {
+          clockwise: formatMarkerPlacementKeybinding(
+            "rotateRegionMarkerClockwise",
+          ),
+          counterclockwise: formatMarkerPlacementKeybinding(
+            "rotateRegionMarkerCounterclockwise",
+          ),
+        },
       ),
     );
     const placementPromise = canvas.regions.placeRegion(placementData, {
       create: false,
-      allowRotation: false,
+      allowRotation: true,
       attachToToken: marker.targeted,
       preSkip: ({ event }) => (event.button !== 0 ? false : undefined),
     });
+    const rotationHandler = (direction) => {
+      canvas.regions._onMouseWheel({ delta: direction, shiftKey: false });
+      return true;
+    };
+    activeRegionMarkerRotation = rotationHandler;
     const stage = canvas.stage;
     let rightPress = null;
     const onPointerDown = (event) => {
@@ -5683,26 +5845,12 @@ async function openRegionMarkerPlacementTool(assignedMarker = null) {
       stage.off("pointermove", onPointerMove);
       stage.off("pointerup", onPointerUp);
       stage.off("pointerupoutside", onPointerUp);
+      if (activeRegionMarkerRotation === rotationHandler)
+        activeRegionMarkerRotation = null;
     }
     if (!placement) return false;
 
-    const placedShape = placement.shapes[0];
-    let shapes;
-    if (marker.shape === "circle") {
-      shapes = [placedShape.toObject()];
-    } else {
-      const rectangles = decomposeMarkerRectangles(marker.state, bounds);
-      const originX = placedShape.origin.x - (centerX + 0.5) * gridSize;
-      const originY = placedShape.origin.y - (centerY + 0.5) * gridSize;
-      shapes = rectangles.map((rectangle) => ({
-        type: "rectangle",
-        x: originX + rectangle.x * gridSize,
-        y: originY + rectangle.y * gridSize,
-        width: rectangle.width * gridSize,
-        height: rectangle.height * gridSize,
-        gridBased: false,
-      }));
-    }
+    const shapes = placement.shapes.flatMap(simplifyPlacedMarkerShape);
     const regionData = createMarkerRegionData({
       marker,
       color,
@@ -5724,6 +5872,53 @@ async function openRegionMarkerPlacementTool(assignedMarker = null) {
   } finally {
     ui.controls.activate?.({ control: "ffxiv" });
   }
+}
+
+function simplifyPlacedMarkerShape(shape) {
+  if (shape.type !== "grid" || !canvas.grid.isSquare) {
+    return [shape.toObject()];
+  }
+
+  const origin = { x: shape.origin.x, y: shape.origin.y };
+  const polygons = Array.from(shape.polygonTree, (node) => ({
+    type: "polygon",
+    points: simplifyMarkerPolygonPoints(node.points),
+    origin,
+    hole: node.isHole,
+  })).filter((polygon) => polygon.points.length >= 6);
+  return polygons.length ? polygons : [shape.toObject()];
+}
+
+function simplifyMarkerPolygonPoints(points) {
+  const vertices = [];
+  for (let index = 0; index < points.length; index += 2) {
+    const vertex = {
+      x: Math.round(points[index] * 1000) / 1000,
+      y: Math.round(points[index + 1] * 1000) / 1000,
+    };
+    const previous = vertices.at(-1);
+    if (previous?.x === vertex.x && previous.y === vertex.y) continue;
+    vertices.push(vertex);
+  }
+  if (
+    vertices.length > 1
+    && vertices[0].x === vertices.at(-1).x
+    && vertices[0].y === vertices.at(-1).y
+  ) {
+    vertices.pop();
+  }
+  if (vertices.length <= 3) return vertices.flatMap(({ x, y }) => [x, y]);
+
+  return vertices
+    .filter((vertex, index) => {
+      const previous = vertices[(index + vertices.length - 1) % vertices.length];
+      const next = vertices[(index + 1) % vertices.length];
+      return Math.abs(
+        (vertex.x - previous.x) * (next.y - vertex.y)
+        - (vertex.y - previous.y) * (next.x - vertex.x),
+      ) > 0.001;
+    })
+    .flatMap(({ x, y }) => [x, y]);
 }
 
 function createMarkerRegionData({
@@ -5859,7 +6054,7 @@ function getRegionMarkerAreas(shapes, fallback) {
   }
 
   const rectangles = shapes
-    .filter((shape) => shape.type === "rectangle")
+    .filter((shape) => shape.type === "rectangle" && !shape.hole)
     .map((shape) => ({
       x: shape.x - shape.width * shape.anchorX,
       y: shape.y - shape.height * shape.anchorY,
@@ -5867,6 +6062,24 @@ function getRegionMarkerAreas(shapes, fallback) {
       height: shape.height,
     }));
   if (rectangles.length) return mergeConnectedMarkerAreas(rectangles);
+
+  const polygons = shapes
+    .filter((shape) => shape.type === "polygon" && !shape.hole)
+    .map((shape) => {
+      const points = shape.points;
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (let index = 0; index < points.length; index += 2) {
+        minX = Math.min(minX, points[index]);
+        minY = Math.min(minY, points[index + 1]);
+        maxX = Math.max(maxX, points[index]);
+        maxY = Math.max(maxY, points[index + 1]);
+      }
+      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    });
+  if (polygons.length) return polygons;
 
   const gridShape = shapes.find((shape) => shape.type === "grid");
   if (gridShape) {
@@ -5885,7 +6098,19 @@ function getRegionMarkerAreas(shapes, fallback) {
 }
 
 function mergeConnectedMarkerAreas(rectangles) {
-  const groups = rectangles.map((rectangle) => [rectangle]);
+  const parents = rectangles.map((_, index) => index);
+  const find = (index) => {
+    while (parents[index] !== index) {
+      parents[index] = parents[parents[index]];
+      index = parents[index];
+    }
+    return index;
+  };
+  const union = (left, right) => {
+    const leftRoot = find(left);
+    const rightRoot = find(right);
+    if (leftRoot !== rightRoot) parents[rightRoot] = leftRoot;
+  };
   const overlaps = (a, b) => {
     const overlapX =
       Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
@@ -5896,50 +6121,49 @@ function mergeConnectedMarkerAreas(rectangles) {
       (overlapY > 0 && overlapX >= 0)
     );
   };
-  for (let left = 0; left < groups.length; left++) {
-    for (let right = groups.length - 1; right > left; right--) {
-      if (!groups[left].some((a) => groups[right].some((b) => overlaps(a, b))))
-        continue;
-      groups[left].push(...groups[right]);
-      groups.splice(right, 1);
-      left = -1;
-      break;
+  for (let left = 0; left < rectangles.length; left++) {
+    for (let right = left + 1; right < rectangles.length; right++) {
+      if (overlaps(rectangles[left], rectangles[right])) union(left, right);
     }
   }
-  return groups.map((group) => {
-    const minX = Math.min(...group.map((area) => area.x));
-    const minY = Math.min(...group.map((area) => area.y));
-    const maxX = Math.max(...group.map((area) => area.x + area.width));
-    const maxY = Math.max(...group.map((area) => area.y + area.height));
-    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-  });
+
+  const bounds = new Map();
+  for (let index = 0; index < rectangles.length; index++) {
+    const area = rectangles[index];
+    const root = find(index);
+    const current = bounds.get(root);
+    if (!current) {
+      bounds.set(root, {
+        minX: area.x,
+        minY: area.y,
+        maxX: area.x + area.width,
+        maxY: area.y + area.height,
+      });
+      continue;
+    }
+    current.minX = Math.min(current.minX, area.x);
+    current.minY = Math.min(current.minY, area.y);
+    current.maxX = Math.max(current.maxX, area.x + area.width);
+    current.maxY = Math.max(current.maxY, area.y + area.height);
+  }
+  return Array.from(bounds.values(), ({ minX, minY, maxX, maxY }) => ({
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  }));
 }
 
 function drawRegionMarkerMask(graphics, shapes) {
   graphics.clear();
   graphics.beginFill(0xffffff);
-  for (const shape of shapes) {
-    if (shape.type === "rectangle") {
-      graphics.drawRect(
-        shape.x - shape.width * shape.anchorX,
-        shape.y - shape.height * shape.anchorY,
-        shape.width,
-        shape.height,
-      );
-    } else if (shape.type === "circle") {
-      graphics.drawCircle(shape.x, shape.y, shape.radius);
-    } else if (shape.type === "grid") {
-      const vertices = canvas.grid.getShape();
-      for (const offset of shape.offsets) {
-        const center = canvas.grid.getCenterPoint(offset);
-        graphics.drawPolygon(
-          vertices.flatMap((vertex) => [
-            center.x + vertex.x,
-            center.y + vertex.y,
-          ]),
-        );
-      }
-    }
+  for (const shape of shapes.filter((entry) => !entry.hole)) {
+    shape.drawShape(graphics);
+  }
+  for (const shape of shapes.filter((entry) => entry.hole)) {
+    graphics.beginHole();
+    shape.drawShape(graphics);
+    graphics.endHole();
   }
   graphics.endFill();
 }
@@ -6065,42 +6289,6 @@ function drawTankbusterChevron(graphics, x, y, size) {
     y - thickness * 2,
   ]);
   graphics.endFill();
-}
-
-function decomposeMarkerRectangles(state, bounds) {
-  const rows = state
-    .slice(bounds.minY, bounds.maxY + 1)
-    .map((row) => row.slice(bounds.minX, bounds.maxX + 1));
-  const rectangles = [];
-  const active = new Map();
-
-  for (let y = 0; y < rows.length; y++) {
-    const runs = [];
-    for (let x = 0; x < rows[y].length; ) {
-      if (!rows[y][x]) {
-        x++;
-        continue;
-      }
-      const start = x;
-      while (x < rows[y].length && rows[y][x]) x++;
-      runs.push({ x: start, width: x - start });
-    }
-
-    const next = new Map();
-    for (const run of runs) {
-      const key = `${run.x}:${run.width}`;
-      const rectangle = active.get(key) ?? { ...run, y, height: 0 };
-      rectangle.height++;
-      next.set(key, rectangle);
-    }
-    for (const [key, rectangle] of active) {
-      if (!next.has(key)) rectangles.push(rectangle);
-    }
-    active.clear();
-    for (const [key, rectangle] of next) active.set(key, rectangle);
-  }
-  rectangles.push(...active.values());
-  return rectangles;
 }
 
 async function requestMarkerTileCreation(tileData) {
