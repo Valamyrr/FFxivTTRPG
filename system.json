@@ -4,7 +4,7 @@
   "description": "An unofficial port of the Final Fantasy XIV TTRPG system for FoundryVTT",
   "compatibility": {
     "minimum": "14.366",
-    "verified": "14.366"
+    "verified": "14.367"
   },
   "version": "5.1.1",
   "authors": [
