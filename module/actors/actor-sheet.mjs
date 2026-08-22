@@ -549,7 +549,10 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   _prepareAdventuringRanks(system) {
-    if (!system?.adventuring_rank) return;
+    if (this.actor?.type !== "character" || !system) return;
+    if (!system.adventuring_rank || typeof system.adventuring_rank !== "object" || Array.isArray(system.adventuring_rank)) {
+      system.adventuring_rank = {};
+    }
     for (const key of ADVENTURING_RANK_KEYS) {
       const value = system.adventuring_rank[key];
       if (value === "" || value === null || value === undefined) {
@@ -625,7 +628,15 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (this.actor.type === "npc" && fieldName === "system.secondary_attributes.speed.value" && String(target.value ?? "").trim() === "") {
       updateValue = 5;
     }
-    const updateData = { [fieldName]: updateValue };
+    let updateData = { [fieldName]: updateValue };
+    if (this.actor.type === "character" && fieldName.startsWith("system.adventuring_rank.")) {
+      const currentRanks = this.actor.system?.adventuring_rank;
+      if (!currentRanks || typeof currentRanks !== "object" || Array.isArray(currentRanks)) {
+        const adventuringRank = Object.fromEntries(ADVENTURING_RANK_KEYS.map(key => [key, 0]));
+        adventuringRank[fieldName.slice("system.adventuring_rank.".length)] = updateValue;
+        updateData = { "system.adventuring_rank": adventuringRank };
+      }
+    }
     if (fieldName === "system.health.max") {
       const nextMax = Number(updateValue);
       const currentValue = Number(this.actor.system?.health?.value ?? 0);
