@@ -544,6 +544,17 @@ function getStatusStackSourceEffects(actor, statusId, origin = null, sourceEffec
 function prepareStatusEffectDuration(duration, actor = null) {
   if (!duration || typeof duration !== "object") return null;
 
+  const units = String(duration.units ?? "").trim().toLowerCase();
+  const value = Number(duration.value);
+  if (["rounds", "turns"].includes(units) && Number.isFinite(value) && value >= 0) {
+    return {
+      value,
+      units,
+      expiry: String(duration.expiry ?? "").trim() || "turnStart",
+      expired: false,
+    };
+  }
+
   const prepared = {};
   for (const key of ["rounds", "turns"]) {
     const value = Number(duration[key]);

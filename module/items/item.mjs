@@ -4255,24 +4255,28 @@ export class FFXIVItem extends Item {
   _prepareEffectRuleDuration(duration) {
     if (!duration || typeof duration !== "object") return null;
 
-    const prepared = {};
-    for (const key of ["rounds", "turns"]) {
-      const value = Number(duration[key]);
-      if (Number.isFinite(value) && value > 0) prepared[key] = value;
+    const units = String(duration.units ?? "").trim().toLowerCase();
+    const value = Number(duration.value);
+    if (["rounds", "turns"].includes(units) && Number.isFinite(value) && value >= 0) {
+      return {
+        value,
+        units,
+        expiry: String(duration.expiry ?? "").trim() || "turnStart",
+        expired: false,
+      };
     }
-    if (!Object.keys(prepared).length) return null;
 
-    prepared.startTime = game.time?.worldTime ?? null;
-    const combat = game.combat;
-    if (combat?.started && combat.turns?.length) {
-      prepared.combat = combat.id;
-      prepared.startRound = combat.round ?? null;
-      prepared.startTurn = combat.turn ?? null;
-    } else {
-      prepared.startRound = null;
-      prepared.startTurn = null;
+    for (const key of ["rounds", "turns"]) {
+      const legacyValue = Number(duration[key]);
+      if (!Number.isFinite(legacyValue) || legacyValue <= 0) continue;
+      return {
+        value: legacyValue,
+        units: key,
+        expiry: String(duration.expiry ?? "").trim() || "turnStart",
+        expired: false,
+      };
     }
-    return prepared;
+    return null;
   }
 
   _getStatusLabelById(statusId) {

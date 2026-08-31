@@ -1410,6 +1410,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _formatEffectDuration(duration) {
     if (!duration || typeof duration !== "object") return "";
+    const units = String(duration.units ?? "").trim().toLowerCase();
+    const value = Number.parseInt(duration.value, 10);
+    if (["turns", "rounds"].includes(units) && Number.isFinite(value) && value >= 0) {
+      const label = value === 1 ? units.slice(0, -1) : units;
+      return `${value} ${label}`;
+    }
     for (const unit of ["turns", "rounds"]) {
       const value = Number.parseInt(duration[unit], 10);
       if (!Number.isFinite(value) || value <= 0) continue;
@@ -1443,8 +1449,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         allSources: entry?.allSources === true,
         stacks: this._normalizeStatusStacks(entry?.stacks),
         stackable: isStackableStatusEffect(entry?.id ?? ""),
-        duration: duration.value
-          ? { [duration.unit]: duration.value }
+        duration: duration.value !== ""
+          ? {
+              value: duration.value,
+              units: duration.unit,
+              expiry: duration.expiry,
+              expired: false,
+            }
           : {},
         durationUnit: duration.unit,
         durationValue: duration.value,
@@ -1465,15 +1476,28 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _normalizeStatusDuration(value) {
     const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : "";
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : "";
   }
 
   _getStatusDurationForm(duration, fallbackUnit = "turns") {
+    const units = this._normalizeStatusDurationUnit(duration?.units);
+    const value = this._normalizeStatusDuration(duration?.value);
+    if (value !== "") {
+      return {
+        unit: units,
+        value,
+        expiry: String(duration?.expiry ?? "").trim() || "turnStart",
+      };
+    }
     const turns = this._normalizeStatusDuration(duration?.turns);
-    if (turns) return { unit: "turns", value: turns };
+    if (turns) return { unit: "turns", value: turns, expiry: "turnStart" };
     const rounds = this._normalizeStatusDuration(duration?.rounds);
-    if (rounds) return { unit: "rounds", value: rounds };
-    return { unit: this._normalizeStatusDurationUnit(fallbackUnit), value: "" };
+    if (rounds) return { unit: "rounds", value: rounds, expiry: "turnStart" };
+    return {
+      unit: this._normalizeStatusDurationUnit(fallbackUnit),
+      value: "",
+      expiry: null,
+    };
   }
 
   _getCurrentStatusEffectEntries() {
@@ -1981,8 +2005,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const rawValue = valueInput?.value ?? current.value;
       const value = this._normalizeStatusDuration(rawValue);
       entries[index].durationUnit = unit;
-      if (value) entries[index].duration = { [unit]: value };
-      else delete entries[index].duration;
+      if (value !== "") {
+        entries[index].duration = {
+          value,
+          units: unit,
+          expiry: current.expiry ?? "turnStart",
+          expired: false,
+        };
+      } else delete entries[index].duration;
     } else {
       entries[index].action = event.currentTarget.value === "true";
     }
