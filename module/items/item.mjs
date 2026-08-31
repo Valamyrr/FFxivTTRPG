@@ -1817,14 +1817,42 @@ export class FFXIVItem extends Item {
   }
 
   _getMPCostReductionEntriesFrom(document) {
+    const entries = [];
     const data =
       foundry.utils.getProperty(document, "flags.ffxiv.mpCost.reductions") ??
       foundry.utils.getProperty(document, "flags.ffxiv.mpCost.reduction");
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (typeof data !== "object") return [];
-    if (data.resource || data.resourceName) return [data];
-    return Object.values(data);
+    if (Array.isArray(data)) entries.push(...data);
+    else if (data && typeof data === "object") {
+      const isEntry =
+        data.resource ||
+        data.resourceName ||
+        Object.hasOwn(data, "override") ||
+        data.abilityNames ||
+        data.abilityName ||
+        data.items ||
+        data.item;
+      if (isEntry) entries.push(data);
+      else entries.push(...Object.values(data).filter((entry) => entry && typeof entry === "object"));
+    }
+
+    const visibleEntry = {};
+    const prefix = "flags.ffxiv.mpCost.reduction.";
+    const fields = new Set([
+      "override",
+      "abilityNames",
+      "abilityName",
+      "items",
+      "item",
+    ]);
+    for (const change of document?.changes ?? []) {
+      const key = String(change?.key ?? "").trim();
+      if (!key.startsWith(prefix)) continue;
+      const field = key.slice(prefix.length);
+      if (!fields.has(field)) continue;
+      visibleEntry[field] = change.value;
+    }
+    if (Object.keys(visibleEntry).length) entries.push(visibleEntry);
+    return entries;
   }
 
   _mpCostReductionApplies(entry) {
