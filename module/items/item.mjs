@@ -4285,11 +4285,12 @@ export class FFXIVItem extends Item {
 
     const units = String(duration.units ?? "").trim().toLowerCase();
     const value = Number(duration.value);
+    const expiry = String(duration.expiry ?? "").trim();
     if (["rounds", "turns"].includes(units) && Number.isFinite(value) && value >= 0) {
       return {
         value,
         units,
-        expiry: String(duration.expiry ?? "").trim() || "turnStart",
+        expiry: expiry || "turnStart",
         expired: false,
       };
     }
@@ -4300,7 +4301,15 @@ export class FFXIVItem extends Item {
       return {
         value: legacyValue,
         units: key,
-        expiry: String(duration.expiry ?? "").trim() || "turnStart",
+        expiry: expiry || "turnStart",
+        expired: false,
+      };
+    }
+    if (expiry) {
+      return {
+        value: null,
+        units: "seconds",
+        expiry,
         expired: false,
       };
     }

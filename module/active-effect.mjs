@@ -2,7 +2,7 @@ export class FFXIVActiveEffect extends ActiveEffect {
   getReplacementData(baseData) {
     const sourceItem = this._getSourceItem();
     if (!sourceItem) return super.getReplacementData(baseData);
-    const sourceData = sourceItem.toObject(false);
+    const sourceSystem = sourceItem.system?.toObject?.() ?? {};
 
     return {
       ...super.getReplacementData(baseData),
@@ -10,13 +10,21 @@ export class FFXIVActiveEffect extends ActiveEffect {
         id: sourceItem.id,
         name: sourceItem.name,
         type: sourceItem.type,
-        system: sourceData.system ?? {},
+        system: sourceSystem,
       },
     };
   }
 
   _getSourceItem() {
     if (this.parent?.documentName === "Item") return this.parent;
+
+    const sourceItemId = String(
+      this.getFlag("ffxiv", "linkedSourceItemId") ?? "",
+    ).trim();
+    if (sourceItemId && this.parent?.documentName === "Actor") {
+      const sourceItem = this.parent.items.get(sourceItemId);
+      if (sourceItem) return sourceItem;
+    }
 
     const references = [
       this.getFlag("ffxiv", "linkedSourceItemUuid"),
@@ -32,13 +40,6 @@ export class FFXIVActiveEffect extends ActiveEffect {
         continue;
       }
       if (sourceItem?.documentName === "Item") return sourceItem;
-    }
-
-    const sourceItemId = String(
-      this.getFlag("ffxiv", "linkedSourceItemId") ?? "",
-    ).trim();
-    if (sourceItemId && this.parent?.documentName === "Actor") {
-      return this.parent.items.get(sourceItemId) ?? null;
     }
 
     return null;
