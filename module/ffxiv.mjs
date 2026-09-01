@@ -1396,6 +1396,8 @@ function showActiveEffectRemovalText(effect) {
   }
 }
 
+const pendingActiveEffectText = new Map();
+
 function showActiveEffectChangeText(effect, sign, fill) {
   const actor = effect?.parent?.documentName === "Actor" ? effect.parent : null;
   if (effect?.getFlag?.("ffxiv", ELITE_FOE_EFFECT_FLAG) === true) return;
@@ -1404,18 +1406,115 @@ function showActiveEffectChangeText(effect, sign, fill) {
   const token = getActorCanvasToken(actor);
   if (!token?.center) return;
 
-  const direction = CONST.TEXT_ANCHOR_POINTS?.TOP ?? 1;
-  const anchor = CONST.TEXT_ANCHOR_POINTS?.CENTER ?? 0;
-  canvas.interface.createScrollingText(token.center, `${sign}${effect.name}`, {
-    anchor,
-    direction,
-    distance: (canvas.grid?.size ?? 100) * 1.5,
-    fontSize: 28,
-    fill,
-    stroke: 0x000000,
-    strokeThickness: 4,
-    ffxivAllowStatusText: true,
+  let batch = pendingActiveEffectText.get(token);
+  if (!batch) {
+    batch = { entries: [], timeout: null };
+    pendingActiveEffectText.set(token, batch);
+  }
+
+  const direction = sign === "-"
+    ? (CONST.TEXT_ANCHOR_POINTS?.BOTTOM ?? 2)
+    : (CONST.TEXT_ANCHOR_POINTS?.TOP ?? 1);
+
+  const icon = effect?.img ?? effect?.icon ?? null;
+  batch.entries.push({ text: `${sign}${effect.name}`, fill, direction, icon });
+  clearTimeout(batch.timeout);
+  batch.timeout = setTimeout(() => {
+    pendingActiveEffectText.delete(token);
+    showActiveEffectTextBatch(token, batch.entries);
+  }, 50);
+}
+
+function showActiveEffectTextBatch(token, entries) {
+  if (!token?.center || !canvas?.interface) return;
+  if (!game.settings.get("core", "scrollingStatusText")) return;
+
+  const uiScale = canvas.dimensions?.uiScale ?? 1;
+  const lineSpacing = 32 * uiScale;
+  const firstLineOffset = -((entries.length - 1) * lineSpacing) / 2;
+
+  entries.forEach(({ text, fill, direction, icon }, index) => {
+    const center = {
+      x: token.center.x,
+      y: token.center.y + firstLineOffset + index * lineSpacing,
+    };
+    showActiveEffectTextEntry(center, { text, fill, direction, icon, uiScale })
+      .catch((error) => debugError("FFXIV | Failed to display status text:", error));
   });
+}
+
+async function showActiveEffectTextEntry(center, { text, fill, direction, icon, uiScale }) {
+  const interfaceLayer = canvas.interface;
+  const CanvasAnimation = foundry.canvas.animation.CanvasAnimation;
+  const container = new PIXI.Container();
+  const textStyle = CONFIG.canvasTextStyle.clone();
+  textStyle.fontSize = 28;
+  textStyle.fill = fill;
+  textStyle.stroke = 0x000000;
+  textStyle.strokeThickness = 4;
+  textStyle.fontWeight = "700";
+
+  const label = new PIXI.Text(text, textStyle);
+  label.anchor.set(0, 0.5);
+
+  const iconSprite = createActiveEffectTextIcon(icon, 26);
+  if (iconSprite) {
+    container.addChild(iconSprite);
+    label.x = 32;
+  }
+  container.addChild(label);
+  container.pivot.set(container.width / 2, 0);
+  container.position.set(center.x, center.y);
+  container.alpha = 0;
+  container.scale.set(0.6 * uiScale);
+  container.visible = false;
+  container.eventMode = "none";
+  container.zIndex = CONFIG.Canvas.groups.interface.zIndexScrollingText;
+  interfaceLayer.addChild(container);
+
+  const directionTop = CONST.TEXT_ANCHOR_POINTS?.TOP ?? 1;
+  const distance = (canvas.grid?.size ?? 100) * 1.5;
+  const destinationY = center.y + (direction === directionTop ? -distance : distance);
+
+  try {
+    const appeared = await CanvasAnimation.animate([
+      { parent: container, attribute: "alpha", to: 1 },
+      { parent: container.scale, attribute: "x", to: uiScale },
+      { parent: container.scale, attribute: "y", to: uiScale },
+    ], {
+      context: interfaceLayer,
+      duration: 300,
+      easing: CanvasAnimation.easeInOutCosine,
+      ontick: () => container.visible = true,
+    });
+    if (!appeared || container.destroyed) return;
+    await CanvasAnimation.animate([
+      { parent: container, attribute: "alpha", to: 0 },
+      { parent: container, attribute: "y", to: destinationY },
+    ], {
+      context: interfaceLayer,
+      duration: 900,
+      easing: CanvasAnimation.easeInOutCosine,
+    });
+  } finally {
+    if (!container.destroyed) {
+      container.removeFromParent();
+      container.destroy({ children: true });
+    }
+  }
+}
+
+function createActiveEffectTextIcon(icon, size) {
+  if (!icon || typeof PIXI?.Texture?.from !== "function") return null;
+  try {
+    const sprite = new PIXI.Sprite(PIXI.Texture.from(icon));
+    sprite.anchor.set(0, 0.5);
+    sprite.width = size;
+    sprite.height = size;
+    return sprite;
+  } catch {
+    return null;
+  }
 }
 
 function installActiveEffectStatusDuplicateControls() {
@@ -9394,6 +9493,11 @@ Hooks.on("createChatMessage", async (message, _options, userId) => {
   }
 });
 
+function shouldSuppressDefaultStatusText(text) {
+  if (typeof text !== "string") return false;
+  return (text.startsWith("+(") || text.startsWith("−(")) && text.endsWith(")");
+}
+
 Hooks.on("canvasReady", () => {
   try {
     if (!canvas?.interface || typeof canvas.interface.createScrollingText !== "function") return;
@@ -9401,15 +9505,8 @@ Hooks.on("canvasReady", () => {
     const originalCreateScrollingText = canvas.interface.createScrollingText.bind(canvas.interface);
     canvas.interface.createScrollingText = (center, text, options = {}) => {
       try {
-        if (options?.ffxivAllowStatusText === true) {
-          return originalCreateScrollingText(center, text, options);
-        }
-        if (typeof text === "string" && Array.isArray(CONFIG.statusEffects) && CONFIG.statusEffects.length) {
-          for (const entry of CONFIG.statusEffects) {
-            const label = game.i18n.localize(entry.label ?? entry.name ?? entry.id);
-            if (label && text.includes(label)) return; // suppress default status scrolling text
-          }
-        }
+        const textValue = String(text ?? "");
+        if (shouldSuppressDefaultStatusText(textValue)) return Promise.resolve();
       } catch (err) {
         // fall through to original
       }
