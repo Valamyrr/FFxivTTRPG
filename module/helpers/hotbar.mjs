@@ -934,8 +934,13 @@ function getImportableActorItems(actor) {
       return indexA - indexB;
     });
   };
-  const bySubtype = (type) =>
-    actor.items.filter((item) => getAbilitySubtype(item) === type);
+  const itemsBySubtype = new Map();
+  for (const item of actor.items) {
+    const subtype = getAbilitySubtype(item);
+    if (!itemsBySubtype.has(subtype)) itemsBySubtype.set(subtype, []);
+    itemsBySubtype.get(subtype).push(item);
+  }
+  const bySubtype = (type) => itemsBySubtype.get(type) ?? [];
 
   return [
     ...sortByAbilityOrder(bySubtype("primary_ability"), "primary_ability"),

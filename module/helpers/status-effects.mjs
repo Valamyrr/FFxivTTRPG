@@ -301,11 +301,12 @@ export function hasStatus(actor, statusId) {
   if (!actor || !normalizedStatusId) return false;
   if (actor.statuses instanceof Set && actor.statuses.has(normalizedStatusId))
     return true;
-  return Array.from(actor.effects ?? []).some((effect) => {
-    if (!effect || effect.disabled) return false;
+  for (const effect of actor.effects ?? []) {
+    if (!effect || effect.disabled) continue;
     const statuses = effect.statuses;
-    return statuses instanceof Set && statuses.has(normalizedStatusId);
-  });
+    if (statuses instanceof Set && statuses.has(normalizedStatusId)) return true;
+  }
+  return false;
 }
 
 function normalizeStackCount(value, fallback = 1) {
@@ -348,28 +349,25 @@ export function getStatusStackValue(effect, fallback = 1, statusId = null) {
 }
 
 export function getStatusStackTotal(actor, statusId) {
-  return getStatusValueEffects(actor, statusId)
-    .filter((effect) => !effect.disabled)
-    .reduce(
-      (total, effect) => total + getStatusStackValue(effect, 1, statusId),
-      0,
-    );
+  let total = 0;
+  for (const effect of actor?.effects ?? []) {
+    if (effect?.disabled || !(effect?.statuses instanceof Set)) continue;
+    if (effect.statuses.has(statusId)) total += getStatusStackValue(effect, 1, statusId);
+  }
+  return total;
 }
 
 export function getHighestStatusStackCount(actor, statusId) {
-  return getStatusValueEffects(actor, statusId)
-    .filter((effect) => !effect.disabled)
-    .reduce(
-      (highest, effect) =>
-        Math.max(highest, getStatusStackValue(effect, 1, statusId)),
-      0,
-    );
+  let highest = 0;
+  for (const effect of actor?.effects ?? []) {
+    if (effect?.disabled || !(effect?.statuses instanceof Set)) continue;
+    if (effect.statuses.has(statusId)) highest = Math.max(highest, getStatusStackValue(effect, 1, statusId));
+  }
+  return highest;
 }
 
 export function getStatusStackCount(actor, statusId) {
-  const effects = getStatusValueEffects(actor, statusId);
-  if (!effects.length) return 0;
-  if (!isStackableStatusEffect(statusId)) return effects.length;
+  if (!isStackableStatusEffect(statusId)) return getStatusValueEffects(actor, statusId).length;
   if (isAdditiveStackableStatusEffect(statusId))
     return getStatusStackTotal(actor, statusId);
   return getHighestStatusStackCount(actor, statusId);

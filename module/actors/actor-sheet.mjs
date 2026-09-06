@@ -280,7 +280,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _prepareEnrichedContext(context, renderedTabs) {
     context.enriched = {};
 
-    const rollData = this.actor.getRollData();
+    const rollData = context.rollData ?? this.actor.getRollData();
     const actorTabs = this.actor.type === "character" ? renderedTabs : new Set(CHARACTER_TABS);
 
     if (this.actor.type === "encounter") {
@@ -1297,7 +1297,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {object} context The context object to mutate
    */
   _prepareCharacterData(context) {
-    context.rollData = this.actor.getRollData()
+    context.rollData ??= this.actor.getRollData();
     context.job = context.items.find(item => item.type === "job");
     const jobPetGrants = Array.isArray(context.job?.system?.pet_grants)
       ? context.job.system.pet_grants
