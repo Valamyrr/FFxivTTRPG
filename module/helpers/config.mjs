@@ -154,6 +154,7 @@ FFXIV.base_tags_abilities = [
   "FFXIV.Tags.Magic",
   "FFXIV.Tags.Unique",
   "FFXIV.Tags.Invoked",
+  "FFXIV.Tags.Surge",
   "FFXIV.Tags.Gem",
   "FFXIV.Tags.WindAspected",
   "FFXIV.Tags.FireAspected",
