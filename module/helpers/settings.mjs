@@ -1,4 +1,5 @@
 import { renderLimitBreakHud } from "./limit-break-hud.mjs";
+import { registerCompactCompendiumSizing } from "./compendium-directory.mjs";
 import {
   TARGET_CLEAR_SETTING,
   TARGET_CLEAR_TIMINGS,
@@ -545,6 +546,7 @@ export class SettingsHelpers {
       },
       requiresReload: false,
     });
+    registerCompactCompendiumSizing();
     toggleCompactDirectories(game.settings.get("ffxiv", "compactDirectories"));
     Hooks.once("ready", () =>
       toggleCompactDirectories(game.settings.get("ffxiv", "compactDirectories")),

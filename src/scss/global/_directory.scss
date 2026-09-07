@@ -24,6 +24,7 @@ body.ffxiv-compact-directories {
 
     li.folder > .folder-header {
       padding: 0 6px;
+      top: 0;
     }
 
     li.folder > .folder-header + .subdirectory > .folder > .folder-header {
@@ -58,24 +59,41 @@ body.ffxiv-compact-directories {
 
   :is(#compendium, #compendium-popout) li.folder > .folder-header {
     padding: 0 6px;
+    top: 0;
   }
 
   .compendium-sidebar .compendium {
-    height: initial;
+    height: 24px;
 
     .compendium-banner {
       position: absolute;
     }
 
     .compendium-name {
+      flex: 1;
       justify-content: left;
       min-width: 0;
       order: 1;
       position: relative;
-      width: 100%;
+      width: auto;
+
+      i {
+        flex: 0 0 auto;
+      }
+
+      strong {
+        flex: 1;
+        font-size: var(--compendium-title-size, 1.3em);
+        min-width: 0;
+        overflow: hidden;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
 
     .status-icons {
+      flex: 0 0 auto;
       font-size: 50%;
       height: 100%;
       order: 3;
@@ -87,6 +105,7 @@ body.ffxiv-compact-directories {
       align-self: center;
       bottom: unset;
       display: flex;
+      flex: 0 0 auto;
       gap: 3px;
       height: 100%;
       left: unset;
