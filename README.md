@@ -53,7 +53,7 @@ The Ko-fi link may be removed and tips may be refused or refunded if necessary t
 
 ## Additional Projects
 
-[FFXIV TTRPG Core Rulebook Compendia](https://github.com/AxeBane/ffxiv-ttrpg-core-rulebook-compendia)
+[FFXIV TTRPG Rulebook Compendia](https://github.com/AxeBane/ffxiv-ttrpg-core-rulebook-compendia)
 
 [FFXIV TTRPG Icons Pack](https://github.com/AxeBane/ffxiv-ttrpg-icons-pack)
 
