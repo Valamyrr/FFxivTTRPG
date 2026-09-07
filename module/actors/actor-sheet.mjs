@@ -219,10 +219,11 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (actorData.type === 'npc' || actorData.type === 'pet') {
       this._prepareItems(context);
       this._prepareSharedData(context);
-      const fightAbilityTypes = new Set(["primary_ability", "secondary_ability", "instant_ability"]);
-      const hasFightAbilities = (context.items || []).some((item) => fightAbilityTypes.has(getAbilitySubtype(item)));
-      const hasTraits = (context.items || []).some((item) => item.type === "trait");
-      const hasLimitBreak = (context.items || []).some((item) => getAbilitySubtype(item) === "limit_break");
+      const hasFightAbilities = context.primary_abilities.length > 0
+        || context.secondary_abilities.length > 0
+        || context.instant_abilities.length > 0;
+      const hasTraits = context.traits.length > 0;
+      const hasLimitBreak = context.limit_break.length > 0;
 
       if (actorData.type === "npc") {
         context.hasNpcFightAbilities = hasFightAbilities;
@@ -375,19 +376,23 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _cacheEnrichedContext(context) {
     const existing = this._enrichedCache;
-    const itemMap = new Map(existing?.items ?? []);
+    const itemMap = new Map();
     for (const item of context.items || []) {
+      const existingItem = existing?.items?.get(item._id);
+      if (existingItem) itemMap.set(item._id, existingItem);
       if (item.enriched) itemMap.set(item._id, foundry.utils.deepClone({
         ...(itemMap.get(item._id) || {}),
         ...item.enriched,
       }));
     }
 
-    const petMap = new Map(existing?.pets ?? []);
+    const petMap = new Map();
     for (const pet of context.pets || []) {
-      const existingPet = petMap.get(pet._id) || {};
-      const petItems = new Map(existingPet.items ?? []);
+      const existingPet = existing?.pets?.get(pet._id) || {};
+      const petItems = new Map();
       for (const item of pet.items || []) {
+        const existingItem = existingPet.items?.get(item._id);
+        if (existingItem) petItems.set(item._id, existingItem);
         if (item.enriched) petItems.set(item._id, foundry.utils.deepClone({
           ...(petItems.get(item._id) || {}),
           ...item.enriched,
