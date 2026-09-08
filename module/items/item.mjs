@@ -339,7 +339,7 @@ export class FFXIVItem extends Item {
   _onUpdate(changed, options, userId) {
     super._onUpdate(changed, options, userId);
     if (game.user.id !== userId) return;
-    if (this.type !== "augment") return;
+    if (!["augment", "consumable"].includes(this.type)) return;
     if (
       this.parent?.documentName !== "Actor" ||
       this.parent.type !== "character"
@@ -773,7 +773,7 @@ export class FFXIVItem extends Item {
   }
 
   async _assignAugmentGrantedAbilities(options = {}) {
-    if (this.type !== "augment") return;
+    if (!["augment", "consumable"].includes(this.type)) return;
     if (
       this.parent?.documentName !== "Actor" ||
       this.parent.type !== "character"
@@ -831,14 +831,14 @@ export class FFXIVItem extends Item {
   }
 
   async _deleteAugmentWithGrantedAbilities(options = {}) {
-    if (!this.parent || this.type !== "augment") return;
+    if (!this.parent || !["augment", "consumable"].includes(this.type)) return;
     const grants = this._getAugmentAbilityGrants();
     const grantedUuids = new Set(
       grants.map((grant) => grant.uuid).filter(Boolean),
     );
     const otherAugmentGrantUuids = new Set(
       this.parent.items
-        .filter((item) => item.type === "augment" && item.id !== this.id)
+        .filter((item) => ["augment", "consumable"].includes(item.type) && item.id !== this.id)
         .flatMap((item) => {
           const raw = Array.isArray(item.system?.ability_grants)
             ? item.system.ability_grants
@@ -853,9 +853,9 @@ export class FFXIVItem extends Item {
     );
     const grantedItems = this.parent.items.filter(
       (item) =>
-        item.flags?.ffxiv?.augmentId === this.id ||
-        (grantedUuids.has(item.flags?.ffxiv?.augmentSourceUuid) &&
-          !otherAugmentGrantUuids.has(item.flags?.ffxiv?.augmentSourceUuid)),
+        (item.flags?.ffxiv?.augmentId === this.id ||
+          grantedUuids.has(item.flags?.ffxiv?.augmentSourceUuid)) &&
+        !otherAugmentGrantUuids.has(item.flags?.ffxiv?.augmentSourceUuid),
     );
     const idsToDelete = grantedItems.map((item) => item.id);
     if (idsToDelete.length)
@@ -866,7 +866,7 @@ export class FFXIVItem extends Item {
   async _preDelete(options, user) {
     const result = await super._preDelete(options, user);
     if (result === false) return false;
-    if (this.type === "augment" && this.parent?.documentName === "Actor") {
+    if (["augment", "consumable"].includes(this.type) && this.parent?.documentName === "Actor") {
       await this._deleteAugmentWithGrantedAbilities({ render: false });
     }
     return result;

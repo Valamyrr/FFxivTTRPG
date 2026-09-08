@@ -476,7 +476,8 @@
       "Consumable": "Consumable",
       "Meal": "Meal",
       "Rest": "Rest",
-      "Utility": "Utility"
+      "Utility": "Utility",
+      "Belt": "Belt"
     },
     "Traits": {
       "Activable": "Activable",

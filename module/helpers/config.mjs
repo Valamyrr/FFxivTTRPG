@@ -189,6 +189,7 @@ FFXIV.base_tags_consumables = [
   "FFXIV.Tags.Meal",
   "FFXIV.Tags.Rest",
   "FFXIV.Tags.Utility",
+  "FFXIV.Tags.Belt",
   "FFXIV.Tags.WindAspected",
   "FFXIV.Tags.FireAspected",
   "FFXIV.Tags.EarthAspected",

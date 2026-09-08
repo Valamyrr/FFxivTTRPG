@@ -848,6 +848,26 @@ class ConsumableItemData extends foundry.abstract.TypeDataModel {
       ...buildItemFields(),
       ...buildInventoryFields(),
       ...buildAbilityFields(),
+      ability_grants: new fields.ArrayField(
+        new fields.SchemaField({
+          uuid: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          name: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          type: new fields.StringField({
+            required: false,
+            blank: true,
+            initial: "",
+          }),
+          item: new fields.AnyField({ required: false }),
+        }),
+      ),
     };
   }
 }

@@ -476,7 +476,8 @@
       "Consumable": "Consommable",
       "Meal": "Repas",
       "Rest": "Repos",
-      "Utility": "Utilitaire"
+      "Utility": "Utilitaire",
+      "Belt": "Ceinture"
     },
     "Traits": {
       "Activable": "Activable",
