@@ -7,7 +7,7 @@
 
 This project is a FoundryVTT custom system compatible with [Square Enix's FFXIV TTRPG](https://www.square-enix-shop.com/ffxivttrpg/en/index.html) (© SQUARE ENIX).
 
-This is a supplementary fan project and is not intended to be used without first purchasing a copy of the official FFFXIV TTRPG rulebook or by using the free play materials provided by Square Enix. Please support the official product release.
+This is a supplementary fan project and is not intended to be used without first purchasing a copy of the official FFXIV TTRPG rulebook or using the free play materials provided by Square Enix. Please support the official product release.
 
 It has been developed on top of [asacolips's boilerplate](https://github.com/asacolips-projects/boilerplate).
 
@@ -32,7 +32,7 @@ FINAL FANTASY, FINAL FANTASY XIV, FFXIV, and related names, logos, characters, a
 
 Use of Square Enix materials is intended to comply with the [FINAL FANTASY XIV Materials Usage License](https://support.na.square-enix.com/rule.php?id=5382&la=1&tag=authc). Nothing in this repository grants any license or ownership interest in Square Enix or Foundry Gaming intellectual property.
 
-This software is provided on an “as is” and “as available” basis, without warranties of any kind. The maintainers are not responsible for loss, damage, account action, incompatibility, or other consequences arising from its installation or use. Users are responsible for obtaining the official game materials and for ensuring that their use complies with applicable licenses, terms, and laws.
+This software is provided on an "as is" and "as available" basis, without warranties of any kind. The maintainers are not responsible for loss, damage, account action, incompatibility, or other consequences arising from its installation or use. Users are responsible for obtaining the official game materials and for ensuring that their use complies with applicable licenses, terms, and laws.
 
 Rights holders may report a concern by opening an [Issue](https://github.com/Valamyrr/FFxivTTRPG/issues). The maintainers will review substantiated requests concerning copyrighted or trademarked material.
 
@@ -41,7 +41,7 @@ For issues and technical support, reach out via the [FFXIV TTRPG Fan Discord](ht
 
 ## Voluntary Tips
 
-[![Voluntary tip on Ko-fi — no benefits](https://badgen.net/badge/Ko-fi/Voluntary%20tip%20%E2%80%94%20no%20benefits/ff5f5f?icon=kofi)](https://ko-fi.com/theaxebane)
+[![Voluntary tip on Ko-fi - no benefits](https://badgen.net/badge/Ko-fi/Voluntary%20tip%20-%20no%20benefits/ff5f5f?icon=kofi)](https://ko-fi.com/theaxebane)
 
 You may optionally support the current maintainer (AxeBane) through Ko-fi using the button above. Any tip is a voluntary, unconditional gift to the maintainer and is **not** a purchase, subscription, license fee, commission, or payment for this project or for any Square Enix material.
 
