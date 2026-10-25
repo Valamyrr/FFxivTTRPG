@@ -1,3 +1,4 @@
+import { getContentKeys, normalizeContentKey } from "../helpers/content-keys.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import {
   getActorCheckPenalty,
@@ -11,13 +12,7 @@ import {
  */
 export class FFXIVActor extends Actor {
   static _normalizeLinkedTraitName(value) {
-    return String(value ?? "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/['’]/g, "")
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "");
+    return normalizeContentKey(value);
   }
 
   static _getLinkedTraitRefs(value) {
@@ -45,8 +40,7 @@ export class FFXIVActor extends Actor {
       );
       if (flagKey) keys.add(flagKey);
 
-      const nameKey = FFXIVActor._normalizeLinkedTraitName(effect.name);
-      if (nameKey) keys.add(nameKey);
+      for (const key of getContentKeys(effect)) keys.add(key);
 
       for (const value of FFXIVActor._getEffectCountsAsRefs(effect)) {
         const key = FFXIVActor._normalizeLinkedTraitName(value);
@@ -58,15 +52,14 @@ export class FFXIVActor extends Actor {
 
   isTraitLinkedToActiveEffect(item, keys = null) {
     if (item?.type !== "trait") return false;
-    const traitKey = FFXIVActor._normalizeLinkedTraitName(item.name);
-    if (!traitKey) return false;
-    return (keys ?? this.getLinkedActiveTraitKeys()).has(traitKey);
+    const activeKeys = keys ?? this.getLinkedActiveTraitKeys();
+    return getContentKeys(item).some((key) => activeKeys.has(key));
   }
 
   findTraitLinkedToActiveEffect(effect) {
     const keys = [
       effect?.getFlag?.("ffxiv", "effectKey"),
-      effect?.name,
+      ...getContentKeys(effect),
     ]
       .map((value) => FFXIVActor._normalizeLinkedTraitName(value))
       .filter(Boolean);
@@ -74,7 +67,7 @@ export class FFXIVActor extends Actor {
     return this.items.find(
       (item) =>
         item.type === "trait" &&
-        keys.includes(FFXIVActor._normalizeLinkedTraitName(item.name)),
+        getContentKeys(item).some((key) => keys.includes(key)),
     );
   }
 

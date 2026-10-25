@@ -1,11 +1,7 @@
+import { getContentKeys, matchesContentKey, normalizeContentKey } from "./content-keys.mjs";
+
 export function normalizeJobResourceName(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
+  return normalizeContentKey(value);
 }
 
 export function getActorLevel(actor) {
@@ -23,7 +19,7 @@ export function findActorTrait(actor, name) {
   return actor.items?.find(
     (item) =>
       item?.type === "trait" &&
-      normalizeJobResourceName(item.name) === key,
+      matchesContentKey(item, key),
   ) ?? null;
 }
 
@@ -39,7 +35,7 @@ export function findActorJobResource(actor, name) {
 }
 
 function getItemJobResourceKeys(item) {
-  const keys = new Set([normalizeJobResourceName(item?.name)]);
+  const keys = new Set(getContentKeys(item));
   const data = foundry.utils.getProperty(item, "flags.ffxiv.jobResource") ?? {};
   for (const value of [
     data.name,

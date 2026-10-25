@@ -1,3 +1,4 @@
+import { getContentKeys, matchesContentKey, normalizeContentKey, getSourceText, resolveContentReference } from "../helpers/content-keys.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import {
   applyStatusEffectChange,
@@ -519,7 +520,7 @@ export class FFXIVItem extends Item {
 
       let itemData = grant.item ? foundry.utils.deepClone(grant.item) : null;
       if (!itemData) {
-        const sourceItem = await fromUuid(grant.uuid);
+        const sourceItem = await resolveContentReference(grant);
         if (!sourceItem) continue;
         itemData = sourceItem.toObject();
       }
@@ -578,7 +579,7 @@ export class FFXIVItem extends Item {
 
       let actorData = grant.actor ? foundry.utils.deepClone(grant.actor) : null;
       if (!actorData) {
-        const sourceActor = await fromUuid(grant.uuid);
+        const sourceActor = await resolveContentReference(grant, "Actor");
         if (!sourceActor || sourceActor.documentName !== "Actor") continue;
         actorData = sourceActor.toObject();
       }
@@ -687,7 +688,7 @@ export class FFXIVItem extends Item {
   }
 
   _normalizeAbilityName(name) {
-    return String(name ?? "").trim().toLocaleLowerCase();
+    return normalizeContentKey(name);
   }
 
   _isAbilityOrTraitItem(item) {
@@ -708,11 +709,10 @@ export class FFXIVItem extends Item {
         const grantName = this._normalizeAbilityName(grant?.name);
         if (grantName) names.add(grantName);
         if (grant?.item?.name) {
-          names.add(this._normalizeAbilityName(grant.item.name));
+          for (const key of getContentKeys(grant.item)) names.add(key);
         } else if (grant?.uuid) {
-          const sourceItem = await fromUuid(grant.uuid);
-          const sourceName = this._normalizeAbilityName(sourceItem?.name);
-          if (sourceName) names.add(sourceName);
+          const sourceItem = await resolveContentReference(grant);
+          for (const key of getContentKeys(sourceItem)) names.add(key);
         }
       }
     }
@@ -729,7 +729,7 @@ export class FFXIVItem extends Item {
         !item.flags?.ffxiv?.augmentSourceUuid &&
         !item.flags?.ffxiv?.jobId &&
         !item.flags?.ffxiv?.jobSourceUuid &&
-        !augmentGrantedNames.has(this._normalizeAbilityName(item.name)),
+        !getContentKeys(item).some((key) => augmentGrantedNames.has(key)),
     );
   }
 
@@ -799,7 +799,7 @@ export class FFXIVItem extends Item {
 
       let itemData = grant.item ? foundry.utils.deepClone(grant.item) : null;
       if (!itemData) {
-        const sourceItem = await fromUuid(grant.uuid);
+        const sourceItem = await resolveContentReference(grant);
         if (!sourceItem) continue;
         itemData = sourceItem.toObject();
       }
@@ -1007,7 +1007,7 @@ export class FFXIVItem extends Item {
             { temporary: true },
           );
         } else if (grant?.uuid) {
-          grantedItem = await fromUuid(grant.uuid);
+          grantedItem = await resolveContentReference(grant);
         }
         if (!grantedItem) continue;
         content =
@@ -1368,7 +1368,7 @@ export class FFXIVItem extends Item {
     if (!uuid) return null;
 
     try {
-      const actor = await fromUuid(uuid);
+      const actor = await resolveContentReference(summon, "Actor");
       return actor?.documentName === "Actor" ? actor : null;
     } catch (_error) {
       return null;
@@ -1463,7 +1463,7 @@ export class FFXIVItem extends Item {
   }
 
   _getNormalizedTargetText() {
-    return String(this.system?.target ?? "")
+    return String(getSourceText(this, "target") ?? "")
       .replace(/<[^>]*>/g, "")
       .replace(/&nbsp;/gi, " ")
       .trim()
@@ -1795,7 +1795,7 @@ export class FFXIVItem extends Item {
     const explicitCost = Number.parseInt(this.system?.mpcost, 10);
     if (Number.isFinite(explicitCost) && explicitCost > 0) return explicitCost;
 
-    const costText = String(this.system?.cost ?? "").trim();
+    const costText = String(getSourceText(this, "cost") ?? "").trim();
     if (!costText) return 0;
     if (/\ball\s*mp\b/i.test(costText)) {
       return Math.max(Number(actor?.system?.mana?.value ?? 0) || 0, 0);
@@ -1862,7 +1862,7 @@ export class FFXIVItem extends Item {
     if (
       names.length &&
       !names.some((name) =>
-        this._normalizeEffectKey(name) === this._normalizeEffectKey(this.name),
+        matchesContentKey(this, name),
       )
     )
       return false;
@@ -1940,8 +1940,7 @@ export class FFXIVItem extends Item {
       entry.exceptions ??
       entry.except,
     );
-    const currentName = this._normalizeEffectKey(this.name);
-    return actionNames.some((name) => this._normalizeEffectKey(name) === currentName);
+    return actionNames.some((name) => matchesContentKey(this, name));
   }
 
   _costRulesConsumeResource(resource) {
@@ -2425,7 +2424,7 @@ export class FFXIVItem extends Item {
     const name = String(entry?.name ?? resource).trim();
     const key =
       this._normalizeEffectKey(entry?.key) ||
-      this._normalizeEffectKey(name) ||
+      this._normalizeEffectKey(getSourceText(entry, "name") || name) ||
       this._normalizeEffectKey(resource);
     return {
       key,
@@ -2518,7 +2517,7 @@ export class FFXIVItem extends Item {
     const name = String(entry?.name ?? entry?.label ?? entry?.key ?? "").trim();
     const key =
       this._normalizeEffectKey(entry?.key) ||
-      this._normalizeEffectKey(name);
+      this._normalizeEffectKey(getSourceText(entry, "name") || name);
     const formula = this._getAbilityBranchFormula(entry);
     return {
       key,
@@ -2634,7 +2633,7 @@ export class FFXIVItem extends Item {
     const name = String(entry.name ?? effect.name ?? "").trim();
     const key =
       this._normalizeEffectKey(entry.key) ||
-      this._normalizeEffectKey(name) ||
+      this._normalizeEffectKey(getSourceText(entry, "name") || getSourceText(effect, "name")) ||
       this._normalizeEffectKey(effect.getFlag?.("ffxiv", "effectKey"));
     const mpCost = Number(entry.mpCost ?? entry.cost ?? 0);
     return {
@@ -2703,7 +2702,7 @@ export class FFXIVItem extends Item {
   }
 
   _isSingleTargetAbility() {
-    const target = String(this.system?.target ?? "").trim().toLowerCase();
+    const target = String(getSourceText(this, "target") ?? "").trim().toLowerCase();
     return target === "single" || target.startsWith("single ");
   }
 
@@ -2759,8 +2758,7 @@ export class FFXIVItem extends Item {
   _forceCriticalAbilityApplies(rule) {
     const names = rule.abilityNames;
     if (!names.length) return true;
-    const itemKey = this._normalizeEffectKey(this.name);
-    return names.some((name) => this._normalizeEffectKey(name) === itemKey);
+    return names.some((name) => matchesContentKey(this, name));
   }
 
   _getForceCriticalRules(options = {}) {
@@ -3400,7 +3398,7 @@ export class FFXIVItem extends Item {
     return {
       action: String(entry?.action ?? "grant").trim().toLowerCase() || "grant",
       trigger: String(entry?.trigger ?? "use").trim() || "use",
-      key: this._normalizeEffectKey(entry?.key ?? entry?.name),
+      key: this._normalizeEffectKey(entry?.key ?? getSourceText(entry, "name")),
       name: String(entry?.name ?? entry?.key ?? "").trim(),
       iconOverride: String(entry?.iconOverride ?? "").trim(),
       icon: String(entry?.icon ?? "").trim(),
@@ -3452,7 +3450,7 @@ export class FFXIVItem extends Item {
       : [];
     return entries
       .map((entry) => ({
-        key: this._normalizeEffectKey(entry?.key ?? entry?.name),
+        key: this._normalizeEffectKey(entry?.key ?? getSourceText(entry, "name")),
         name: String(entry?.name ?? entry?.key ?? "").trim(),
         mode: entry?.mode === "forbidden" ? "forbidden" : "required",
         consume: entry?.consume === true,
@@ -3993,7 +3991,7 @@ export class FFXIVItem extends Item {
   }
 
   async _grantNamedEffect(actor, rule, context = {}) {
-    const key = this._normalizeEffectKey(rule?.key ?? rule?.name);
+    const key = this._normalizeEffectKey(rule?.key ?? getSourceText(rule, "name"));
     if (!actor || !key) return;
     if (this._isStatusEffectId(key)) {
       await applyStatusEffectChange(actor, key, true, { origin: this.uuid });
@@ -4022,7 +4020,7 @@ export class FFXIVItem extends Item {
   }
 
   _getLinkedAutomationEffectTemplate(rule) {
-    const key = this._normalizeEffectKey(rule?.key ?? rule?.name);
+    const key = this._normalizeEffectKey(rule?.key ?? getSourceText(rule, "name"));
     if (!key) return null;
 
     const effects = Array.from(this.effects ?? []).filter((effect) =>
@@ -4219,7 +4217,7 @@ export class FFXIVItem extends Item {
       foundry.utils.getProperty(effect, "flags.ffxiv.effectKey"),
     );
     if (flagKey && flagKey === normalizedKey) return true;
-    return this._normalizeEffectKey(effect.name) === normalizedKey;
+    return matchesContentKey(effect, normalizedKey);
   }
 
   _getEffectCountsAsKeys(effect) {
@@ -4262,7 +4260,7 @@ export class FFXIVItem extends Item {
     }
     const name = String(value.name ?? value.key ?? "").trim();
     return {
-      key: this._normalizeEffectKey(value.key ?? name),
+      key: this._normalizeEffectKey(value.key ?? getSourceText(value, "name") ?? name),
       name,
       iconOverride: String(value.iconOverride ?? "").trim(),
       icon: String(value.icon ?? "").trim(),
@@ -4271,13 +4269,7 @@ export class FFXIVItem extends Item {
   }
 
   _normalizeEffectKey(value) {
-    return String(value ?? "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/['’]/g, "")
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "");
+    return normalizeContentKey(value);
   }
 
   _prepareEffectRuleDuration(duration) {
@@ -4577,7 +4569,7 @@ export class FFXIVItem extends Item {
     )
       .map((value) => this._normalizeEffectKey(value))
       .filter(Boolean);
-    return !keys.length || keys.includes(this._normalizeEffectKey(this.name));
+    return !keys.length || keys.some((key) => matchesContentKey(this, key));
   }
 
   _getStatusIgnoreEntryStatuses(entry) {
@@ -4597,8 +4589,7 @@ export class FFXIVItem extends Item {
   }
 
   _matchesAnyEffectKey(keys) {
-    const nameKey = this._normalizeEffectKey(this.name);
-    return keys.some((key) => this._normalizeEffectKey(key) === nameKey);
+    return keys.some((key) => matchesContentKey(this, key));
   }
 
   _getActiveEffectCheckAdvantageDice(options = {}) {

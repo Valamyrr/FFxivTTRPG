@@ -1,3 +1,4 @@
+import { getContentKeys, getSourceText, normalizeContentKey } from "../helpers/content-keys.mjs";
 import {
   onManageActiveEffect,
   prepareActiveEffectCategories,
@@ -1352,7 +1353,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   _normalizeComboTargetName(name) {
-    return String(name ?? "").trim().toLowerCase();
+    return normalizeContentKey(name);
   }
 
   _sortItemsByComboLinks(items) {
@@ -1362,14 +1363,14 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       item.comboBranch = false;
       item.comboSource = false;
       item.comboTarget = false;
-      byName.set(this._normalizeComboTargetName(item.name), item);
+      for (const key of getContentKeys(item)) byName.set(key, item);
     }
 
     const targetsBySource = new Map();
     const incomingTargets = new Set();
     for (const item of ordered) {
       const source = byName.get(
-        this._normalizeComboTargetName(this._getComboSource(item.system?.combo)),
+        this._normalizeComboTargetName(this._getComboSource(getSourceText(item, "combo"))),
       );
       if (!source) continue;
       item.comboTarget = true;

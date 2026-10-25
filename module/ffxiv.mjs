@@ -1,3 +1,4 @@
+import { matchesContentKey } from "./helpers/content-keys.mjs";
 // Import document classes.
 import { FFXIVActor } from "./actors/actor.mjs";
 import { FFXIVCombat, getTurnStep } from "./combat.mjs";
@@ -523,7 +524,7 @@ async function migrateEssentialDignityHealingFlags() {
 }
 
 function getBootshineCriticalFlagPatch(item) {
-  if (!item || item.type !== "ability" || item.name !== "Bootshine") return null;
+  if (!item || item.type !== "ability" || !matchesContentKey(item, "bootshine")) return null;
   const current = foundry.utils.getProperty(item, "flags.ffxiv.critical.force");
   if (current !== undefined && current !== null && current !== "") return null;
 
@@ -535,7 +536,7 @@ function getBootshineCriticalFlagPatch(item) {
 }
 
 function getEssentialDignityHealingFlagPatch(item) {
-  if (!item || item.type !== "ability" || item.name !== "Essential Dignity") return null;
+  if (!item || item.type !== "ability" || !matchesContentKey(item, "essential_dignity")) return null;
   const directFormula = String(item.system?.direct_formula ?? "").trim();
   const currentHealing = foundry.utils.getProperty(item, "flags.ffxiv.healing.application");
   const currentOverride = foundry.utils.getProperty(item, "flags.ffxiv.baseFormula.override");
@@ -7755,7 +7756,7 @@ function damageApplicationEntryApplies(entry, { sourceActor = null, sourceItem =
   ).map((value) => String(value ?? "").trim().toLowerCase()).filter(Boolean);
   if (
     sourceNames.length &&
-    !sourceNames.includes(String(sourceItem?.name ?? "").trim().toLowerCase())
+    !sourceNames.some((key) => matchesContentKey(sourceItem, key))
   )
     return false;
 
@@ -7764,7 +7765,7 @@ function damageApplicationEntryApplies(entry, { sourceActor = null, sourceItem =
   ).map((value) => String(value ?? "").trim().toLowerCase()).filter(Boolean);
   if (
     sourceActorNames.length &&
-    !sourceActorNames.includes(String(sourceActor?.name ?? "").trim().toLowerCase())
+    !sourceActorNames.some((key) => matchesContentKey(sourceActor, key))
   )
     return false;
 
@@ -7884,7 +7885,7 @@ function healingApplicationEntryApplies(entry, targetActor, sourceActor = null) 
   ).map((value) => String(value ?? "").trim().toLowerCase()).filter(Boolean);
   if (
     sourceNames.length &&
-    !sourceNames.includes(String(sourceActor?.name ?? "").trim().toLowerCase())
+    !sourceNames.some((key) => matchesContentKey(sourceActor, key))
   )
     return false;
 
