@@ -21,6 +21,15 @@ export function getContentKey(document) {
 }
 
 export function getTranslationKey(document, folders = null) {
+  if (!folders) {
+    const packs = globalThis.game?.packs;
+    const uuid = document?.uuid ?? document?._stats?.compendiumSource ?? document?.flags?.core?.sourceId;
+    const collection = document?.pack ?? (uuid?.startsWith("Compendium.") ? uuid.split(".").slice(1, 3).join(".") : null);
+    const pack = packs?.get(collection) ?? [...packs?.values?.() ?? []].find(
+      (entry) => entry.index?.get(document?._id ?? document?.id)?.folder === document?.folder && document?.folder,
+    );
+    folders = pack?.folders ?? null;
+  }
   const findFolder = (id) => {
     if (typeof id === "object") return id;
     if (folders) return folders.get(id);
