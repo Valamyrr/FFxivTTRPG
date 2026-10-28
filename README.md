@@ -36,6 +36,12 @@ This software is provided on an "as is" and "as available" basis, without warran
 
 Rights holders may report a concern by opening an [Issue](https://github.com/Valamyrr/FFxivTTRPG/issues). The maintainers will review substantiated requests concerning copyrighted or trademarked material.
 
+## Automation Documentation
+
+See the [Ability Automation Reference](docs/automation-flags.md) for ability setup, custom flags, linked effect modifiers, and examples. Supporting sections cover combat timing and system-managed flags.
+
+The [alphabetical flag index](docs/automation-flags.md#flag-index) lists full paths, where each flag is stored, and how it is edited. Use Ctrl+F to search by flag name or behavior.
+
 ## Support
 For issues and technical support, reach out via the [FFXIV TTRPG Fan Discord](https://discord.gg/hr2GCzErfX) or submit an [Issue](https://github.com/Valamyrr/FFxivTTRPG/issues) here.
 
