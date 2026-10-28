@@ -1,4 +1,5 @@
 import { getContentKeys, matchesContentKey, normalizeContentKey, getSourceText, resolveContentReference } from "../helpers/content-keys.mjs";
+import { applyBarrier } from "../helpers/barrier.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import {
   applyStatusEffectChange,
@@ -3633,9 +3634,81 @@ export class FFXIVItem extends Item {
     for (const rule of this._getEffectRules()) {
       if (rule.trigger !== trigger) continue;
       if (!this._canApplyEffectRule(actor, rule, context)) continue;
-      const result = await this._applyEffectRule(actor, rule, context);
-      if (Array.isArray(result)) results.push(...result);
-      else if (result) results.push(result);
+      let recipients = [actor];
+      if (rule.action === "resource" && rule.applyTo === "target") {
+        recipients = Array.from(
+          new Set(
+            Array.from(game.user.targets ?? [])
+              .map((token) => token.actor)
+              .filter(Boolean),
+          ),
+        );
+        if (!recipients.length) {
+          ui.notifications.warn(
+            game.i18n.localize("FFXIV.Notifications.NoTarget"),
+          );
+          continue;
+        }
+      }
+      let resourceContext = context;
+      if (
+        rule.action === "resource" &&
+        String(rule.amount).toLowerCase() === "sourcebarrier"
+      ) {
+        const sourceIndex = await foundry.applications.api.DialogV2.prompt({
+          window: {
+            title: game.i18n.localize("FFXIV.Abilities.BarrierSource"),
+          },
+          content: `<select name="source">${recipients
+            .map(
+              (recipient, index) =>
+                `<option value="${index}">${foundry.utils.escapeHTML(recipient.name)}</option>`,
+            )
+            .join("")}</select>`,
+          ok: {
+            callback: (_event, button) =>
+              Number(button.form.elements.source.value),
+          },
+          rejectClose: false,
+        });
+        if (!Number.isInteger(sourceIndex) || !recipients[sourceIndex])
+          continue;
+        const source = recipients[sourceIndex];
+        resourceContext = {
+          ...context,
+          sourceBarrier: Math.max(
+            Number(source.system?.barrier?.value) || 0,
+            0,
+          ),
+        };
+        recipients = recipients.filter((recipient) => recipient !== source);
+      }
+      for (const recipient of recipients) {
+        if (
+          rule.action === "resource" &&
+          rule.applyTo === "target" &&
+          !recipient.testUserPermission(game.user, "OWNER")
+        ) {
+          emitToActiveGM({
+            type: "applyResourceRule",
+            userName: game.user.name,
+            data: {
+              sourceItemUuid: this.uuid,
+              actorRefs: [recipient.uuid],
+              rule,
+              context: resourceContext,
+            },
+          });
+          continue;
+        }
+        const result = await this._applyEffectRule(
+          recipient,
+          rule,
+          resourceContext,
+        );
+        if (Array.isArray(result)) results.push(...result);
+        else if (result) results.push(result);
+      }
     }
     return results;
   }
@@ -3733,6 +3806,24 @@ export class FFXIVItem extends Item {
 
     const actorResource = this._normalizeActorResource(resource);
     if (actorResource) {
+      const text = String(rule.amount ?? "").trim();
+      if (
+        text &&
+        !/^\d+$/.test(text) &&
+        !["missing", "spent", "max", "full", "sourcebarrier"].includes(
+          text.toLowerCase(),
+        )
+      ) {
+        const roll = new Roll(text, {
+          ...this.getRollData(),
+          targetHPMax: Number(actor.system?.health?.max) || 0,
+        });
+        await roll.evaluate();
+        context = {
+          ...context,
+          resolvedAmount: Math.max(Math.floor(Number(roll.total) || 0), 0),
+        };
+      }
       return this._applyActorResourceRule(actor, actorResource, rule, context);
     }
 
@@ -3749,6 +3840,30 @@ export class FFXIVItem extends Item {
 
   async _applyActorResourceRule(actor, resource, rule, context = {}) {
     const current = Number(actor.system?.[resource]?.value ?? 0);
+    if (
+      resource === "barrier" &&
+      ["grant", "set", "max"].includes(rule.operation)
+    ) {
+      const amount = this._resolveActorResourceRuleAmount(
+        actor,
+        resource,
+        rule,
+        context,
+      );
+      const result = await applyBarrier(actor, amount, {
+        operation: rule.operation,
+        sourceItem: this,
+      });
+      if (result.next === result.current) return null;
+      return {
+        type: "actorResource",
+        actor,
+        resource,
+        operation: rule.operation,
+        ...result,
+        delta: result.next - result.current,
+      };
+    }
     const next = this._getNextActorResourceValue(
       actor,
       resource,
@@ -3758,7 +3873,10 @@ export class FFXIVItem extends Item {
     );
     if (next === current) return null;
 
-    await actor.update({ [`system.${resource}.value`]: next }, { render: false });
+    await actor.update(
+      { [`system.${resource}.value`]: next },
+      { render: false },
+    );
     this._updateParentActorSheetResourceBars(resource);
     return {
       type: "actorResource",
@@ -3780,6 +3898,8 @@ export class FFXIVItem extends Item {
       next = 0;
     } else if (rule.operation === "set") {
       next = amount;
+    } else if (rule.operation === "max") {
+      next = Math.max(current, amount);
     } else if (["consume", "subtract"].includes(rule.operation)) {
       next = current - amount;
     } else {
@@ -3790,7 +3910,9 @@ export class FFXIVItem extends Item {
   }
 
   _resolveActorResourceRuleAmount(actor, resource, rule, context = {}) {
+    if (context.resolvedAmount !== undefined) return context.resolvedAmount;
     const amountText = String(rule?.amount ?? "").trim().toLowerCase();
+    if (amountText === "sourcebarrier") return Math.max(Number(context.sourceBarrier) || 0, 0);
     if (amountText === "missing") {
       const cap = this._getActorResourceCap(actor, resource);
       const current = Number(actor.system?.[resource]?.value ?? 0);
@@ -3805,7 +3927,8 @@ export class FFXIVItem extends Item {
     if (["max", "full"].includes(amountText)) {
       return this._getActorResourceCap(actor, resource);
     }
-    return Math.max(Number.parseInt(rule?.amount, 10) || 1, 0);
+    const amount = Number.parseInt(rule?.amount, 10);
+    return Math.max(Number.isFinite(amount) ? amount : 1, 0);
   }
 
   _getActorResourceCap(actor, resource, fallback = 0) {

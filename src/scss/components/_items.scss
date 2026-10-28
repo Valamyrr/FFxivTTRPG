@@ -655,7 +655,8 @@
       text-align: left;
     }
 
-    .ability-form-grid .resource-label {
+    .ability-form-grid .resource-label,
+    .ability-settings-field > .resource-label {
       align-items: center;
       display: flex;
       justify-content: flex-start;
@@ -671,7 +672,9 @@
     .ability-form-grid input,
     .ability-form-grid formula-input,
     .ability-form-grid select,
-    .ability-form-grid textarea {
+    .ability-form-grid textarea,
+    .ability-settings-field input,
+    .ability-settings-field select {
       border: 1px solid rgba(216, 188, 112, 0.22);
       border-radius: 4px;
       background: rgba(0, 0, 0, 0.16);
@@ -1428,6 +1431,179 @@
     .remove-effect-rule:hover {
       border-color: rgba(255, 107, 97, 0.65);
       color: #ff6b61;
+    }
+
+    .ability-settings-panel {
+      .ability-panel-header {
+        justify-content: flex-start;
+        gap: 8px;
+      }
+
+      .ability-flag-entry-control {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 28px;
+        height: 28px;
+        margin: 0;
+        padding: 0 8px;
+        font-size: 12px;
+        line-height: 1;
+      }
+
+      .ability-panel-header > button {
+        margin-left: auto;
+      }
+    }
+
+    .ability-settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+      align-items: start;
+    }
+
+    .ability-settings-panel > .ability-settings-grid,
+    .ability-critical-rule {
+      margin-top: 12px;
+    }
+
+    .ability-critical-effect,
+    .ability-settings-panel .ability-critical-add {
+      margin-top: 10px;
+    }
+
+    .ability-settings-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      margin: 0;
+
+      input, select, .item-locked-field {
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+      }
+    }
+
+    .ability-settings-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      margin: 0;
+
+      input[type="checkbox"] {
+        flex: 0 0 16px;
+        width: 16px;
+        height: 16px;
+        min-height: 16px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+        background: none;
+      }
+    }
+
+    &.item-editing .ability-settings-toggle {
+      align-self: end;
+      min-height: max(30px, var(--input-height, 30px));
+    }
+
+    &.item-locked .ability-settings-toggle {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+
+      > .resource-label {
+        order: -1;
+        min-height: 18px;
+      }
+    }
+
+    .ability-settings-subheader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 14px 0 8px;
+      font-weight: bold;
+    }
+
+    .ability-barrier-grant-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr) 28px;
+      align-items: end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    &.item-locked .ability-barrier-grant-row {
+      grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
+    }
+
+    .ability-critical-rule + .ability-critical-rule {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(216, 188, 112, 0.22);
+    }
+
+    .ability-critical-rule-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: end;
+      gap: 8px;
+    }
+
+    .ability-critical-effects {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+
+      > input {
+        width: 100%;
+        margin: 0;
+      }
+
+      > .tags:empty {
+        display: none;
+      }
+    }
+
+    .ability-settings-panel .ability-critical-remove-case {
+      margin-top: 8px;
+    }
+
+    .ability-critical-conditions {
+      margin-top: 8px;
+
+      > summary {
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      > .ability-settings-grid {
+        margin-top: 8px;
+      }
+    }
+
+    .ability-settings-empty {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 600px) {
+      .ability-settings-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ability-barrier-grant-row,
+      &.item-locked .ability-barrier-grant-row {
+        grid-template-columns: minmax(0, 1fr) 56px;
+      }
     }
 
     .ability-automation-fields {

@@ -211,6 +211,29 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.effectRuleEntries = this._getEffectRuleEntries(itemData.system);
     context.jobResourceBonusEntries = this._getJobResourceBonusEntries(itemData.flags);
     context.conditionalBaseFormula = this._getConditionalBaseFormulaEntry(itemData.flags);
+    context.barrierDepletionEntries = this._getAbilityFlagEntries("barrier.onDepleted");
+    context.barrierGrant = this._getBarrierGrantContext();
+    context.automaticCriticals = this._getAbilityFlagEntries("critical.force").length > 0;
+    context.automationEffectNames = [...new Set([
+      ...Array.from(this.item.parent?.effects ?? [], (effect) => effect.name),
+      ...Array.from(this.item.effects ?? [], (effect) => effect.name),
+      ...Array.from(this.item.parent?.items ?? []).flatMap((item) => Array.from(item.effects ?? [], (effect) => effect.name)),
+      ...Array.from(game.items ?? []).flatMap((item) => Array.from(item.effects ?? [], (effect) => effect.name)),
+      ...Array.from(CONFIG.statusEffects ?? [], (effect) => game.i18n.localize(effect.name ?? effect.label ?? effect.id)),
+    ].filter(Boolean))].sort();
+    context.criticalForceEntries = this._getAbilityFlagEntries("critical.force").map((entry) => ({
+      ...entry,
+      rollsText: this._getAbilityFlagListText(entry.rolls ?? entry.rollTypes ?? entry.appliesTo ?? entry.roll),
+      rollScope: this._getCriticalRollScope(entry),
+      abilitiesText: this._getAbilityFlagListText(entry.abilityNames ?? entry.abilityName ?? entry.items ?? entry.item),
+      tagsText: this._getAbilityFlagListText(entry.tags ?? entry.tag),
+      requiresText: this._getAbilityFlagListText(entry.requires),
+      requiresAnyText: this._getAbilityFlagListText(entry.requiresAny),
+      effectOptions: this._getCriticalEffectOptions(entry.requiresAny, context.automationEffectNames),
+      forbidsText: this._getAbilityFlagListText(entry.forbids),
+      hasConditions: [entry.requires, entry.forbids, entry.tags, entry.tag, entry.abilityNames, entry.abilityName, entry.items, entry.item]
+        .some((value) => this._toArray(value).length > 0),
+    }));
     context.cssClass = this._getSheetClasses().join(" ");
     context.editable =
       this.document.isOwner &&
@@ -792,11 +815,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "flags.ffxiv.baseFormula.override",
         "flags.ffxiv.baseFormula.override.formula",
         "flags.ffxiv.baseFormula.override.threshold",
+        "flags.ffxiv.barrier.lock",
       ].includes(event.target.name);
     if (render) this._captureSheetScroll();
     this.document
       .update(updateData, { render })
       .then(async () => {
+        if (event.target.name.startsWith("flags.ffxiv.barrier.")) {
+          this._playConfiguredSound("soundNotificationFFXIV_moveItem");
+        }
         await this._syncJobPetVisibility(
           event.target.name,
           updateData[event.target.name],
@@ -878,6 +905,176 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         "halfMax",
       ).trim() || "halfMax",
     };
+  }
+
+  _getAbilityFlagEntries(path) {
+    const data = this.item.getFlag("ffxiv", path);
+    return this._toArray(data).map((entry) =>
+      entry === true ? { always: true } : foundry.utils.deepClone(entry),
+    ).filter((entry) => entry && typeof entry === "object");
+  }
+
+  _isBarrierGrantRule(rule) {
+    return rule?.action === "resource" &&
+      ["barrier", "shield"].includes(String(rule.resource ?? rule.resourceName ?? "").trim().toLowerCase()) &&
+      ["grant", "set", "max"].includes(rule.operation ?? rule.resourceAction ?? "grant");
+  }
+
+  _isBasicBarrierGrantRule(rule) {
+    if (!this._isBarrierGrantRule(rule) || (rule.trigger ?? "use") !== "use") return false;
+    const fields = new Set(["action", "trigger", "resource", "resourceName", "operation", "resourceAction", "amount", "applyTo"]);
+    return Object.keys(rule).every((field) => fields.has(field));
+  }
+
+  _getBarrierGrantContext() {
+    const rules = (this.item.system.effect_rules ?? []).filter((rule) => this._isBasicBarrierGrantRule(rule));
+    const healing = this.item.getFlag("ffxiv", "barrier.onHealing") === true;
+    const rule = rules[0];
+    return {
+      mode: rule ? healing ? "both" : "fixed" : healing ? "healing" : "none",
+      enabled: Boolean(rule || healing),
+      hasFixed: Boolean(rule),
+      amount: rule?.amount ?? "",
+      applyTo: rule?.applyTo ?? this.item.getFlag("ffxiv", "barrier.applyTo") ?? "target",
+      operation: ["grant", "set", "max"].includes(this.item.getFlag("ffxiv", "barrier.operation"))
+        ? this.item.getFlag("ffxiv", "barrier.operation")
+        : rule?.operation ?? rule?.resourceAction ?? "grant",
+      multiple: rules.length > 1,
+    };
+  }
+
+  async _onChangeBarrierGrant(event) {
+    if (!this.isEditable || this._isCompendiumLocked() || !this._isItemEditMode()) return;
+    const target = event.currentTarget;
+    const field = target.dataset.field;
+    if (field === "mode" && target.value === this._getBarrierGrantContext().mode) return;
+    let rules = foundry.utils.deepClone(this.item.system.effect_rules ?? []);
+    const update = {};
+    if (field === "mode") {
+      const mode = target.value;
+      if (!["none", "fixed", "healing", "both"].includes(mode)) return;
+      const applyTo = this._getBarrierGrantContext().applyTo;
+      update["flags.ffxiv.barrier.applyTo"] = applyTo;
+      update["flags.ffxiv.barrier.onHealing"] = ["healing", "both"].includes(mode);
+      if (["none", "healing"].includes(mode)) {
+        rules = rules.filter((rule) => !this._isBasicBarrierGrantRule(rule));
+      } else if (!rules.some((rule) => this._isBasicBarrierGrantRule(rule))) {
+        rules.push({ action: "resource", trigger: "use", resource: "barrier", operation: "grant", amount: 1, applyTo });
+      }
+    } else {
+      const rule = rules.find((entry) => this._isBasicBarrierGrantRule(entry));
+      if (field === "amount" && rule) rule.amount = String(target.value ?? "").trim();
+      else if (field === "applyTo" && ["self", "target"].includes(target.value)) {
+        if (rule) rule.applyTo = target.value;
+        update["flags.ffxiv.barrier.applyTo"] = target.value;
+      }
+      else return;
+    }
+    update["system.effect_rules"] = rules;
+    this._captureSheetScroll();
+    await this.item.update(update, { render: false });
+    this._playConfiguredSound(field === "mode" && target.value === "none"
+      ? "soundNotificationFFXIV_deleteItem"
+      : "soundNotificationFFXIV_moveItem");
+    await this.render({ force: true });
+  }
+
+  async _onChangeCriticalMode(event) {
+    if (!this.isEditable || this._isCompendiumLocked() || !this._isItemEditMode()) return;
+    const automatic = event.currentTarget.value === "automatic";
+    if (automatic === (this._getAbilityFlagEntries("critical.force").length > 0)) return;
+    const rules = automatic ? this._getAbilityFlagEntries("critical.force") : [];
+    if (automatic && !rules.length) rules.push({ always: true });
+    this._captureSheetScroll();
+    await this.item.setFlag("ffxiv", "critical.force", rules);
+    this._playConfiguredSound(automatic
+      ? "soundNotificationFFXIV_moveItem"
+      : "soundNotificationFFXIV_deleteItem");
+    await this.render({ force: true });
+  }
+
+  _getAbilityFlagListText(value) {
+    return this._toArray(value).map((entry) =>
+      typeof entry === "string" ? entry : entry?.key ?? entry?.name ?? "",
+    ).filter(Boolean).join(", ");
+  }
+
+  _getCriticalRollScope(entry) {
+    const rolls = this._toArray(entry.rolls ?? entry.rollTypes ?? entry.appliesTo ?? entry.roll)
+      .map((value) => String(value).trim().toLowerCase()).filter(Boolean);
+    if (!rolls.length || rolls.includes("all") || rolls.includes("any")) return "all";
+    if (rolls.length === 1 && ["base", "direct", "alternate"].includes(rolls[0])) return rolls[0];
+    return "custom";
+  }
+
+  _getCriticalEffectOptions(references, names) {
+    const selected = this._toArray(references).map((entry) =>
+      typeof entry === "string" ? entry : entry?.key ?? entry?.name ?? "",
+    ).filter(Boolean);
+    return [...new Set([...names, ...selected])].sort().map((value) => ({
+      value,
+      selected: selected.includes(value),
+    }));
+  }
+
+  async _onEditAbilityFlagEntry(event) {
+    if (!this.isEditable || this._isCompendiumLocked() || !this._isItemEditMode()) return;
+    const target = event.currentTarget;
+    const path = target.dataset.flag;
+    if (!["barrier.onDepleted", "critical.force"].includes(path)) return;
+    const entries = this._getAbilityFlagEntries(path);
+    const previous = foundry.utils.deepClone(entries);
+    const index = Number(target.dataset.index);
+    const action = target.dataset.entryAction;
+    if (action === "add") {
+      entries.push(path === "barrier.onDepleted"
+        ? { resource: "", amount: 1, recipient: "source" }
+        : { always: true, rolls: ["base"] });
+    } else {
+      if (!Number.isInteger(index) || !entries[index]) return;
+      if (action === "remove") entries.splice(index, 1);
+      else {
+        const field = target.dataset.field;
+        const aliases = {
+          rolls: ["rollTypes", "appliesTo", "roll"],
+          abilityNames: ["abilityName", "items", "item"],
+          tags: ["tag"],
+        };
+        const fields = path === "barrier.onDepleted"
+          ? ["resource", "amount", "recipient"]
+          : ["always", "rolls", "abilityNames", "tags", "requires", "requiresAny", "forbids"];
+        if (!fields.includes(field)) return;
+        let value = this._getChangedFieldValue(target);
+        if (target.dataset.list === "true") {
+          value = (Array.isArray(value) ? value : String(value ?? "").split(","))
+            .map((entry) => String(entry).trim()).filter(Boolean);
+          if (field === "requiresAny") {
+            const current = this._toArray(entries[index][field]).map((entry) =>
+              typeof entry === "string" ? entry : entry?.key ?? entry?.name ?? "",
+            ).filter(Boolean);
+            if (current.length === value.length && current.every((entry) => value.includes(entry))) return;
+          }
+        }
+        if (field === "amount") value = Math.max(Math.floor(Number(value)) || 1, 1);
+        entries[index][field] = value;
+        if (path === "critical.force") entries[index].always = true;
+        for (const alias of aliases[field] ?? []) delete entries[index][alias];
+      }
+    }
+    if (JSON.stringify(previous) === JSON.stringify(entries)) return;
+    if (path === "barrier.onDepleted" && !action) {
+      await this.item.update({ [`flags.ffxiv.${path}`]: entries }, { render: false });
+      return;
+    }
+    const removed = action === "remove" ||
+      (target.dataset.field === "requiresAny" &&
+        this._toArray(entries[index]?.requiresAny).length < this._toArray(previous[index]?.requiresAny).length);
+    this._captureSheetScroll();
+    await this.item.setFlag("ffxiv", path, entries);
+    this._playConfiguredSound(removed
+      ? "soundNotificationFFXIV_deleteItem"
+      : "soundNotificationFFXIV_moveItem");
+    await this.render({ force: true });
   }
 
   _getConditionalBaseFormulaUpdate(target) {
@@ -1182,11 +1379,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _getEffectRuleEntries(system) {
     const rules = this._getEffectRulesFrom(system, { includeDrafts: true });
+    const barrierIndex = rules.findIndex((rule) => this._isBasicBarrierGrantRule(rule));
     return rules.map((rule, index) => ({
+      index,
       action: this._normalizeEffectRuleAction(rule?.action),
       trigger: this._normalizeEffectRuleTrigger(rule?.trigger),
       name: String(rule?.name ?? "").trim() || this._titleizeEffectKey(rule?.key),
       isResource: this._normalizeEffectRuleAction(rule?.action) === "resource",
+      applyTo: rule?.applyTo === "target" ? "target" : "self",
       isToggle: this._normalizeEffectRuleAction(rule?.action) === "toggle",
       iconOverride: String(rule?.iconOverride ?? rule?.icon ?? "").trim(),
       threshold: Number.isFinite(Number.parseInt(rule?.threshold, 10))
@@ -1221,7 +1421,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       toggle2Name: this._getEffectRefName(rule?.toggle2),
       open: this._expandedEffectRules.has(index),
       text: this._formatEffectRule(rule),
-    }));
+    })).filter((entry) => entry.index !== barrierIndex || this._expandedEffectRules.has(entry.index));
   }
 
   _normalizeEffectRuleAction(value) {
@@ -1239,7 +1439,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _normalizeEffectRuleOperation(value) {
     const operation = String(value ?? "grant").trim().toLowerCase();
-    return ["grant", "consume", "fill", "clear", "set"].includes(operation)
+    return ["grant", "consume", "fill", "clear", "set", "max"].includes(operation)
       ? operation
       : "grant";
   }
@@ -1297,11 +1497,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _formatEffectRule(rule) {
     const trigger = this._formatEffectRuleTrigger(rule);
-    const action = String(rule?.action ?? "grant").trim().toLowerCase();
+    const action = String(rule?.action ?? "grant")
+      .trim()
+      .toLowerCase();
     const parts = [];
 
     if (action === "resource") {
-      const resource = String(rule?.resource ?? rule?.resourceName ?? "").trim();
+      const resource = String(
+        rule?.resource ?? rule?.resourceName ?? "",
+      ).trim();
       if (!resource) return "";
       const operation = this._normalizeEffectRuleOperation(
         rule?.operation ?? rule?.resourceAction,
@@ -1315,11 +1519,20 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
             ? "fill"
             : operation === "clear"
               ? "clear"
-              : operation === "set"
-                ? "set"
-                : "grant";
-      const quantity = ["fill", "clear"].includes(operation) ? "" : `${amount} `;
-      parts.push(`${trigger}: ${verb} ${quantity}${resource}`);
+              : operation === "max"
+                ? game.i18n.localize("FFXIV.Abilities.AutomationMax")
+                : operation === "set"
+                  ? "set"
+                  : "grant";
+      const quantity = ["fill", "clear"].includes(operation)
+        ? ""
+        : `${amount} `;
+      const recipient = game.i18n.localize(
+        rule.applyTo === "target"
+          ? "FFXIV.Abilities.ApplyToTarget"
+          : "FFXIV.Abilities.ApplyToSelf",
+      );
+      parts.push(`${trigger}: ${verb} ${quantity}${resource} (${recipient})`);
       if (Number.isFinite(min) && min > 0) parts.push(`minimum ${min}`);
       const spentResource = String(rule?.spentResource ?? "").trim();
       if (spentResource) parts.push(`from spent ${spentResource}`);
@@ -1351,7 +1564,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const range = [
         Number.isFinite(min) ? `min ${min}` : "",
         Number.isFinite(max) ? `max ${max}` : "",
-      ].filter(Boolean).join(", ");
+      ]
+        .filter(Boolean)
+        .join(", ");
       parts.push(`spent ${spent}${range ? ` (${range})` : ""}`);
     }
 
@@ -2336,6 +2551,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ".job-resource-bonus-field",
       this._onChangeJobResourceBonus.bind(this),
     );
+    html.on("change.ffxivItemSheet", ".ability-flag-entry-field", this._onEditAbilityFlagEntry.bind(this));
+    html.on("click.ffxivItemSheet", ".ability-flag-entry-control", this._onEditAbilityFlagEntry.bind(this));
+    html.on("change.ffxivItemSheet", ".ability-barrier-grant-field", this._onChangeBarrierGrant.bind(this));
+    html.on("change.ffxivItemSheet", ".ability-critical-mode", this._onChangeCriticalMode.bind(this));
+    html.on("click.ffxivItemSheet", ".ability-critical-conditions > summary", (event) => {
+      this._playConfiguredSound(event.currentTarget.closest("details").open
+        ? "soundNotificationFFXIV_closeSheet"
+        : "soundNotificationFFXIV_openSheet");
+    });
     html.on(
       "change.ffxivItemSheet",
       ".job-resource-bonus-upgrade-field",
@@ -3620,9 +3844,13 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       this._isItemEditMode() &&
       !this._isCompendiumLocked() &&
       !this._isReadOnlyItemSheet();
+    // Use the document's registered sheet. Creating a second instance leaves
+    // document updates and UI actions addressing different applications.
+    const grantSheet = tempItem.sheet;
+    grantSheet.options.ffxivReadOnly = !editable;
 
     if (editable) {
-      const persistGrant = async (changes) => {
+      const persistGrant = async (changes, options = {}) => {
         const update = foundry.utils.expandObject(changes);
         const nextData = foundry.utils.mergeObject(
           foundry.utils.deepClone(itemData),
@@ -3651,16 +3879,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         });
         tempItem.updateSource(update);
         this.render({ force: true });
+        if (options.render !== false) grantSheet.render({ force: true });
         return tempItem;
       };
 
       tempItem.update = persistGrant;
     }
 
-    new tempItem.sheet.constructor({
-      document: tempItem,
-      ffxivReadOnly: !editable,
-    }).render({ force: true });
+    grantSheet.render({ force: true });
   }
 
   async _onEditJobPet(event) {

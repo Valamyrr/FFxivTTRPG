@@ -1,4 +1,6 @@
 import { matchesContentKey } from "./helpers/content-keys.mjs";
+import { isAbilityAutomationEnabled } from "./helpers/automation.mjs";
+import { applyBarrier, applyHealingBarrier, initBarrierAutomation } from "./helpers/barrier.mjs";
 // Import document classes.
 import { FFXIVActor } from "./actors/actor.mjs";
 import { FFXIVCombat, getTurnStep } from "./combat.mjs";
@@ -1155,6 +1157,7 @@ Hooks.once("ready", function () {
   initHotbar();
   initLimitBreakHud();
   initHudResources();
+  initBarrierAutomation();
   initDutyCommenced();
   configureCombatTrackedResource().catch((error) => {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);
@@ -7561,6 +7564,20 @@ async function applyHealingToActor(actor, amount, options = {}) {
 
 async function applyResolvedHealingToActor(actor, healing, options = {}) {
   const result = await recoverActorHealth(actor, healing.resolvedHealing);
+  if (
+    isAbilityAutomationEnabled() &&
+    options.sourceItem?.getFlag("ffxiv", "barrier.onHealing") === true
+  ) {
+    // Use the resolved healing roll, including when the target is at full HP.
+    const amount = Math.max(
+      Math.floor(Number(healing.resolvedHealing) || 0),
+      0,
+    );
+    await applyHealingBarrier(actor, amount, {
+      sourceActor: options.sourceActor,
+      sourceItem: options.sourceItem,
+    });
+  }
   if (result.healing > 0) {
     showFloatingCombatText(actor, result.healing, "healing", options);
   }
@@ -9040,6 +9057,45 @@ Hooks.on("ready", function () {
       if (!gmUserId || gmUserId !== game.user.id) return;
       const actors = await resolveSocketActors(data);
       switch (type) {
+        case "applyResourceRule": {
+          const sourceItem = await resolveItemFromReference(data.sourceItemUuid);
+          if (!sourceItem || !isAbilityAutomationEnabled()) break;
+          // Only execute resource rules that are actually configured on the item.
+          const rule = sourceItem
+            ._getEffectRules()
+            .find(
+              (entry) =>
+                entry.action === "resource" &&
+                entry.applyTo === "target" &&
+                JSON.stringify(entry) === JSON.stringify(data.rule),
+            );
+          if (!rule) break;
+          const apply = async () => {
+            for (const actor of actors) {
+              await sourceItem._applyEffectRule(actor, rule, data.context ?? {});
+            }
+          };
+          if (game.settings.get("ffxiv", "autoApplySocketRequests")) await apply();
+          else
+            new foundry.applications.api.DialogV2({
+              window: {
+                title: game.i18n.localize("FFXIV.Abilities.AutomationResource"),
+              },
+              content: `<p>${foundry.utils.escapeHTML(userName ?? "")}: ${foundry.utils.escapeHTML(sourceItem.name)}</p><ul>${actors.map((actor) => `<li>${foundry.utils.escapeHTML(actor.name)}</li>`).join("")}</ul>`,
+              buttons: [
+                {
+                  action: "accept",
+                  label: game.i18n.localize("FFXIV.Sockets.Accept"),
+                  callback: apply,
+                },
+                {
+                  action: "decline",
+                  label: game.i18n.localize("FFXIV.Sockets.Decline"),
+                },
+              ],
+            }).render(true);
+          break;
+        }
         case FFXIV_MARKER_SOCKET_TYPE:
           try {
             await createMarkerTileFromRequest(data);

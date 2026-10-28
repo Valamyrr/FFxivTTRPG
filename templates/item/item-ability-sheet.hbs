@@ -151,6 +151,81 @@
       <div class="attributes item-details-card ability-sheet-card">
         <section class="ability-sheet-panel">
           <header class="ability-panel-header">
+            <h2>{{localize "FFXIV.Abilities.HitRoll"}}</h2>
+          </header>
+          <div class="ability-form-grid ability-form-grid-2">
+            <div class="resource flex-group-center">
+              <label for="system.check" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.Check" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CheckHint"}}
+                </span>
+              </label>
+              <div class="resource-content flexrow flex-center flex-between">
+                <select class="ffxiv-text-center" name="system.check">
+                  <option value="{{localize "FFXIV.None"}}">{{localize "FFXIV.None"}}</option>
+                  {{#each this.config.attributes as |a| }}
+                    <option value="{{a.label}}"
+                            {{#if (eq a.label ../item.system.check) }}
+                            selected
+                            {{/if}}>{{ localize a.label }}
+                    </option>
+                  {{/each}}
+                  <option value="FFXIV.Special"
+                          {{#if (eq "FFXIV.Special" item.system.check) }}
+                          selected
+                          {{/if}}>{{localize "FFXIV.Special"}}
+                  </option>
+                </select>
+              </div>
+            </div>
+            {{#if hasCheck }}
+              <div class="resource flex-group-center">
+                <label for="system.challenge" class="resource-label">
+                  <span>
+                    {{ localize "FFXIV.Abilities.Challenge" }}
+                    {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ChallengeHint"}}
+                  </span>
+                </label>
+                <div class="resource-content flexrow flex-center flex-between">
+                  <input name="system.challenge"
+                         type="text"
+                         value="{{item.system.challenge}}"
+                         placeholder="{{localize 'FFXIV.Abilities.ChallengePlaceholder'}}" />
+                </div>
+              </div>
+            {{/if}}
+            <div class="resource flex-group-center ability-form-span">
+              <label for="system.hit_formula" class="resource-label">
+                <span>
+                  {{ localize "FFXIV.Abilities.HitFormula" }}
+                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.HitFormulaHint"}}
+                </span>
+              </label>
+              <div class="resource-content flexrow flex-center flex-between ability-formula-row">
+                <formula-input name="system.hit_formula"
+                               context="ffxiv-ability"
+                               value="{{item.system.hit_formula}}"
+                               placeholder="{{localize 'FFXIV.Abilities.HitFormulaPlaceholder'}}"
+                               data-formula-source="hit"></formula-input>
+                <select class="ffxiv-text-center {{#unless (hasContent item.system.hit_formula)}}ffxiv-hidden{{/unless}}"
+                        name="system.hit_formula_attribute"
+                        data-formula-target="hit">
+                  <option value="">{{ localize "FFXIV.None" }}</option>
+                  {{#each this.config.formula_attributes as |attr| }}
+                    <option value="{{attr.value}}"
+                            {{#if (eq attr.value ../item.system.hit_formula_attribute) }}
+                            selected
+                            {{/if}}>+ {{ localize attr.label }}
+                    </option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="ability-sheet-panel">
+          <header class="ability-panel-header">
             <h2>{{localize "FFXIV.Abilities.BaseEffectRoll"}}</h2>
           </header>
           <div class="ability-form-grid ability-form-grid-2">
@@ -236,81 +311,6 @@
                 </div>
               </div>
             {{/if}}
-          </div>
-        </section>
-        <section class="ability-sheet-panel">
-          <header class="ability-panel-header">
-            <h2>{{localize "FFXIV.Abilities.HitRoll"}}</h2>
-          </header>
-          <div class="ability-form-grid ability-form-grid-2">
-            <div class="resource flex-group-center">
-              <label for="system.check" class="resource-label">
-                <span>
-                  {{ localize "FFXIV.Abilities.Check" }}
-                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CheckHint"}}
-                </span>
-              </label>
-              <div class="resource-content flexrow flex-center flex-between">
-                <select class="ffxiv-text-center" name="system.check">
-                  <option value="{{localize "FFXIV.None"}}">{{localize "FFXIV.None"}}</option>
-                  {{#each this.config.attributes as |a| }}
-                    <option value="{{a.label}}"
-                            {{#if (eq a.label ../item.system.check) }}
-                            selected
-                            {{/if}}>{{ localize a.label }}
-                    </option>
-                  {{/each}}
-                  <option value="FFXIV.Special"
-                          {{#if (eq "FFXIV.Special" item.system.check) }}
-                          selected
-                          {{/if}}>{{localize "FFXIV.Special"}}
-                  </option>
-                </select>
-              </div>
-            </div>
-            {{#if hasCheck }}
-              <div class="resource flex-group-center">
-                <label for="system.challenge" class="resource-label">
-                  <span>
-                    {{ localize "FFXIV.Abilities.Challenge" }}
-                    {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ChallengeHint"}}
-                  </span>
-                </label>
-                <div class="resource-content flexrow flex-center flex-between">
-                  <input name="system.challenge"
-                         type="text"
-                         value="{{item.system.challenge}}"
-                         placeholder="{{localize 'FFXIV.Abilities.ChallengePlaceholder'}}" />
-                </div>
-              </div>
-            {{/if}}
-            <div class="resource flex-group-center ability-form-span">
-              <label for="system.hit_formula" class="resource-label">
-                <span>
-                  {{ localize "FFXIV.Abilities.HitFormula" }}
-                  {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.HitFormulaHint"}}
-                </span>
-              </label>
-              <div class="resource-content flexrow flex-center flex-between ability-formula-row">
-                <formula-input name="system.hit_formula"
-                               context="ffxiv-ability"
-                               value="{{item.system.hit_formula}}"
-                               placeholder="{{localize 'FFXIV.Abilities.HitFormulaPlaceholder'}}"
-                               data-formula-source="hit"></formula-input>
-                <select class="ffxiv-text-center {{#unless (hasContent item.system.hit_formula)}}ffxiv-hidden{{/unless}}"
-                        name="system.hit_formula_attribute"
-                        data-formula-target="hit">
-                  <option value="">{{ localize "FFXIV.None" }}</option>
-                  {{#each this.config.formula_attributes as |attr| }}
-                    <option value="{{attr.value}}"
-                            {{#if (eq attr.value ../item.system.hit_formula_attribute) }}
-                            selected
-                            {{/if}}>+ {{ localize attr.label }}
-                    </option>
-                  {{/each}}
-                </select>
-              </div>
-            </div>
           </div>
         </section>
         <section class="ability-sheet-panel">
@@ -430,6 +430,79 @@
             </div>
           </div>
         </section>
+        <section class="ability-sheet-panel ability-settings-panel">
+          <header class="ability-panel-header">
+            <h2>{{localize "FFXIV.Abilities.ForcedCriticals"}}</h2>
+            {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.ForcedCriticalsHint"}}
+          </header>
+          <label class="ability-settings-field">
+            <select class="ability-critical-mode" aria-label="{{localize 'FFXIV.Abilities.ForcedCriticals'}}">
+              <option value="normal">{{localize "FFXIV.Abilities.CriticalNormal"}}</option>
+              <option value="automatic" {{#if automaticCriticals}}selected{{/if}}>{{localize "FFXIV.Abilities.CriticalAutomatic"}}</option>
+            </select>
+          </label>
+          {{#each criticalForceEntries as |entry index|}}
+            <div class="ability-critical-rule">
+              <div class="ability-critical-rule-header">
+                <label class="ability-settings-field">
+                  <span class="resource-label">{{localize "FFXIV.Abilities.CriticalRolls"}}</span>
+                  <select class="ability-flag-entry-field" data-flag="critical.force" data-index="{{index}}" data-field="rolls" data-list="true">
+                    <option value="" {{#if (eq entry.rollScope "all")}}selected{{/if}}>{{localize "FFXIV.Abilities.CriticalAllRolls"}}</option>
+                    <option value="base" {{#if (eq entry.rollScope "base")}}selected{{/if}}>{{localize "FFXIV.Abilities.CriticalBaseRoll"}}</option>
+                    <option value="direct" {{#if (eq entry.rollScope "direct")}}selected{{/if}}>{{localize "FFXIV.Abilities.CriticalDirectRoll"}}</option>
+                    <option value="alternate" {{#if (eq entry.rollScope "alternate")}}selected{{/if}}>{{localize "FFXIV.Abilities.CriticalAlternateRoll"}}</option>
+                    {{#if (eq entry.rollScope "custom")}}
+                      <option value="{{entry.rollsText}}" selected>{{localize "FFXIV.Abilities.CriticalMultipleRolls"}}</option>
+                    {{/if}}
+                  </select>
+                </label>
+              </div>
+              <label class="ability-settings-field ability-critical-effect">
+                <span class="resource-label">{{localize "FFXIV.Abilities.CriticalWhileEffect"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CriticalWhileEffectHint"}}</span>
+                <autocomplete-tags class="ffxiv-action-tags ability-critical-effects ability-flag-entry-field"
+                                   data-flag="critical.force"
+                                   data-index="{{index}}"
+                                   data-field="requiresAny"
+                                   data-list="true"
+                                   placeholder="{{localize 'FFXIV.Abilities.CriticalAlwaysAvailable'}}">
+                  {{#each entry.effectOptions as |option|}}
+                    <option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.value}}</option>
+                  {{/each}}
+                </autocomplete-tags>
+              </label>
+              <details class="ability-critical-conditions" {{#if entry.hasConditions}}open{{/if}}>
+                <summary>{{localize "FFXIV.Abilities.CriticalConditions"}}</summary>
+                <div class="ability-settings-grid">
+                    <label class="ability-settings-field">
+                      <span class="resource-label">{{localize "FFXIV.Abilities.CriticalRequires"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CriticalRequiresHint"}}</span>
+                      <input type="text" class="ability-flag-entry-field" data-flag="critical.force" data-index="{{index}}" data-field="requires" data-list="true" value="{{entry.requiresText}}" />
+                    </label>
+
+                    <label class="ability-settings-field">
+                      <span class="resource-label">{{localize "FFXIV.Abilities.CriticalForbids"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CriticalForbidsHint"}}</span>
+                      <input type="text" class="ability-flag-entry-field" data-flag="critical.force" data-index="{{index}}" data-field="forbids" data-list="true" value="{{entry.forbidsText}}" />
+                    </label>
+                    <label class="ability-settings-field">
+                      <span class="resource-label">{{localize "FFXIV.Abilities.CriticalTags"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CriticalTagsHint"}}</span>
+                      <input type="text" class="ability-flag-entry-field" data-flag="critical.force" data-index="{{index}}" data-field="tags" data-list="true" value="{{entry.tagsText}}" />
+                    </label>
+                    <label class="ability-settings-field">
+                      <span class="resource-label">{{localize "FFXIV.Abilities.CriticalAbilities"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.CriticalAbilitiesHint"}}</span>
+                      <input type="text" class="ability-flag-entry-field" data-flag="critical.force" data-index="{{index}}" data-field="abilityNames" data-list="true" value="{{entry.abilitiesText}}" />
+                    </label>
+                </div>
+                {{#if ../itemEditMode}}
+                  <button type="button" class="ability-flag-entry-control ability-critical-remove-case" data-flag="critical.force" data-index="{{index}}" data-entry-action="remove">{{localize "FFXIV.Abilities.CriticalRemoveCase"}}</button>
+                {{/if}}
+              </details>
+            </div>
+          {{/each}}
+          {{#if automaticCriticals}}
+            {{#if itemEditMode}}
+              <button type="button" class="ability-flag-entry-control ability-critical-add" data-flag="critical.force" data-entry-action="add">{{localize "FFXIV.Abilities.CriticalAddCase"}}</button>
+            {{/if}}
+          {{/if}}
+        </section>
       </div>
     </div>
     <div class="tab ability-resources" data-group="primary" data-tab="resources">
@@ -497,6 +570,91 @@
               </div>
             </div>
           </div>
+        </section>
+        <section class="ability-sheet-panel ability-settings-panel">
+          <header class="ability-panel-header">
+            <h2>{{localize "FFXIV.Abilities.BarrierAutomation"}}</h2>
+            {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.BarrierAutomationHint"}}
+          </header>
+          <label class="ability-settings-field">
+            <span class="resource-label">{{localize "FFXIV.Abilities.BarrierGrantMode"}}</span>
+            <select class="ability-barrier-grant-field" data-field="mode">
+              <option value="none">{{localize "FFXIV.Abilities.BarrierGrantNone"}}</option>
+              <option value="fixed" {{#if (eq barrierGrant.mode "fixed")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierGrantFixed"}}</option>
+              <option value="healing" {{#if (eq barrierGrant.mode "healing")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierGrantHealing"}}</option>
+              {{#if (eq barrierGrant.mode "both")}}
+                <option value="both" selected>{{localize "FFXIV.Abilities.BarrierGrantBoth"}}</option>
+              {{/if}}
+            </select>
+          </label>
+          {{#if barrierGrant.enabled}}
+          <div class="ability-settings-grid">
+            {{#if barrierGrant.hasFixed}}
+              <label class="ability-settings-field">
+                <span class="resource-label">{{localize "FFXIV.Abilities.BarrierAmount"}}</span>
+                <input type="text" class="ability-barrier-grant-field" data-field="amount" value="{{barrierGrant.amount}}" placeholder="15" />
+              </label>
+            {{/if}}
+              <label class="ability-settings-field">
+                <span class="resource-label">{{localize "FFXIV.Abilities.BarrierGrantTo"}}</span>
+                <select class="ability-barrier-grant-field" data-field="applyTo">
+                  <option value="target" {{#if (eq barrierGrant.applyTo "target")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierGrantTarget"}}</option>
+                  <option value="self" {{#if (eq barrierGrant.applyTo "self")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierGrantSelf"}}</option>
+                </select>
+              </label>
+            <label class="ability-settings-field">
+              <span class="resource-label">{{localize "FFXIV.Abilities.BarrierOperation"}}</span>
+              <select name="flags.ffxiv.barrier.operation">
+                <option value="grant" {{#if (eq barrierGrant.operation "grant")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierAddAmount"}}</option>
+                <option value="set" {{#if (eq barrierGrant.operation "set")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierReplaceAmount"}}</option>
+                <option value="max" {{#if (eq barrierGrant.operation "max")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierHigherAmount"}}</option>
+              </select>
+            </label>
+            <label class="ability-settings-toggle">
+              <input type="checkbox" name="flags.ffxiv.barrier.lock" {{checked item.flags.ffxiv.barrier.lock}} />
+              <span class="resource-label">{{localize "FFXIV.Abilities.BarrierLock"}}</span>
+            </label>
+            {{#if item.flags.ffxiv.barrier.lock}}
+              <label class="ability-settings-field">
+                <span class="resource-label">{{localize "FFXIV.Abilities.BarrierExpiry"}}</span>
+                <select name="flags.ffxiv.barrier.expireAtSourceTurnStart" data-dtype="Boolean">
+                  <option value="false">{{localize "FFXIV.Abilities.BarrierNoExpiry"}}</option>
+                  <option value="true" {{#if item.flags.ffxiv.barrier.expireAtSourceTurnStart}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierExpireAtSourceTurnStart"}}</option>
+                </select>
+              </label>
+            {{/if}}
+          </div>
+          {{#if item.flags.ffxiv.barrier.lock}}
+            <div class="ability-settings-subheader">
+              <span class="resource-label">{{localize "FFXIV.Abilities.BarrierDepletion"}}</span>
+              {{#if itemEditMode}}
+                <button type="button" class="ability-flag-entry-control" data-flag="barrier.onDepleted" data-entry-action="add">{{localize "FFXIV.Abilities.BarrierAddResource"}}</button>
+              {{/if}}
+            </div>
+            {{#each barrierDepletionEntries as |entry index|}}
+              <div class="ability-barrier-grant-row">
+                <label class="ability-settings-field">
+                  <span class="resource-label">{{localize "FFXIV.Abilities.BarrierResource"}}</span>
+                  <input type="text" class="ability-flag-entry-field" data-flag="barrier.onDepleted" data-index="{{index}}" data-field="resource" value="{{entry.resource}}" />
+                </label>
+                <label class="ability-settings-field">
+                  <span class="resource-label">{{localize "FFXIV.Abilities.AutomationAmount"}}</span>
+                  <input type="number" min="1" step="1" class="ability-flag-entry-field" data-flag="barrier.onDepleted" data-index="{{index}}" data-field="amount" value="{{entry.amount}}" />
+                </label>
+                <label class="ability-settings-field">
+                  <span class="resource-label">{{localize "FFXIV.Abilities.ApplyTo"}}</span>
+                  <select class="ability-flag-entry-field" data-flag="barrier.onDepleted" data-index="{{index}}" data-field="recipient">
+                    <option value="source" {{#if (eq entry.recipient "source")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierSourceActor"}}</option>
+                    <option value="target" {{#if (eq entry.recipient "target")}}selected{{/if}}>{{localize "FFXIV.Abilities.BarrierTargetActor"}}</option>
+                  </select>
+                </label>
+                {{#if ../itemEditMode}}
+                  <button type="button" class="ability-flag-entry-control ability-settings-remove" data-flag="barrier.onDepleted" data-index="{{index}}" data-entry-action="remove" aria-label="{{localize 'FFXIV.Abilities.StatusRemove'}}">x</button>
+                {{/if}}
+              </div>
+            {{/each}}
+          {{/if}}
+          {{/if}}
         </section>
         {{> "systems/ffxiv/templates/item/parts/item-summons.hbs" abilityPanel=true }}
       </div>
@@ -849,10 +1007,10 @@
             {{/if}}
           </div>
           <ul class="status-effect-list ability-automation-list ability-automation-edit-list">
-            {{#each effectRuleEntries as |entry index| }}
+            {{#each effectRuleEntries as |entry| }}
               <li>
                 <details class="ability-automation-entry effect-rule-entry"
-                         data-index="{{index}}"
+                         data-index="{{entry.index}}"
                          {{#if entry.open}}open{{/if}}>
                   <summary>
                     <span class="ability-automation-text">{{entry.text}}</span>
@@ -861,7 +1019,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationTrigger"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationTriggerHelp"}}</span>
                       <select class="effect-rule-field"
-                              data-index="{{index}}"
+                              data-index="{{entry.index}}"
                               data-field="trigger">
                         <option value="use" {{#if (eq entry.trigger "use")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationOnUse"}}</option>
                         <option value="cost" {{#if (eq entry.trigger "cost")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationOnCost"}}</option>
@@ -871,7 +1029,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationAction"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationActionHelp"}}</span>
                       <select class="effect-rule-field"
-                              data-index="{{index}}"
+                              data-index="{{entry.index}}"
                               data-field="action">
                         <option value="grant" {{#if (eq entry.action "grant")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationGrant"}}</option>
                         <option value="remove" {{#if (eq entry.action "remove")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationRemove"}}</option>
@@ -881,21 +1039,29 @@
                     </label>
                     {{#if entry.isResource}}
                       <label>
+                        <span>{{localize "FFXIV.Abilities.ApplyTo"}}</span>
+                        <select class="effect-rule-field" data-index="{{entry.index}}" data-field="applyTo">
+                          <option value="self" {{#if (eq entry.applyTo "self")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToSelf"}}</option>
+                          <option value="target" {{#if (eq entry.applyTo "target")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToTarget"}}</option>
+                        </select>
+                      </label>
+                      <label>
                         <span>{{localize "FFXIV.Abilities.AutomationOperation"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationOperationHelp"}}</span>
                         <select class="effect-rule-field"
-                                data-index="{{index}}"
+                                data-index="{{entry.index}}"
                                 data-field="operation">
                           <option value="grant" {{#if (eq entry.operation "grant")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationGrant"}}</option>
                           <option value="consume" {{#if (eq entry.operation "consume")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationConsume"}}</option>
                           <option value="fill" {{#if (eq entry.operation "fill")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationFill"}}</option>
                           <option value="clear" {{#if (eq entry.operation "clear")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationClear"}}</option>
                           <option value="set" {{#if (eq entry.operation "set")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationSet"}}</option>
+                          <option value="max" {{#if (eq entry.operation "max")}}selected{{/if}}>{{localize "FFXIV.Abilities.AutomationMax"}}</option>
                         </select>
                       </label>
                       <label>
                         <span>{{localize "FFXIV.Abilities.AutomationResourceName"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationResourceNameHelp"}}</span>
                         <input class="effect-rule-field"
-                               data-index="{{index}}"
+                               data-index="{{entry.index}}"
                                data-field="resource"
                                type="text"
                                value="{{entry.resource}}" />
@@ -903,7 +1069,7 @@
                       <label>
                         <span>{{localize "FFXIV.Abilities.AutomationAmount"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationAmountHelp"}}</span>
                         <input class="effect-rule-field"
-                               data-index="{{index}}"
+                               data-index="{{entry.index}}"
                                data-field="amount"
                                type="text"
                                value="{{entry.amount}}" />
@@ -911,7 +1077,7 @@
                       <label>
                         <span>{{localize "FFXIV.Abilities.AutomationMinimum"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationMinimumHelp"}}</span>
                         <input class="effect-rule-field"
-                               data-index="{{index}}"
+                               data-index="{{entry.index}}"
                                data-field="min"
                                type="number"
                                value="{{entry.min}}" />
@@ -919,7 +1085,7 @@
                       <label>
                         <span>{{localize "FFXIV.Abilities.AutomationSpentResource"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceHelp"}}</span>
                         <input class="effect-rule-field"
-                               data-index="{{index}}"
+                               data-index="{{entry.index}}"
                                data-field="spentResource"
                                type="text"
                                value="{{entry.spentResource}}" />
@@ -928,7 +1094,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationThreshold"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationThresholdHelp"}}</span>
                       <input class="effect-rule-field"
-                             data-index="{{index}}"
+                             data-index="{{entry.index}}"
                              data-field="threshold"
                              type="number"
                              value="{{entry.threshold}}" />
@@ -936,7 +1102,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationName"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationNameHelp"}}</span>
                       <input class="effect-rule-field"
-                             data-index="{{index}}"
+                             data-index="{{entry.index}}"
                              data-field="name"
                              type="text"
                              value="{{entry.name}}" />
@@ -945,13 +1111,13 @@
                       <span>{{localize "FFXIV.Abilities.AutomationIconOverride"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationIconOverrideHelp"}}</span>
                       <div class="ability-automation-file">
                         <input class="effect-rule-field"
-                               data-index="{{index}}"
+                               data-index="{{entry.index}}"
                                data-field="iconOverride"
                                type="text"
                                value="{{entry.iconOverride}}" />
                         <button type="button"
                                 class="effect-rule-icon-picker"
-                                data-index="{{index}}"
+                                data-index="{{entry.index}}"
                                 title="{{localize 'FFXIV.Abilities.AutomationIconOverride'}}">
                           <i class="fas fa-file-import"></i>
                         </button>
@@ -960,7 +1126,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationRemoveFirst"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationRemoveFirstHelp"}}</span>
                       <input class="effect-rule-field"
-                             data-index="{{index}}"
+                             data-index="{{entry.index}}"
                              data-field="remove"
                              type="text"
                              value="{{entry.removeText}}" />
@@ -968,7 +1134,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationRequires"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationRequiresHelp"}}</span>
                       <input class="effect-rule-field"
-                             data-index="{{index}}"
+                             data-index="{{entry.index}}"
                              data-field="requires"
                              type="text"
                              value="{{entry.requiresText}}" />
@@ -976,7 +1142,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationSpentResource"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceHelp"}}</span>
                       <input class="effect-rule-field"
-                             data-index="{{index}}"
+                             data-index="{{entry.index}}"
                              data-field="requiresResourceSpent"
                              type="text"
                              value="{{entry.requiresResourceSpent}}" />
@@ -984,7 +1150,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMin"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceMinHelp"}}</span>
                       <input class="effect-rule-field"
-                             data-index="{{index}}"
+                             data-index="{{entry.index}}"
                              data-field="requiresResourceSpentMin"
                              type="number"
                              value="{{entry.requiresResourceSpentMin}}" />
@@ -992,7 +1158,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationSpentResourceMax"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationSpentResourceMaxHelp"}}</span>
                       <input class="effect-rule-field"
-                             data-index="{{index}}"
+                             data-index="{{entry.index}}"
                              data-field="requiresResourceSpentMax"
                              type="number"
                              value="{{entry.requiresResourceSpentMax}}" />
@@ -1000,7 +1166,7 @@
                     <label>
                       <span>{{localize "FFXIV.Abilities.AutomationForbids"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationForbidsHelp"}}</span>
                       <input class="effect-rule-field"
-                             data-index="{{index}}"
+                             data-index="{{entry.index}}"
                              data-field="forbids"
                              type="text"
                              value="{{entry.forbidsText}}" />
@@ -1009,7 +1175,7 @@
                       <label>
                         <span>{{localize "FFXIV.Abilities.AutomationToggle1"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationToggle1Help"}}</span>
                         <input class="effect-rule-field"
-                               data-index="{{index}}"
+                               data-index="{{entry.index}}"
                                data-field="toggle1Name"
                                type="text"
                                value="{{entry.toggle1Name}}" />
@@ -1017,7 +1183,7 @@
                       <label>
                         <span>{{localize "FFXIV.Abilities.AutomationToggle2"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationToggle2Help"}}</span>
                         <input class="effect-rule-field"
-                               data-index="{{index}}"
+                               data-index="{{entry.index}}"
                                data-field="toggle2Name"
                                type="text"
                                value="{{entry.toggle2Name}}" />
@@ -1026,7 +1192,7 @@
                   </div>
                 </details>
                 {{#if ../itemEditMode}}
-                  <button type="button" class="remove-effect-rule" data-index="{{index}}">x</button>
+                  <button type="button" class="remove-effect-rule" data-index="{{entry.index}}">x</button>
                 {{/if}}
               </li>
             {{/each}}
