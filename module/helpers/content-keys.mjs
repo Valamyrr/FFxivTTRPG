@@ -35,7 +35,7 @@ export function getTranslationKey(document, folders = null) {
   let folder = findFolder(document?.folder);
   while (folder && !visited.has(folder.id ?? folder._id)) {
     visited.add(folder.id ?? folder._id);
-    names.unshift(getSourceText(folder, "name"));
+    names.unshift(folder.originalName ?? getSourceText(folder, "name"));
     folder = findFolder(folder.folder);
   }
   return normalizeContentKey([...names, getSourceText(document, "name")].join(" "));
