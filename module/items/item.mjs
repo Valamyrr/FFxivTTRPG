@@ -4769,7 +4769,7 @@ export class FFXIVItem extends Item {
     if (mode === "always") return true;
     if (mode === "never") return false;
 
-    const baseEffect = String(this.system?.base_effect ?? "")
+    const baseEffect = String(getSourceText(this, "base_effect") ?? "")
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
       .trim();
