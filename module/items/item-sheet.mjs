@@ -79,6 +79,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   constructor(...args) {
     super(...args);
+    this._ffxivReadOnly = this.options.ffxivReadOnly === true;
     this.options.window ??= {};
     this.options.position ??= {};
     const defaultWidth = this.constructor.DEFAULT_OPTIONS.position.width;
@@ -500,7 +501,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _isReadOnlyItemSheet() {
-    return this.options?.ffxivReadOnly === true;
+    return this._ffxivReadOnly === true;
   }
 
   _isItemEditMode() {
@@ -3847,7 +3848,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     // Use the document's registered sheet. Creating a second instance leaves
     // document updates and UI actions addressing different applications.
     const grantSheet = tempItem.sheet;
-    grantSheet.options.ffxivReadOnly = !editable;
+    grantSheet._ffxivReadOnly = !editable;
 
     if (editable) {
       const persistGrant = async (changes, options = {}) => {
