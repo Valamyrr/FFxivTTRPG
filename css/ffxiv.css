@@ -43,7 +43,9 @@
   width: 16px;
 }
 .ffxiv-marker-config .ffxiv-marker-checkbox input {
-  appearance: none;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
   cursor: pointer;
   height: 16px;
   inset: 0;
@@ -323,7 +325,8 @@ input:disabled {
   height: 22px;
   border: 0;
   border-radius: 3px;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
 }
 
 #ffxiv-hud-status-effects .hud-status-effect-stack {
@@ -598,7 +601,8 @@ input:disabled {
   inset: 0;
   border: 0;
   border-radius: 3px;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
 }
 
 #hotbar .ffxiv-hotbar-slot .slot-icon {
@@ -660,6 +664,88 @@ input:disabled {
   transform: translateY(0);
 }
 
+.ffxiv-tooltip-lock-progress {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: block;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.ffxiv-tooltip-lock-progress svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ffxiv-tooltip-lock-progress circle {
+  fill: currentColor;
+  fill-opacity: 0;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-dasharray: 50.27;
+  stroke-dashoffset: 50.27;
+  animation: ffxiv-tooltip-lock-fill var(--tooltip-progress-duration, 1s) linear forwards;
+}
+
+.ffxiv-tooltip-lock-progress.closing circle {
+  animation: ffxiv-tooltip-lock-fill var(--tooltip-progress-duration, 500ms) linear reverse forwards, ffxiv-tooltip-lock-solid var(--tooltip-progress-duration, 500ms) ease-out reverse forwards;
+}
+
+.ffxiv-tooltip-lock-progress.full circle {
+  animation: ffxiv-tooltip-lock-solid 600ms ease-out forwards;
+  stroke-dashoffset: 0;
+}
+
+.ffxiv-tooltip-lock-progress.full::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 5px currentColor;
+  animation: ffxiv-tooltip-lock-pulse 600ms ease-out forwards;
+}
+
+@keyframes ffxiv-tooltip-lock-pulse {
+  from {
+    box-shadow: 0 0 5px 0 currentColor;
+    opacity: 0.8;
+  }
+  to {
+    box-shadow: 0 0 8px 10px currentColor;
+    opacity: 0;
+  }
+}
+@keyframes ffxiv-tooltip-lock-fill {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ffxiv-tooltip-lock-solid {
+  from {
+    fill-opacity: 0;
+  }
+  to {
+    fill-opacity: 1;
+  }
+}
+.ffxiv-hotbar-ability-tooltip.locked {
+  pointer-events: auto;
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+}
+
+.ffxiv-hotbar-ability-tooltip,
+#tooltip.ffxiv-enriched-tooltip,
+.locked-tooltip.ffxiv-enriched-tooltip {
+  border: 1px solid rgba(225, 214, 169, 0.58);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.86), 0 3px 10px rgba(0, 0, 0, 0.54), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
 body.ffxiv-hotbar-tooltip-visible #tooltip {
   visibility: hidden;
   opacity: 0;
@@ -679,7 +765,8 @@ body.ffxiv-hotbar-tooltip-visible #tooltip {
   height: 54px;
   border: 1px solid #aaa99f;
   border-radius: 6px;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   box-shadow: 0 1px 3px #000;
 }
 
@@ -1114,7 +1201,8 @@ body.ffxiv-hotbar-tooltip-visible #tooltip {
   align-items: center;
   animation: ffxiv-duty-commenced-text 4.4s cubic-bezier(0.19, 0.72, 0.24, 1) forwards;
   background: linear-gradient(180deg, #fff9cf 0%, #ffe78a 25%, #e5a837 52%, #fff0a6 73%, #a55d17 100%);
-  background-clip: text;
+  -webkit-background-clip: text;
+          background-clip: text;
   color: transparent;
   display: flex;
   filter: drop-shadow(0 2px 1px rgba(46, 22, 0, 0.95));
@@ -1572,6 +1660,12 @@ form.active-effect-config .form-group.statuses .ffxiv-status-stack-value {
   width: 100%;
 }
 
+.ffxiv-settings-submenu .setting-control input::-moz-placeholder {
+  color: var(--placeholder-color, #8d8d8d);
+  font-style: italic;
+  opacity: 0.68;
+}
+
 .ffxiv-settings-submenu .setting-control input::placeholder {
   color: var(--placeholder-color, #8d8d8d);
   font-style: italic;
@@ -2007,7 +2101,8 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   border: 1px solid rgba(216, 188, 112, 0.55);
   border-radius: 6px;
   height: 72px;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   width: 72px;
 }
 .ffxiv.actor.encounter .encounter-heading {
@@ -2115,6 +2210,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   padding: 3px 8px;
   text-transform: uppercase;
   white-space: nowrap;
+  width: -moz-fit-content;
   width: fit-content;
 }
 .ffxiv.actor.encounter .encounter-hidden-control {
@@ -2127,7 +2223,9 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   width: 16px;
 }
 .ffxiv.actor.encounter .encounter-hidden-toggle .encounter-hidden-control input[type=checkbox] {
-  appearance: none !important;
+  -webkit-appearance: none !important;
+     -moz-appearance: none !important;
+          appearance: none !important;
   background: transparent !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -2243,7 +2341,8 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.actor.encounter .encounter-member-open img {
   border: 0;
   height: 38px;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   width: 38px;
 }
 .ffxiv.actor.encounter .encounter-member-open span {
@@ -2522,7 +2621,8 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   border: 0;
   border-radius: 5px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
 }
 .ffxiv.actor:is(.character, .npc) .actor-player-abilities .ability-header {
   align-items: flex-start;
@@ -2588,7 +2688,9 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   width: 16px;
 }
 .ffxiv.actor:is(.character, .npc) .actor-player-abilities .ability-limitations input[type=checkbox] {
-  appearance: none !important;
+  -webkit-appearance: none !important;
+     -moz-appearance: none !important;
+          appearance: none !important;
   cursor: pointer !important;
   height: 16px !important;
   left: 0 !important;
@@ -2871,6 +2973,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   grid-template-columns: repeat(4, 34px);
   gap: 5px;
   justify-content: center;
+  width: -moz-max-content;
   width: max-content;
   margin: -2px 0 -44px auto;
   padding: 6px 8px;
@@ -3093,7 +3196,9 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   justify-content: center;
 }
 .ffxiv .limit-break-segment {
-  appearance: none;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
   background: linear-gradient(to right, rgba(213, 167, 79, 0.95) 0%, transparent 15%, transparent 85%, rgba(213, 167, 79, 0.95) 100%), linear-gradient(#5a4526 10%, #1b2d43 40%, #6a4a24 95%);
   border: 0;
   clip-path: polygon(7% 0, 96% 0, 100% 35%, 94% 100%, 4% 100%, 0 62%);
@@ -3243,7 +3348,8 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   flex: 0 0 42px;
   height: 42px;
   margin-right: 0;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   width: 42px;
 }
 .ffxiv.item.item-modern-sheet .sheet-header .header-fields {
@@ -3739,7 +3845,8 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   border: 1px solid rgba(216, 188, 112, 0.35);
   border-radius: 4px;
   height: 24px;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   width: 24px;
 }
 .ffxiv.item .ability-effect-name span {
@@ -4027,7 +4134,9 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   width: 180px;
 }
 .ffxiv.item .ability-marker-editor .ability-marker-controls .ffxiv-marker-checkbox input {
-  appearance: none;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
   box-shadow: none;
   height: 16px;
   inset: 0;
@@ -4049,7 +4158,9 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   grid-template-columns: repeat(15, 18px);
 }
 .ffxiv.item .ability-marker-editor .ffxiv-marker-cell {
-  appearance: none;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
   background: #222;
   border: 1px solid #888;
   border-radius: 0;
@@ -4103,7 +4214,8 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   height: auto;
   max-height: 100px;
   max-width: 100%;
-  object-fit: contain;
+  -o-object-fit: contain;
+     object-fit: contain;
 }
 .ffxiv.item .remove-status-effect,
 .ffxiv.item .remove-effect-requirement,
@@ -4371,7 +4483,9 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   width: 16px;
 }
 .ffxiv.item .ability-automation-fields .ability-automation-checkbox input[type=checkbox] {
-  appearance: none !important;
+  -webkit-appearance: none !important;
+     -moz-appearance: none !important;
+          appearance: none !important;
   cursor: pointer !important;
   height: 16px !important;
   left: 0 !important;
@@ -4669,8 +4783,10 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   flex: 0 0 48px;
   width: 48px;
   height: 64px;
-  object-fit: contain;
-  object-position: center;
+  -o-object-fit: contain;
+     object-fit: contain;
+  -o-object-position: center;
+     object-position: center;
 }
 .ffxiv .effect-meta,
 .ffxiv .ability-effect-name span {
@@ -4752,6 +4868,10 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   color: var(--text-color);
 }
 
+.ffxiv input::-moz-placeholder {
+  color: var(--placeholder-color);
+}
+
 .ffxiv input::placeholder {
   color: var(--placeholder-color);
 }
@@ -4816,7 +4936,8 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   grid-row: 1;
   height: 46px;
   margin: 0;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   width: 46px;
 }
 

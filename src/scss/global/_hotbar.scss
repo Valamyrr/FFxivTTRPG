@@ -285,6 +285,92 @@
   transform: translateY(0);
 }
 
+.ffxiv-tooltip-lock-progress {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: block;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  circle {
+    fill: currentColor;
+    fill-opacity: 0;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-dasharray: 50.27;
+    stroke-dashoffset: 50.27;
+    animation: ffxiv-tooltip-lock-fill var(--tooltip-progress-duration, 1s) linear forwards;
+  }
+
+  &.closing {
+    circle {
+      animation:
+        ffxiv-tooltip-lock-fill var(--tooltip-progress-duration, 500ms) linear reverse forwards,
+        ffxiv-tooltip-lock-solid var(--tooltip-progress-duration, 500ms) ease-out reverse forwards;
+    }
+  }
+
+  &.full circle {
+    animation: ffxiv-tooltip-lock-solid 600ms ease-out forwards;
+    stroke-dashoffset: 0;
+  }
+
+  &.full::after {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    box-shadow: 0 0 5px currentColor;
+    animation: ffxiv-tooltip-lock-pulse 600ms ease-out forwards;
+  }
+}
+
+@keyframes ffxiv-tooltip-lock-pulse {
+  from {
+    box-shadow: 0 0 5px 0 currentColor;
+    opacity: 0.8;
+  }
+  to {
+    box-shadow: 0 0 8px 10px currentColor;
+    opacity: 0;
+  }
+}
+
+@keyframes ffxiv-tooltip-lock-fill {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes ffxiv-tooltip-lock-solid {
+  from { fill-opacity: 0; }
+  to { fill-opacity: 1; }
+}
+
+.ffxiv-hotbar-ability-tooltip.locked {
+  pointer-events: auto;
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+}
+
+.ffxiv-hotbar-ability-tooltip,
+#tooltip.ffxiv-enriched-tooltip,
+.locked-tooltip.ffxiv-enriched-tooltip {
+  border: 1px solid rgba(225, 214, 169, 0.58);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.86),
+    0 3px 10px rgba(0, 0, 0, 0.54),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
 body.ffxiv-hotbar-tooltip-visible #tooltip {
   visibility: hidden;
   opacity: 0;

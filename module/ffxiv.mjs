@@ -63,6 +63,7 @@ import {
   FFXIV_SUMMON_SOCKET_TYPE,
 } from "./helpers/summons.mjs";
 import { initHotbar, registerHotbarKeybindings } from "./helpers/hotbar.mjs";
+import { initEnrichedTooltips } from "./helpers/tooltips.mjs";
 import { emitToActiveGM, getActiveGM } from "./helpers/socket.mjs";
 import { registerFormulaEditorContexts } from "./helpers/formula-editor.mjs";
 
@@ -1153,6 +1154,7 @@ Handlebars.registerHelper("hasItemType", function (items, type) {
 /* -------------------------------------------- */
 
 Hooks.once("ready", function () {
+  initEnrichedTooltips();
   installSheetDragPerformanceClass();
   initHotbar();
   initLimitBreakHud();

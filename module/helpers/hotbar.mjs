@@ -1,4 +1,5 @@
 import { getAbilitySubtype } from "./ability-subtype.mjs";
+import { addTooltipLockProgress, manageTooltipDismissal } from "./tooltips.mjs";
 
 const HOTBAR_STACK_CLASS = "ffxiv-hotbar-bars";
 const EXTRA_BAR_CLASS = "ffxiv-extra-action-bar";
@@ -13,6 +14,8 @@ let hotbarCollisionTarget = null;
 let hotbarContextMenu = null;
 let hotbarAbilityTooltip = null;
 let hotbarAbilityTooltipTimer = null;
+let cancelHotbarTooltipLock = null;
+let cancelHotbarTooltipDismissal = null;
 let hotbarAbilityTooltipSlot = null;
 let suppressHotbarRender = false;
 let coreHotbarRoutingInstalled = false;
@@ -1114,7 +1117,7 @@ function getAbilityForTooltip(slot) {
     : null;
 }
 
-function createAbilityTooltip(item) {
+async function createAbilityTooltip(item) {
   const tooltip = document.createElement("aside");
   tooltip.className = "ffxiv-hotbar-ability-tooltip";
   tooltip.setAttribute("role", "tooltip");
@@ -1190,7 +1193,12 @@ function createAbilityTooltip(item) {
       }
       const text = document.createElement("div");
       text.className = "ffxiv-hotbar-ability-section-content";
-      text.innerHTML = content;
+      text.innerHTML = await foundry.applications.ux.TextEditor.implementation.enrichHTML(content, {
+        secrets: item.isOwner,
+        async: true,
+        rollData: item.getRollData(),
+        relativeTo: item,
+      });
       section.append(text);
       body.append(section);
     }
@@ -1217,6 +1225,10 @@ function positionAbilityTooltip(tooltip, slot) {
 
 function hideAbilityTooltip() {
   clearTimeout(hotbarAbilityTooltipTimer);
+  cancelHotbarTooltipLock?.();
+  cancelHotbarTooltipLock = null;
+  cancelHotbarTooltipDismissal?.();
+  cancelHotbarTooltipDismissal = null;
   hotbarAbilityTooltipTimer = null;
   hotbarAbilityTooltipSlot = null;
   document.body.classList.remove("ffxiv-hotbar-tooltip-visible");
@@ -1225,21 +1237,36 @@ function hideAbilityTooltip() {
 }
 
 function queueAbilityTooltip(slot) {
+  if (hotbarAbilityTooltipSlot === slot && hotbarAbilityTooltip?.classList.contains("locked")) return;
   hideAbilityTooltip();
   const item = getAbilityForTooltip(slot);
   if (!item) return;
 
   hotbarAbilityTooltipSlot = slot;
-  hotbarAbilityTooltip = createAbilityTooltip(item);
-  document.body.append(hotbarAbilityTooltip);
-  positionAbilityTooltip(hotbarAbilityTooltip, slot);
-  hotbarAbilityTooltipTimer = setTimeout(() => {
-    if (!slot.isConnected || hotbarAbilityTooltipSlot !== slot) return;
+  const timer = setTimeout(async () => {
+    const tooltip = await createAbilityTooltip(item);
+    if (!slot.isConnected || hotbarAbilityTooltipSlot !== slot || hotbarAbilityTooltipTimer !== timer) return;
     hotbarAbilityTooltipTimer = null;
+    hotbarAbilityTooltip = tooltip;
+    document.body.append(tooltip);
+    positionAbilityTooltip(tooltip, slot);
     game.tooltip?.deactivate?.();
     document.body.classList.add("ffxiv-hotbar-tooltip-visible");
     hotbarAbilityTooltip?.classList.add("visible");
+    cancelHotbarTooltipLock = addTooltipLockProgress(tooltip, () => {
+      cancelHotbarTooltipLock = null;
+      if (hotbarAbilityTooltip === tooltip) {
+        tooltip.classList.add("locked");
+        cancelHotbarTooltipDismissal = manageTooltipDismissal(tooltip, slot, hideAbilityTooltip);
+        document.body.classList.remove("ffxiv-hotbar-tooltip-visible");
+      }
+    });
+    tooltip.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      hideAbilityTooltip();
+    });
   }, HOTBAR_ABILITY_TOOLTIP_DELAY);
+  hotbarAbilityTooltipTimer = timer;
 }
 
 function getPageSlots(page, actorHotbar = null) {
@@ -2030,12 +2057,18 @@ function installExtraBarHandlers(hotbar, app) {
     slot.addEventListener("pointerenter", () => queueAbilityTooltip(slot), {
       signal,
     });
-    slot.addEventListener("pointerleave", hideAbilityTooltip, { signal });
+    slot.addEventListener("pointerleave", () => {
+      if (!hotbarAbilityTooltip?.classList.contains("locked")) hideAbilityTooltip();
+    }, { signal });
   }
 
   document.addEventListener("pointermove", (event) => {
     queueHotbarHoverState(hotbar, event);
   }, { passive: true, signal });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hideAbilityTooltip();
+  }, { signal });
 
   window.addEventListener("blur", () => {
     hotbar.classList.remove("ffxiv-hotbar-hover");
