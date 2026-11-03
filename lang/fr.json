@@ -1,4 +1,9 @@
 {
+  "TYPES": {
+    "JournalEntryPage": {
+      "rule": "Règle"
+    }
+  },
   "FFXIV": {
     "Name": "Nom",
     "Level": "Niveau",
@@ -871,6 +876,11 @@
       "Large": "Grand",
       "Huge": "Énorme",
       "Colossal": "Colossal"
+    },
+    "Rules": {
+      "Aliases": "Alias",
+      "AliasesHint": "Termes détectés dans le texte, séparés par des points-virgules (ex. Entrave; Entravé). Les majuscules doivent correspondre.",
+      "NotFound": "Règle introuvable : {term}"
     },
     "None": "Aucun",
     "Special": "Spécial",

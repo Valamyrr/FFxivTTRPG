@@ -80,6 +80,11 @@
       "job": {
         "htmlFields": ["description"]
       }
+    },
+    "JournalEntryPage": {
+      "rule": {
+        "htmlFields": ["content"]
+      }
     }
   },
   "primaryTokenAttribute": "resources.health",

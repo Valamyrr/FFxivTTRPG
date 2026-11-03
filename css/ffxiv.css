@@ -5214,3 +5214,26 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
     transform: translateY(0);
   }
 }
+
+.ffxiv-rule-reference {
+  color: #000;
+  font-weight: 700;
+  cursor: help;
+}
+
+:is(.dark_theme, .blue_theme, .theme-dark, #tooltip, .locked-tooltip, .ffxiv-hotbar-ability-tooltip) .ffxiv-rule-reference {
+  color: inherit;
+}
+
+.ffxiv-rule-page-edit {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+}
+
+.ffxiv-rule-page-edit prose-mirror {
+  flex: 1;
+  min-height: 240px;
+}

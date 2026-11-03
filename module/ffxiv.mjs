@@ -66,6 +66,8 @@ import { initHotbar, registerHotbarKeybindings } from "./helpers/hotbar.mjs";
 import { initEnrichedTooltips } from "./helpers/tooltips.mjs";
 import { emitToActiveGM, getActiveGM } from "./helpers/socket.mjs";
 import { registerFormulaEditorContexts } from "./helpers/formula-editor.mjs";
+import { registerRulePages } from "./journal/rule-page.mjs";
+import { registerRules } from "./helpers/rules.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -130,6 +132,8 @@ Hooks.once("init", function () {
 
   // Add custom constants for configuration.
   CONFIG.FFXIV = FFXIV;
+  registerRulePages();
+  registerRules();
 
   // Define custom Document classes
   CONFIG.Actor.documentClass = FFXIVActor;

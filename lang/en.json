@@ -1,4 +1,9 @@
 {
+  "TYPES": {
+    "JournalEntryPage": {
+      "rule": "Rule"
+    }
+  },
   "FFXIV": {
     "Name": "Name",
     "Level": "Level",
@@ -871,6 +876,11 @@
       "Large": "Large",
       "Huge": "Huge",
       "Colossal": "Colossal"
+    },
+    "Rules": {
+      "Aliases": "Aliases",
+      "AliasesHint": "Terms detected in text, separated by semicolons (e.g. Bind; Bound). Capitalization must match.",
+      "NotFound": "Rule not found: {term}"
     },
     "None": "None",
     "Special": "Special",
