@@ -19,6 +19,7 @@ import {
 import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
 import { createChatMessage } from "./helpers/chat-message.mjs";
 import { broadcastDutyCommenced } from "./helpers/duty-commenced.mjs";
+import { getSummonerCombatant } from "./helpers/summons.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
 const ENTER_INSTANCE_SOUND = "systems/ffxiv/assets/sfx/ffxiv-enter-instance.ogg";
@@ -45,7 +46,19 @@ const STEP_END_STATUS_ICONS = {
   revivify: "systems/ffxiv/assets/effects/revivify.webp",
 };
 
+function getCombatantTurnGroup(combatant) {
+  const group = [];
+  const seen = new Set();
+  for (let entry = combatant; entry; entry = getSummonerCombatant(entry)) {
+    if (seen.has(entry.id)) return [combatant];
+    seen.add(entry.id);
+    group.unshift(entry);
+  }
+  return group;
+}
+
 export function getTurnStep(combatant) {
+  combatant = getCombatantTurnGroup(combatant)[0];
   const actorType = combatant?.actor?.type;
   const disposition = combatant?.token?.disposition;
   if (actorType === "character" || actorType === "pet") return 0;
@@ -76,6 +89,15 @@ export class FFXIVCombat extends Combat {
 
   /** @override */
   _sortCombatants(a, b) {
+    const groupA = getCombatantTurnGroup(a);
+    const groupB = getCombatantTurnGroup(b);
+    const length = Math.min(groupA.length, groupB.length);
+    let index = 0;
+    while (index < length && groupA[index].id === groupB[index].id) index++;
+    if (index === length) return groupB.length - groupA.length;
+
+    a = groupA[index];
+    b = groupB[index];
     const stepDifference = getTurnStep(a) - getTurnStep(b);
     if (stepDifference !== 0) return stepDifference;
 
@@ -89,14 +111,16 @@ export class FFXIVCombat extends Combat {
     return String(a.name ?? "").localeCompare(
       String(b.name ?? ""),
       game.i18n.lang,
-    );
+    ) || String(a.id).localeCompare(String(b.id));
   }
 
   /** @override */
   async rollInitiative(ids, options = {}) {
     const requested = new Set(Array.isArray(ids) ? ids : [ids]);
     const combatants = this.combatants
-      .filter((combatant) => requested.has(combatant.id))
+      .filter((combatant) =>
+        requested.has(combatant.id) && !getSummonerCombatant(combatant),
+      )
       .sort(this._sortCombatants.bind(this));
     if (!combatants.length) return this;
 
@@ -117,11 +141,11 @@ export class FFXIVCombat extends Combat {
 
   async reorderCombatant(combatantId, direction) {
     const combatant = this.combatants.get(combatantId);
-    if (!combatant) return this;
+    if (!combatant || getSummonerCombatant(combatant)) return this;
 
     const step = getTurnStep(combatant);
     const stepCombatants = this.turns.filter(
-      (entry) => getTurnStep(entry) === step,
+      (entry) => getTurnStep(entry) === step && !getSummonerCombatant(entry),
     );
     const currentIndex = stepCombatants.findIndex(
       (entry) => entry.id === combatant.id,
@@ -789,7 +813,9 @@ export class FFXIVCombat extends Combat {
     const used = this.combatants
       .filter(
         (combatant) =>
-          getTurnStep(combatant) === step && !excludedIds.has(combatant.id),
+          getTurnStep(combatant) === step &&
+          !getSummonerCombatant(combatant) &&
+          !excludedIds.has(combatant.id),
       )
       .map((combatant) => Number(combatant.initiative))
       .filter(Number.isFinite);
