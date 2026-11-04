@@ -1224,6 +1224,9 @@ export class FFXIVItem extends Item {
   _getSummonSourceToken() {
     const actor = this.parent?.documentName === "Actor" ? this.parent : null;
     if (!actor) return null;
+    if (actor.isToken) {
+      return actor.token?.parent?.id === canvas?.scene?.id ? actor.token : null;
+    }
 
     const controlled = canvas?.tokens?.controlled?.find((token) =>
       this._isSummonSourceTokenForActor(token, actor),
@@ -1246,6 +1249,7 @@ export class FFXIVItem extends Item {
     const tokenActor = token.actor ?? token.document?.actor;
     if (tokenActor === actor) return true;
     if (String(tokenActor?.uuid ?? "") === String(actor.uuid ?? "")) return true;
+    if (actor.isToken) return false;
     const tokenActorId = String(token.document?.actorId ?? token.actorId ?? "");
     return tokenActorId && tokenActorId === String(actor.id ?? "");
   }
@@ -1333,7 +1337,9 @@ export class FFXIVItem extends Item {
     const tokenData = tokenDocument.toObject();
     const actorData = this._getSummonActorData(actor);
     const disposition =
-      sourceToken?.disposition ?? sourceToken?.object?.document?.disposition;
+      sourceToken?.disposition ??
+      sourceToken?.object?.document?.disposition ??
+      this.parent?.prototypeToken?.disposition;
 
     tokenData.actorLink = false;
     tokenData.actorId = null;

@@ -446,6 +446,49 @@
   opacity: 0.3;
 }
 
+#combat-tracker .combatant.ffxiv-combat-summon,
+.combat-tracker .combatant.ffxiv-combat-summon,
+#combat-tracker .combatant.ffxiv-combat-summoner,
+.combat-tracker .combatant.ffxiv-combat-summoner {
+  position: relative;
+  border-radius: 0;
+  background-image: linear-gradient(90deg, rgba(201, 181, 139, 0.06), transparent 70%);
+}
+
+#combat-tracker .combatant.ffxiv-combat-summon-start,
+.combat-tracker .combatant.ffxiv-combat-summon-start {
+  border-radius: 4px 4px 0 0;
+}
+
+#combat-tracker .combatant.ffxiv-combat-summoner,
+.combat-tracker .combatant.ffxiv-combat-summoner {
+  border-radius: 0 0 4px 4px;
+}
+
+#combat-tracker .ffxiv-combat-summon-link,
+.combat-tracker .ffxiv-combat-summon-link {
+  position: absolute;
+  top: -9px;
+  left: calc(var(--element-spacing, 8px) + var(--sidebar-item-height, 48px) * 0.5 - 9px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(201, 181, 139, 0.3);
+  border-radius: 50%;
+  background: var(--color-cool-5, #19191f);
+  color: var(--color-text-secondary, #c9b58b);
+  font-size: 9px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#combat-tracker .ffxiv-combat-summon-start .ffxiv-combat-summon-link,
+.combat-tracker .ffxiv-combat-summon-start .ffxiv-combat-summon-link {
+  display: none;
+}
+
 form.active-effect-config .form-group.statuses .ffxiv-status-stack-controls {
   display: inline-flex;
   align-items: center;

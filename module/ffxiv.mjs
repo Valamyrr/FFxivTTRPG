@@ -61,6 +61,9 @@ import { clearActorJobResources } from "./helpers/job-resources.mjs";
 import {
   createSummonTokenFromRequest,
   FFXIV_SUMMON_SOCKET_TYPE,
+  getSummonerCombatant,
+  getSummonTokenDisposition,
+  syncSummonTokenDispositions,
 } from "./helpers/summons.mjs";
 import { initHotbar, registerHotbarKeybindings } from "./helpers/hotbar.mjs";
 import { initEnrichedTooltips } from "./helpers/tooltips.mjs";
@@ -670,6 +673,42 @@ Hooks.on("renderCombatTracker", (app, html) => {
   renderCombatStepIndicators(app, html);
   renderCombatTrackerStatusStacks(app, html);
   renderCombatTrackerOrderControls(app, html);
+  renderCombatTrackerSummonGroups(app, html);
+});
+
+Hooks.on("preCreateToken", (token) => {
+  const disposition = getSummonTokenDisposition(token);
+  if (Number.isFinite(disposition)) token.updateSource({ disposition });
+});
+
+Hooks.on("preUpdateToken", (token, changes) => {
+  if (!("disposition" in changes)) return;
+  const disposition = getSummonTokenDisposition(token);
+  if (Number.isFinite(disposition)) changes.disposition = disposition;
+});
+
+Hooks.on("updateToken", (token, changes) => {
+  if (!("disposition" in changes) || game.user.id !== getActiveGM()?.id) return;
+  syncSummonTokenDispositions(token.parent).catch((error) => {
+    debugError("FFXIV | Failed to sync summon dispositions:", error);
+  });
+});
+
+Hooks.on("canvasReady", (canvas) => {
+  if (game.user.id !== getActiveGM()?.id) return;
+  syncSummonTokenDispositions(canvas.scene).catch((error) => {
+    debugError("FFXIV | Failed to sync summon dispositions:", error);
+  });
+});
+
+Hooks.on("updateActor", (_actor, changes) => {
+  if (game.user.id !== getActiveGM()?.id) return;
+  if (!foundry.utils.hasProperty(changes, "prototypeToken.disposition")) return;
+  for (const scene of game.scenes) {
+    syncSummonTokenDispositions(scene).catch((error) => {
+      debugError("FFXIV | Failed to sync summon dispositions:", error);
+    });
+  }
 });
 
 /* -------------------------------------------- */
@@ -5181,6 +5220,7 @@ function renderCombatTrackerOrderControls(app, html) {
 
   const stepIndexes = new Map();
   for (const combatant of turns) {
+    if (getSummonerCombatant(combatant)) continue;
     const step = getTurnStep(combatant);
     if (!stepIndexes.has(step)) stepIndexes.set(step, []);
     stepIndexes.get(step).push(combatant.id);
@@ -5195,6 +5235,12 @@ function renderCombatTrackerOrderControls(app, html) {
     const controls = getCombatTrackerInitiativeElement(combatantElement);
     if (!(controls instanceof HTMLElement)) continue;
 
+    if (getSummonerCombatant(combatant)) {
+      controls.replaceChildren();
+      controls.classList.remove("ffxiv-combat-order-controls");
+      continue;
+    }
+
     const stepIds = stepIndexes.get(getTurnStep(combatant)) ?? [];
     const index = stepIds.indexOf(combatant.id);
     controls.replaceChildren(
@@ -5207,6 +5253,58 @@ function renderCombatTrackerOrderControls(app, html) {
       ),
     );
     controls.classList.add("ffxiv-combat-order-controls");
+  }
+}
+
+function renderCombatTrackerSummonGroups(app, html) {
+  const element = getHookHTMLElement(html, app);
+  if (!element) return;
+
+  const combat = app?.viewed ?? app?.combat ?? game.combat;
+  const rows = new Map();
+  for (const row of element.querySelectorAll("[data-combatant-id]")) {
+    row.classList.remove(
+      "ffxiv-combat-summon",
+      "ffxiv-combat-summoner",
+      "ffxiv-combat-summon-start",
+    );
+    row.querySelectorAll(".ffxiv-combat-summon-link").forEach((link) => link.remove());
+    rows.set(row.dataset.combatantId, row);
+  }
+
+  const groups = new Map();
+  for (const combatant of combat?.turns ?? []) {
+    if (!rows.has(combatant.id)) continue;
+    let summoner = getSummonerCombatant(combatant);
+    if (!summoner) continue;
+
+    const seen = new Set([combatant.id]);
+    while (summoner) {
+      if (seen.has(summoner.id)) {
+        summoner = null;
+        break;
+      }
+      seen.add(summoner.id);
+      const parent = getSummonerCombatant(summoner);
+      if (!parent) break;
+      summoner = parent;
+    }
+    if (!summoner || !rows.has(summoner.id)) continue;
+    if (!groups.has(summoner.id)) groups.set(summoner.id, []);
+    groups.get(summoner.id).push(combatant.id);
+  }
+
+  for (const [summonerId, summonIds] of groups) {
+    const groupIds = [...summonIds, summonerId];
+    for (const [index, id] of groupIds.entries()) {
+      const row = rows.get(id);
+      row.classList.add(id === summonerId ? "ffxiv-combat-summoner" : "ffxiv-combat-summon");
+      if (index === 0) row.classList.add("ffxiv-combat-summon-start");
+      const link = document.createElement("span");
+      link.className = "ffxiv-combat-summon-link fa-solid fa-link";
+      link.setAttribute("aria-hidden", "true");
+      row.appendChild(link);
+    }
   }
 }
 
