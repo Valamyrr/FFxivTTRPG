@@ -55,17 +55,35 @@
         {{else}}
           <span class="npc-plain-value npc-specie">{{system.specie}}</span>
         {{/if}}
+      </div>
+      <div class="statblock-meta-line">
         {{#if actorEditMode }}
+          <select name="system.threat_rank"
+                  class="input-transparent ffxiv-w-auto"
+                  title="{{localize 'FFXIV.CharacterSheet.ThreatRanking'}}">
+            <option value="">{{localize "FFXIV.CharacterSheet.ThreatRanking"}}</option>
+            {{#each (array "Mob" "Menace" "Champion" "Solo" "Boss") as |label| }}
+              <option value="{{label}}" {{#if (eq ../system.threat_rank label) }}selected{{/if}}>
+                {{localize (concat "FFXIV.ThreatRanks." label)}}
+              </option>
+            {{/each}}
+          </select>
           <label class="npc-elite-foe-toggle" title="{{localize 'FFXIV.CharacterSheet.EliteFoeHint'}}">
             <input type="checkbox"
                    name="system.elite_foe"
                    {{#if system.elite_foe}}checked{{/if}} />
             <span>{{localize "FFXIV.CharacterSheet.EliteFoe"}}</span>
           </label>
-        {{else if system.elite_foe}}
-          <span class="npc-elite-foe-badge" title="{{localize 'FFXIV.CharacterSheet.EliteFoeHint'}}">
-            {{localize "FFXIV.CharacterSheet.EliteFoe"}}
-          </span>
+        {{else}}
+          {{#if system.threat_rank }}
+            {{ localize "FFXIV.CharacterSheet.ThreatRanking" }}:
+            <span class="npc-plain-value">{{localize (concat "FFXIV.ThreatRanks." system.threat_rank)}}</span>
+          {{/if}}
+          {{#if system.elite_foe}}
+            <span class="npc-elite-foe-badge" title="{{localize 'FFXIV.CharacterSheet.EliteFoeHint'}}">
+              {{localize "FFXIV.CharacterSheet.EliteFoe"}}
+            </span>
+          {{/if}}
         {{/if}}
       </div>
     </div>
@@ -153,8 +171,21 @@
                              name="system.secondary_attributes.speed.value"
                              value="{{ system.secondary_attributes.speed.value }}"
                              placeholder="0" />
+                      <select name="system.speed_type"
+                              class="input-transparent ffxiv-w-auto"
+                              title="{{localize 'FFXIV.Attributes.SpeedType'}}">
+                        <option value=""></option>
+                        {{#each (array "Flying" "Aquatic") as |label| }}
+                          <option value="{{label}}" {{#if (eq ../system.speed_type label) }}selected{{/if}}>
+                            {{localize (concat "FFXIV.SpeedTypes." label)}}
+                          </option>
+                        {{/each}}
+                      </select>
                     {{else}}
                       <span class="npc-plain-value npc-stat-number">{{system.secondary_attributes.speed.value}}</span>
+                      {{#if system.speed_type }}
+                        <span class="npc-speed-type">({{localize (concat "FFXIV.SpeedTypes." system.speed_type)}})</span>
+                      {{/if}}
                     {{/if}}
                   </span>
                 </div>

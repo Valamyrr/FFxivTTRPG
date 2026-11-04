@@ -129,15 +129,13 @@
   vertical-align: middle;
 }
 
-.npc-statblock .npc-size-value {
-  min-width: 90px;
-  width: 90px;
+.npc-statblock :is(.npc-size-value, .npc-size-number) {
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .npc-statblock .npc-size-number {
-  min-width: 2.25em;
   padding: 0;
-  width: 2.25em;
 }
 
 .npc-statblock .npc-stat-number {
@@ -300,6 +298,15 @@
 
 .npc-secondary-stat .npc-stat-control {
   justify-content: flex-start;
+}
+
+.npc-secondary-stat:has(.npc-speed-type, select) {
+  grid-template-columns: auto auto;
+}
+
+.npc-speed-type {
+  text-transform: lowercase;
+  white-space: nowrap;
 }
 
 .npc-secondary-stat .npc-stat-number,
@@ -617,11 +624,10 @@
 }
 
 .statblock-meta-line {
-  flex: 1 1 24ch;
+  flex: 0 0 auto;
   flex-wrap: nowrap;
   justify-content: flex-end;
   margin-left: auto;
-  min-width: min(100%, 24ch);
   white-space: nowrap;
 }
 
@@ -756,7 +762,8 @@
   color: var(--text-color-input);
 }
 
-.npc-statblock .statblock-size-line select.input-transparent {
+.npc-statblock :is(.statblock-size-line, .statblock-meta-line, .npc-secondary-stat) select.input-transparent {
+  flex: 0 0 auto;
   width: auto;
   min-width: 0;
   max-width: 10.5em;
@@ -927,5 +934,8 @@
   min-width: 0 !important;
   max-width: none !important;
   margin-left: 0.15em !important;
+  overflow: hidden;
   text-align: left !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
