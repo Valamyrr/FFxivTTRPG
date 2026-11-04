@@ -581,6 +581,8 @@
       "ThemeHint": "Color palettes with which you want to display sheets.",
       "DebugLogging": "Debug Logging",
       "DebugLoggingHint": "Enable extra FFXIV system messages in the browser console for troubleshooting.",
+      "RuleHoverTooltips": "Rule Hover Tooltips",
+      "RuleHoverTooltipsHint": "Show rule explanations when you hover over matching terms. This setting only affects your user.",
       "DefaultHotbarRowsUser": "Default User Hotbar Rows",
       "DefaultHotbarRowsCharacter": "Default Character Hotbar Rows",
       "DefaultHotbarRowsNpc": "Default NPC Hotbar Rows",

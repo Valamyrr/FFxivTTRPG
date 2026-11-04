@@ -12,7 +12,7 @@ export function getActiveGM() {
   return next;
 }
 
-export function emitToActiveGM(payload) {
+export function emitToActiveGM(payload, options = {}) {
   const gm = getActiveGM();
   if (!gm) {
     ui.notifications.warn(
@@ -24,6 +24,6 @@ export function emitToActiveGM(payload) {
   game.socket.emit("system.ffxiv", {
     ...payload,
     gmUserId: gm.id,
-  });
+  }, options);
   return true;
 }

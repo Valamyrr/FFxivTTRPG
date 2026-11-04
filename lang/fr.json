@@ -581,6 +581,8 @@
       "ThemeHint": "La palette de couleurs avec laquelle vous voulez représenter vos fiches.",
       "DebugLogging": "Journalisation de débogage",
       "DebugLoggingHint": "Active les messages supplémentaires du système FFXIV dans la console du navigateur pour le dépannage.",
+      "RuleHoverTooltips": "Infobulles des règles au survol",
+      "RuleHoverTooltipsHint": "Affiche les explications des règles au survol des termes correspondants. Ce paramètre ne concerne que votre utilisateur.",
       "DefaultHotbarRowsUser": "Nombre de lignes par défaut de la barre de raccourcis utilisateur",
       "DefaultHotbarRowsCharacter": "Nombre de lignes par défaut de la barre de raccourcis des personnages",
       "DefaultHotbarRowsNpc": "Nombre de lignes par défaut de la barre de raccourcis des PNJ",

@@ -67,7 +67,7 @@ import { initEnrichedTooltips } from "./helpers/tooltips.mjs";
 import { emitToActiveGM, getActiveGM } from "./helpers/socket.mjs";
 import { registerFormulaEditorContexts } from "./helpers/formula-editor.mjs";
 import { registerRulePages } from "./journal/rule-page.mjs";
-import { registerRules } from "./helpers/rules.mjs";
+import { registerRules, RULE_SOCKET_TYPE } from "./helpers/rules.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -9060,7 +9060,7 @@ Hooks.on("ready", function () {
     game.socket.on("system.ffxiv", async (params) => {
       debugLog("get socket");
       const { type, data, userName, gmUserId } = params;
-      if (!gmUserId || gmUserId !== game.user.id) return;
+      if (!gmUserId || gmUserId !== game.user.id || type === RULE_SOCKET_TYPE) return;
       const actors = await resolveSocketActors(data);
       switch (type) {
         case "applyResourceRule": {
