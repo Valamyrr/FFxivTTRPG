@@ -336,7 +336,7 @@ function registerRuleTooltips() {
         if (!stillHovered()) return;
         const html = await ruleTooltipHTML(reference);
         if (!stillHovered() || !canReferenceRule(reference.dataset.ruleUuid)) return;
-        game.tooltip.activate(reference, { html, direction: "UP", cssClass: "ffxiv-rule-tooltip" });
+        game.tooltip.activate(reference, { html, direction: "UP", cssClass: "ffxiv-rule-tooltip ffxiv-enriched-tooltip" });
       } catch (error) {
         console.error("FFXIV | Failed to create rule tooltip", error);
       }

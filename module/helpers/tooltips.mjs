@@ -107,11 +107,12 @@ export function initEnrichedTooltips() {
       source = null;
       return;
     }
-    if (element === source) return;
+    if (element === source && tooltip.classList.contains("ffxiv-enriched-tooltip")) return;
     cancelProgress?.();
+    cancelProgress = null;
+    source = null;
+    if (!tooltip.classList.contains("ffxiv-enriched-tooltip")) return;
     source = element;
-    if (!element?.closest(".content-link, .enriched-text, [data-ffxiv-tooltip]")) return;
-    tooltip.classList.add("ffxiv-enriched-tooltip");
     cancelProgress = addTooltipLockProgress(tooltip, () => {
       if (game.tooltip.element !== element || !element.matches(":hover")) return;
       const locked = game.tooltip.lockTooltip();
@@ -145,7 +146,7 @@ export function initEnrichedTooltips() {
         rollData: doc.getRollData?.() ?? {},
       });
       if (pending !== request || !link.isConnected || !link.matches(":hover")) return;
-      game.tooltip.activate(link, { html, direction: "UP" });
+      game.tooltip.activate(link, { html, direction: "UP", cssClass: "ffxiv-enriched-tooltip" });
     } catch (error) {
       console.error("FFXIV | Failed to create enriched tooltip", error);
     }
