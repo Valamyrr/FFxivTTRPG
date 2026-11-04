@@ -1,0 +1,10 @@
+<div>
+  {{#if rule.showTitle}}
+  <header class="journal-page-header">
+    <h{{rule.titleLevel}}>{{rule.name}}</h{{rule.titleLevel}}>
+  </header>
+  {{/if}}
+  <section class="journal-page-content">
+    {{{rule.content}}}
+  </section>
+</div>

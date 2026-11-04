@@ -69,6 +69,8 @@ import { initHotbar, registerHotbarKeybindings } from "./helpers/hotbar.mjs";
 import { initEnrichedTooltips } from "./helpers/tooltips.mjs";
 import { emitToActiveGM, getActiveGM } from "./helpers/socket.mjs";
 import { registerFormulaEditorContexts } from "./helpers/formula-editor.mjs";
+import { registerRulePages } from "./journal/rule-page.mjs";
+import { registerRules, RULE_SOCKET_TYPE } from "./helpers/rules.mjs";
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -133,6 +135,8 @@ Hooks.once("init", function () {
 
   // Add custom constants for configuration.
   CONFIG.FFXIV = FFXIV;
+  registerRulePages();
+  registerRules();
 
   // Define custom Document classes
   CONFIG.Actor.documentClass = FFXIVActor;
@@ -9154,7 +9158,7 @@ Hooks.on("ready", function () {
     game.socket.on("system.ffxiv", async (params) => {
       debugLog("get socket");
       const { type, data, userName, gmUserId } = params;
-      if (!gmUserId || gmUserId !== game.user.id) return;
+      if (!gmUserId || gmUserId !== game.user.id || type === RULE_SOCKET_TYPE) return;
       const actors = await resolveSocketActors(data);
       switch (type) {
         case "applyResourceRule": {
