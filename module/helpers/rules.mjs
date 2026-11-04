@@ -219,8 +219,20 @@ const ruleEnricher = {
 };
 
 let ruleTerms = new Map();
+let ruleMatchers = [];
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+function ruleTermPattern(term) {
+  return term.split(/(\([XY]\)|(?<![\p{L}\p{N}_])[XY](?![\p{L}\p{N}_]))/u)
+    .map((part) => {
+      if (/^\([XY]\)$/u.test(part)) return String.raw`\(\d+\)`;
+      if (/^[XY]$/u.test(part)) {
+        return String.raw`(?:[\p{Lu}\p{Lt}][\p{L}\p{N}'-]*[ \t]+)*[\p{L}\p{N}][\p{L}\p{N}'-]*`;
+      }
+      return escapeRegExp(part);
+    }).join("");
+}
 
 function updateLocalRules() {
   rulePages = new Map([...rulePagesOf(game.journal)].filter(canReadRule).map((page) => [page.uuid, page]));
@@ -252,10 +264,14 @@ function updateRuleTerms() {
       }
     }
   }
-  const unchanged = next.size === ruleTerms.size && [...next.keys()].every((term) => ruleTerms.has(term));
+  const unchanged = next.size === ruleTerms.size && [...next].every(([term, uuid]) => ruleTerms.get(term) === uuid);
   ruleTerms = next;
   if (unchanged) return;
-  const terms = [...ruleTerms.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp);
+  const terms = [...ruleTerms.keys()].sort((a, b) => b.length - a.length).map(ruleTermPattern);
+  ruleMatchers = [...ruleTerms.entries()]
+    .filter(([term]) => ruleTermPattern(term) !== escapeRegExp(term))
+    .sort(([a], [b]) => b.length - a.length)
+    .map(([term, uuid]) => ({ pattern: new RegExp(`^(?:${ruleTermPattern(term)})$`, "u"), uuid }));
   const pattern = terms.length
     ? String.raw`(?<![\p{L}\p{N}_])(${terms.join("|")})(?![\p{L}\p{N}_])`
     : NO_MATCH.source;
@@ -263,7 +279,7 @@ function updateRuleTerms() {
 }
 
 function enrichRuleMatch([text], options = {}) {
-  const uuid = ruleTerms.get(text);
+  const uuid = ruleTerms.get(text) ?? ruleMatchers.find(({ pattern }) => pattern.test(text))?.uuid;
   if (!uuid || uuid === options.relativeTo?.uuid || !canReferenceRule(uuid)) return null;
 
   const reference = document.createElement("span");

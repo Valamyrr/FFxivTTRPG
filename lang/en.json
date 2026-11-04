@@ -582,7 +582,7 @@
       "DebugLogging": "Debug Logging",
       "DebugLoggingHint": "Enable extra FFXIV system messages in the browser console for troubleshooting.",
       "RuleHoverTooltips": "Rule Hover Tooltips",
-      "RuleHoverTooltipsHint": "Show rule explanations when you hover over matching terms. This setting only affects your user.",
+      "RuleHoverTooltipsHint": "Show rule explanations when you hover over matching terms. This setting only affects your account.",
       "DefaultHotbarRowsUser": "Default User Hotbar Rows",
       "DefaultHotbarRowsCharacter": "Default Character Hotbar Rows",
       "DefaultHotbarRowsNpc": "Default NPC Hotbar Rows",
@@ -881,7 +881,7 @@
     },
     "Rules": {
       "Aliases": "Aliases",
-      "AliasesHint": "Terms detected in text, separated by semicolons (e.g. Bind; Bound). Capitalization must match.",
+      "AliasesHint": "Terms detected in text, separated by semicolons (e.g. Bind; Bound). Capitalization must match. Use X to represent an arbitrary name and (X) or (Y) to represent a number.",
       "NotFound": "Rule not found: {term}"
     },
     "None": "None",
