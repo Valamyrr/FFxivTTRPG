@@ -288,6 +288,10 @@ Entries support `key`, `name`, `buttonLabel`, `criticalButtonLabel`, `flavorLabe
 
 On applicable effects, `damage.incoming.flat` / `.mult`, `damage.outgoing.flat` / `.mult`, and `damage.self.flat` / `.mult` accept numbers. Flat flags sum and multiplier flags multiply. `incoming` belongs to the damaged actor, `outgoing` to the source, and `self` is consulted for self-damage. These modify applied damage, separately from dice/formula modifiers. They do not take tag-filter objects.
 
+Ability damage combines the base effect with any applicable direct hit or critical damage before applying these modifiers. Each target receives its own total, with flat adjustments and multipliers applied once. Manual direct hit and critical rolls update the combined result before damage is applied.
+
+The damage and healing target lists follow the local user's current targets. Each application records its own recipients and direct hit outcomes, so targeting changes do not affect a pending request. The same roll can be applied again after the request finishes, including damage and healing to different targets.
+
 ### `damage.application`
 
 Set this on an applicable effect belonging to the actor taking damage. Each rule changes the damage left after the previous rule. This example prevents half the damage, rounded up, and consumes the effect:

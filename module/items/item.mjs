@@ -46,6 +46,7 @@ import {
 import { isAbilityAutomationEnabled } from "../helpers/automation.mjs";
 import { emitToActiveGM, getActiveGM } from "../helpers/socket.mjs";
 import { createChatMessage } from "../helpers/chat-message.mjs";
+import { getAbilityDamageTargets, renderAbilityDamageTargets } from "../helpers/ability-targets.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
   "consumable",
@@ -1030,19 +1031,16 @@ export class FFXIVItem extends Item {
       flavor: game.i18n.format("FFXIV.ItemType." + this.type),
     });
 
-    const checkResult = this._shouldAutoCheckBeforeBase()
-      ? await this._rollHit({ auto: true, deferHitThresholdRules: true })
+    const checkResult = this._hasHitRoll()
+      ? await this._rollHit({ auto: this._shouldAutoCheckBeforeBase(), deferHitThresholdRules: true })
       : null;
+    if (this._hasHitRoll() && !checkResult) return;
     if (checkResult?.interrupted) {
       this._clearTargetsAfterAbilityUse();
       return;
     }
 
-    await this._rollBase({
-      critical: checkResult?.isCritical ?? false,
-      autoFromHit: Boolean(checkResult),
-      forceCriticalRule: checkResult?.forceCriticalRule ?? null,
-    });
+    const baseMessage = !checkResult ? await this._rollBase() : null;
     await this._consumeForceCriticalRule(checkResult?.forceCriticalRule);
     const effectRuleResults = await this._applyEffectRules("use", {
       jobResourceCosts: this._ffxivJobResourceCostResult,
@@ -1063,7 +1061,8 @@ export class FFXIVItem extends Item {
     for (const marker of markers) {
       await game.ffxivttrpg.placeMarker(foundry.utils.deepClone(marker));
     }
-    this._clearTargetsAfterAbilityUse();
+    if (!checkResult?.hasApplication && !baseMessage?.getFlag("ffxiv", "damageResolution"))
+      this._clearTargetsAfterAbilityUse();
   }
 
   _playErrorSound() {
@@ -2181,8 +2180,11 @@ export class FFXIVItem extends Item {
       });
     }
 
-    const autoDirectHit =
-      !isInterrupted && this._shouldAutoRollDirectHit(roll, options);
+    const autoDirectHit = !isInterrupted && this._hasDirectRoll() &&
+      (isCritical || this._shouldAutoRollDirectHit(roll, options));
+    const baseResult = !isInterrupted
+      ? await this._evaluateBaseRoll({ ...options, critical: isCritical, autoFromHit: true })
+      : null;
     const directHitResult = autoDirectHit
       ? await this._evaluateDirectHitRoll({
         critical: isCritical,
@@ -2209,7 +2211,7 @@ export class FFXIVItem extends Item {
     extraButtons += "</div>";
 
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    if (isCritical) rollHTML.find(".dice-total").css({ color: "blue" });
+    if (isCritical) rollHTML.find(".dice-total").addClass("critical");
     if (isCriticalFailure) rollHTML.find(".dice-total").css({ color: "red" });
     if (enmityPenaltyApplies) {
       rollHTML.append(
@@ -2233,13 +2235,19 @@ export class FFXIVItem extends Item {
         `<div>${game.i18n.localize("FFXIV.Notifications.ParalysisInterrupted")}</div>`,
       );
     }
-    if (directHitResult) {
-      rollHTML.append(
-        `<hr><div style="font-weight: 700; margin: 4px 0;">${directHitResult.flavor}</div>`,
-      );
-      rollHTML.append(directHitResult.html.html());
-      rollHTML.append(this._getApplyButton(directHitResult.roll.result));
-    }
+    const resolution = !isInterrupted && (baseResult || directHitResult)
+      ? this._createAbilityDamageResolution(baseResult, directHitResult, {
+        ...options,
+        critical: isCritical,
+        checkRoll: roll,
+        checkTotal: roll.total,
+        automaticDirectHit: this._hasDirectRoll() && (
+          isCritical || autoDirectHit || game.settings.get("ffxiv", "autoRollDirectHitDamage")
+        ),
+        buttons: extraButtons,
+      })
+      : null;
+    if (resolution) rollHTML.append(await this._renderAbilityDamage(resolution));
 
     await createChatMessage({
       user,
@@ -2247,9 +2255,14 @@ export class FFXIVItem extends Item {
       flavor: this._hasCheck()
         ? game.i18n.localize("FFXIV.Abilities.Check")
         : game.i18n.format("FFXIV.Abilities.HitRoll"),
-      rolls: directHitResult ? [roll, directHitResult.roll] : [roll],
-      content: `${rollHTML.html()} ${isInterrupted ? "" : extraButtons}`,
+      rolls: [roll, baseResult?.roll, directHitResult?.roll].filter(Boolean),
+      content: `${rollHTML.html()} ${isInterrupted || resolution ? "" : extraButtons}`,
+      flags: resolution ? { ffxiv: { damageResolution: resolution } } : {},
     });
+    if (baseResult?.forceCriticalRule)
+      await this._consumeForceCriticalRule(baseResult.forceCriticalRule);
+    if (directHitResult?.forceCriticalRule)
+      await this._consumeForceCriticalRule(directHitResult.forceCriticalRule);
 
     if (!isInterrupted && !options.deferHitThresholdRules) {
       await this._applyEffectRules("hitThreshold", {
@@ -2269,31 +2282,17 @@ export class FFXIVItem extends Item {
       directHitRoll: directHitResult?.roll ?? null,
       forceCriticalRule,
       deferredHitThresholdRules: options.deferHitThresholdRules === true,
+      hasApplication: Boolean(resolution),
     };
   }
 
   async _rollAutomaticCriticalCheck(options = {}) {
-    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
-    let directHitResult = null;
-    if (this._hasDirectRoll()) {
-      directHitResult = await this._evaluateDirectHitRoll({
-        ...options,
-        critical: true,
-        autoFromHit: true,
-      });
-      if (directHitResult) {
-        await createChatMessage({
-          user: game.user.id,
-          speaker,
-          rolls: [directHitResult.roll],
-          flavor: directHitResult.flavor,
-          content: `${directHitResult.html.html()} ${this._getApplyButton(directHitResult.roll.result)}`,
-        });
-        if (!this._hasFormula(this.system.base_formula)) {
-          await this._consumeForceCriticalRule(options.forceCriticalRule);
-        }
-      }
-    }
+    const rollOptions = { ...options, critical: true, autoFromHit: true };
+    const baseResult = await this._evaluateBaseRoll(rollOptions);
+    const directHitResult = await this._evaluateDirectHitRoll(rollOptions);
+    await this._postAbilityDamage(baseResult, directHitResult, rollOptions);
+    await this._consumeForceCriticalRule(options.forceCriticalRule);
+    await this._consumeForceCriticalRule(directHitResult?.forceCriticalRule);
 
     await this._applyCriticalJobResourceAutomation(true);
     return {
@@ -2306,22 +2305,81 @@ export class FFXIVItem extends Item {
       forceCriticalRule: options.forceCriticalRule ?? null,
       deferredHitThresholdRules: false,
       automaticCritical: true,
+      hasApplication: Boolean(baseResult || directHitResult),
     };
   }
 
   async _rollDirect(options = {}) {
     options = this._normalizeRollOptions(options);
+    const message = game.messages.get(options.messageId);
+    const stored = message?.getFlag("ffxiv", "damageResolution");
+    const previous = stored ? { ...stored, targets: getAbilityDamageTargets(stored) } : null;
+    if (previous && (previous.targetsLocked || previous.appliedTargets?.length || previous.pendingTargets?.length || previous.healingApplied))
+      return;
+    let directTargets = previous?.targets.map((target) => target.actorUuid) ?? [];
+    if (directTargets.length > 1) {
+      directTargets = await foundry.applications.api.DialogV2.wait({
+        window: { title: game.i18n.localize("FFXIV.Chat.DirectHitTargets") },
+        content: previous.targets.map((target, index) =>
+          `<div class="form-group"><label>${foundry.utils.escapeHTML(target.name)}</label><input type="checkbox" name="target-${index}" checked></div>`,
+        ).join(""),
+        buttons: [{
+          action: "roll",
+          label: game.i18n.localize("FFXIV.RollDialog.ButtonRoll"),
+          default: true,
+          callback: (_event, button) => previous.targets
+            .filter((_target, index) => button.form.elements[`target-${index}`].checked)
+            .map((target) => target.actorUuid),
+        }],
+        rejectClose: false,
+      });
+      if (!directTargets) return;
+    }
+    const current = message?.getFlag("ffxiv", "damageResolution");
+    if (current && (current.targetsLocked || current.appliedTargets.length || current.pendingTargets.length || current.healingApplied))
+      return;
+    if (options.directHitOption) {
+      const option = this._getDirectHitOption(options.directHitOption, options);
+      if (!option || !this._canUseDirectHitOption(option)) return;
+      const currentMana = Number(this.parent?.system?.mana?.value ?? 0);
+      await this.parent.update(
+        { "system.mana.value": Math.max(currentMana - option.mpCost, 0) },
+        { render: false },
+      );
+      this._updateParentActorSheetManaBars();
+    }
     const directHitResult = await this._evaluateDirectHitRoll(options);
     if (!directHitResult) return;
-    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
-    const user = game.user.id;
-    await createChatMessage({
-      user: user,
-      speaker: speaker,
-      rolls: [directHitResult.roll],
-      flavor: directHitResult.flavor,
-      content: `${directHitResult.html.html()} ${this._getApplyButton(directHitResult.roll.result)}`,
+    const critical = directHitResult.critical;
+    const baseResult = previous?.baseRoll && previous.critical === critical
+      ? { roll: Roll.fromData(previous.baseRoll), flavor: previous.baseFlavor }
+      : await this._evaluateBaseRoll({ ...options, critical });
+    const resolution = this._createAbilityDamageResolution(baseResult, directHitResult, {
+      ...options,
+      critical,
+      checkRoll: previous?.checkRoll ? Roll.fromData(previous.checkRoll) : null,
+      checkTotal: previous?.checkTotal,
+      automaticDirectHit: false,
     });
+    if (previous) {
+      const current = message.getFlag("ffxiv", "damageResolution");
+      if (current.targetsLocked || current.appliedTargets.length || current.pendingTargets.length || current.healingApplied)
+        return;
+      resolution.targets = previous.targets.map((target) => ({
+        ...target,
+        direct: directTargets.includes(target.actorUuid),
+      }));
+      const content = $("<div>" + message.content + "</div>");
+      content.find(".ffxiv-ability-damage").replaceWith(await this._renderAbilityDamage(resolution));
+      await message.update({
+        content: content.html(),
+        rolls: [resolution.checkRoll ? Roll.fromData(resolution.checkRoll) : null, baseResult?.roll, directHitResult.roll].filter(Boolean),
+        "flags.ffxiv.damageResolution": resolution,
+      });
+    } else {
+      await this._postAbilityDamage(baseResult, directHitResult, { ...options, critical, automaticDirectHit: false });
+    }
+    await this._consumeForceCriticalRule(baseResult?.forceCriticalRule);
     await this._consumeForceCriticalRule(directHitResult.forceCriticalRule);
   }
 
@@ -2346,6 +2404,7 @@ export class FFXIVItem extends Item {
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
     return {
       roll,
+      critical: Boolean(critical),
       html: rollHTML,
       flavor: this._getDirectRollFlavor({
         critical,
@@ -2373,12 +2432,6 @@ export class FFXIVItem extends Item {
       return;
     }
 
-    const currentMana = Number(this.parent?.system?.mana?.value ?? 0);
-    await this.parent.update(
-      { "system.mana.value": Math.max(currentMana - directHitOption.mpCost, 0) },
-      { render: false },
-    );
-    this._updateParentActorSheetManaBars();
     await this._rollDirect({
       ...options,
       directHitOption: directHitOption.key,
@@ -2843,24 +2896,7 @@ export class FFXIVItem extends Item {
 
   async _rollCritical(options = {}) {
     options = this._normalizeRollOptions(options);
-    if (!this._hasDirectRoll()) return;
-    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
-    const user = game.user.id;
-    const rollData = this.getRollData();
-
-    let roll = new Roll(
-      await this._getCriticalDirectFormula(rollData, options),
-      rollData,
-    );
-    await roll.evaluate();
-    const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    await createChatMessage({
-      user: user,
-      speaker: speaker,
-      rolls: [roll],
-      flavor: game.i18n.format("FFXIV.Abilities.CriticalHitRoll"),
-      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`,
-    });
+    return this._rollDirect({ ...options, critical: true });
   }
 
   async _rollCriticalAlternate(options = {}) {
@@ -2897,13 +2933,19 @@ export class FFXIVItem extends Item {
 
   async _rollBase(options = {}) {
     options = this._normalizeRollOptions(options);
+    const baseResult = await this._evaluateBaseRoll(options);
+    if (!baseResult) return;
+    const message = await this._postAbilityDamage(baseResult, null, options);
+    await this._consumeForceCriticalRule(baseResult.forceCriticalRule);
+    return message;
+  }
+
+  async _evaluateBaseRoll(options = {}) {
     const forceCriticalRule = options.forceCriticalRule ??
       this._getForceCriticalRule("base", options);
     const critical = options.critical || Boolean(forceCriticalRule);
     const { autoFromHit = false } = options;
-    if (!this._hasFormula(this.system.base_formula)) return;
-    const speaker = ChatMessage.getSpeaker({ actor: this.parent });
-    const user = game.user.id;
+    if (!this._hasFormula(this.system.base_formula)) return null;
     const rollData = this.getRollData();
     const baseFormula = this._appendDamageFormulaModifiers(
       this._appendActorDamageModifier(rollData.base_formula),
@@ -2920,15 +2962,71 @@ export class FFXIVItem extends Item {
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
 
-    const rollHTML = $("<div>" + (await roll.render()) + "</div>");
-    await createChatMessage({
-      user: user,
-      speaker: speaker,
-      rolls: [roll],
+    return {
+      roll,
+      critical: Boolean(critical),
       flavor: this._getBaseRollFlavor({ critical, autoFromHit }),
-      content: `${rollHTML.html()} ${this._getApplyButton(roll.result)}`,
+      forceCriticalRule: critical ? forceCriticalRule : null,
+    };
+  }
+
+  _createAbilityDamageResolution(baseResult, directHitResult, options = {}) {
+    const critical = Boolean(options.critical || baseResult?.critical);
+    const rollData = this.getRollData();
+    const resolution = {
+      sourceActorUuid: this.parent?.uuid ?? "",
+      sourceItemUuid: this.uuid,
+      baseRoll: baseResult?.roll.toJSON() ?? null,
+      directRoll: directHitResult?.roll.toJSON() ?? null,
+      baseFlavor: baseResult?.flavor ?? "",
+      directFlavor: directHitResult?.flavor ?? "",
+      critical,
+      automaticDirectHit: options.automaticDirectHit ?? game.settings.get("ffxiv", "autoRollDirectHitDamage"),
+      hasDirectRoll: this._hasDirectRoll(),
+      defenseType: this._getDirectHitDefenseType(),
+      useLowerDefense: this._usesLowerTargetDefense(options),
+      directFormula: Roll.replaceFormulaData(this._getDirectFormula(rollData, options), rollData, {
+        missing: "0",
+        warn: true,
+      }),
+      effectSnapshot: options.effectSnapshot ?? this._getEffectSnapshotData(),
+      checkRoll: options.checkRoll?.toJSON() ?? null,
+      checkTotal: options.checkTotal ?? null,
+      targets: [],
+      targetsLocked: false,
+      appliedTargets: [],
+      pendingTargets: [],
+      pendingApplicationId: null,
+      completedApplications: [],
+      buttons: options.buttons ?? "",
+    };
+    resolution.targets = getAbilityDamageTargets(resolution);
+    return resolution;
+  }
+
+  async _renderAbilityDamage(resolution) {
+    const baseRoll = resolution.baseRoll ? Roll.fromData(resolution.baseRoll) : null;
+    const directRoll = resolution.directRoll ? Roll.fromData(resolution.directRoll) : null;
+    const escape = foundry.utils.escapeHTML;
+    let content = '<div class="ffxiv-ability-damage">';
+    for (const [roll, flavor] of [[baseRoll, resolution.baseFlavor], [directRoll, resolution.directFlavor]]) {
+      if (!roll) continue;
+      content += `<hr><div><strong>${escape(flavor)}</strong></div>${await roll.render()}`;
+    }
+    return `${content}<ffxiv-ability-targets>${renderAbilityDamageTargets(resolution)}</ffxiv-ability-targets>${resolution.buttons}</div>`;
+  }
+
+  async _postAbilityDamage(baseResult, directHitResult, options = {}) {
+    if (!baseResult && !directHitResult) return;
+    const resolution = this._createAbilityDamageResolution(baseResult, directHitResult, options);
+    return createChatMessage({
+      user: game.user.id,
+      speaker: ChatMessage.getSpeaker({ actor: this.parent }),
+      rolls: [baseResult?.roll, directHitResult?.roll].filter(Boolean),
+      flavor: directHitResult?.flavor ?? baseResult.flavor,
+      content: await this._renderAbilityDamage(resolution),
+      flags: { ffxiv: { damageResolution: resolution } },
     });
-    if (critical) await this._consumeForceCriticalRule(forceCriticalRule);
   }
 
   _getBaseRollFormulaOverride() {
@@ -3062,13 +3160,6 @@ export class FFXIVItem extends Item {
     if (manuallyAppliedEffects.length) {
       buttons += `<button class="ffxiv-apply-active-effects" data-item-id="${this._id}" data-item-uuid="${this.uuid}" data-actor-id="${this.parent._id}" data-actor-uuid="${this.parent?.uuid ?? ""}">${game.i18n.localize("FFXIV.Abilities.ApplyActiveEffects")}</button>`;
     }
-    if (this._hasHitRoll() && !this._shouldAutoCheckBeforeBase()) {
-      const hitLabel =
-        !this._hasDirectRoll() && this._hasCheck()
-          ? game.i18n.localize("FFXIV.Abilities.Check")
-          : game.i18n.localize("FFXIV.Chat.RollHitFormula");
-      buttons += `<button class="ffxiv-roll-hit" ${buttonData}>${hitLabel}</button>`;
-    }
     for (const option of this._getJobResourceBonusOptions()) {
       buttons += `<button class="ffxiv-roll-resource-bonus" data-resource-bonus="${option.key}" ${buttonData}>${option.buttonLabel}</button>`;
     }
@@ -3113,6 +3204,8 @@ export class FFXIVItem extends Item {
       normalized.resourceBonus = dataset.resourceBonus;
     if (dataset?.abilityBranch !== undefined)
       normalized.abilityBranch = dataset.abilityBranch;
+    if (dataset)
+      normalized.messageId = options.currentTarget.closest(".message")?.dataset.messageId;
 
     const snapshot =
       dataset?.effectSnapshot ?? normalized.effectSnapshot ?? null;
@@ -4004,11 +4097,13 @@ export class FFXIVItem extends Item {
       );
     if (!chatMessage || !resourceResults.length) return;
 
+    const escape = foundry.utils.escapeHTML;
     const rows = resourceResults
       .map((result) => {
         const label = this._getResourceResultLabel(result);
         const verb = this._getResourceResultVerb(result);
-        return `<li><strong>${result.actor?.name ?? this.parent?.name ?? ""}</strong>: ${verb} ${label} ${result.current} -> ${result.next}</li>`;
+        const name = result.actor?.name ?? this.parent?.name ?? "";
+        return `<li><strong>${escape(name)}</strong><span>${escape(verb)} ${escape(label)}</span><span class="ffxiv-resource-change">${result.current} &rarr; ${result.next}</span></li>`;
       })
       .join("");
     if (!rows) return;
@@ -4535,12 +4630,10 @@ export class FFXIVItem extends Item {
 
   _getBaseRollFlavor({ critical = false, autoFromHit = false } = {}) {
     const baseFlavor = game.i18n.format("FFXIV.Abilities.BaseEffectRoll");
-    if (autoFromHit && critical)
+    if (critical)
       return `${baseFlavor} (${game.i18n.localize("FFXIV.Chat.AutoCriticalDamageFromHit")})`;
     if (autoFromHit)
       return `${baseFlavor} (${game.i18n.localize("FFXIV.Chat.AutoDamageFromHit")})`;
-    if (critical)
-      return `${baseFlavor} (${game.i18n.format("FFXIV.Chat.RollCriticalHitFormula")})`;
     return baseFlavor;
   }
 
@@ -4557,7 +4650,7 @@ export class FFXIVItem extends Item {
     const prefix = directHitOption
       ? `${directHitOption.flavorLabel || directHitOption.name} `
       : "";
-    if (autoFromHit && critical)
+    if (critical)
       return `${prefix}${baseFlavor} (${game.i18n.localize(
         "FFXIV.Chat.AutoCriticalDamageFromHit",
       )})`;
@@ -4593,14 +4686,12 @@ export class FFXIVItem extends Item {
     const defenseType = this._getDirectHitDefenseType();
     if (!defenseType) return false;
 
-    const target = game.user.targets.first();
-    if (!target?.actor) return false;
-
     const total = Number(roll.total);
-    const defense = this._getTargetDefense(target.actor, defenseType, options);
-    return (
-      Number.isFinite(total) && Number.isFinite(defense) && total > defense
-    );
+    return Number.isFinite(total) && Array.from(game.user.targets ?? []).some((target) => {
+      if (!target.actor) return false;
+      const defense = this._getTargetDefense(target.actor, defenseType, options);
+      return Number.isFinite(defense) && total > defense;
+    });
   }
 
   _getDirectHitDefenseType() {
