@@ -149,6 +149,11 @@
   will-change: transform;
 }
 
+.window-app.ffxiv.ffxiv-window-dragging.actor:has(.ffxiv.actor.character),
+.application.ffxiv.ffxiv-window-dragging.actor:has(.ffxiv.actor.character) {
+  contain: layout style;
+}
+
 .window-app.ffxiv.ffxiv-window-dragging .window-content,
 .application.ffxiv.ffxiv-window-dragging .window-content {
   pointer-events: none;
