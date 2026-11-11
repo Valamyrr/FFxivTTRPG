@@ -1,7 +1,11 @@
 import {
-  onManageActiveEffect,
-  prepareActiveEffectCategories,
-} from "../helpers/effects.mjs";
+  captureSheetScroll,
+  restoreSheetScroll,
+  playInterfaceSound,
+  settingOrDefault,
+} from "../helpers/ui.mjs";
+import { toArray } from "../helpers/collections.mjs";
+import { onManageActiveEffect, prepareActiveEffectCategories } from "../helpers/effects.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import { normalizeShopTier } from "../helpers/shop-tier.mjs";
 import {
@@ -10,6 +14,7 @@ import {
   getSubtypeTagLabel,
 } from "../helpers/ability-subtype.mjs";
 import { isStackableStatusEffect } from "../helpers/status-effects.mjs";
+import PopoutEditor from "../popout-editor.js";
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem:
@@ -21,8 +26,6 @@ const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_closeSheet:
     "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
 };
-
-import PopoutEditor from "../popout-editor.js";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
@@ -482,22 +485,11 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _playConfiguredSound(setting) {
     const src = this._settingOrDefault(setting, DEFAULT_SOUNDS);
-    if (game.settings.get("ffxiv", "soundNotificationFFXIV") && src) {
-      foundry.audio.AudioHelper.play({
-        src,
-        channel: "interface",
-        volume: 1,
-        autoplay: true,
-        loop: false,
-      });
-    }
+    playInterfaceSound(src);
   }
 
   _settingOrDefault(setting, defaults) {
-    const configured = game.settings.get("ffxiv", setting);
-    const fallback = defaults[setting] || "";
-    if (configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")) return fallback;
-    return configured || fallback;
+    return settingOrDefault(setting, defaults);
   }
 
   _isReadOnlyItemSheet() {
@@ -1731,8 +1723,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _toArray(value) {
-    if (Array.isArray(value)) return value;
-    return value === undefined || value === null || value === "" ? [] : [value];
+    return toArray(value);
   }
 
   _getJobResourceBonusEntries(flags) {
@@ -3116,54 +3107,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _captureSheetScroll() {
-    const root = this.element;
-    if (!root) return;
-
-    const selectors = [
+    captureSheetScroll(this, [
       ".window-content",
       ".sheet-body",
       ".sheet-body .tab.active",
-    ];
-
-    this._pendingSheetScrollPositions = selectors.flatMap((selector) => {
-      const element = root.matches?.(selector)
-        ? root
-        : root.querySelector(selector);
-      if (!element) return [];
-      return [
-        {
-          selector,
-          scrollTop: element.scrollTop,
-          scrollLeft: element.scrollLeft,
-        },
-      ];
-    });
+    ]);
   }
 
   _restoreSheetScroll() {
-    const positions = this._pendingSheetScrollPositions;
-    if (!positions?.length) return;
-    const restore = () => {
-      for (const position of positions) {
-        const root = this.element;
-        const element = root?.matches?.(position.selector)
-          ? root
-          : root?.querySelector(position.selector);
-        if (!element) continue;
-        element.scrollTop = position.scrollTop;
-        element.scrollLeft = position.scrollLeft;
-      }
-      if (this._pendingSheetScrollPositions === positions) {
-        this._pendingSheetScrollPositions = null;
-      }
-    };
-
-    requestAnimationFrame(() => {
-      restore();
-      setTimeout(() => {
-        if (this._pendingSheetScrollPositions === positions) restore();
-      }, 50);
-    });
+    restoreSheetScroll(this);
   }
 
   _activateFormulaFieldVisibility() {

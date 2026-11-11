@@ -1,4 +1,11 @@
-import { getContentKeys, matchesContentKey, normalizeContentKey, getSourceText, resolveContentReference } from "../helpers/content-keys.mjs";
+import { toArray } from "../helpers/collections.mjs";
+import {
+  getContentKeys,
+  matchesContentKey,
+  normalizeContentKey,
+  getSourceText,
+  resolveContentReference,
+} from "../helpers/content-keys.mjs";
 import { applyBarrier } from "../helpers/barrier.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import {
@@ -35,18 +42,15 @@ import {
   normalizeJobResourceName,
   setActorJobResourceCount,
 } from "../helpers/job-resources.mjs";
-import {
-  createSummonTokenFromRequest,
-  FFXIV_SUMMON_SOCKET_TYPE,
-} from "../helpers/summons.mjs";
-import {
-  clearUserTargetsForTiming,
-  TARGET_CLEAR_TIMINGS,
-} from "../helpers/target-selection.mjs";
+import { createSummonTokenFromRequest, FFXIV_SUMMON_SOCKET_TYPE } from "../helpers/summons.mjs";
+import { clearUserTargetsForTiming, TARGET_CLEAR_TIMINGS } from "../helpers/target-selection.mjs";
 import { isAbilityAutomationEnabled } from "../helpers/automation.mjs";
 import { emitToActiveGM, getActiveGM } from "../helpers/socket.mjs";
 import { createChatMessage } from "../helpers/chat-message.mjs";
-import { getAbilityDamageTargets, renderAbilityDamageTargets } from "../helpers/ability-targets.mjs";
+import {
+  getAbilityDamageTargets,
+  renderAbilityDamageTargets,
+} from "../helpers/ability-targets.mjs";
 
 const SHOP_TIER_ITEM_TYPES = new Set([
   "consumable",
@@ -5046,10 +5050,7 @@ export class FFXIVItem extends Item {
   }
 
   _toArray(value) {
-    if (Array.isArray(value)) return value;
-    return value === undefined || value === null || value === ""
-      ? []
-      : [value];
+    return toArray(value);
   }
 
   _isInterruptedByParalysis(d20Result) {

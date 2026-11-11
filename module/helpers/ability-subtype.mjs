@@ -198,3 +198,48 @@ export function ensureAbilitySubtypeTags(
 
   return shouldCanonicalizeBakedTags ? canonicalizeBakedTags(next) : next;
 }
+
+export function localizeTag(tag) {
+  const text = String(tag ?? "");
+  return globalThis.game?.i18n?.localize(text) ?? text;
+}
+
+export function normalizeActionTag(tag) {
+  return String(tag ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+export function normalizeComboName(name) {
+  return String(name ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+export function normalizeTagValue(tag) {
+  return localizeTag(canonicalizeBakedTag(tag))
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+export function parseTagSetting(raw) {
+  return String(raw ?? "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+export function buildTagPool(tags) {
+  const pool = {};
+  for (const tag of tags) {
+    const key = tag.replace(/\s+/g, "-");
+    if (!pool[key]) {
+      pool[key] = {
+        value: key,
+        label: tag,
+      };
+    }
+  }
+  return pool;
+}

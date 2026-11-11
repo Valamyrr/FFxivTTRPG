@@ -1,10 +1,17 @@
-import { getContentKeys, getSourceText, normalizeContentKey } from "../helpers/content-keys.mjs";
 import {
-  onManageActiveEffect,
-  prepareActiveEffectCategories,
-} from '../helpers/effects.mjs';
+  captureSheetScroll,
+  restoreSheetScroll,
+  playInterfaceSound,
+  settingOrDefault,
+} from "../helpers/ui.mjs";
+import { getContentKeys, getSourceText, normalizeContentKey } from "../helpers/content-keys.mjs";
+import { onManageActiveEffect, prepareActiveEffectCategories } from "../helpers/effects.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
-import { getAbilitySubtype, getSubtypeTagLabel, ensureAbilitySubtypeTags } from "../helpers/ability-subtype.mjs";
+import {
+  getAbilitySubtype,
+  getSubtypeTagLabel,
+  ensureAbilitySubtypeTags,
+} from "../helpers/ability-subtype.mjs";
 import {
   getItemJobResourceName,
   getNormalizedJobResourceStatus,
@@ -803,22 +810,11 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _playConfiguredSound(setting) {
     const src = this._settingOrDefault(setting, DEFAULT_SOUNDS);
-    if (game.settings.get('ffxiv', 'soundNotificationFFXIV') && src) {
-      foundry.audio.AudioHelper.play({
-        src,
-        channel: "interface",
-        volume: 1,
-        autoplay: true,
-        loop: false
-      });
-    }
+    playInterfaceSound(src);
   }
 
   _settingOrDefault(setting, defaults) {
-    const configured = game.settings.get("ffxiv", setting);
-    const fallback = defaults[setting] || "";
-    if (configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")) return fallback;
-    return configured || fallback;
+    return settingOrDefault(setting, defaults);
   }
 
   /** @override */
@@ -2143,50 +2139,17 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   _captureSheetScroll() {
-    const root = this.element;
-    if (!root) return;
-
-    const selectors = [
+    captureSheetScroll(this, [
       ".window-content",
       ".fixed-part",
       ".sheet-body",
       ".sheet-body .tab.active",
-      ".sub-tab-content.active"
-    ];
-
-    this._pendingSheetScrollPositions = selectors.flatMap(selector => {
-      const element = root.matches?.(selector) ? root : root.querySelector(selector);
-      if (!element) return [];
-      return [{
-        selector,
-        scrollTop: element.scrollTop,
-        scrollLeft: element.scrollLeft
-      }];
-    });
+      ".sub-tab-content.active",
+    ]);
   }
 
   _restoreSheetScroll() {
-    const positions = this._pendingSheetScrollPositions;
-    if (!positions?.length) return;
-    const restore = () => {
-      for (const position of positions) {
-        const root = this.element;
-        const element = root?.matches?.(position.selector) ? root : root?.querySelector(position.selector);
-        if (!element) continue;
-        element.scrollTop = position.scrollTop;
-        element.scrollLeft = position.scrollLeft;
-      }
-      if (this._pendingSheetScrollPositions === positions) {
-        this._pendingSheetScrollPositions = null;
-      }
-    };
-
-    requestAnimationFrame(() => {
-      restore();
-      setTimeout(() => {
-        if (this._pendingSheetScrollPositions === positions) restore();
-      }, 50);
-    });
+    restoreSheetScroll(this);
   }
 
   _activateAbilityQuickTabs() {

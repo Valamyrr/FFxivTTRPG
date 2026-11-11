@@ -1,3 +1,4 @@
+import { createHotbarObserver } from "./ui.mjs";
 import {
   getStatusStackCount,
   isBeneficialStatusEffect,
@@ -9,10 +10,8 @@ const HUD_HEALTH_ID = "ffxiv-hud-health";
 const HUD_MANA_ID = "ffxiv-hud-mana";
 const HUD_STATUS_EFFECTS_ID = "ffxiv-hud-status-effects";
 
-let resizeObserver = null;
-let mutationObserver = null;
-let currentObservedHotbar = null;
-let hotbarTransitionListener = null;
+const observeHotbar = createHotbarObserver(queuePositionHudResources);
+
 let positionFrame = null;
 let renderFrame = null;
 
@@ -30,26 +29,6 @@ function queueRenderHudResources() {
     renderFrame = null;
     renderHudResources();
   });
-}
-
-function observeHotbar(hotbar) {
-  if (!hotbar || typeof ResizeObserver === "undefined") return;
-  if (currentObservedHotbar === hotbar) return;
-  if (currentObservedHotbar && currentObservedHotbar !== hotbar) {
-    if (hotbarTransitionListener) {
-      currentObservedHotbar.removeEventListener("transitionend", hotbarTransitionListener, true);
-      hotbarTransitionListener = null;
-    }
-  }
-  resizeObserver?.disconnect();
-  mutationObserver?.disconnect();
-  resizeObserver = new ResizeObserver(() => queuePositionHudResources());
-  resizeObserver.observe(hotbar);
-  mutationObserver = new MutationObserver(() => queuePositionHudResources());
-  mutationObserver.observe(hotbar, { attributes: true, childList: true, subtree: true });
-  hotbarTransitionListener = () => queuePositionHudResources();
-  hotbar.addEventListener("transitionend", hotbarTransitionListener, true);
-  currentObservedHotbar = hotbar;
 }
 
 function getSelectedActor() {

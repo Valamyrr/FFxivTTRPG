@@ -1,3 +1,10 @@
+import {
+  playInterfaceSound,
+  settingOrDefault,
+  createHotbarObserver,
+  getHookHTMLElement,
+} from "./ui.mjs";
+
 const TEMPLATE = "systems/ffxiv/templates/actor/parts/actor-limitbreak-gauge.hbs";
 const HUD_ID = "ffxiv-limit-break-hud";
 const LIMIT_BREAK_SOUND_VOLUME = 0.4;
@@ -7,10 +14,8 @@ const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_limitBreakActivated: "systems/ffxiv/assets/sfx/ffxiv-limit-break-activated.ogg",
 };
 
-let resizeObserver = null;
-let mutationObserver = null;
-let currentObservedHotbar = null;
-let hotbarTransitionListener = null;
+const observeHotbar = createHotbarObserver(queuePositionLimitBreakHud);
+
 let positionFrame = null;
 
 function queuePositionLimitBreakHud() {
@@ -19,26 +24,6 @@ function queuePositionLimitBreakHud() {
     positionFrame = null;
     positionLimitBreakHud();
   });
-}
-
-function observeHotbar(hotbar) {
-  if (!hotbar || typeof ResizeObserver === "undefined") return;
-  if (currentObservedHotbar === hotbar) return;
-  if (currentObservedHotbar && currentObservedHotbar !== hotbar) {
-    if (hotbarTransitionListener) {
-      currentObservedHotbar.removeEventListener("transitionend", hotbarTransitionListener, true);
-      hotbarTransitionListener = null;
-    }
-  }
-  resizeObserver?.disconnect();
-  mutationObserver?.disconnect();
-  resizeObserver = new ResizeObserver(() => queuePositionLimitBreakHud());
-  resizeObserver.observe(hotbar);
-  mutationObserver = new MutationObserver(() => queuePositionLimitBreakHud());
-  mutationObserver.observe(hotbar, { attributes: true, childList: true, subtree: true });
-  hotbarTransitionListener = () => queuePositionLimitBreakHud();
-  hotbar.addEventListener("transitionend", hotbarTransitionListener, true);
-  currentObservedHotbar = hotbar;
 }
 
 function getLimitBreakGaugeContext() {
@@ -73,21 +58,8 @@ export function getLimitBreakValue() {
 }
 
 function playLimitBreakSound(setting, socketOptions = false) {
-  const configured = game.settings.get("ffxiv", setting);
-  const fallback = DEFAULT_SOUNDS[setting] || "";
-  const src =
-    configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")
-      ? fallback
-      : configured || fallback;
-  if (!game.settings.get("ffxiv", "soundNotificationFFXIV") || !src) return;
-
-  foundry.audio.AudioHelper.play({
-    src,
-    channel: "interface",
-    volume: LIMIT_BREAK_SOUND_VOLUME,
-    autoplay: true,
-    loop: false,
-  }, socketOptions);
+  const src = settingOrDefault(setting, DEFAULT_SOUNDS);
+  playInterfaceSound(src, { volume: LIMIT_BREAK_SOUND_VOLUME, socketOptions });
 }
 
 export function playLimitBreakActivatedSound() {
@@ -267,4 +239,93 @@ export function initLimitBreakHud() {
   observeHotbar(hotbar);
 
   renderLimitBreakHud();
+}
+
+export async function toggleLimitBreakGauge() {
+  if (!game.user?.isGM) return;
+
+  if (isLimitBreakActive()) {
+    await deactivateLimitBreakGauge();
+    refreshSceneControls();
+    return;
+  }
+
+  const options = await promptLimitBreakOptions();
+  if (!options) {
+    refreshSceneControls();
+    return;
+  }
+
+  await activateLimitBreakGauge(options.max, options.startEmpty);
+  refreshSceneControls();
+}
+
+async function promptLimitBreakOptions() {
+  let max = getLimitBreakMax();
+  let startEmpty = false;
+  const content = `
+    <form class="ffxiv-limit-break-dialog">
+      <div class="form-group">
+        <label for="ffxiv-limit-break-max">${game.i18n.localize("FFXIV.LimitBreak.Segments")}</label>
+        <input id="ffxiv-limit-break-max" type="number" name="max" min="1" max="10" step="1" value="${max}">
+      </div>
+      <div class="form-group">
+        <label for="ffxiv-limit-break-empty">${game.i18n.localize("FFXIV.LimitBreak.StartEmpty")}</label>
+        <input id="ffxiv-limit-break-empty" type="checkbox" name="startEmpty">
+        <p class="hint">${game.i18n.localize("FFXIV.LimitBreak.StartEmptyHint")}</p>
+      </div>
+    </form>`;
+
+  const confirmed = await foundry.applications.api.DialogV2.wait({
+    window: { title: game.i18n.localize("FFXIV.LimitBreak.Activate") },
+    content,
+    buttons: [
+      {
+        action: "activate",
+        label: game.i18n.localize("FFXIV.LimitBreak.Activate"),
+        icon: "fas fa-check",
+        default: true,
+        callback: () => true,
+      },
+      {
+        action: "cancel",
+        label: game.i18n.localize("FFXIV.Dialogs.Cancel"),
+        icon: "fas fa-times",
+        callback: () => false,
+      },
+    ],
+    render: (_app, html) => {
+      const root = getHookHTMLElement(html);
+      const input = root?.querySelector?.("input[name='max']");
+      input?.addEventListener("change", () => {
+        max = Number(input.value) || max;
+      });
+      input?.addEventListener("input", () => {
+        max = Number(input.value) || max;
+      });
+      const emptyInput = root?.querySelector?.("input[name='startEmpty']");
+      emptyInput?.addEventListener("change", () => {
+        startEmpty = emptyInput.checked;
+      });
+    },
+  });
+
+  if (!confirmed) return null;
+  return {
+    max: Math.max(1, Math.min(10, Number(max) || 3)),
+    startEmpty,
+  };
+}
+
+function refreshSceneControls() {
+  globalThis.ui?.controls?.render?.({ force: true });
+}
+
+export async function consumeLimitBreakSegment() {
+  if (!game.user?.isGM) return false;
+  if (!isLimitBreakActive()) return false;
+  const value = getLimitBreakValue();
+  if (value <= 0) return false;
+  await game.settings.set("ffxiv", "limitBreakValue", value - 1);
+  return true;
 }
