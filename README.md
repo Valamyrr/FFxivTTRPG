@@ -16,7 +16,7 @@ It has been developed on top of [asacolips's boilerplate](https://github.com/asa
 Navigate to Foundry's Systems list, and click Install. Then, on the Custom Manifest URL field, place ``https://github.com/Valamyrr/FFxivTTRPG/releases/latest/download/system.json`` for the latest version of the system to be automatically installed. Prior versions alongside change notes can be found via the [Releases](https://github.com/Valamyrr/FFxivTTRPG/releases) page.
 
 ## Old Versions
-The current version of the TTRPG system is designed for Foundry V14 compatibility only. For prior versions, see below. 
+The current version of the TTRPG system requires Foundry V14.370 or later. For prior versions, see below.
 
 **Note that support for these older Foundry versions is not guaranteed**.
 
