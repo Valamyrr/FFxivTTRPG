@@ -3,10 +3,10 @@
   "title": "Final Fantasy XIV TTRPG",
   "description": "An unofficial port of the Final Fantasy XIV TTRPG system for FoundryVTT",
   "compatibility": {
-    "minimum": "14.366",
+    "minimum": "14.370",
     "verified": "14.370"
   },
-  "version": "5.6.0",
+  "version": "5.7.0",
   "authors": [
     {
       "name": "Valamyrr",
@@ -103,7 +103,7 @@
   ],
   "url": "https://github.com/Valamyrr/FFxivTTRPG",
   "manifest": "https://github.com/Valamyrr/FFxivTTRPG/releases/latest/download/system.json",
-  "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v5.6.0/system.zip",
+  "download": "https://github.com/Valamyrr/FFxivTTRPG/releases/download/v5.7.0/system.zip",
   "license": "LICENSE.txt",
   "socket": true
 }
