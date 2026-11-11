@@ -734,6 +734,10 @@
                     <option value="allied" {{#if (eq entry.marker.type "allied")}}selected{{/if}}>{{ localize "FFXIV.MarkerPlacement.Dialog.Ally" }}</option>
                   </select>
                 </label>
+                <label><span>{{ localize "FFXIV.MarkerPlacement.Dialog.Opacity" }}</span>
+                  <input type="range" id="ffxiv-marker-opacity" min="0" max="100" value="{{entry.marker.opacity}}">
+                  <span id="ffxiv-marker-opacity-value">{{entry.marker.opacity}}%</span>
+                </label>
                 <label><span>{{ localize "FFXIV.MarkerPlacement.Dialog.Mode" }}</span>
                   <select id="ffxiv-marker-mode">
                     <option value="standard" {{#if (eq entry.marker.mode "standard")}}selected{{/if}}>{{ localize "FFXIV.MarkerPlacement.Dialog.Standard" }}</option>

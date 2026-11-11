@@ -3,6 +3,8 @@ import { FFXIVActor } from "./actors/actor.mjs";
 import { FFXIVCombat } from "./combat.mjs";
 import { FFXIVItem } from "./items/item.mjs";
 import { FFXIVActiveEffect } from "./active-effect.mjs";
+import { FFXIVTokenDocument } from "./token.mjs";
+import { FFXIVRegionLayer } from "./region-layer.mjs";
 import { registerDataModels } from "./data-models.mjs";
 import { FFXIVActorSheet } from "./actors/actor-sheet.mjs";
 import { FFXIVItemSheet } from "./items/item-sheet.mjs";
@@ -72,7 +74,7 @@ import {
 } from "./helpers/combat-tracker.mjs";
 import {
   registerMarkerPlacementKeybindings,
-  openRegionMarkerPlacementTool,
+  openMarkerPlacementTool,
   initializeMarkerShapeDialog,
   renderMarkerDataUrl,
   registerMarkerHooks,
@@ -108,6 +110,12 @@ Hooks.once("init", function () {
     type: Object,
     default: {},
   });
+  game.settings.register("ffxiv", "markerOpacity", {
+    scope: "user",
+    config: false,
+    type: Number,
+    default: 0.75,
+  });
   registerHotbarKeybindings();
   registerMarkerPlacementKeybindings();
   // Add utility classes to the global game object so that they're more easily
@@ -115,7 +123,7 @@ Hooks.once("init", function () {
   game.ffxivttrpg = {
     FFXIVActor,
     FFXIVItem,
-    placeMarker: (marker) => openRegionMarkerPlacementTool(marker),
+    placeMarker: (marker) => openMarkerPlacementTool(marker),
     initializeMarkerEditor: (element, marker, setMarker, signal) => {
       const size = 15;
       const state = Array.from({ length: size }, (_, y) =>
@@ -166,6 +174,8 @@ Hooks.once("init", function () {
   CONFIG.Combat.documentClass = FFXIVCombat;
   CONFIG.Item.documentClass = FFXIVItem;
   CONFIG.ActiveEffect.documentClass = FFXIVActiveEffect;
+  CONFIG.Token.documentClass = FFXIVTokenDocument;
+  CONFIG.Canvas.layers.regions.layerClass = FFXIVRegionLayer;
   registerFormulaEditorContexts();
 
   // Active Effects are never copied to the Actor,

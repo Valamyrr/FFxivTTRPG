@@ -271,6 +271,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           ? marker.mode
           : "standard",
         targeted: Boolean(marker.targeted),
+        opacity: Math.round(Math.clamp(marker.opacity ?? 0.75, 0, 1) * 100),
         followRotation: marker.followRotation !== false,
         circle: marker.shape === "circle",
       },
@@ -2453,7 +2454,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const markers = foundry.utils.deepClone(storedMarkers);
       markers.push({
         state,
-        opacity: 0.8,
+        opacity: game.settings.get("ffxiv", "markerOpacity"),
         type: "enemy",
         mode: "standard",
         targeted: false,

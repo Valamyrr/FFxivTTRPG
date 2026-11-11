@@ -3,7 +3,6 @@ import { FFXIV } from "./config.mjs";
 import { debugError, debugLog } from "./debug.mjs";
 import { createSummonTokenFromRequest, FFXIV_SUMMON_SOCKET_TYPE } from "./summons.mjs";
 import { RULE_SOCKET_TYPE } from "./rules.mjs";
-import { FFXIV_MARKER_SOCKET_TYPE, createMarkerTileFromRequest } from "./markers.mjs";
 import {
   applyResolvedHealingToActor,
   applyDamageToActorWithEffects,
@@ -126,13 +125,6 @@ export function registerSystemSocketHooks() {
               }).render(true);
             break;
           }
-          case FFXIV_MARKER_SOCKET_TYPE:
-            try {
-              await createMarkerTileFromRequest(data);
-            } catch (err) {
-              debugError("socket marker placement failed:", err);
-            }
-            break;
           case FFXIV_SUMMON_SOCKET_TYPE:
             try {
               await createSummonTokenFromRequest(data);
