@@ -1722,7 +1722,7 @@ export function registerMarkerHooks() {
         if (game.user?.isGM) canvas.regions.setAllRenderFlags({ refreshState: true });
       },
       order:
-        Number(controls.regions?.order ?? controls.region?.order ?? 5) + 0.1,
+        Number(controls.tokens?.order ?? controls.token?.order ?? 2) + 0.1,
       visible: Object.values(tools).some((tool) => tool.visible),
       tools,
     };
