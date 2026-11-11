@@ -424,15 +424,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   static async enrichStringFields(target, fields, rollData, relativeTo, secrets = true) {
     const enriched = {};
-    for (const field of fields) {
+    await Promise.all(fields.map(async (field) => {
       const value = foundry.utils.getProperty(target, field);
-      if (typeof value !== "string") continue;
+      if (typeof value !== "string") return;
       foundry.utils.setProperty(
         enriched,
         field,
         await this.enrichAllStrings(value, rollData, relativeTo, secrets),
       );
-    }
+    }));
     return enriched;
   }
 

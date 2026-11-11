@@ -8,7 +8,7 @@ const HOTBAR_COLLISION_OFFSCREEN_TOLERANCE = 60;
 const HOTBAR_ABILITY_TOOLTIP_DELAY = 500;
 let hotbarCollisionObserver = null;
 let hotbarCollisionMutationObserver = null;
-let hotbarCollisionObservedElements = new WeakSet();
+let hotbarCollisionObservedElements = new Set();
 let hotbarCollisionFrame = null;
 let hotbarCollisionTarget = null;
 let hotbarContextMenu = null;
@@ -124,22 +124,20 @@ function getPageNumber(hotbar, app) {
 
 function getHotbarCollisionElements(hotbar) {
   const elements = new Set();
-  for (const selector of HOTBAR_COLLISION_SELECTORS) {
-    for (const element of document.querySelectorAll(selector)) {
-      const container =
-        element.matches("input, textarea, [contenteditable='true']")
-          ? (element.closest(".overflow, #overflow, [data-application-part='overflow']") ??
-            element.closest("form, footer, .chat-form") ??
-            element)
-          : element;
-      if (
-        container === hotbar ||
-        container.contains(hotbar) ||
-        hotbar.contains(container)
-      )
-        continue;
-      elements.add(container);
-    }
+  for (const element of document.querySelectorAll(HOTBAR_COLLISION_SELECTORS.join(","))) {
+    const container =
+      element.matches("input, textarea, [contenteditable='true']")
+        ? (element.closest(".overflow, #overflow, [data-application-part='overflow']") ??
+          element.closest("form, footer, .chat-form") ??
+          element)
+        : element;
+    if (
+      container === hotbar ||
+      container.contains(hotbar) ||
+      hotbar.contains(container)
+    )
+      continue;
+    elements.add(container);
   }
   return elements;
 }
@@ -165,11 +163,11 @@ function getHotbarVisualRect(hotbar) {
   }));
 }
 
-function getOverlappingPanelRects(hotbar) {
+function getOverlappingPanelRects(hotbar, elements) {
   const hotbarRect = getHotbarVisualRect(hotbar);
   const rects = [];
 
-  for (const element of getHotbarCollisionElements(hotbar)) {
+  for (const element of elements) {
     const style = getComputedStyle(element);
     if (style.display === "none" || style.visibility === "hidden") continue;
     if (style.pointerEvents === "none" && style.opacity === "0") continue;
@@ -185,11 +183,11 @@ function getOverlappingPanelRects(hotbar) {
   return { hotbarRect, rects };
 }
 
-function updateHotbarCollisionOffset(hotbar) {
+function updateHotbarCollisionOffset(hotbar, elements) {
   hotbar.style.removeProperty("--ffxiv-hotbar-left");
   hotbar.style.removeProperty("--ffxiv-hotbar-bottom");
 
-  const { hotbarRect, rects } = getOverlappingPanelRects(hotbar);
+  const { hotbarRect, rects } = getOverlappingPanelRects(hotbar, elements);
   if (!rects.length) {
     return;
   }
@@ -265,7 +263,10 @@ function queueHotbarCollisionOffset(hotbar = getHotbarElement(ui.hotbar)) {
     const target = hotbarCollisionTarget;
     hotbarCollisionFrame = null;
     hotbarCollisionTarget = null;
-    if (target) updateHotbarCollisionOffset(target);
+    if (target?.isConnected) {
+      const elements = observeHotbarCollisions(target);
+      updateHotbarCollisionOffset(target, elements);
+    }
   });
 }
 
@@ -320,7 +321,6 @@ function observeHotbarCollisionMutations() {
         !mutation.target.closest?.(".ffxiv-window-dragging"),
     );
     if (!changedOutsideHotbar) return;
-    observeHotbarCollisions();
     queueHotbarCollisionOffset();
   });
   hotbarCollisionMutationObserver.observe(document.body, {
@@ -331,22 +331,23 @@ function observeHotbarCollisionMutations() {
   });
 }
 
-function observeHotbarCollisions() {
-  const hotbar = getHotbarElement(ui.hotbar);
-  if (!hotbar) return;
-
+function observeHotbarCollisions(hotbar) {
+  const elements = getHotbarCollisionElements(hotbar);
   observeHotbarCollisionMutations();
-  if (typeof ResizeObserver !== "function") return;
+  if (typeof ResizeObserver !== "function") return elements;
 
   if (!hotbarCollisionObserver) {
     hotbarCollisionObserver = new ResizeObserver(() => queueHotbarCollisionOffset());
-    hotbarCollisionObservedElements = new WeakSet();
   }
-  for (const element of getHotbarCollisionElements(hotbar)) {
+  for (const element of hotbarCollisionObservedElements) {
+    if (!elements.has(element)) hotbarCollisionObserver.unobserve(element);
+  }
+  for (const element of elements) {
     if (hotbarCollisionObservedElements.has(element)) continue;
     hotbarCollisionObserver.observe(element);
-    hotbarCollisionObservedElements.add(element);
   }
+  hotbarCollisionObservedElements = elements;
+  return elements;
 }
 
 function normalizePage(page) {
@@ -458,9 +459,7 @@ function getHotbarFlag(
   key = getHotbarFlagKey(document),
 ) {
   return normalizeHotbarFlag(
-    foundry.utils.deepClone(
-      document.getFlag("ffxiv", key) ?? {},
-    ),
+    document.getFlag("ffxiv", key) ?? {},
   );
 }
 
@@ -605,17 +604,16 @@ function getDocumentForSlot(
   slot,
   document = getHotbarFlagDocument(),
   forceFlag = false,
+  hotbar = getHotbarFlag(document),
 ) {
   const isActor = document?.documentName === "Actor";
   if (!forceFlag && !isActor && !String(slot).includes(".")) {
-    const hotbar = getHotbarFlag(document);
     const entry = hotbar[getHotbarFlagStorageKey(slot)];
     const documentEntry = getDocumentFromHotbarEntry(entry);
     if (documentEntry) return documentEntry;
     return game.macros.get(game.user.hotbar[slot]);
   }
 
-  const hotbar = getHotbarFlag(document);
   const entry = hotbar[getHotbarFlagStorageKey(slot)];
   const documentEntry =
     getDocumentFromHotbarEntry(entry) ??
@@ -905,7 +903,14 @@ function showHotbarContextMenu(event, slot, hotbarDocument, forceFlag) {
             ? currentSlotDocument
             : getMacroForSlot(slotId, hotbarDocument, forceFlag);
         if (currentMacro?.isOwner) {
-          await currentMacro.deleteDialog();
+          const deleted = await currentMacro.deleteDialog({
+            content: `
+              <h2>${game.i18n.localize("COMMON.AreYouSure")}</h2>
+              <p><strong>${game.i18n.localize("FFXIV.Hotbar.DeleteWarning")}</strong></p>
+              <p>${game.i18n.localize("FFXIV.Hotbar.DeleteDetails")}</p>
+            `,
+          });
+          if (!deleted) return;
           await assignMacroToSlot(slotId, null, hotbarDocument, forceFlag);
         }
       }),
@@ -1269,12 +1274,13 @@ function queueAbilityTooltip(slot) {
   hotbarAbilityTooltipTimer = timer;
 }
 
-function getPageSlots(page, actorHotbar = null) {
+function getPageSlots(page, slotHotbar = null) {
   const actor = getActiveHotbarActor();
+  slotHotbar ??= getHotbarFlag(actor ?? game.user);
   if (!actor) {
     const slots = game.user.getHotbarMacros(page).map((slot, index) => {
       const slotDocument =
-        getDocumentForSlot(slot.slot, game.user, true) ??
+        getDocumentForSlot(slot.slot, game.user, true, slotHotbar) ??
         slot.macro;
       return createSlotData({
         ...slot,
@@ -1286,7 +1292,7 @@ function getPageSlots(page, actorHotbar = null) {
 
     for (const index of [10, 11]) {
       const extraKey = `${page}.${index + 1}`;
-      const slotDocument = getDocumentForSlot(extraKey, game.user, true);
+      const slotDocument = getDocumentForSlot(extraKey, game.user, true, slotHotbar);
       slots.push(createSlotData({
         slot: extraKey,
         extraKey,
@@ -1302,12 +1308,12 @@ function getPageSlots(page, actorHotbar = null) {
   for (const index of HOTBAR_KEYS.keys()) {
     const slotId = getSlotForPageKey(page, index);
     const storageKey = getHotbarFlagStorageKey(slotId);
-    const entry = actorHotbar?.[storageKey] ?? null;
+    const entry = slotHotbar[storageKey] ?? null;
     const slotDocument = getDocumentFromActorHotbarEntry(
       entry,
       slotId,
       actor,
-      actorHotbar,
+      slotHotbar,
     );
     slots.push(createSlotData({
       slot: slotId,
@@ -1323,14 +1329,12 @@ function getPageSlots(page, actorHotbar = null) {
   return slots;
 }
 
-function renderExtraBar(page) {
+function renderExtraBar(page, slotHotbar) {
   const menu = document.createElement("menu");
   menu.className = `${EXTRA_BAR_CLASS} flexrow`;
   menu.dataset.hotbarPage = String(page);
   menu.dataset.tooltipDirection = "UP";
-  const actor = getActiveHotbarActor();
-  const actorHotbar = actor ? getHotbarFlag(actor, "hotbar") : null;
-  for (const slot of getPageSlots(page, actorHotbar)) menu.append(createSlot(slot));
+  for (const slot of getPageSlots(page, slotHotbar)) menu.append(createSlot(slot));
   return menu;
 }
 
@@ -1428,13 +1432,13 @@ function removeRenderedPrimarySlots(actionBar) {
     .forEach((slot) => slot.remove());
 }
 
-function updatePrimarySlots(actionBar, page) {
+function updatePrimarySlots(actionBar, page, slotHotbar) {
   hideNativePrimarySlots(actionBar);
   removeRenderedPrimarySlots(actionBar);
 
   const actor = getActiveHotbarActor();
   if (!actor) {
-    for (const slot of getPageSlots(page)) {
+    for (const slot of getPageSlots(page, slotHotbar)) {
       const element = createSlot(slot);
       element.classList.add("ffxiv-user-slot");
       actionBar.append(element);
@@ -1442,8 +1446,7 @@ function updatePrimarySlots(actionBar, page) {
     return;
   }
 
-  const actorHotbar = getHotbarFlag(actor, "hotbar");
-  for (const slot of getPageSlots(page, actorHotbar)) {
+  for (const slot of getPageSlots(page, slotHotbar)) {
     const element = createSlot(slot);
     element.classList.add("ffxiv-actor-slot");
     actionBar.append(element);
@@ -1546,6 +1549,7 @@ function updateHotbarStack(hotbar, app) {
   if (!actionBar) return;
   const actor = getActiveHotbarActor();
   const visibleCount = getVisibleHotbarsCount();
+  const slotHotbar = getHotbarFlag(actor ?? game.user);
   const leftControls = hotbar.querySelector("#hotbar-controls-left");
   const rightControls = hotbar.querySelector("#hotbar-controls-right");
   const pageControls = hotbar.querySelector("#hotbar-page-controls");
@@ -1577,7 +1581,7 @@ function updateHotbarStack(hotbar, app) {
     slot.dataset.hotbarPage = String(currentPage);
     slot.dataset.keyIndex = String(index);
   }
-  updatePrimarySlots(actionBar, currentPage);
+  updatePrimarySlots(actionBar, currentPage, slotHotbar);
   if (pageControls && pageControls.parentElement !== hotbar)
     hotbar.insertBefore(pageControls, stack);
   if (leftControls && rightControls && leftControls.parentElement !== rightControls)
@@ -1586,7 +1590,7 @@ function updateHotbarStack(hotbar, app) {
 
   const pagesToShow = HOTBAR_PAGES.slice(1, visibleCount).reverse();
   for (const page of pagesToShow) {
-    stack.insertBefore(renderExtraBar(normalizePage(page)), actionBar);
+    stack.insertBefore(renderExtraBar(normalizePage(page), slotHotbar), actionBar);
   }
 }
 
@@ -1916,6 +1920,7 @@ function handleHotbarDragStart(event) {
   const slot = getExtraSlot(event);
   if (!slot || !slot.classList.contains("full") || ui.hotbar?.locked) return;
 
+  hideAbilityTooltip();
   const actor = getActorForSlot(slot);
   const document = actor ?? getHotbarFlagDocument();
   const slotDocument =
@@ -2013,6 +2018,12 @@ async function handleHotbarDrop(event) {
     foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
   if (ui.hotbar?.locked) return;
   if (
+    data.ffxivHotbar === true &&
+    data.hotbarDocumentUuid === (actor ?? getHotbarFlagDocument()).uuid &&
+    String(data.slot) === String(dropSlot)
+  )
+    return;
+  if (
     !actor &&
     !String(dropSlot).includes(".") &&
     Hooks.call("hotbarDrop", ui.hotbar, data, dropSlot) === false
@@ -2045,22 +2056,17 @@ function installExtraBarHandlers(hotbar, app) {
 
   hotbar.addEventListener("pointerover", (event) => {
     const slot = getExtraSlot(event);
-    slot?.classList.add("hover");
+    if (!slot || slot.contains(event.relatedTarget)) return;
+    slot.classList.add("hover");
+    queueAbilityTooltip(slot);
   }, { signal });
 
   hotbar.addEventListener("pointerout", (event) => {
     const slot = getExtraSlot(event);
-    slot?.classList.remove("hover");
+    if (!slot || slot.contains(event.relatedTarget)) return;
+    slot.classList.remove("hover");
+    if (!hotbarAbilityTooltip?.classList.contains("locked")) hideAbilityTooltip();
   }, { signal });
-
-  for (const slot of getHotbarSlots(hotbar)) {
-    slot.addEventListener("pointerenter", () => queueAbilityTooltip(slot), {
-      signal,
-    });
-    slot.addEventListener("pointerleave", () => {
-      if (!hotbarAbilityTooltip?.classList.contains("locked")) hideAbilityTooltip();
-    }, { signal });
-  }
 
   document.addEventListener("pointermove", (event) => {
     queueHotbarHoverState(hotbar, event);
@@ -2097,7 +2103,6 @@ export function renderFFXIVHotbar(app, html) {
   updateHotbarSlotLabels(hotbar, app);
   updateHotbarControls(hotbar);
   installExtraBarHandlers(hotbar, app);
-  observeHotbarCollisions();
   queueHotbarCollisionOffset(hotbar);
   hotbar.classList.add("ffxiv-hotbar-ready");
 }
@@ -2108,19 +2113,12 @@ export function initHotbar() {
   Hooks.on("renderApplicationV2", (app, html) => {
     if (app?.id === "hotbar") renderFFXIVHotbar(app, html);
     else {
-      observeHotbarCollisions();
       queueHotbarCollisionOffset();
     }
   });
-  Hooks.on("renderChatLog", () => {
-    observeHotbarCollisions();
-    queueHotbarCollisionOffset();
-  });
+  Hooks.on("renderChatLog", () => queueHotbarCollisionOffset());
   window.addEventListener("resize", () => queueHotbarCollisionOffset());
-  window.addEventListener("mouseup", () => {
-    observeHotbarCollisions();
-    queueHotbarCollisionOffset();
-  });
+  window.addEventListener("mouseup", () => queueHotbarCollisionOffset());
   Hooks.on("controlToken", () => renderFFXIVHotbar(ui.hotbar));
   Hooks.on("updateActor", (actor, changes) => {
     if (suppressHotbarRender) return;

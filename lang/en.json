@@ -768,6 +768,10 @@
         "NoD20AdvantageIgnored": "No d20 in formula — advantage dice ignored."
       }
     },
+    "Hotbar": {
+      "DeleteWarning": "This macro will be permanently deleted for everyone, everywhere in this world.",
+      "DeleteDetails": "It will be removed from every hotbar that uses it and cannot be recovered."
+    },
     "MarkerPlacement": {
       "Title": "FFXIV Marker Placement",
       "RegionName": "FFXIV Marker",

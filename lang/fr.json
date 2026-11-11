@@ -768,6 +768,10 @@
         "NoD20AdvantageIgnored": "Pas de d20 dans la formule de jet — dés d’avantage ignorés."
       }
     },
+    "Hotbar": {
+      "DeleteWarning": "Cette macro sera définitivement supprimée pour tout le monde, partout dans ce monde.",
+      "DeleteDetails": "Elle sera retirée de toutes les barres de raccourcis qui l'utilisent et ne pourra pas être récupérée."
+    },
     "MarkerPlacement": {
       "Title": "Placement de FFXIV Marqueur",
       "RegionName": "Marqueur FFXIV",
