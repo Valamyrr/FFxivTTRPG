@@ -52,7 +52,6 @@ import {
 } from "./migrations/legacy-data.mjs";
 import {
   playConfiguredSound,
-  getFFXIVTheme,
   applyFFXIVChatTheme,
   getHookHTMLElement,
 } from "./helpers/ui.mjs";
@@ -1553,9 +1552,7 @@ Hooks.on("closeActorSheet", (hookEvent) => {
 
 Hooks.on("renderChatLog", (app, html) => {
   applyFFXIVChatTheme(html);
-  document
-    .querySelector("section#chat.sidebar-tab")
-    ?.classList.add("chat-ffxiv", `${getFFXIVTheme()}_theme`);
+  applyFFXIVChatTheme(document.querySelector("section#chat.sidebar-tab"));
 });
 
 Hooks.on("renderTokenHUD", (app, html) => {

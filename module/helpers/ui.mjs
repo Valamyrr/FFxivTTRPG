@@ -53,10 +53,10 @@ export function restoreSheetScroll(sheet) {
   });
 }
 
-export function getFFXIVTheme() {
+export function getFFXIVTheme(scope = "applications") {
   if (game.settings.get("ffxiv", "overrideColorScheme")) return "blue";
   return (
-    game.settings.get("core", "uiConfig").colorScheme.applications ||
+    game.settings.get("core", "uiConfig").colorScheme[scope] ||
     (window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light")
@@ -67,7 +67,8 @@ export function applyFFXIVChatTheme(element) {
   const chatElement = element instanceof HTMLElement ? element : element?.[0];
   if (!chatElement) return;
 
-  const theme = getFFXIVTheme();
+  const theme = getFFXIVTheme("interface");
+  chatElement.classList.remove("dark_theme", "light_theme", "blue_theme");
   chatElement.classList.add("chat-ffxiv", `${theme}_theme`);
 }
 
