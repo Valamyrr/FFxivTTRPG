@@ -313,12 +313,12 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const abilityTypes = this.actor.type === "character" && itemTabs.has("abilities")
       ? this._getRenderedAbilityTypes()
       : null;
-    for (const item of context.items || []) {
+    await Promise.all((context.items || []).map(async (item) => {
       item.enriched = await this._enrichItemForTabs(item, itemTabs, null, {
         abilityTypes,
         rollData,
       });
-    }
+    }));
 
     if (this.actor.type !== "character" && ACTOR_ENRICHED_FIELDS.companions?.length) {
       context.enriched = {
@@ -338,11 +338,11 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         petRollData,
         petDocument ?? this.actor,
       );
-      for (const item of pet.items || []) {
+      await Promise.all((pet.items || []).map(async (item) => {
         item.enriched = await this._enrichItemForTabs(item, new Set(["abilities"]), petDocument ?? this.actor, {
           rollData: petRollData,
         });
-      }
+      }));
     }
   }
 
@@ -1262,7 +1262,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async enrichStringFields(target, fields, rollData, relativeTo) {
     const enriched = {};
 
-    for (const key of fields) {
+    await Promise.all(fields.map(async (key) => {
       const value = foundry.utils.getProperty(target, key);
       if (typeof value === "string" && value.trim()) {
         const html = await foundry.applications.ux.TextEditor.implementation.enrichHTML(
@@ -1277,7 +1277,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
         foundry.utils.setProperty(enriched, key, html?.trim() ? html : value);
       }
-    }
+    }));
     return enriched;
   }
 
