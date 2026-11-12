@@ -771,6 +771,11 @@
       }
     },
     "Hotbar": {
+      "Stunned": "Stunned characters cannot act.",
+      "Petrified": "Petrified characters cannot act.",
+      "RequiresMP": "Requires {amount} MP.",
+      "Requires": "Requires {requirements}.",
+      "BlockedBy": "Cannot be used while under {effects}.",
       "DeleteWarning": "This macro will be permanently deleted for everyone, everywhere in this world.",
       "DeleteDetails": "It will be removed from every hotbar that uses it and cannot be recovered."
     },

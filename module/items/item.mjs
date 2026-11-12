@@ -1156,12 +1156,37 @@ export class FFXIVItem extends Item {
   }
 
   _canUseAbility() {
+    const reason = this._getAbilityUseFailure();
+    if (!reason) return true;
+    ui.notifications.warn(reason);
+    return false;
+  }
+
+  getAbilityUnavailableReason() {
+    if (this.parent?.documentName !== "Actor" || !this._isAbilityLikeItem()) return "";
+    return this._getAbilityUseFailure() || this._getLimitBreakFailure() ||
+      this._getHPCostFailure() || this._getLimitationFailure();
+  }
+
+  hasAvailableAbilityResource() {
+    const actor = this.parent;
+    if (actor?.documentName !== "Actor" || !this._isAbilityLikeItem()) return false;
+    return this._getJobResourceCostRules().some((rule) =>
+      !this._normalizeActorResource(rule.resource) &&
+      getActorJobResourceCount(actor, rule.resource) > 0 &&
+      this._getJobResourceSpendAmount(actor, rule) > 0,
+    ) || this._getEffectRequirements().some((requirement) =>
+      requirement.mode === "required" && requirement.consume && requirement.key &&
+      this._hasNamedEffect(actor, requirement.key),
+    );
+  }
+
+  _getAbilityUseFailure() {
     const subtype = getAbilitySubtype(this);
     const isAbility = this.type === "ability" || ABILITY_SUBTYPE_TYPES.includes(this.type);
-    if (!isAbility) return true;
+    if (!isAbility) return "";
     if (hasStatus(this.parent, "knocked_out") || hasStatus(this.parent, "comatose")) {
-      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.Incapacitated"));
-      return false;
+      return game.i18n.localize("FFXIV.Notifications.Incapacitated");
     }
     const blockedByStun =
       hasStatus(this.parent, "stun") &&
@@ -1170,35 +1195,33 @@ export class FFXIVItem extends Item {
       hasStatus(this.parent, "petrified") &&
       !this._ignoresCheckPenaltyStatus("petrified");
     if (subtype !== "limit_break" && (blockedByStun || blockedByPetrified)) {
-      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.CannotAct"));
-      return false;
+      return game.i18n.localize(blockedByStun ? "FFXIV.Hotbar.Stunned" : "FFXIV.Hotbar.Petrified");
     }
     if (hasStatus(this.parent, "silence") && this._isInvokedAbility()) {
-      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.Silenced"));
-      return false;
+      return game.i18n.localize("FFXIV.Notifications.Silenced");
     }
-    return (
-      this._canSatisfyEffectRequirements() &&
-      this._canSatisfyJobResourceCosts() &&
-      this._canSatisfyMPCost()
-    );
+    return this._getEffectRequirementFailure() || this._getJobResourceCostFailure() ||
+      this._getMPCostFailure();
   }
 
   _canUseLimitBreak() {
-    if (getAbilitySubtype(this) !== "limit_break") return true;
+    const reason = this._getLimitBreakFailure();
+    if (!reason) return true;
+    ui.notifications.warn(reason);
+    return false;
+  }
+
+  _getLimitBreakFailure() {
+    if (getAbilitySubtype(this) !== "limit_break") return "";
     if (!isLimitBreakActive()) {
-      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakDisabled"));
-      return false;
+      return game.i18n.localize("FFXIV.Notifications.LimitBreakDisabled");
     }
 
     const value = getLimitBreakValue();
     if (!game.user?.isGM && !game.users.find((user) => user.isGM && user.active)) {
-      ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakNoGM"));
-      return false;
+      return game.i18n.localize("FFXIV.Notifications.LimitBreakNoGM");
     }
-    if (value > 0) return true;
-    ui.notifications.warn(game.i18n.localize("FFXIV.Notifications.LimitBreakEmpty"));
-    return false;
+    return value > 0 ? "" : game.i18n.localize("FFXIV.Notifications.LimitBreakEmpty");
   }
 
   async _consumeLimitBreakIfNeeded() {
@@ -1633,7 +1656,26 @@ export class FFXIVItem extends Item {
     return key.replace(/([a-z])([A-Z])/g, "$1 $2");
   }
 
+  _getLimitationFailure() {
+    if (this.type !== "ability" || this.parent?.documentName !== "Actor") return "";
+    if (!String(this.system?.limitations ?? "").trim()) return "";
+
+    const max = Number.parseInt(this.system?.job_resources_max, 10);
+    if (!Number.isFinite(max) || max <= 0) return "";
+    const status = this.system?.job_resource_status;
+    if (!Array.isArray(status) || status.length < max) return "";
+    for (let index = 0; index < max; index++) {
+      if (!status[index]) return "";
+    }
+    return game.i18n.localize("FFXIV.Notifications.LimitationsConsumed");
+  }
+
   async _consumeLimitationIfNeeded() {
+    const reason = this._getLimitationFailure();
+    if (reason) {
+      ui.notifications.warn(reason);
+      return false;
+    }
     if (this.type !== "ability") return true;
     if (this.parent?.documentName !== "Actor") return true;
     if (!String(this.system?.limitations ?? "").trim()) return true;
@@ -1647,13 +1689,6 @@ export class FFXIVItem extends Item {
     while (resourceStatus.length < max) resourceStatus.push(false);
 
     const index = resourceStatus.findIndex((status) => !status);
-    if (index === -1) {
-      ui.notifications.warn(
-        game.i18n.localize("FFXIV.Notifications.LimitationsConsumed"),
-      );
-      return false;
-    }
-
     resourceStatus[index] = true;
     await this.update(
       { "system.job_resource_status": resourceStatus },
@@ -1662,7 +1697,20 @@ export class FFXIVItem extends Item {
     return true;
   }
 
+  _getHPCostFailure() {
+    if (this.parent?.documentName !== "Actor") return "";
+    const hpCost = Number.parseInt(this.system?.hpcost, 10);
+    if (!Number.isFinite(hpCost) || hpCost <= 0) return "";
+    const currentHP = Number.parseInt(this.parent.system?.health?.value, 10) || 0;
+    return currentHP - hpCost < 1 ? game.i18n.localize("FFXIV.Notifications.NotEnoughHP") : "";
+  }
+
   async _spendHPCostIfNeeded() {
+    const reason = this._getHPCostFailure();
+    if (reason) {
+      ui.notifications.warn(reason);
+      return false;
+    }
     if (this.parent?.documentName !== "Actor") return true;
     const hpCost = Number.parseInt(this.system?.hpcost, 10);
     if (!Number.isFinite(hpCost) || hpCost <= 0) return true;
@@ -1670,13 +1718,6 @@ export class FFXIVItem extends Item {
     const currentHP =
       Number.parseInt(this.parent.system?.health?.value, 10) || 0;
     const nextHP = currentHP - hpCost;
-    if (nextHP < 1) {
-      ui.notifications.warn(
-        game.i18n.localize("FFXIV.Notifications.NotEnoughHP"),
-      );
-      return false;
-    }
-
     // HP cost always drains HP directly and never consumes Barrier.
     await this.parent.update(
       { "system.health.value": nextHP },
@@ -1685,16 +1726,14 @@ export class FFXIVItem extends Item {
     return true;
   }
 
-  _canSatisfyMPCost() {
+  _getMPCostFailure() {
     const actor = this.parent;
-    if (actor?.documentName !== "Actor") return true;
+    if (actor?.documentName !== "Actor") return "";
 
     const cost = this._getResolvedMPCost(actor);
-    if (cost.amount <= 0) return true;
+    if (cost.amount <= 0) return "";
     const currentMana = Number(actor.system?.mana?.value ?? 0);
-    if (currentMana >= cost.amount) return true;
-    ui.notifications.warn(`${this.name}: requires ${cost.amount} MP.`);
-    return false;
+    return currentMana >= cost.amount ? "" : game.i18n.format("FFXIV.Hotbar.RequiresMP", { amount: cost.amount });
   }
 
   async _spendMPCostIfNeeded() {
@@ -1705,7 +1744,7 @@ export class FFXIVItem extends Item {
     if (cost.amount <= 0) return true;
     const currentMana = Number(actor.system?.mana?.value ?? 0);
     if (currentMana < cost.amount) {
-      ui.notifications.warn(`${this.name}: requires ${cost.amount} MP.`);
+      ui.notifications.warn(game.i18n.format("FFXIV.Hotbar.RequiresMP", { amount: cost.amount }));
       return false;
     }
 
@@ -3626,9 +3665,9 @@ export class FFXIVItem extends Item {
       .filter((entry) => entry.key || entry.resourceSpent);
   }
 
-  _canSatisfyEffectRequirements() {
+  _getEffectRequirementFailure() {
     const actor = this.parent;
-    if (actor?.documentName !== "Actor") return true;
+    if (actor?.documentName !== "Actor") return "";
 
     const missing = [];
     const blocked = [];
@@ -3655,13 +3694,12 @@ export class FFXIVItem extends Item {
         missing.push(requirement.name || requirement.key || requirement.resourceSpent);
     }
 
-    if (!missing.length && !blocked.length) return true;
+    if (!missing.length && !blocked.length) return "";
 
     const messages = [];
-    if (missing.length) messages.push(`requires ${missing.join(", ")}`);
-    if (blocked.length) messages.push(`cannot be used while under ${blocked.join(", ")}`);
-    ui.notifications.warn(`${this.name}: ${messages.join("; ")}.`);
-    return false;
+    if (missing.length) messages.push(game.i18n.format("FFXIV.Hotbar.Requires", { requirements: missing.join(", ") }));
+    if (blocked.length) messages.push(game.i18n.format("FFXIV.Hotbar.BlockedBy", { effects: blocked.join(", ") }));
+    return messages.join(" ");
   }
 
   async _consumeEffectRequirements() {
@@ -3731,8 +3769,15 @@ export class FFXIVItem extends Item {
   }
 
   _canSatisfyJobResourceCosts() {
+    const reason = this._getJobResourceCostFailure();
+    if (!reason) return true;
+    ui.notifications.warn(reason);
+    return false;
+  }
+
+  _getJobResourceCostFailure() {
     const actor = this.parent;
-    if (actor?.documentName !== "Actor") return true;
+    if (actor?.documentName !== "Actor") return "";
 
     const missing = [];
     for (const rule of this._getJobResourceCostRules()) {
@@ -3743,9 +3788,7 @@ export class FFXIVItem extends Item {
       }
     }
 
-    if (!missing.length) return true;
-    ui.notifications.warn(`${this.name}: requires ${missing.join(", ")}.`);
-    return false;
+    return missing.length ? game.i18n.format("FFXIV.Hotbar.Requires", { requirements: missing.join(", ") }) : "";
   }
 
   async _consumeJobResourceCostsIfNeeded() {

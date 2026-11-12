@@ -771,6 +771,11 @@
       }
     },
     "Hotbar": {
+      "Stunned": "Les personnages étourdis ne peuvent pas agir.",
+      "Petrified": "Les personnages pétrifiés ne peuvent pas agir.",
+      "RequiresMP": "Nécessite {amount} PM.",
+      "Requires": "Nécessite {requirements}.",
+      "BlockedBy": "Ne peut pas être utilisé sous les effets de {effects}.",
       "DeleteWarning": "Cette macro sera définitivement supprimée pour tout le monde, partout dans ce monde.",
       "DeleteDetails": "Elle sera retirée de toutes les barres de raccourcis qui l'utilisent et ne pourra pas être récupérée."
     },

@@ -17,6 +17,10 @@ let hotbarAbilityTooltipTimer = null;
 let cancelHotbarTooltipLock = null;
 let cancelHotbarTooltipDismissal = null;
 let hotbarAbilityTooltipSlot = null;
+let hotbarReadinessFrame = null;
+const hotbarReadinessSlots = new Map();
+const hotbarReadinessActors = new Map();
+const hotbarReadinessItems = new Set();
 let suppressHotbarRender = false;
 let coreHotbarRoutingInstalled = false;
 const routedCoreHotbarActions = new WeakSet();
@@ -1122,6 +1126,75 @@ function getAbilityForTooltip(slot) {
     : null;
 }
 
+function indexHotbarReadiness(hotbar) {
+  hotbarReadinessSlots.clear();
+  hotbarReadinessActors.clear();
+  hotbarReadinessItems.clear();
+  for (const slot of hotbar.querySelectorAll(".ffxiv-hotbar-slot[data-document-type='Item']")) {
+    const item = getAbilityForTooltip(slot);
+    if (!item?.getAbilityUnavailableReason || item.parent?.documentName !== "Actor") continue;
+    let entry = hotbarReadinessSlots.get(item);
+    if (!entry) {
+      entry = { slots: [], reason: null, resourceReady: null };
+      hotbarReadinessSlots.set(item, entry);
+      let items = hotbarReadinessActors.get(item.parent.uuid);
+      if (!items) {
+        items = new Set();
+        hotbarReadinessActors.set(item.parent.uuid, items);
+      }
+      items.add(item);
+    }
+    entry.slots.push(slot);
+  }
+  queueHotbarReadiness();
+}
+
+function queueHotbarReadiness(actor = null) {
+  const items = actor ? hotbarReadinessActors.get(actor.uuid) : hotbarReadinessSlots.keys();
+  if (!items) return;
+  for (const item of items) hotbarReadinessItems.add(item);
+  if (!hotbarReadinessItems.size || hotbarReadinessFrame !== null) return;
+  hotbarReadinessFrame = requestAnimationFrame(updateHotbarReadiness);
+}
+
+function updateHotbarReadiness() {
+  hotbarReadinessFrame = null;
+  for (const item of hotbarReadinessItems) {
+    const entry = hotbarReadinessSlots.get(item);
+    if (!entry) continue;
+    const reason = item.getAbilityUnavailableReason();
+    const resourceReady = !reason && item.hasAvailableAbilityResource();
+    if (entry.reason === reason && entry.resourceReady === resourceReady) continue;
+    for (const slot of entry.slots) {
+      if (entry.reason !== reason) {
+        slot.classList.toggle("ffxiv-ability-unavailable", !!reason);
+        slot.setAttribute("aria-label", reason ? `${item.name}: ${reason}` : item.name);
+        if (reason) slot.setAttribute("aria-disabled", "true");
+        else slot.removeAttribute("aria-disabled");
+      }
+      if (entry.resourceReady !== resourceReady) {
+        const indicator = slot.querySelector(".ffxiv-hotbar-resource-ready");
+        if (resourceReady && !indicator) {
+          slot.insertAdjacentHTML("beforeend", '<svg class="ffxiv-hotbar-resource-ready" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect x="2" y="2" width="36" height="36" rx="4" pathLength="144" /></svg>');
+        } else if (!resourceReady) indicator?.remove();
+      }
+    }
+    if (entry.reason !== reason && hotbarAbilityTooltip && hotbarAbilityTooltipSlot?.dataset.documentUuid === item.uuid) {
+      updateAbilityTooltipReadiness(hotbarAbilityTooltip, reason);
+      positionAbilityTooltip(hotbarAbilityTooltip, hotbarAbilityTooltipSlot);
+    }
+    entry.reason = reason;
+    entry.resourceReady = resourceReady;
+  }
+  hotbarReadinessItems.clear();
+}
+
+function updateAbilityTooltipReadiness(tooltip, reason) {
+  const status = tooltip.querySelector(".ffxiv-hotbar-ability-readiness");
+  status.textContent = reason;
+  status.hidden = !reason;
+}
+
 async function createAbilityTooltip(item) {
   const tooltip = document.createElement("aside");
   tooltip.className = "ffxiv-hotbar-ability-tooltip";
@@ -1157,6 +1230,11 @@ async function createAbilityTooltip(item) {
   heading.append(subtype);
   header.append(heading);
   tooltip.append(header);
+
+  const readiness = document.createElement("p");
+  readiness.className = "ffxiv-hotbar-ability-readiness";
+  readiness.hidden = true;
+  tooltip.append(readiness);
 
   const details = [
     [game.i18n.localize("FFXIV.Abilities.Range"), item.system.range],
@@ -1210,6 +1288,7 @@ async function createAbilityTooltip(item) {
     tooltip.append(body);
   }
 
+  updateAbilityTooltipReadiness(tooltip, item.getAbilityUnavailableReason?.() ?? "");
   return tooltip;
 }
 
@@ -1409,6 +1488,7 @@ function updateRenderedHotbarSlots(slots, hotbarDocument, forceFlag) {
   const hotbar = getHotbarElement(ui.hotbar);
   if (hotbar) {
     updateHotbarSlotLabels(hotbar, ui.hotbar);
+    indexHotbarReadiness(hotbar);
     queueHotbarCollisionOffset(hotbar);
   }
 }
@@ -2103,6 +2183,7 @@ export function renderFFXIVHotbar(app, html) {
   updateHotbarSlotLabels(hotbar, app);
   updateHotbarControls(hotbar);
   installExtraBarHandlers(hotbar, app);
+  indexHotbarReadiness(hotbar);
   queueHotbarCollisionOffset(hotbar);
   hotbar.classList.add("ffxiv-hotbar-ready");
 }
@@ -2121,19 +2202,39 @@ export function initHotbar() {
   window.addEventListener("mouseup", () => queueHotbarCollisionOffset());
   Hooks.on("controlToken", () => renderFFXIVHotbar(ui.hotbar));
   Hooks.on("updateActor", (actor, changes) => {
-    if (suppressHotbarRender) return;
+    queueHotbarReadiness(actor);
+    if (suppressHotbarRender || !isActiveHotbarActor(actor)) return;
     if (!actorUpdateAffectsHotbar(changes)) return;
-    if (isActiveHotbarActor(actor)) renderFFXIVHotbar(ui.hotbar);
+    renderFFXIVHotbar(ui.hotbar);
   });
   Hooks.on("createItem", (item) => {
+    if (item.parent?.documentName === "Actor") queueHotbarReadiness(item.parent);
     if (itemBelongsToActiveHotbarActor(item)) renderFFXIVHotbar(ui.hotbar);
   });
   Hooks.on("updateItem", (item, changes) => {
+    if (item.parent?.documentName === "Actor") queueHotbarReadiness(item.parent);
+    if (!hotbarReadinessSlots.has(item) && !itemBelongsToActiveHotbarActor(item)) return;
     if (!itemUpdateAffectsHotbar(changes)) return;
-    if (itemBelongsToActiveHotbarActor(item)) renderFFXIVHotbar(ui.hotbar);
+    renderFFXIVHotbar(ui.hotbar);
   });
   Hooks.on("deleteItem", (item) => {
-    if (itemBelongsToActiveHotbarActor(item)) renderFFXIVHotbar(ui.hotbar);
+    if (item.parent?.documentName === "Actor") queueHotbarReadiness(item.parent);
+    if (hotbarReadinessSlots.has(item) || itemBelongsToActiveHotbarActor(item)) renderFFXIVHotbar(ui.hotbar);
+  });
+  for (const hook of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
+    Hooks.on(hook, (effect) => {
+      const actor = effect.parent?.documentName === "Actor" ? effect.parent : effect.parent?.parent;
+      if (actor?.documentName === "Actor") queueHotbarReadiness(actor);
+    });
+  }
+  Hooks.on("updateSetting", (setting) => {
+    if (["ffxiv.automationLevel", "ffxiv.limitBreakActive", "ffxiv.limitBreakValue"].includes(setting.key)) {
+      queueHotbarReadiness();
+    }
+  });
+  Hooks.on("userConnected", () => queueHotbarReadiness());
+  Hooks.on("updateUser", (_user, changes) => {
+    if ("role" in changes) queueHotbarReadiness();
   });
   Hooks.once("canvasReady", () => {
     renderFFXIVHotbar();

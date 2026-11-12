@@ -690,6 +690,44 @@ input:disabled {
   transform-origin: center;
 }
 
+#hotbar .ffxiv-hotbar-slot.ffxiv-ability-unavailable .slot-icon-frame {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+#hotbar .ffxiv-hotbar-resource-ready {
+  position: absolute;
+  inset: -3px;
+  z-index: 1;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  overflow: visible;
+  fill: none;
+  stroke: #ffe46b;
+  stroke-width: 2.5;
+  stroke-dasharray: 3 5;
+  pointer-events: none;
+}
+
+#hotbar .ffxiv-hotbar-resource-ready rect {
+  animation: ffxiv-hotbar-resource-ready 4s linear infinite;
+}
+
+@keyframes ffxiv-hotbar-resource-ready {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #hotbar .ffxiv-hotbar-resource-ready rect {
+    animation: none;
+  }
+}
+.ffxiv-hotbar-ability-readiness {
+  margin: 0 0 9px;
+  color: #ffb4a8;
+}
+
 .ffxiv-hotbar-context-menu {
   position: fixed;
   z-index: 10000;
@@ -876,6 +914,11 @@ body.ffxiv-hotbar-tooltip-visible #tooltip {
 .ffxiv-hotbar-ability-details dt,
 .ffxiv-hotbar-ability-details dd {
   margin: 0;
+}
+
+.ffxiv-hotbar-ability-details dt:nth-of-type(even) {
+  padding-left: 9px;
+  border-left: 1px solid rgba(179, 177, 166, 0.25);
 }
 
 .ffxiv-hotbar-ability-details dd {
