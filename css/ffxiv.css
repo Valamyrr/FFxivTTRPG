@@ -26,6 +26,81 @@
   letter-spacing: -0.08em;
 }
 
+.ffxiv-marker-config {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  min-width: 0;
+  overflow-x: auto;
+}
+.ffxiv-marker-config .ffxiv-marker-panel {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 8px;
+}
+.ffxiv-marker-config .ffxiv-marker-panel:last-child {
+  flex-basis: 260px;
+}
+.ffxiv-marker-config .ffxiv-marker-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+.ffxiv-marker-config .ffxiv-marker-row select,
+.ffxiv-marker-config .ffxiv-marker-row input[type=range] {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+}
+.ffxiv-marker-config .ffxiv-marker-row button {
+  flex: 0 0 auto;
+  width: auto;
+}
+.ffxiv-marker-config .ffxiv-marker-grid {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(var(--ffxiv-marker-grid-size, 15), 24px);
+}
+.ffxiv-marker-config .ffxiv-marker-cell {
+  background: #222;
+  border: 1px solid #888;
+  box-sizing: border-box;
+  cursor: pointer;
+  height: 24px;
+  width: 24px;
+}
+.ffxiv-marker-config .ffxiv-marker-cell.selected.enemy {
+  background: orange;
+}
+.ffxiv-marker-config .ffxiv-marker-cell.selected.allied {
+  background: #66ffff;
+}
+.ffxiv-marker-config .ffxiv-marker-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ffxiv-marker-config .ffxiv-marker-preset-row {
+  display: flex;
+  gap: 8px;
+}
+.ffxiv-marker-config .ffxiv-marker-preview {
+  background: transparent;
+  border: 0;
+  height: -moz-fit-content;
+  height: fit-content;
+  max-height: 260px;
+  max-width: 260px;
+  overflow: hidden;
+  padding: 6px;
+  width: -moz-fit-content;
+  width: fit-content;
+}
+.ffxiv-marker-config .ffxiv-marker-preview canvas {
+  display: block;
+}
 .ffxiv-marker-config .ffxiv-marker-checkbox {
   align-items: center;
   cursor: pointer;
@@ -2816,6 +2891,82 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.actor.npc .actor-player-abilities .ability-details:not(:has(.detail)), .ffxiv.actor.npc .actor-player-abilities .ability-effects:not(:has(.effect)) {
   display: none;
 }
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  grid-template-areas: "header header" "details markers" "effects markers" "description markers" "roll roll";
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-card-info {
+  grid-area: header;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-details {
+  grid-area: details;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-effects {
+  grid-area: effects;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-description {
+  grid-area: description;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-roll-button {
+  grid-area: roll;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-read-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  grid-area: markers;
+  min-width: 0;
+  padding: 5px 6px 6px;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-read-preview {
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(216, 188, 112, 0.22);
+  border-radius: 4px;
+  overflow: hidden;
+  padding: 8px;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-preview-heading {
+  align-items: center;
+  border-bottom: 1px solid rgba(216, 188, 112, 0.18);
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-preview-heading h3 {
+  border: 0;
+  flex: 1;
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-cycle {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  flex: 0 0 18px;
+  height: 18px;
+  line-height: 1;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  width: 18px;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-read-canvas {
+  align-items: center;
+  display: flex;
+  height: 110px;
+  justify-content: center;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-read-preview canvas {
+  height: auto;
+  max-height: 100px;
+  max-width: 100%;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
 .ffxiv.actor:is(.character, .npc) .actor-player-abilities .effect {
   margin-bottom: 0.35em;
 }
@@ -4157,31 +4308,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.item .ability-marker-entry-heading .remove-ability-marker {
   color: #ff3b30;
 }
-.ffxiv.item .ability-marker-controls {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 280px));
-  margin-bottom: 10px;
-}
-.ffxiv.item .ability-marker-controls label {
-  align-items: center;
-  display: flex;
-  gap: 6px;
-  margin: 0;
-  min-width: 0;
-}
-.ffxiv.item .ability-marker-controls label > span {
-  flex: 0 0 auto;
-}
-.ffxiv.item .ability-marker-controls select {
-  flex: 0 1 180px;
-  height: 30px;
-  max-width: 180px;
-  min-height: 30px;
-  padding: 4px 8px;
-  width: 180px;
-}
-.ffxiv.item .ability-marker-editor .ability-marker-controls .ffxiv-marker-checkbox input {
+.ffxiv.item .ability-marker-editor .ffxiv-marker-checkbox input {
   -webkit-appearance: none;
      -moz-appearance: none;
           appearance: none;
@@ -4194,43 +4321,6 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
   padding: 0;
   position: absolute;
   width: 16px;
-}
-.ffxiv.item .ability-marker-workspace {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-}
-.ffxiv.item .ability-marker-editor .ffxiv-marker-grid {
-  display: grid;
-  flex: 0 0 auto;
-  grid-template-columns: repeat(15, 18px);
-}
-.ffxiv.item .ability-marker-editor .ffxiv-marker-cell {
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
-  background: #222;
-  border: 1px solid #888;
-  border-radius: 0;
-  box-shadow: none;
-  flex: none;
-  font-size: 0;
-  height: 18px;
-  line-height: 0;
-  margin: 0;
-  min-height: 0;
-  min-width: 0;
-  padding: 0;
-  width: 18px;
-}
-.ffxiv.item .ability-marker-editor .ffxiv-marker-cell.selected.enemy {
-  background: orange;
-}
-.ffxiv.item .ability-marker-editor .ffxiv-marker-cell.selected.allied {
-  background: #66ffff;
-}
-.ffxiv.item .ability-marker-editor .ffxiv-marker-preview canvas {
-  display: block;
 }
 .ffxiv.item .ability-marker-read-list {
   display: grid;

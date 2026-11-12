@@ -65,6 +65,7 @@ const ITEM_ENRICHED_FIELDS = [
   "marker_area",
   "marker_effect",
   "marker_trigger",
+  "origin",
   "range",
   "target",
   "traits",
@@ -95,6 +96,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
     this.options.window.resizable = !this._isLimitedDisplayMode();
     this.itemEditMode = false;
+    this._markerDraft = null;
     this._expandedEffectRequirements = new Set();
     this._expandedEffectRules = new Set();
     this._automationHelpCleanup = [];
@@ -256,12 +258,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       );
     }
     context.hasMarkerTag = this._hasMarkerTag(itemData.system.tags);
-    const markers =
+    const markers = this._markerDraft ?? (
       Array.isArray(itemData.system.markers) && itemData.system.markers.length
         ? itemData.system.markers
         : itemData.system.marker
           ? [itemData.system.marker]
-          : [];
+          : []);
     context.markerEntries = markers.map((marker, index) => ({
       index,
       number: index + 1,
@@ -459,7 +461,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this._activateFormulaFieldVisibility();
     this._activateAutomationExpansionTracking();
     this._activateAutomationHelp();
-    this._applyItemEditMode();
+    this._applyItemEditMode(context);
     this._restoreSheetScroll();
   }
 
@@ -474,6 +476,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @override */
   async _preClose(options) {
     await this._saveProseMirrorEditors();
+    await this._saveMarkerDraft();
     await super._preClose(options);
     this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
   }
@@ -523,8 +526,23 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     } finally {
       this._suppressProseMirrorSaveSound = false;
     }
+    if (this.itemEditMode) await this._saveMarkerDraft();
     this.itemEditMode = !this.itemEditMode;
     await this.render({ force: true });
+  }
+
+  async _saveMarkerDraft() {
+    if (!this._markerDraft) return;
+    const markers = this.item.system.markers?.length
+      ? this.item.system.markers
+      : this.item.system.marker ? [this.item.system.marker] : [];
+    if (!foundry.utils.equals(markers, this._markerDraft)) {
+      await this.item.update({
+        "system.markers": foundry.utils.deepClone(this._markerDraft),
+        "system.marker": null,
+      }, { render: false });
+    }
+    this._markerDraft = null;
   }
 
   _captureAutomationExpansion() {
@@ -652,7 +670,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this._automationHelpCleanup = [];
   }
 
-  _applyItemEditMode() {
+  _applyItemEditMode(context) {
     if (!EDIT_MODE_ITEM_TYPES.has(this.item.type)) return;
     const editing = this._isItemEditMode();
     this.element.classList.toggle("item-editing", editing);
@@ -679,7 +697,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       .forEach((control) => {
         const customElement = control.closest("formula-input, autocomplete-tags");
         if (customElement && customElement !== control) return;
-        this._replaceLockedItemField(control);
+        this._replaceLockedItemField(control, context.enriched);
       });
     sheet
       .querySelectorAll("button")
@@ -689,7 +707,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       });
   }
 
-  _replaceLockedItemField(control) {
+  _replaceLockedItemField(control, enriched) {
     if (control.closest(".item-edit-toggle")) return;
     if (control.type === "hidden" || control.classList.contains("ffxiv-hidden") || control.closest(".ffxiv-hidden")) {
       control.disabled = true;
@@ -701,6 +719,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
 
     let display;
+    const field = control.name?.startsWith("system.") ? control.name.slice(7) : null;
+    if (ITEM_ENRICHED_FIELDS.includes(field)) {
+      const html = foundry.utils.getProperty(enriched ?? {}, field);
+      if (typeof html === "string" && html.trim()) {
+        display = document.createElement("div");
+        display.classList.add("item-locked-field-block");
+        display.innerHTML = html;
+      }
+    }
     if (control.name === "system.combo") {
       const resource = control.closest(".combo-resource");
       const preview = resource?.querySelector(":scope > .combo-chain");
@@ -2373,12 +2400,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     html.off(".ffxivItemSheet");
     html.on("save.ffxivItemSheet", "prose-mirror", this._onSaveProseMirror.bind(this));
 
-    const storedMarkers =
+    const storedMarkers = this._markerDraft ?? (
       Array.isArray(this.item.system.markers) && this.item.system.markers.length
         ? foundry.utils.deepClone(this.item.system.markers)
         : this.item.system.marker
           ? [foundry.utils.deepClone(this.item.system.marker)]
-          : [];
+          : []);
     const markerEditors = html[0]?.querySelectorAll(".ability-marker-editor") ?? [];
     if (markerEditors.length && this._isItemEditMode() && this.document.isOwner) {
       for (const markerEditor of markerEditors) {
@@ -2388,13 +2415,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           storedMarkers[index],
           (marker) => {
             storedMarkers[index] = foundry.utils.deepClone(marker);
-            return this.item.update(
-              {
-                "system.markers": foundry.utils.deepClone(storedMarkers),
-                "system.marker": null,
-              },
-              { render: false },
-            );
+            this._markerDraft = storedMarkers;
           },
           this._eventAbortController?.signal,
         );
@@ -2454,7 +2475,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const markers = foundry.utils.deepClone(storedMarkers);
       markers.push({
         state,
-        opacity: game.settings.get("ffxiv", "markerOpacity"),
+        opacity: game.settings.get("ffxiv", "abilityMarkerOpacity"),
         type: "enemy",
         mode: "standard",
         targeted: false,
@@ -2462,12 +2483,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         shape: "grid",
         radius: null,
       });
-      this.item
-        .update(
-          { "system.markers": markers, "system.marker": null },
-          { render: false },
-        )
-        .then(() => this.render({ force: true }))
+      this._markerDraft = markers;
+      this.render({ force: true })
         .catch((err) => ui.notifications.error(err, { console: true }));
     });
     html.on("click.ffxivItemSheet", ".remove-ability-marker", (event) => {
@@ -2477,12 +2494,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       this._captureSheetScroll();
       const markers = foundry.utils.deepClone(storedMarkers);
       markers.splice(Number(event.currentTarget.dataset.index), 1);
-      this.item
-        .update(
-          { "system.markers": markers, "system.marker": null },
-          { render: false },
-        )
-        .then(() => this.render({ force: true }))
+      this._markerDraft = markers;
+      this.render({ force: true })
         .catch((err) => ui.notifications.error(err, { console: true }));
     });
 

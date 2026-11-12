@@ -94,6 +94,8 @@ const LEGACY_ABILITY_TYPES = new Set([
   "limit_break",
 ]);
 const HIDDEN_ITEM_CREATE_TYPES = new Set(["currency"]);
+const markerPreviewImages = new WeakMap();
+const markerPreviewCache = new WeakMap();
 
 /* -------------------------------------------- */
 /*  Init Hook                                   */
@@ -110,6 +112,12 @@ Hooks.once("init", function () {
     default: {},
   });
   game.settings.register("ffxiv", "markerOpacity", {
+    scope: "user",
+    config: false,
+    type: Number,
+    default: 0.75,
+  });
+  game.settings.register("ffxiv", "abilityMarkerOpacity", {
     scope: "user",
     config: false,
     type: Number,
@@ -139,22 +147,53 @@ Hooks.once("init", function () {
         Math.floor(size / 2),
         geometry,
         setMarker,
+        undefined,
+        "abilityMarkerOpacity",
       );
     },
-    renderMarkerPreview: (canvasElement, marker) => {
+    renderMarkerPreview: (canvasElement, marker, showGrid = false) => {
       if (!canvasElement || !marker) return;
-      const rendered = renderMarkerDataUrl(
-        marker,
-        Math.max(24, Math.round(canvas.grid.size / 3)),
-      );
-      if (!rendered) return;
+      const gridSize = Math.max(24, Math.round(canvas.grid.size / 3));
+      const key = JSON.stringify([gridSize, marker]);
+      const current = markerPreviewImages.get(canvasElement);
+      if (current?.key === key && current.showGrid === showGrid) return;
+      let cached = markerPreviewCache.get(marker);
+      if (cached?.key !== key) {
+        cached = { key, rendered: renderMarkerDataUrl(marker, gridSize) };
+        markerPreviewCache.set(marker, cached);
+      }
+      const rendered = cached.rendered;
+      if (!rendered) {
+        markerPreviewImages.delete(canvasElement);
+        canvasElement.width = 1;
+        canvasElement.height = 1;
+        return;
+      }
       canvasElement.width = rendered.width;
       canvasElement.height = rendered.height;
       const context = canvasElement.getContext("2d");
       const image = new Image();
-      image.addEventListener("load", () => context.drawImage(image, 0, 0), {
-        once: true,
-      });
+      markerPreviewImages.set(canvasElement, { image, key, showGrid });
+      image.addEventListener("load", () => {
+        if (markerPreviewImages.get(canvasElement)?.image !== image) return;
+        context.drawImage(image, 0, 0);
+        if (!showGrid) return;
+        context.save();
+        context.globalCompositeOperation = "source-atop";
+        context.strokeStyle = "rgba(255, 255, 255, 0.65)";
+        context.lineWidth = Math.max(1, gridSize / 24);
+        context.beginPath();
+        for (let x = gridSize; x < canvasElement.width; x += gridSize) {
+          context.moveTo(x, 0);
+          context.lineTo(x, canvasElement.height);
+        }
+        for (let y = gridSize; y < canvasElement.height; y += gridSize) {
+          context.moveTo(0, y);
+          context.lineTo(canvasElement.width, y);
+        }
+        context.stroke();
+        context.restore();
+      }, { once: true });
       image.src = rendered.src;
     },
     runItemMigration: async (force = false) =>
@@ -1440,13 +1479,20 @@ Hooks.on("renderActorSheet", (app, html) => {
 
 Hooks.on("updateItem", (item, changes, options) => {
   if (options?.ffxivSkipActorSheetRefresh) return;
-  refreshOwnedItemActorSheets(item, { preserveTopWindow: true }).catch((err) =>
+  const fields = Object.keys(foundry.utils.flattenObject(changes))
+    .filter(key => key !== "_id" && key !== "_stats" && !key.startsWith("_stats."));
+  if (!fields.length) return;
+  const markersOnly = fields.every(key =>
+    key === "system.markers" || key.startsWith("system.markers.")
+    || key === "system.marker" || key.startsWith("system.marker."),
+  );
+  refreshOwnedItemActorSheets(item, { preserveTopWindow: true, markersOnly }).catch((err) =>
     debugError("FFXIV | Failed to refresh actor sheet after item update", err),
   );
 });
 
 Hooks.on("closeItemSheet", (app) => {
-  refreshOwnedItemActorSheets(app?.item).catch((err) =>
+  refreshOwnedItemActorSheets(app?.item, { markersOnly: true }).catch((err) =>
     debugError(
       "FFXIV | Failed to refresh actor sheet after item sheet close",
       err,
@@ -1456,7 +1502,7 @@ Hooks.on("closeItemSheet", (app) => {
 
 async function refreshOwnedItemActorSheets(
   item,
-  { preserveTopWindow = false } = {},
+  { preserveTopWindow = false, markersOnly = false } = {},
 ) {
   if (!item?.parent || item.parent.documentName !== "Actor") return;
 
@@ -1484,7 +1530,11 @@ async function refreshOwnedItemActorSheets(
   }
 
   for (const sheet of sheets) {
-    await sheet.render({ force: true, focus: false });
+    if (markersOnly && sheet instanceof FFXIVActorSheet && sheet.actor.type === "npc" && item.type === "ability") {
+      await sheet._refreshAbilityMarkerPreview(item);
+    } else {
+      await sheet.render({ force: true, focus: false });
+    }
   }
 
   for (const sheet of sheets) {

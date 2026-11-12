@@ -387,6 +387,8 @@
       "MarkerEffectHint": "Effet résolu lorsque le marqueur se déclenche, y compris ses éventuels effets secondaires.",
       "AssignedMarkers": "Marqueurs assignés",
       "Marker": "Marqueur",
+      "PreviousMarker": "Marqueur précédent",
+      "NextMarker": "Marqueur suivant",
       "Limitations": "Restrictions",
       "LimitationsDescription": "Restrictions (Description)",
       "LimitationsDescriptionHint": "Limite d'utilisation de la compétence, par exemple <code>Une fois par phase</code>. Le suivi automatique des utilisations ne s'applique que si ce champ est renseigné.",

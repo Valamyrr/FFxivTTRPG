@@ -113,6 +113,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.currentAbilityTab = "primary";
     this.actorEditMode = false;
     this._enrichedCache = null;
+    this._markerPreviewIndices = new Map();
+    this._markerPreviewSnapshots = new WeakMap();
+    this._markerPreviewCanvases = new WeakMap();
   }
 
   /** @override */
@@ -290,7 +293,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.enriched = {};
 
     const rollData = context.rollData ?? this.actor.getRollData();
-    const actorTabs = this.actor.type === "character" ? renderedTabs : new Set(CHARACTER_TABS);
+    const actorTabs = this.actor.type === "npc"
+      ? new Set(["abilities"])
+      : this.actor.type === "character" ? renderedTabs : new Set(CHARACTER_TABS);
 
     if (this.actor.type === "encounter") {
       context.enriched = await this.constructor.enrichStringFields(
@@ -309,7 +314,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       };
     }
 
-    const itemTabs = this.actor.type === "character" ? actorTabs : new Set(["abilities", "items", "companions", "roleplay"]);
+    const itemTabs = this.actor.type === "character" || this.actor.type === "npc"
+      ? actorTabs
+      : new Set(["abilities", "items", "companions", "roleplay"]);
     const abilityTypes = this.actor.type === "character" && itemTabs.has("abilities")
       ? this._getRenderedAbilityTypes()
       : null;
@@ -320,7 +327,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }));
 
-    if (this.actor.type !== "character" && ACTOR_ENRICHED_FIELDS.companions?.length) {
+    if (this.actor.type !== "character" && this.actor.type !== "npc" && ACTOR_ENRICHED_FIELDS.companions?.length) {
       context.enriched = {
         ...context.enriched,
         ...await this.constructor.enrichStringFields(this.actor.system, ACTOR_ENRICHED_FIELDS.companions, rollData, this.actor),
@@ -595,14 +602,16 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     this.element.classList.add(`${CONFIG.theme}_theme`);
     this._setCharacterSheetId();
-    this._activateProseMirrorEditors();
+    if (this.actor.type !== "npc") this._activateProseMirrorEditors();
     this._activatePrimaryTabs();
-    await this._relocateInventoryItems();
-    this._activateInventoryDragDrop();
-    this._activateJobDropZone();
+    if (this.actor.type !== "npc") {
+      await this._relocateInventoryItems();
+      this._activateInventoryDragDrop();
+      this._activateJobDropZone();
+    }
     this.activateListeners($(this.element));
     this._applyActorEditMode();
-    this._updateHeaderBanner(this.actor.system?.banner || "");
+    if (this.actor.type !== "npc") this._updateHeaderBanner(this.actor.system?.banner || "");
 
     if (this.actor.type == "character") {
       this._updateManaBar();
@@ -827,6 +836,9 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _onClose(options) {
     this._abilityQuickTabsController?.abort();
     this._abilityQuickTabsController = null;
+    this._markerPreviewObserver?.disconnect();
+    this._markerPreviewObserver = null;
+    this._markerPreviewCanvases = new WeakMap();
     this._exitActorEditMode();
     this._closeInventoryContextMenu();
     this._closeInventoryItemTooltip();
@@ -1436,6 +1448,20 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     for (let i of context.items) {
       i.img = i.img || Item.DEFAULT_ICON;
       const abilitySubtype = getAbilitySubtype(i);
+      if (this.actor.type === "npc" && i.type === "ability") {
+        const markers =
+          Array.isArray(i.system.markers) && i.system.markers.length
+            ? i.system.markers
+            : i.system.marker
+              ? [i.system.marker]
+              : [];
+        const index = Math.min(this._markerPreviewIndices.get(i._id) ?? 0, markers.length - 1);
+        i.markerPreview = markers.length ? {
+          index,
+          number: index + 1,
+          multiple: markers.length > 1,
+        } : null;
+      }
 
       if (i.type === "consumable") {
         consumables.push(i);
@@ -1518,13 +1544,114 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   /* -------------------------------------------- */
 
+  async _refreshAbilityMarkerPreview(item) {
+    if (getAbilitySubtype(item) === "limit_break") return;
+    const card = this.element?.querySelector(`.ability-card[data-item-id="${item.id}"]`);
+    if (!card) return;
+    const markers = item.system.markers?.length
+      ? item.system.markers
+      : item.system.marker ? [item.system.marker] : [];
+    const key = JSON.stringify(markers);
+    const snapshot = this._markerPreviewSnapshots.get(card);
+    if (snapshot?.key === key) return;
+    const previous = card.querySelector(".ability-marker-read-list");
+    const index = Math.min(this._markerPreviewIndices.get(item.id) ?? 0, markers.length - 1);
+    if (previous && snapshot?.count === markers.length && markers.length) {
+      const preview = previous.querySelector(".ability-marker-read-preview");
+      preview.dataset.index = String(index);
+      this._renderAbilityMarkerPreview(preview);
+    } else {
+      const html = await foundry.applications.handlebars.renderTemplate(
+        "systems/ffxiv/templates/actor/parts/actor-marker-preview.hbs",
+        { markerPreview: markers.length ? { index, number: index + 1, multiple: markers.length > 1 } : null },
+      );
+      if (!card.isConnected) return;
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = html.trim();
+      const replacement = wrapper.firstElementChild;
+      const oldPreview = previous?.querySelector(".ability-marker-read-preview");
+      if (oldPreview) this._markerPreviewObserver?.unobserve(oldPreview);
+      if (replacement) {
+        const canvas = previous?.querySelector("canvas");
+        if (canvas) replacement.querySelector("canvas").replaceWith(canvas);
+        if (previous) previous.replaceWith(replacement);
+        else card.querySelector(".ability-roll-button").before(replacement);
+        this._observeAbilityMarkerPreviews(replacement);
+      } else {
+        previous?.remove();
+        this._markerPreviewIndices.delete(item.id);
+        this._markerPreviewCanvases.delete(item);
+      }
+      card.classList.toggle("has-markers", markers.length > 0);
+    }
+    this._markerPreviewSnapshots.set(card, { key, count: markers.length });
+  }
+
+  _observeAbilityMarkerPreviews(root) {
+    const previews = root?.querySelectorAll(".ability-marker-read-preview") ?? [];
+    if (!previews.length) return;
+    this._markerPreviewObserver ??= new IntersectionObserver((entries, observer) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting || !entry.target.isConnected) continue;
+        observer.unobserve(entry.target);
+        this._renderAbilityMarkerPreview(entry.target);
+      }
+    }, {
+      root: this.element.querySelector(".sheet-body"),
+      rootMargin: "100px",
+    });
+    for (const preview of previews) {
+      const card = preview.closest(".ability-card");
+      const item = this.actor.items.get(card.dataset.itemId);
+      if (!item) continue;
+      const canvas = preview.querySelector("canvas");
+      const savedCanvas = this._markerPreviewCanvases.get(item);
+      if (savedCanvas && savedCanvas !== canvas) canvas.replaceWith(savedCanvas);
+      else this._markerPreviewCanvases.set(item, canvas);
+      const markers = item.system.markers?.length
+        ? item.system.markers
+        : item.system.marker ? [item.system.marker] : [];
+      this._markerPreviewSnapshots.set(card, { key: JSON.stringify(markers), count: markers.length });
+      this._markerPreviewObserver.observe(preview);
+    }
+  }
+
+  _renderAbilityMarkerPreview(preview, direction = 0) {
+    const item = this.actor.items.get(preview.closest(".ability-card").dataset.itemId);
+    if (!item) return;
+    const markers =
+      Array.isArray(item.system.markers) && item.system.markers.length
+        ? item.system.markers
+        : item.system.marker
+          ? [item.system.marker]
+          : [];
+    if (!markers.length) return;
+    const index = (Number(preview.dataset.index) + direction + markers.length) % markers.length;
+    preview.dataset.index = String(index);
+    preview.querySelector(".ability-marker-number").textContent = String(index + 1);
+    this._markerPreviewIndices.set(item.id, index);
+    game.ffxivttrpg.renderMarkerPreview(preview.querySelector("canvas"), markers[index], true);
+  }
+
   /** @override */
   activateListeners(html) {
     debugLog("Listeners activated for:", this.actor.name);
     html.off(".ffxivActorSheet");
     html.on("save.ffxivActorSheet", "prose-mirror", this._onSaveProseMirror.bind(this));
 
-    html.find("input, textarea").off("keydown.ffxivActorSheet").on("keydown.ffxivActorSheet", (event) => {
+    this._markerPreviewObserver?.disconnect();
+    this._markerPreviewObserver = null;
+    this._observeAbilityMarkerPreviews(html[0]);
+    html.on("click.ffxivActorSheet", ".ability-marker-cycle", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._renderAbilityMarkerPreview(
+        event.currentTarget.closest(".ability-marker-read-preview"),
+        Number(event.currentTarget.dataset.direction),
+      );
+    });
+
+    html.on("keydown.ffxivActorSheet", "input, textarea", (event) => {
       if (event.key === "Enter") {
         const target = event.currentTarget;
         if (target instanceof HTMLInputElement && ENTER_COMMIT_FIELDS.has(target.name)) {
@@ -1657,7 +1784,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     html.find(".ability-description p:not(:last-of-type)").each(function () {
-      $(this).after("<br>");
+      if (!this.nextElementSibling?.matches("br")) $(this).after("<br>");
     });
 
 

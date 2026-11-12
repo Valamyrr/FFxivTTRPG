@@ -1,0 +1,86 @@
+<div class="ffxiv-marker-config" style="--ffxiv-marker-grid-size: {{size}};">
+  <div class="ffxiv-marker-panel">
+    <label class="ffxiv-marker-row">
+      <span>{{localize "FFXIV.MarkerPlacement.Dialog.Source"}}</span>
+      <select id="ffxiv-marker-type">
+        <option value="enemy" {{#if (eq marker.type "enemy")}}selected{{/if}}>{{localize "FFXIV.MarkerPlacement.Dialog.Enemy"}}</option>
+        <option value="allied" {{#if (eq marker.type "allied")}}selected{{/if}}>{{localize "FFXIV.MarkerPlacement.Dialog.Ally"}}</option>
+      </select>
+    </label>
+    <label class="ffxiv-marker-row">
+      <span>{{localize "FFXIV.MarkerPlacement.Dialog.Opacity"}}</span>
+      <input type="range" id="ffxiv-marker-opacity" min="0" max="100" value="{{marker.opacity}}">
+      <span id="ffxiv-marker-opacity-value">{{marker.opacity}}%</span>
+    </label>
+    <label class="ffxiv-marker-row">
+      <span>{{localize "FFXIV.MarkerPlacement.Dialog.Mode"}}</span>
+      <select id="ffxiv-marker-mode">
+        <option value="standard" {{#if (eq marker.mode "standard")}}selected{{/if}}>{{localize "FFXIV.MarkerPlacement.Dialog.Standard"}}</option>
+        <option value="stack" {{#if (eq marker.mode "stack")}}selected{{/if}}>{{localize "FFXIV.MarkerPlacement.Dialog.Stack"}}</option>
+        <option value="knockback" {{#if (eq marker.mode "knockback")}}selected{{/if}}>{{localize "FFXIV.MarkerPlacement.Dialog.Knockback"}}</option>
+        <option value="tankbuster" {{#if (eq marker.mode "tankbuster")}}selected{{/if}}>{{localize "FFXIV.MarkerPlacement.Dialog.Tankbuster"}}</option>
+      </select>
+    </label>
+    <label class="ffxiv-marker-checkbox">
+      <span class="ffxiv-marker-checkbox-control">
+        <input type="checkbox" id="ffxiv-marker-targeted" {{checked marker.targeted}}>
+        <span class="checkmark"></span>
+      </span>
+      <span>{{localize "FFXIV.MarkerPlacement.Dialog.Targeted"}}</span>
+    </label>
+    <label class="ffxiv-marker-checkbox">
+      <span class="ffxiv-marker-checkbox-control">
+        <input type="checkbox" id="ffxiv-marker-follow-rotation" {{checked marker.followRotation}} {{#unless marker.targeted}}disabled{{/unless}}>
+        <span class="checkmark"></span>
+      </span>
+      <span>{{localize "FFXIV.MarkerPlacement.Dialog.FollowRotation"}}</span>
+    </label>
+    <label class="ffxiv-marker-checkbox">
+      <span class="ffxiv-marker-checkbox-control">
+        <input type="checkbox" id="ffxiv-marker-circle" {{checked marker.circle}}>
+        <span class="checkmark"></span>
+      </span>
+      <span>{{localize "FFXIV.MarkerPlacement.Dialog.Circle"}}</span>
+    </label>
+    <div class="ffxiv-marker-grid">
+      {{#each cells}}
+        <div class="ffxiv-marker-cell {{#if selected}}selected {{../marker.type}}{{/if}}" data-x="{{x}}" data-y="{{y}}"></div>
+      {{/each}}
+    </div>
+  </div>
+  <div class="ffxiv-marker-panel">
+    <strong>{{localize "FFXIV.MarkerPlacement.Custom.Title"}}</strong>
+    <div class="ffxiv-marker-row">
+      <select id="ffxiv-marker-custom">
+        <option value="">{{localize "FFXIV.MarkerPlacement.Custom.New"}}</option>
+      </select>
+      <button type="button" id="ffxiv-marker-save" data-tooltip="{{localize 'FFXIV.MarkerPlacement.Custom.Save'}}">
+        <i class="fa-solid fa-floppy-disk"></i>
+      </button>
+      <button type="button" id="ffxiv-marker-delete" data-tooltip="{{localize 'FFXIV.MarkerPlacement.Custom.Delete'}}">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+    <strong>{{localize "FFXIV.MarkerPlacement.Dialog.Presets"}}</strong>
+    <div class="ffxiv-marker-presets">
+      <div class="ffxiv-marker-preset-row">
+        <button type="button" data-span="1" data-mode="standard">Standard 3x3</button>
+        <button type="button" data-span="2" data-mode="standard">Standard 5x5</button>
+      </div>
+      <div class="ffxiv-marker-preset-row">
+        <button type="button" data-span="1" data-mode="stack">Stack 3x3</button>
+        <button type="button" data-span="2" data-mode="stack">Stack 5x5</button>
+      </div>
+      <div class="ffxiv-marker-preset-row">
+        <button type="button" data-span="1" data-mode="knockback">Knockback 3x3</button>
+        <button type="button" data-span="2" data-mode="knockback">Knockback 5x5</button>
+      </div>
+      <div class="ffxiv-marker-preset-row">
+        <button type="button" data-span="1" data-mode="tankbuster">Tank Buster 3x3</button>
+        <button type="button" data-span="2" data-mode="tankbuster">Tank Buster 5x5</button>
+      </div>
+    </div>
+    <strong>{{localize "FFXIV.MarkerPlacement.Dialog.Preview"}}</strong>
+    <div class="ffxiv-marker-preview"><canvas id="ffxiv-marker-preview"></canvas></div>
+  </div>
+</div>

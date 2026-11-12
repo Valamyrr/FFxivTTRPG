@@ -1,4 +1,4 @@
-<div class="ability-card" data-item-id="{{_id}}">
+<div class="ability-card{{#if markerPreview}} has-markers{{/if}}" data-item-id="{{_id}}">
   <div class="ability-card-info">
     <div class="ability-icon-wrapper">
       <img src="{{img}}"
@@ -121,6 +121,7 @@
   {{#if system.description }}
     <div class="ability-description">{{{enriched.description}}}</div>
   {{/if}}
+  {{> "systems/ffxiv/templates/actor/parts/actor-marker-preview.hbs"}}
   <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{localize "FFXIV.CharacterSheet.Roll"}}
   </button>
 </div>

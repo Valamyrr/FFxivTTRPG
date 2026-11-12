@@ -10,6 +10,7 @@ export const preloadHandlebarsTemplates = async function () {
     "systems/ffxiv/templates/actor/parts/actor-attributes.hbs",
     "systems/ffxiv/templates/actor/parts/actor-profile.hbs",
     "systems/ffxiv/templates/actor/parts/actor-card-abilities.hbs",
+    "systems/ffxiv/templates/actor/parts/actor-marker-preview.hbs",
     "systems/ffxiv/templates/actor/parts/actor-card-pet-abilities.hbs",
     "systems/ffxiv/templates/actor/parts/actor-card-augment.hbs",
     "systems/ffxiv/templates/actor/parts/actor-card-limitbreak.hbs",
@@ -32,6 +33,7 @@ export const preloadHandlebarsTemplates = async function () {
     "systems/ffxiv/templates/item/parts/combo-chain.hbs",
     "systems/ffxiv/templates/item/parts/item-effects.hbs",
     "systems/ffxiv/templates/item/parts/item-summons.hbs",
+    "systems/ffxiv/templates/item/parts/marker-config.hbs",
     // Item user-side
     "systems/ffxiv/templates/item/item-sheet-dialog.hbs",
     "systems/ffxiv/templates/item/item-sheet-dialog-gear.hbs",

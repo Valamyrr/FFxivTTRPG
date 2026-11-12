@@ -96,7 +96,8 @@ async function openMarkerEditTool() {
   if (!region) return;
   try {
     const initial = getPlacedMarkerData(region);
-    const marker = await configureMarkerShape(initial.marker);
+    const opacitySetting = region.getFlag("ffxiv", "markerPlacement").opacitySetting ?? "markerOpacity";
+    const marker = await configureMarkerShape(initial.marker, opacitySetting);
     if (!marker || canvas.scene !== scene || !scene.regions.has(region.id)
       || !region.canUserModify(game.user, "update")) return;
     if (!getMarkerBounds(marker.state)) {
@@ -111,6 +112,7 @@ async function openMarkerEditTool() {
         targeted: marker.targeted,
         followRotation: marker.followRotation,
         opacity: marker.opacity,
+        opacitySetting,
       },
     };
     if (marker.shape !== initial.marker.shape
@@ -128,6 +130,7 @@ async function openMarkerEditTool() {
         marker,
         color: getMarkerColor(marker),
         shape: createMarkerShape(marker),
+        opacitySetting,
       }), {
         create: false,
         attachToToken: true,
@@ -269,6 +272,7 @@ export async function openMarkerPlacementTool(assignedMarker = null) {
 
   const marker = assignedMarker ?? (await configureMarkerShape());
   if (!marker) return false;
+  const opacitySetting = assignedMarker ? "abilityMarkerOpacity" : "markerOpacity";
   const bounds = getMarkerBounds(marker.state);
   if (!bounds) {
     ui.notifications.warn(
@@ -287,6 +291,7 @@ export async function openMarkerPlacementTool(assignedMarker = null) {
     marker,
     color,
     shape: placementShape,
+    opacitySetting,
   });
   try {
     ui.notifications.info(
@@ -360,7 +365,7 @@ export async function openMarkerPlacementTool(assignedMarker = null) {
       await game.settings
         .set(
           "ffxiv",
-          "markerOpacity",
+          opacitySetting,
           placement.getFlag("ffxiv", "markerPlacement").opacity,
         )
         .catch((err) => debugError("Failed to save marker opacity:", err));
@@ -412,7 +417,7 @@ function createMarkerShape(marker, origin = { x: 0, y: 0 }) {
   }
 }
 
-function createMarkerRegionData({ marker, color, shape }) {
+function createMarkerRegionData({ marker, color, shape, opacitySetting = "markerOpacity" }) {
   return {
     name: game.i18n.localize("FFXIV.MarkerPlacement.RegionName"),
     color,
@@ -430,7 +435,8 @@ function createMarkerRegionData({ marker, color, shape }) {
           mode: marker.mode,
           targeted: marker.targeted,
           followRotation: marker.followRotation,
-          opacity: marker.opacity ?? game.settings.get("ffxiv", "markerOpacity"),
+          opacity: marker.opacity ?? game.settings.get("ffxiv", opacitySetting),
+          opacitySetting,
         },
       },
     },
@@ -668,8 +674,8 @@ function drawTankbusterChevron(graphics, x, y, size) {
   graphics.endFill();
 }
 
-async function configureMarkerShape(initialMarker = null) {
-  const opacity = initialMarker?.opacity ?? game.settings.get("ffxiv", "markerOpacity");
+async function configureMarkerShape(initialMarker = null, opacitySetting = "markerOpacity") {
+  const opacity = initialMarker?.opacity ?? game.settings.get("ffxiv", opacitySetting);
   const size = initialMarker?.state.length ?? 15;
   const center = Math.floor(size / 2);
   const state = Array.from({ length: size }, () =>
@@ -699,111 +705,20 @@ async function configureMarkerShape(initialMarker = null) {
     state,
   };
   const wrapper = document.createElement("div");
-  wrapper.innerHTML = `
-    <style>
-      .ffxiv-marker-config { display: flex; gap: 16px; overflow-x: auto; }
-      .ffxiv-marker-panel { display: flex; flex-direction: column; gap: 8px; }
-      .ffxiv-marker-row { display: flex; align-items: center; gap: 8px; }
-      .ffxiv-marker-grid { display: grid; grid-template-columns: repeat(${size}, 24px); }
-      .ffxiv-marker-cell { width: 24px; height: 24px; border: 1px solid #888; background: #222; cursor: pointer; }
-      .ffxiv-marker-cell.selected.enemy { background: orange; }
-      .ffxiv-marker-cell.selected.allied { background: #66ffff; }
-      .ffxiv-marker-presets { display: flex; flex-direction: column; gap: 8px; }
-      .ffxiv-marker-preset-row { display: flex; gap: 8px; }
-	      .ffxiv-marker-preview { overflow: hidden; max-width: 260px; max-height: 260px; border: 0; background: transparent; width: fit-content; height: fit-content; padding: 6px; }
-      .ffxiv-marker-preview canvas { display: block; }
-    </style>
-    <div class="ffxiv-marker-config" style="display: flex; gap: 16px; overflow-x: auto; align-items: flex-start;">
-      <div class="ffxiv-marker-panel" style="display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto;">
-        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
-          <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Source")}</label>
-          <select id="ffxiv-marker-type">
-            <option value="enemy"${selection.type === "enemy" ? " selected" : ""}>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Enemy")}</option>
-            <option value="allied"${selection.type === "allied" ? " selected" : ""}>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Ally")}</option>
-          </select>
-        </div>
-        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
-          <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Opacity")}</label>
-          <input type="range" id="ffxiv-marker-opacity" min="0" max="100" value="${Math.round(opacity * 100)}">
-          <span id="ffxiv-marker-opacity-value">${Math.round(opacity * 100)}%</span>
-        </div>
-        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
-          <label>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Mode")}</label>
-          <select id="ffxiv-marker-mode">
-            <option value="standard"${selection.mode === "standard" ? " selected" : ""}>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Standard")}</option>
-            <option value="stack"${selection.mode === "stack" ? " selected" : ""}>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Stack")}</option>
-            <option value="knockback"${selection.mode === "knockback" ? " selected" : ""}>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Knockback")}</option>
-            <option value="tankbuster"${selection.mode === "tankbuster" ? " selected" : ""}>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Tankbuster")}</option>
-          </select>
-        </div>
-        <label class="ffxiv-marker-checkbox">
-          <span class="ffxiv-marker-checkbox-control">
-            <input type="checkbox" id="ffxiv-marker-targeted"${selection.targeted ? " checked" : ""}>
-            <span class="checkmark"></span>
-          </span>
-          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Targeted")}</span>
-        </label>
-        <label class="ffxiv-marker-checkbox">
-          <span class="ffxiv-marker-checkbox-control">
-            <input type="checkbox" id="ffxiv-marker-follow-rotation"${selection.followRotation ? " checked" : ""}${selection.targeted ? "" : " disabled"}>
-            <span class="checkmark"></span>
-          </span>
-          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.FollowRotation")}</span>
-        </label>
-        <label class="ffxiv-marker-checkbox">
-          <span class="ffxiv-marker-checkbox-control">
-            <input type="checkbox" id="ffxiv-marker-circle"${selection.shape === "circle" ? " checked" : ""}>
-            <span class="checkmark"></span>
-          </span>
-          <span>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Circle")}</span>
-        </label>
-        <div class="ffxiv-marker-grid" style="display: grid; grid-template-columns: repeat(${size}, 24px); flex: 0 0 auto;">
-          ${state
-      .flatMap((row, y) =>
-        row.map(
-          (_on, x) =>
-            `<div class="ffxiv-marker-cell" data-x="${x}" data-y="${y}" style="width: 24px; height: 24px; box-sizing: border-box; border: 1px solid #888; background: ${state[y][x] ? "orange" : "#222"}; cursor: pointer;"></div>`,
-        ),
-      )
-      .join("")}
-        </div>
-      </div>
-      <div class="ffxiv-marker-panel" style="display: flex; flex-direction: column; gap: 8px; flex: 0 0 260px;">
-        <strong>${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Title")}</strong>
-        <div class="ffxiv-marker-row" style="display: flex; align-items: center; gap: 8px;">
-          <select id="ffxiv-marker-custom" style="min-width: 0; flex: 1;">
-            <option value="">${game.i18n.localize("FFXIV.MarkerPlacement.Custom.New")}</option>
-          </select>
-          <button type="button" id="ffxiv-marker-save" data-tooltip="${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Save")}">
-            <i class="fa-solid fa-floppy-disk"></i>
-          </button>
-          <button type="button" id="ffxiv-marker-delete" data-tooltip="${game.i18n.localize("FFXIV.MarkerPlacement.Custom.Delete")}">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-        <strong>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Presets")}</strong>
-	        <div class="ffxiv-marker-presets" style="display: flex; flex-direction: column; gap: 8px;">
-	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
-	            <button type="button" data-span="1" data-mode="standard">Standard 3x3</button>
-	            <button type="button" data-span="2" data-mode="standard">Standard 5x5</button>
-	          </div>
-	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
-	            <button type="button" data-span="1" data-mode="stack">Stack 3x3</button>
-	            <button type="button" data-span="2" data-mode="stack">Stack 5x5</button>
-	          </div>
-	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
-	            <button type="button" data-span="1" data-mode="knockback">Knockback 3x3</button>
-	            <button type="button" data-span="2" data-mode="knockback">Knockback 5x5</button>
-	          </div>
-	          <div class="ffxiv-marker-preset-row" style="display: flex; gap: 8px;">
-	            <button type="button" data-span="1" data-mode="tankbuster">Tank Buster 3x3</button>
-	            <button type="button" data-span="2" data-mode="tankbuster">Tank Buster 5x5</button>
-	          </div>
-        </div>
-        <strong>${game.i18n.localize("FFXIV.MarkerPlacement.Dialog.Preview")}</strong>
-	        <div class="ffxiv-marker-preview" style="overflow: hidden; max-width: 260px; max-height: 260px; border: 0; background: transparent; width: fit-content; height: fit-content; padding: 6px;"><canvas id="ffxiv-marker-preview" style="display: block;"></canvas></div>
-      </div>
-    </div>`;
+  wrapper.innerHTML = await foundry.applications.handlebars.renderTemplate(
+    "systems/ffxiv/templates/item/parts/marker-config.hbs",
+    {
+      size,
+      marker: {
+        ...selection,
+        opacity: Math.round(opacity * 100),
+        circle: selection.shape === "circle",
+      },
+      cells: state.flatMap((row, y) =>
+        row.map((selected, x) => ({ x, y, selected })),
+      ),
+    },
+  );
 
   initializeMarkerShapeDialog(
     wrapper,
@@ -814,6 +729,8 @@ async function configureMarkerShape(initialMarker = null) {
     (selectionValue) => {
       selection = selectionValue;
     },
+    undefined,
+    opacitySetting,
   );
   const confirmed = await foundry.applications.api.DialogV2.wait({
     window: {
@@ -851,6 +768,8 @@ async function configureMarkerShape(initialMarker = null) {
         (selectionValue) => {
           selection = selectionValue;
         },
+        undefined,
+        opacitySetting,
       );
     },
   });
@@ -867,6 +786,7 @@ export function initializeMarkerShapeDialog(
   geometry,
   setSelection,
   dialogKey,
+  opacitySetting = "markerOpacity",
 ) {
   const element = getDialogElement(app, html, dialogKey);
   if (!element) return false;
@@ -899,6 +819,7 @@ export function initializeMarkerShapeDialog(
   }
   const getOpacity = () => Math.clamp(Number(opacity?.value ?? 75) / 100, 0, 1);
   type.disabled = mode.value === "tankbuster";
+  if (followRotation) followRotation.disabled = !targeted.checked;
   const updateGeometry = () => {
     geometry.shape = circle?.checked ? "circle" : "grid";
     const bounds = getMarkerBounds(state);
@@ -1082,7 +1003,7 @@ export function initializeMarkerShapeDialog(
   });
   opacity?.addEventListener("change", () => {
     game.settings
-      .set("ffxiv", "markerOpacity", getOpacity())
+      .set("ffxiv", opacitySetting, getOpacity())
       .catch((err) => debugError("Failed to save marker opacity:", err));
   });
   mode.addEventListener("change", (event) => {
@@ -1109,27 +1030,8 @@ export function initializeMarkerShapeDialog(
   });
   saveCustom?.addEventListener("click", async (event) => {
     event.preventDefault();
-    let name = custom.value;
-    if (!name) {
-      try {
-        name = await foundry.applications.api.DialogV2.prompt({
-          window: {
-            title: game.i18n.localize("FFXIV.MarkerPlacement.Custom.NameTitle"),
-          },
-          content: `<input type="text" name="name" required autofocus>`,
-          ok: {
-            label: game.i18n.localize("FFXIV.MarkerPlacement.Custom.Save"),
-            callback: (_event, button) =>
-              button.form.elements.name.value.trim(),
-          },
-        });
-      } catch {
-        return;
-      }
-      if (!name) return;
-    }
-    const markers = getCustomMarkers();
-    markers[name] = {
+    event.stopPropagation();
+    const marker = {
       state: state.map((row) => Array.from(row, Boolean)),
       opacity: getOpacity(),
       type: type.value,
@@ -1138,8 +1040,34 @@ export function initializeMarkerShapeDialog(
       followRotation: followRotation?.checked ?? true,
       circle: Boolean(circle?.checked),
     };
-    await game.settings.set("ffxiv", "customMarkers", markers);
-    refreshCustomMarkers(name);
+    const saveMarker = async (name) => {
+      const markers = getCustomMarkers();
+      markers[name] = marker;
+      await game.settings.set("ffxiv", "customMarkers", markers);
+      refreshCustomMarkers(name);
+    };
+    if (custom.value) {
+      await saveMarker(custom.value);
+      return;
+    }
+    try {
+      await foundry.applications.api.DialogV2.prompt({
+        window: {
+          title: game.i18n.localize("FFXIV.MarkerPlacement.Custom.NameTitle"),
+        },
+        content: `<input type="text" name="name" required autofocus>`,
+        ok: {
+          label: game.i18n.localize("FFXIV.MarkerPlacement.Custom.Save"),
+          callback: async (_event, button) => {
+            const name = button.form.elements.name.value.trim();
+            if (!name) return;
+            await saveMarker(name);
+          },
+        },
+      });
+    } catch {
+      return;
+    }
   });
   deleteCustom?.addEventListener("click", async (event) => {
     event.preventDefault();
@@ -1170,9 +1098,6 @@ function getDialogElement(app, html, dialogKey) {
   const keyedElement = dialogKey
     ? document.querySelector(`[data-ffxiv-marker-dialog="${dialogKey}"]`)
     : null;
-  const visibleMarkerElements = Array.from(
-    document.querySelectorAll(".ffxiv-marker-config"),
-  ).filter((element) => element.offsetParent !== null);
   const candidates = [
     keyedElement,
     html,
@@ -1187,19 +1112,16 @@ function getDialogElement(app, html, dialogKey) {
     app?.target,
     app?.currentTarget,
     app?.[0],
-    visibleMarkerElements.at(-1),
-    visibleMarkerElements
-      .at(-1)
-      ?.closest(".app, .application, .window-app, .dialog"),
   ];
 
-  return (
-    candidates.find(
-      (element) =>
-        element instanceof HTMLElement &&
-        element.querySelector?.("#ffxiv-marker-preview"),
-    ) ?? null
-  );
+  for (const candidate of candidates) {
+    if (!(candidate instanceof HTMLElement)) continue;
+    const element = candidate.matches(".ffxiv-marker-config")
+      ? candidate
+      : candidate.querySelector(".ffxiv-marker-config");
+    if (element?.querySelector("#ffxiv-marker-preview")) return element;
+  }
+  return null;
 }
 
 export function renderMarkerDataUrl(marker, gridSize) {
@@ -1613,8 +1535,9 @@ export function registerMarkerHooks() {
       return;
     const opacity = foundry.utils.expandObject(changes).flags?.ffxiv?.markerPlacement?.opacity;
     if (opacity === undefined) return;
+    const opacitySetting = region.getFlag("ffxiv", "markerPlacement").opacitySetting ?? "markerOpacity";
     game.settings
-      .set("ffxiv", "markerOpacity", opacity)
+      .set("ffxiv", opacitySetting, opacity)
       .catch((err) => debugError("Failed to save marker opacity:", err));
   });
 

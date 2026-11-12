@@ -387,6 +387,8 @@
       "MarkerEffectHint": "The effect resolved when the marker is triggered, including any secondary effects.",
       "AssignedMarkers": "Assigned Markers",
       "Marker": "Marker",
+      "PreviousMarker": "Previous marker",
+      "NextMarker": "Next marker",
       "Limitations": "Limitation",
       "LimitationsDescription": "Limitation (Description)",
       "LimitationsDescriptionHint": "The ability's use limit, such as <code>Once per phase</code>. Automatic use tracking only applies when this field is filled in.",
