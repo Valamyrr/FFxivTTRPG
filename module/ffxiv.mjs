@@ -130,7 +130,7 @@ Hooks.once("init", function () {
   game.ffxivttrpg = {
     FFXIVActor,
     FFXIVItem,
-    placeMarker: (marker) => openMarkerPlacementTool(marker),
+    placeMarker: (marker, options) => openMarkerPlacementTool(marker, options),
     initializeMarkerEditor: (element, marker, setMarker, signal) => {
       const size = 15;
       const state = Array.from({ length: size }, (_, y) =>

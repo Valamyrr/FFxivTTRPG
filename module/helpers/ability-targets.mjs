@@ -78,7 +78,8 @@ export function renderAbilityDamageTargets(resolution, targets = getAbilityDamag
       ? `${base} + ${resolution.directRoll?.total ?? resolution.directFormula}`
       : resolution.baseRoll?.formula ?? String(base);
     content += `<div class="ffxiv-ability-target-list"><strong>${game.i18n.localize("FFXIV.Chat.Targeting")}</strong> ${names}</div>`;
-    content += `<div><strong>${game.i18n.localize("FFXIV.Chat.TotalEffect")}</strong></div><div class="dice-roll" data-action="expandRoll" data-direct="${group.direct}"><div class="dice-result"><div class="dice-formula">${escape(formula)}</div><div class="dice-total">${escape(String(total))}</div></div></div>`;
+    if (group.direct)
+      content += `<div><strong>${game.i18n.localize("FFXIV.Chat.TotalEffect")}</strong></div><div class="dice-roll" data-action="expandRoll" data-direct="${group.direct}"><div class="dice-result"><div class="dice-formula">${escape(formula)}</div><div class="dice-total">${escape(String(total))}</div></div></div>`;
     content += `<div class="ffxiv-chat-buttons"><button class="ffxiv-apply-ability-damage" data-damage-targets="${targetData}" data-direct="${group.direct}" ${buttonData} ${disabled}>${game.i18n.localize("FFXIV.Chat.Damage")}</button>`;
     content += `<button class="ffxiv-apply-heal" data-damage-targets="${targetData}" data-direct="${group.direct}" data-heal="${escape(String(total))}" ${buttonData} ${disabled}>${game.i18n.localize("FFXIV.Chat.Heal")}</button></div>`;
   }

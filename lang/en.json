@@ -777,6 +777,11 @@
     "MarkerPlacement": {
       "Title": "FFXIV Marker Placement",
       "RegionName": "FFXIV Marker",
+      "Ability": {
+        "Place": "Place Markers",
+        "Resolve": "Resolve Markers",
+        "None": "There are no markers placed by this ability for this NPC in the active scene."
+      },
       "Edit": {
         "Title": "Edit FFXIV Marker",
         "Save": "Save Changes",
@@ -812,6 +817,8 @@
         "NoScene": "No active scene.",
         "RegionFailed": "Failed to create region marker. See console.",
         "EditFailed": "Failed to update marker. See console.",
+        "ResolveFailed": "Failed to resolve ability markers. See console.",
+        "ResolvePermission": "You need permission to delete this ability's markers to resolve them.",
         "EmptyShape": "Choose at least one marker square.",
         "NoPermission": "You need permission to create Scene Regions to place markers.",
         "GridRequired": "Grid markers require a scene grid. Use a circle marker on gridless scenes."

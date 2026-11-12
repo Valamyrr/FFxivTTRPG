@@ -122,6 +122,14 @@
     <div class="ability-description">{{{enriched.description}}}</div>
   {{/if}}
   {{> "systems/ffxiv/templates/actor/parts/actor-marker-preview.hbs"}}
-  <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{localize "FFXIV.CharacterSheet.Roll"}}
-  </button>
+  {{#if markerPreview}}
+    <div class="ability-marker-buttons">
+      <button type="button" class="ability-marker-button" data-item-id="{{_id}}" data-marker-action="place">{{localize "FFXIV.MarkerPlacement.Ability.Place"}}</button>
+      <button type="button" class="ability-marker-button" data-item-id="{{_id}}" data-marker-action="resolve">{{localize "FFXIV.MarkerPlacement.Ability.Resolve"}}</button>
+      <button type="button" class="ability-roll-button" data-item-id="{{_id}}">{{localize "FFXIV.CharacterSheet.Roll"}}</button>
+    </div>
+  {{else}}
+    <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{localize "FFXIV.CharacterSheet.Roll"}}
+    </button>
+  {{/if}}
 </div>

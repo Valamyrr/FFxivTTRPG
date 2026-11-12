@@ -1057,16 +1057,76 @@ export class FFXIVItem extends Item {
     await this._summonActorsIfNeeded();
 
     await this._consumeFromInventoryIfNeeded();
-    const markers = Array.isArray(this.system.markers) && this.system.markers.length
+    if (this.parent?.type !== "npc" || this.type !== "ability") {
+      for (const marker of this._getAbilityMarkers()) {
+        await game.ffxivttrpg.placeMarker(foundry.utils.deepClone(marker));
+      }
+    }
+    if (!checkResult?.hasApplication && !baseMessage?.getFlag("ffxiv", "damageResolution"))
+      this._clearTargetsAfterAbilityUse();
+  }
+
+  _getAbilityMarkers() {
+    return Array.isArray(this.system.markers) && this.system.markers.length
       ? this.system.markers
       : this.system.marker
         ? [this.system.marker]
         : [];
-    for (const marker of markers) {
-      await game.ffxivttrpg.placeMarker(foundry.utils.deepClone(marker));
+  }
+
+  _getMarkerSourceToken() {
+    if (this.parent?.isToken) {
+      return this.parent.token?.parent === canvas.scene ? this.parent.token : null;
     }
-    if (!checkResult?.hasApplication && !baseMessage?.getFlag("ffxiv", "damageResolution"))
-      this._clearTargetsAfterAbilityUse();
+    const tokens = this.parent?.getActiveTokens(false, true) ?? [];
+    return tokens.find((token) => token.parent === canvas.scene && token.object?.controlled)
+      ?? tokens.find((token) => token.parent === canvas.scene)
+      ?? null;
+  }
+
+  async placeMarkers() {
+    if (this.parent?.type !== "npc" || this.type !== "ability") return false;
+    const sourceToken = this._getMarkerSourceToken();
+    for (const [index, marker] of this._getAbilityMarkers().entries()) {
+      const placed = await game.ffxivttrpg.placeMarker(foundry.utils.deepClone(marker), {
+        sourceItemUuid: this.uuid,
+        sourceTokenId: sourceToken?.id ?? null,
+        showInstructions: index === 0,
+      });
+      if (!placed) return false;
+    }
+    return true;
+  }
+
+  async resolveMarkers() {
+    if (this.parent?.type !== "npc" || this.type !== "ability") return;
+    const scene = canvas.scene;
+    if (!scene) {
+      ui.notifications.error(game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoScene"));
+      return;
+    }
+    const sourceToken = this._getMarkerSourceToken();
+    const regions = scene.regions.filter((region) => {
+      const source = region.getFlag("ffxiv", "markerSource");
+      return source?.itemUuid === this.uuid && source.tokenId === (sourceToken?.id ?? null);
+    });
+    if (!regions.length) {
+      ui.notifications.info(game.i18n.localize("FFXIV.MarkerPlacement.Ability.None"));
+      return;
+    }
+    if (regions.some((region) => !region.canUserModify(game.user, "delete"))) {
+      ui.notifications.warn(game.i18n.localize("FFXIV.MarkerPlacement.Errors.ResolvePermission"));
+      return;
+    }
+    const disposition = sourceToken?.disposition
+      ?? this.parent.prototypeToken.disposition;
+    const targetIds = scene.tokens.filter((token) =>
+      token.actor && token.actor.type !== "pet" && token.object && token.disposition !== disposition
+      && (!token.hidden || game.user.isGM)
+      && regions.some((region) => token.testInsideRegion(region)),
+    ).map((token) => token.id);
+    await scene.deleteEmbeddedDocuments("Region", regions.map((region) => region.id));
+    if (canvas.scene === scene) canvas.tokens.setTargets(targetIds, { mode: "replace" });
   }
 
   _playErrorSound() {

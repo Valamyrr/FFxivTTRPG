@@ -170,8 +170,8 @@ export function registerChatMessageRendering() {
       const card = html.querySelector(".ffxiv-ability-damage");
       const row = card?.querySelector(".ffxiv-apply-ability-damage")?.closest(".ffxiv-chat-buttons");
       if (row && !card.querySelector("ffxiv-ability-targets")) {
-        let first = row.previousElementSibling?.previousElementSibling;
-        if (damageResolution.targets.length) first = first?.previousElementSibling;
+        let first = row.previousElementSibling;
+        while (first && !first.matches("hr")) first = first.previousElementSibling;
         if (first) {
           card.insertBefore(document.createElement("ffxiv-ability-targets"), first);
           for (let node = first; node;) {

@@ -255,7 +255,10 @@ function getMarkerColor(marker) {
       : "#ffa500";
 }
 
-export async function openMarkerPlacementTool(assignedMarker = null) {
+export async function openMarkerPlacementTool(
+  assignedMarker = null,
+  { sourceItemUuid = null, sourceTokenId = null, showInstructions = true } = {},
+) {
   cancelMarkerEdit?.();
   if (!canvas.scene) {
     ui.notifications.error(
@@ -293,22 +296,30 @@ export async function openMarkerPlacementTool(assignedMarker = null) {
     shape: placementShape,
     opacitySetting,
   });
+  if (sourceItemUuid) {
+    placementData.flags.ffxiv.markerSource = {
+      itemUuid: sourceItemUuid,
+      tokenId: sourceTokenId,
+    };
+  }
   try {
-    ui.notifications.info(
-      game.i18n.format(
-        marker.targeted
-          ? "FFXIV.MarkerPlacement.Instructions.RegionClickToken"
-          : "FFXIV.MarkerPlacement.Instructions.RegionClickToPlace",
-        {
-          clockwise: formatMarkerPlacementKeybinding(
-            "rotateRegionMarkerClockwise",
-          ),
-          counterclockwise: formatMarkerPlacementKeybinding(
-            "rotateRegionMarkerCounterclockwise",
-          ),
-        },
-      ),
-    );
+    if (showInstructions) {
+      ui.notifications.info(
+        game.i18n.format(
+          marker.targeted
+            ? "FFXIV.MarkerPlacement.Instructions.RegionClickToken"
+            : "FFXIV.MarkerPlacement.Instructions.RegionClickToPlace",
+          {
+            clockwise: formatMarkerPlacementKeybinding(
+              "rotateRegionMarkerClockwise",
+            ),
+            counterclockwise: formatMarkerPlacementKeybinding(
+              "rotateRegionMarkerCounterclockwise",
+            ),
+          },
+        ),
+      );
+    }
     const placementPromise = canvas.regions.placeRegion(placementData, {
       allowRotation: true,
       attachToToken: marker.targeted,

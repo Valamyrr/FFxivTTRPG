@@ -777,6 +777,11 @@
     "MarkerPlacement": {
       "Title": "Placement de FFXIV Marqueur",
       "RegionName": "Marqueur FFXIV",
+      "Ability": {
+        "Place": "Placer les marqueurs",
+        "Resolve": "Résoudre les marqueurs",
+        "None": "Aucun marqueur de cette aptitude pour ce PNJ n'est placé dans la scène active."
+      },
       "Edit": {
         "Title": "Modifier un marqueur FFXIV",
         "Save": "Enregistrer les modifications",
@@ -812,6 +817,8 @@
         "NoScene": "Aucune scène active.",
         "RegionFailed": "Échec de la création du marqueur de région. Voir la console pour les détails.",
         "EditFailed": "Échec de la modification du marqueur. Voir la console pour les détails.",
+        "ResolveFailed": "Impossible de résoudre les marqueurs de l'aptitude. Voir la console.",
+        "ResolvePermission": "Vous devez avoir la permission de supprimer les marqueurs de cette aptitude pour les résoudre.",
         "EmptyShape": "Choisissez au moins une case de marqueur.",
         "NoPermission": "Vous devez avoir la permission de créer des régions de scène pour placer des marqueurs.",
         "GridRequired": "Les marqueurs de grille nécessitent une grille de scène. Utilisez un marqueur circulaire sur les scènes sans grille."

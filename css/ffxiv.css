@@ -2908,8 +2908,19 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-description {
   grid-area: description;
 }
-.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-roll-button {
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-buttons {
   grid-area: roll;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 4px 4px;
+}
+.ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-buttons button {
+  border: none;
+  border-radius: 0;
+  flex: 1;
+  margin: 0;
+  white-space: nowrap;
 }
 .ffxiv.actor.npc .actor-player-abilities .ability-card.has-markers .ability-marker-read-list {
   display: grid;
@@ -2973,7 +2984,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.actor:is(.character, .npc) .actor-player-abilities .effect:last-child {
   margin-bottom: 0;
 }
-.ffxiv.actor:is(.character, .npc) .actor-player-abilities .ability-roll-button {
+.ffxiv.actor:is(.character, .npc) .actor-player-abilities .ability-roll-button, .ffxiv.actor.npc .actor-player-abilities .ability-marker-button {
   min-height: 28px;
   background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
   color: var(--text-color-strong);
@@ -3049,7 +3060,7 @@ body.ffxiv-compact-directories .compendium-sidebar .compendium .compendium-foote
 .ffxiv.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-limitations input[type=checkbox]:checked + .checkmark::after {
   background: rgba(6, 25, 64, 0.88);
 }
-.ffxiv.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-roll-button, .ffxiv.actor:is(.character, .npc).blue_theme .actor-player-abilities .move-buttons button {
+.ffxiv.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-roll-button, .ffxiv.actor.npc.blue_theme .actor-player-abilities .ability-marker-button, .ffxiv.actor:is(.character, .npc).blue_theme .actor-player-abilities .move-buttons button {
   background: linear-gradient(180deg, rgba(43, 100, 188, 0.88) 0%, rgba(27, 73, 143, 0.9) 100%);
   color: #d7ebff;
 }

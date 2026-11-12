@@ -1799,6 +1799,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     html.on('click.ffxivActorSheet', '.ability-icon', this._renderItem.bind(this));
     html.on('click.ffxivActorSheet', '.augment-icon', this._renderItem.bind(this));
     html.on('click.ffxivActorSheet', '.ability-roll-button', this._rollItem.bind(this));
+    html.on('click.ffxivActorSheet', '.ability-marker-button', this._onAbilityMarkerAction.bind(this));
     html.on('click.ffxivActorSheet', '.pet-ability-roll-button', this._rollPet.bind(this));
 
     html.on('click.ffxivActorSheet', '.roll-attribute', this._rollAttribute.bind(this));
@@ -1958,6 +1959,29 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       debugError(event.currentTarget);
     }
 
+  }
+
+  async _onAbilityMarkerAction(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this._markerActionPending) return;
+    const button = event.currentTarget;
+    const item = this.actor.items.get(button.dataset.itemId);
+    if (!item) return;
+    this._markerActionPending = true;
+    button.disabled = true;
+    try {
+      if (button.dataset.markerAction === "place") await item.placeMarkers();
+      else await item.resolveMarkers();
+    } catch (err) {
+      debugError("Ability marker action failed:", err);
+      ui.notifications.error(game.i18n.localize(button.dataset.markerAction === "place"
+        ? "FFXIV.MarkerPlacement.Errors.RegionFailed"
+        : "FFXIV.MarkerPlacement.Errors.ResolveFailed"));
+    } finally {
+      this._markerActionPending = false;
+      button.disabled = false;
+    }
   }
 
   async _rollPet(event) {
