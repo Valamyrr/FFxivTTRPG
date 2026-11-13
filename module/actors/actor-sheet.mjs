@@ -92,7 +92,7 @@ const ACTOR_ENRICHED_FIELDS = {
 const ITEM_ENRICHED_FIELDS = {
   ability: ["base_effect", "direct_hit", "limitations", "marker_area", "origin", "marker_trigger", "marker_effect", "description"],
   trait: ["description"],
-  limit_break: ["description"],
+  limit_break: ["base_effect", "description"],
   augment: ["base_effect"],
   minion: ["traits", "description"],
   title: ["description"],
