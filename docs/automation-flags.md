@@ -136,12 +136,13 @@ This index covers the system-owned `flags.ffxiv` paths read or written by the cu
 | `flags.ffxiv.linkedTraitId` | Active Effect | Internal | [Linked trait Item ID.](#system-managed-flags) |
 | `flags.ffxiv.linkedTraitName` | Active Effect | Internal | [Linked trait display name.](#system-managed-flags) |
 | `flags.ffxiv.linkedTraitUuid` | Active Effect | Internal | [Linked trait Item UUID.](#system-managed-flags) |
-| `flags.ffxiv.markerPlacement` | Region or Tile | Internal | [Ability marker placement and rendering data.](#system-managed-flags) |
-| `flags.ffxiv.markerPlacement.followRotation` | Region or Tile | Internal | [Marker placement setting: followRotation.](#system-managed-flags) |
-| `flags.ffxiv.markerPlacement.mode` | Region or Tile | Internal | [Marker placement setting: mode.](#system-managed-flags) |
-| `flags.ffxiv.markerPlacement.opacity` | Region or Tile | Internal | [Marker placement setting: opacity.](#system-managed-flags) |
-| `flags.ffxiv.markerPlacement.targeted` | Region or Tile | Internal | [Marker placement setting: targeted.](#system-managed-flags) |
-| `flags.ffxiv.markerPlacement.tokenId` | Tile | Internal | [Marker placement setting: tokenId.](#system-managed-flags) |
+| `flags.ffxiv.markerPlacement` | Region or legacy Tile | Internal | [Ability marker placement and rendering data.](#system-managed-flags) |
+| `flags.ffxiv.markerPlacement.followRotation` | Region | Internal | [Marker placement setting: followRotation.](#system-managed-flags) |
+| `flags.ffxiv.markerPlacement.mode` | Region | Internal | [Marker placement setting: mode.](#system-managed-flags) |
+| `flags.ffxiv.markerPlacement.opacity` | Region | Internal | [Marker placement setting: opacity.](#system-managed-flags) |
+| `flags.ffxiv.markerPlacement.targeted` | Region | Internal | [Marker placement setting: targeted.](#system-managed-flags) |
+| `flags.ffxiv.markerPlacement.tokenId` | Tile | Legacy | [Former token link for tile markers.](#system-managed-flags) |
+| `flags.ffxiv.markerPlacement.type` | Region | Internal | [Marker source: enemy or allied.](#system-managed-flags) |
 | `flags.ffxiv.migratedTrait` | Item | Internal / Legacy | [Trait created by a legacy conversion.](#system-managed-flags) |
 | `flags.ffxiv.mpCost.reduction` | Owned Item or applicable effect | Advanced | [Compatibility alias for mpCost.reductions.](#mpcostreductions) |
 | `flags.ffxiv.mpCost.reduction.abilityName` | Effect change row | Change | [Ability name/key filter for the MP cost override.](#active-effect-change-keys) |
@@ -287,6 +288,10 @@ Entries support `key`, `name`, `buttonLabel`, `criticalButtonLabel`, `flavorLabe
 ### Numeric damage channels
 
 On applicable effects, `damage.incoming.flat` / `.mult`, `damage.outgoing.flat` / `.mult`, and `damage.self.flat` / `.mult` accept numbers. Flat flags sum and multiplier flags multiply. `incoming` belongs to the damaged actor, `outgoing` to the source, and `self` is consulted for self-damage. These modify applied damage, separately from dice/formula modifiers. They do not take tag-filter objects.
+
+Ability damage combines the base effect with any applicable direct hit or critical damage before applying these modifiers. Each target receives its own total, with flat adjustments and multipliers applied once. Manual direct hit and critical rolls update the combined result before damage is applied.
+
+The damage and healing target lists follow the local user's current targets. Each application records its own recipients and direct hit outcomes, so targeting changes do not affect a pending request. The same roll can be applied again after the request finishes, including damage and healing to different targets.
 
 ### `damage.application`
 
@@ -512,7 +517,7 @@ These flags track source documents, linked effects, and previous actions. The sy
 - `enmityPhase`, `stunnedInEncounter`, petrified turn bookkeeping: status lifecycle state.
 - `petrifiedAppliedTurn`: turn descriptor recorded when petrified is applied.
 - `knockedOutFromDefeated`: combatant marker used to undo a knocked out status added by the defeated toggle.
-- `markerPlacement`: generated region/tile placement state.
+- `markerPlacement`: generated region placement state. Existing tile markers retain this flag so they can still be cleared.
 - `summoned`, `summon`: generated token marker and links to the summoned actor, source actor, source ability, and source token.
 - `selfAutoLinkedEffectsApplied`: chat-message duplicate-application guard.
 - Migration markers, including `migratedTrait` and `comboFromMigration*`.

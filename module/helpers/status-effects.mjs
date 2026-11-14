@@ -1,3 +1,4 @@
+import { getTurnsUntilActorTurnEnd } from "./effect-utils.mjs";
 import { clearActorJobResources } from "./job-resources.mjs";
 
 export const STACKABLE_STATUS_EFFECT_IDS = new Set([
@@ -229,8 +230,8 @@ export const NEGATIVE_STATUS_IDS = [
   "weakness",
 ];
 
-const COMATOSE_ALLOWED_STATUS_IDS = new Set(["comatose", "death"]);
-const KNOCKED_OUT_ALLOWED_STATUS_IDS = new Set([
+export const COMATOSE_ALLOWED_STATUS_IDS = new Set(["comatose", "death"]);
+export const KNOCKED_OUT_ALLOWED_STATUS_IDS = new Set([
   "comatose",
   "death",
   "knocked_out",
@@ -575,29 +576,6 @@ function prepareStatusEffectDuration(duration, actor = null) {
     prepared.startTurn = null;
   }
   return prepared;
-}
-
-function getTurnsUntilActorTurnEnd(actor, combat) {
-  const turns = combat?.turns ?? [];
-  if (!actor || !turns.length) return 1;
-
-  const currentTurn = Number.isInteger(combat.turn) ? combat.turn : 0;
-  const targetTurn = turns.findIndex((combatant) =>
-    isSameActorDocument(combatant.actor, actor),
-  );
-  if (targetTurn < 0) return 1;
-  if (targetTurn >= currentTurn) return targetTurn - currentTurn + 1;
-  return turns.length - currentTurn + targetTurn + 1;
-}
-
-function isSameActorDocument(first, second) {
-  return (
-    first &&
-    second &&
-    (first === second ||
-      (first.uuid && second.uuid && first.uuid === second.uuid) ||
-      (first.id && second.id && first.id === second.id))
-  );
 }
 
 async function createStatusStack(

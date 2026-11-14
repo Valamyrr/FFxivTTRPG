@@ -1287,35 +1287,7 @@
       color: #ff3b30;
     }
 
-    .ability-marker-controls {
-      display: grid;
-      gap: 8px;
-      grid-template-columns: repeat(2, minmax(0, 280px));
-      margin-bottom: 10px;
-    }
-
-    .ability-marker-controls label {
-      align-items: center;
-      display: flex;
-      gap: 6px;
-      margin: 0;
-      min-width: 0;
-    }
-
-    .ability-marker-controls label > span {
-      flex: 0 0 auto;
-    }
-
-    .ability-marker-controls select {
-      flex: 0 1 180px;
-      height: 30px;
-      max-width: 180px;
-      min-height: 30px;
-      padding: 4px 8px;
-      width: 180px;
-    }
-
-    .ability-marker-editor .ability-marker-controls .ffxiv-marker-checkbox input {
+    .ability-marker-editor .ffxiv-marker-checkbox input {
       appearance: none;
       box-shadow: none;
       height: 16px;
@@ -1326,47 +1298,6 @@
       padding: 0;
       position: absolute;
       width: 16px;
-    }
-
-    .ability-marker-workspace {
-      display: flex;
-      gap: 16px;
-      overflow-x: auto;
-    }
-
-    .ability-marker-editor .ffxiv-marker-grid {
-      display: grid;
-      flex: 0 0 auto;
-      grid-template-columns: repeat(15, 18px);
-    }
-
-    .ability-marker-editor .ffxiv-marker-cell {
-      appearance: none;
-      background: #222;
-      border: 1px solid #888;
-      border-radius: 0;
-      box-shadow: none;
-      flex: none;
-      font-size: 0;
-      height: 18px;
-      line-height: 0;
-      margin: 0;
-      min-height: 0;
-      min-width: 0;
-      padding: 0;
-      width: 18px;
-    }
-
-    .ability-marker-editor .ffxiv-marker-cell.selected.enemy {
-      background: orange;
-    }
-
-    .ability-marker-editor .ffxiv-marker-cell.selected.allied {
-      background: #66ffff;
-    }
-
-    .ability-marker-editor .ffxiv-marker-preview canvas {
-      display: block;
     }
 
     .ability-marker-read-list {

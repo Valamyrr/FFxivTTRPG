@@ -32,7 +32,12 @@ export function manageTooltipDismissal(tooltip, source, onDismiss) {
   const controller = new AbortController();
   let cancelProgress = null;
   let cancelIndicator = addTooltipLockProgress(tooltip, null, { locked: true });
+  let pointerFrame = null;
+  let pointerPosition = null;
   const cleanup = () => {
+    if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
+    pointerFrame = null;
+    pointerPosition = null;
     cancelProgress?.();
     cancelIndicator?.();
     controller.abort();
@@ -41,7 +46,9 @@ export function manageTooltipDismissal(tooltip, source, onDismiss) {
     cleanup();
     onDismiss();
   };
-  document.addEventListener("pointermove", (event) => {
+  const updatePosition = () => {
+    pointerFrame = null;
+    const event = pointerPosition;
     if (!tooltip.isConnected || !source.isConnected) {
       dismiss();
       return;
@@ -83,6 +90,11 @@ export function manageTooltipDismissal(tooltip, source, onDismiss) {
       cancelIndicator = null;
       cancelProgress = addTooltipLockProgress(tooltip, dismiss, { reverse: true });
     }
+  };
+  document.addEventListener("pointermove", (event) => {
+    pointerPosition = { clientX: event.clientX, clientY: event.clientY };
+    if (pointerFrame !== null) return;
+    pointerFrame = requestAnimationFrame(updatePosition);
   }, { passive: true, signal: controller.signal });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") dismiss();

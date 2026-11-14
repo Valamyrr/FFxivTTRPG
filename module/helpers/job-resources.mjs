@@ -1,3 +1,4 @@
+import { toArray } from "./collections.mjs";
 import { getContentKeys, matchesContentKey, normalizeContentKey } from "./content-keys.mjs";
 
 export function normalizeJobResourceName(value) {
@@ -55,11 +56,6 @@ function getItemJobResourceKeys(item) {
     if (key) keys.add(key);
   }
   return keys;
-}
-
-function toArray(value) {
-  if (Array.isArray(value)) return value;
-  return value === undefined || value === null || value === "" ? [] : [value];
 }
 
 export function getItemJobResourceName(item) {

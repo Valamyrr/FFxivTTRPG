@@ -1,0 +1,16 @@
+{{#if markerPreview}}
+  <div class="ability-marker-read-list">
+    <div class="ability-marker-read-preview" data-index="{{markerPreview.index}}">
+      <div class="ability-marker-preview-heading">
+        {{#if markerPreview.multiple}}
+          <button type="button" class="ability-marker-cycle" data-direction="-1" aria-label="{{localize 'FFXIV.Abilities.PreviousMarker'}}">&lt;</button>
+        {{/if}}
+        <h3>{{localize "FFXIV.Abilities.Marker"}} <span class="ability-marker-number">{{markerPreview.number}}</span></h3>
+        {{#if markerPreview.multiple}}
+          <button type="button" class="ability-marker-cycle" data-direction="1" aria-label="{{localize 'FFXIV.Abilities.NextMarker'}}">&gt;</button>
+        {{/if}}
+      </div>
+      <div class="ability-marker-read-canvas"><canvas></canvas></div>
+    </div>
+  </div>
+{{/if}}

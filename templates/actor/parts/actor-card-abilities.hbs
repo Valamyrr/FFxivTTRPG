@@ -1,4 +1,4 @@
-<div class="ability-card" data-item-id="{{_id}}">
+<div class="ability-card{{#if markerPreview}} has-markers{{/if}}" data-item-id="{{_id}}">
   <div class="ability-card-info">
     <div class="ability-icon-wrapper">
       <img src="{{img}}"
@@ -121,6 +121,15 @@
   {{#if system.description }}
     <div class="ability-description">{{{enriched.description}}}</div>
   {{/if}}
-  <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{localize "FFXIV.CharacterSheet.Roll"}}
-  </button>
+  {{> "systems/ffxiv/templates/actor/parts/actor-marker-preview.hbs"}}
+  {{#if markerPreview}}
+    <div class="ability-marker-buttons">
+      <button type="button" class="ability-marker-button" data-item-id="{{_id}}" data-marker-action="place">{{localize "FFXIV.MarkerPlacement.Ability.Place"}}</button>
+      <button type="button" class="ability-marker-button" data-item-id="{{_id}}" data-marker-action="resolve">{{localize "FFXIV.MarkerPlacement.Ability.Resolve"}}</button>
+      <button type="button" class="ability-roll-button" data-item-id="{{_id}}">{{localize "FFXIV.CharacterSheet.Roll"}}</button>
+    </div>
+  {{else}}
+    <button type="button" class="ability-roll-button" data-item-id={{_id}}>{{localize "FFXIV.CharacterSheet.Roll"}}
+    </button>
+  {{/if}}
 </div>

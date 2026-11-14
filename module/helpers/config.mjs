@@ -59,23 +59,23 @@ FFXIV.characteristics = {
 FFXIV.attributesAbbreviations = {
   Strength: {
     value: "str",
-    label: "FFXIV.CharacterSheet.Attributes.Strength.abbrv",
+    label: "FFXIV.Attributes.Strength.abbrv",
   },
   Dexterity: {
     value: "dex",
-    label: "FFXIV.CharacterSheet.Attributes.Dexterity.abbrv",
+    label: "FFXIV.Attributes.Dexterity.abbrv",
   },
   Vitality: {
     value: "vit",
-    label: "FFXIV.CharacterSheet.Attributes.Vitality.abbrv",
+    label: "FFXIV.Attributes.Vitality.abbrv",
   },
   Intelligence: {
     value: "int",
-    label: "FFXIV.CharacterSheet.Attributes.Intelligence.abbrv",
+    label: "FFXIV.Attributes.Intelligence.abbrv",
   },
   Mind: {
     value: "mnd",
-    label: "FFXIV.CharacterSheet.Attributes.Mind.abbrv",
+    label: "FFXIV.Attributes.Mind.abbrv",
   },
 };
 

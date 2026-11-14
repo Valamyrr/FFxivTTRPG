@@ -37,6 +37,91 @@
 }
 
 .ffxiv-marker-config {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  min-width: 0;
+  overflow-x: auto;
+
+  .ffxiv-marker-panel {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ffxiv-marker-panel:last-child {
+    flex-basis: 260px;
+  }
+
+  .ffxiv-marker-row {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .ffxiv-marker-row select,
+  .ffxiv-marker-row input[type="range"] {
+    flex: 1;
+    min-width: 0;
+    width: 0;
+  }
+
+  .ffxiv-marker-row button {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .ffxiv-marker-grid {
+    display: grid;
+    flex: 0 0 auto;
+    grid-template-columns: repeat(var(--ffxiv-marker-grid-size, 15), 24px);
+  }
+
+  .ffxiv-marker-cell {
+    background: #222;
+    border: 1px solid #888;
+    box-sizing: border-box;
+    cursor: pointer;
+    height: 24px;
+    width: 24px;
+  }
+
+  .ffxiv-marker-cell.selected.enemy {
+    background: orange;
+  }
+
+  .ffxiv-marker-cell.selected.allied {
+    background: #66ffff;
+  }
+
+  .ffxiv-marker-presets {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ffxiv-marker-preset-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .ffxiv-marker-preview {
+    background: transparent;
+    border: 0;
+    height: fit-content;
+    max-height: 260px;
+    max-width: 260px;
+    overflow: hidden;
+    padding: 6px;
+    width: fit-content;
+  }
+
+  .ffxiv-marker-preview canvas {
+    display: block;
+  }
+
   .ffxiv-marker-checkbox {
     align-items: center;
     cursor: pointer;

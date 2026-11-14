@@ -74,7 +74,8 @@ function isBarrierAuthority(actor) {
 }
 
 export function initBarrierAutomation() {
-  Hooks.on("updateActor", async (actor, changes) => {
+  Hooks.on("updateActor", async (actor, changes, options) => {
+    if (options?.ffxivUndoApplication) return;
     const value =
       changes["system.barrier.value"] ??
       foundry.utils.getProperty(changes, "system.barrier.value");
@@ -99,7 +100,8 @@ export function initBarrierAutomation() {
     }
   });
 
-  Hooks.on("deleteActiveEffect", async (effect) => {
+  Hooks.on("deleteActiveEffect", async (effect, options) => {
+    if (options?.ffxivUndoApplication) return;
     if (!effect.getFlag("ffxiv", "barrierLock")) return;
     const actor = effect.parent;
     if (actor?.documentName !== "Actor" || !isBarrierAuthority(actor)) return;

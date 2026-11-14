@@ -11,12 +11,13 @@ This is a supplementary fan project and is not intended to be used without first
 
 It has been developed on top of [asacolips's boilerplate](https://github.com/asacolips-projects/boilerplate).
 
-# How To Install
+## How To Install
 
 Navigate to Foundry's Systems list, and click Install. Then, on the Custom Manifest URL field, place ``https://github.com/Valamyrr/FFxivTTRPG/releases/latest/download/system.json`` for the latest version of the system to be automatically installed. Prior versions alongside change notes can be found via the [Releases](https://github.com/Valamyrr/FFxivTTRPG/releases) page.
 
 ## Old Versions
-The current version of the TTRPG system is designed for Foundry V14 compatibility only. For prior versions, see below. 
+
+The current version of the TTRPG system requires Foundry V14.370 or later. For prior versions, see below. Be cautious that prior versions of FoundryVTT than V14.370 may suffer from a NodeJS security vulnerability and ideally shouldn't be used unless you have good reason to.
 
 **Note that support for these older Foundry versions is not guaranteed**.
 
@@ -43,6 +44,7 @@ See the [Ability Automation Reference](docs/automation-flags.md) for ability set
 The [alphabetical flag index](docs/automation-flags.md#flag-index) lists full paths, where each flag is stored, and how it is edited. Use Ctrl+F to search by flag name or behavior.
 
 ## Support
+
 For issues and technical support, reach out via the [FFXIV TTRPG Fan Discord](https://discord.gg/hr2GCzErfX) or submit an [Issue](https://github.com/Valamyrr/FFxivTTRPG/issues) here.
 
 ## Voluntary Tips
@@ -64,6 +66,7 @@ The Ko-fi link may be removed and tips may be refused or refunded if necessary t
 [FFXIV TTRPG Icons Pack](https://github.com/AxeBane/ffxiv-ttrpg-icons-pack)
 
 ## Additional Attributions
+
 - Most status effects drawn and shared by Demonskunk on Discord. Hidden status icon made by FatSpidy
 - The header logo and for the Final Fantasy XIV TTRPG system was made by and is property of Square Enix.
 - Most SFX included are provided by Square Enix's fan kit.

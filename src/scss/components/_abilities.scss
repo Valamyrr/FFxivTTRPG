@@ -346,6 +346,111 @@
     display: none;
   }
 
+  &.actor.npc .actor-player-abilities .ability-card.has-markers {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    grid-template-areas:
+      "header header"
+      "details markers"
+      "effects markers"
+      "description markers"
+      "roll roll";
+
+    .ability-card-info {
+      grid-area: header;
+    }
+
+    .ability-details {
+      grid-area: details;
+    }
+
+    .ability-effects {
+      grid-area: effects;
+    }
+
+    .ability-description {
+      grid-area: description;
+    }
+
+    .ability-marker-buttons {
+      grid-area: roll;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 0 4px 4px;
+    }
+
+    .ability-marker-buttons button {
+      border: none;
+      border-radius: 0;
+      flex: 1;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .ability-marker-read-list {
+      display: grid;
+      align-content: start;
+      gap: 6px;
+      grid-area: markers;
+      min-width: 0;
+      padding: 5px 6px 6px;
+    }
+
+    .ability-marker-read-preview {
+      background: rgba(0, 0, 0, 0.14);
+      border: 1px solid rgba(216, 188, 112, 0.22);
+      border-radius: 4px;
+      overflow: hidden;
+      padding: 8px;
+    }
+
+    .ability-marker-preview-heading {
+      align-items: center;
+      border-bottom: 1px solid rgba(216, 188, 112, 0.18);
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+    }
+
+    .ability-marker-preview-heading h3 {
+      border: 0;
+      flex: 1;
+      font-size: 13px;
+      margin: 0;
+      text-align: center;
+    }
+
+    .ability-marker-cycle {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      flex: 0 0 18px;
+      height: 18px;
+      line-height: 1;
+      margin: 0;
+      min-height: 0;
+      padding: 0;
+      width: 18px;
+    }
+
+    .ability-marker-read-canvas {
+      align-items: center;
+      display: flex;
+      height: 110px;
+      justify-content: center;
+    }
+
+    .ability-marker-read-preview canvas {
+      height: auto;
+      max-height: 100px;
+      max-width: 100%;
+      object-fit: contain;
+    }
+  }
+
   &.actor:is(.character, .npc) .actor-player-abilities .effect {
     margin-bottom: 0.35em;
   }
@@ -354,7 +459,8 @@
     margin-bottom: 0;
   }
 
-  &.actor:is(.character, .npc) .actor-player-abilities .ability-roll-button {
+  &.actor:is(.character, .npc) .actor-player-abilities .ability-roll-button,
+  &.actor.npc .actor-player-abilities .ability-marker-button {
     min-height: 28px;
     background: linear-gradient(180deg, rgba(49, 44, 28, 0.92) 0%, rgba(27, 24, 15, 0.95) 100%);
     color: var(--text-color-strong);
@@ -449,6 +555,7 @@
   }
 
   &.actor:is(.character, .npc).blue_theme .actor-player-abilities .ability-roll-button,
+  &.actor.npc.blue_theme .actor-player-abilities .ability-marker-button,
   &.actor:is(.character, .npc).blue_theme .actor-player-abilities .move-buttons button {
     background: linear-gradient(180deg, rgba(43, 100, 188, 0.88) 0%, rgba(27, 73, 143, 0.9) 100%);
     color: #d7ebff;

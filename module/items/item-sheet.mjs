@@ -1,7 +1,11 @@
 import {
-  onManageActiveEffect,
-  prepareActiveEffectCategories,
-} from "../helpers/effects.mjs";
+  captureSheetScroll,
+  restoreSheetScroll,
+  playInterfaceSound,
+  settingOrDefault,
+} from "../helpers/ui.mjs";
+import { toArray } from "../helpers/collections.mjs";
+import { onManageActiveEffect, prepareActiveEffectCategories } from "../helpers/effects.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import { normalizeShopTier } from "../helpers/shop-tier.mjs";
 import {
@@ -10,6 +14,7 @@ import {
   getSubtypeTagLabel,
 } from "../helpers/ability-subtype.mjs";
 import { isStackableStatusEffect } from "../helpers/status-effects.mjs";
+import PopoutEditor from "../popout-editor.js";
 
 const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_deleteItem:
@@ -21,8 +26,6 @@ const DEFAULT_SOUNDS = {
   soundNotificationFFXIV_closeSheet:
     "systems/ffxiv/assets/sfx/ffxiv-untarget.ogg",
 };
-
-import PopoutEditor from "../popout-editor.js";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
@@ -62,6 +65,7 @@ const ITEM_ENRICHED_FIELDS = [
   "marker_area",
   "marker_effect",
   "marker_trigger",
+  "origin",
   "range",
   "target",
   "traits",
@@ -92,6 +96,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
     this.options.window.resizable = !this._isLimitedDisplayMode();
     this.itemEditMode = false;
+    this._markerDraft = null;
     this._expandedEffectRequirements = new Set();
     this._expandedEffectRules = new Set();
     this._automationHelpCleanup = [];
@@ -253,12 +258,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       );
     }
     context.hasMarkerTag = this._hasMarkerTag(itemData.system.tags);
-    const markers =
+    const markers = this._markerDraft ?? (
       Array.isArray(itemData.system.markers) && itemData.system.markers.length
         ? itemData.system.markers
         : itemData.system.marker
           ? [itemData.system.marker]
-          : [];
+          : []);
     context.markerEntries = markers.map((marker, index) => ({
       index,
       number: index + 1,
@@ -268,6 +273,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           ? marker.mode
           : "standard",
         targeted: Boolean(marker.targeted),
+        opacity: Math.round(Math.clamp(marker.opacity ?? 0.75, 0, 1) * 100),
         followRotation: marker.followRotation !== false,
         circle: marker.shape === "circle",
       },
@@ -420,15 +426,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   static async enrichStringFields(target, fields, rollData, relativeTo, secrets = true) {
     const enriched = {};
-    for (const field of fields) {
+    await Promise.all(fields.map(async (field) => {
       const value = foundry.utils.getProperty(target, field);
-      if (typeof value !== "string") continue;
+      if (typeof value !== "string") return;
       foundry.utils.setProperty(
         enriched,
         field,
         await this.enrichAllStrings(value, rollData, relativeTo, secrets),
       );
-    }
+    }));
     return enriched;
   }
 
@@ -455,7 +461,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this._activateFormulaFieldVisibility();
     this._activateAutomationExpansionTracking();
     this._activateAutomationHelp();
-    this._applyItemEditMode();
+    this._applyItemEditMode(context);
     this._restoreSheetScroll();
   }
 
@@ -470,6 +476,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @override */
   async _preClose(options) {
     await this._saveProseMirrorEditors();
+    await this._saveMarkerDraft();
     await super._preClose(options);
     this._playConfiguredSound("soundNotificationFFXIV_closeSheet");
   }
@@ -482,22 +489,11 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _playConfiguredSound(setting) {
     const src = this._settingOrDefault(setting, DEFAULT_SOUNDS);
-    if (game.settings.get("ffxiv", "soundNotificationFFXIV") && src) {
-      foundry.audio.AudioHelper.play({
-        src,
-        channel: "interface",
-        volume: 1,
-        autoplay: true,
-        loop: false,
-      });
-    }
+    playInterfaceSound(src);
   }
 
   _settingOrDefault(setting, defaults) {
-    const configured = game.settings.get("ffxiv", setting);
-    const fallback = defaults[setting] || "";
-    if (configured && fallback.endsWith(".ogg") && configured === fallback.replace(/\.ogg$/, ".mp3")) return fallback;
-    return configured || fallback;
+    return settingOrDefault(setting, defaults);
   }
 
   _isReadOnlyItemSheet() {
@@ -530,8 +526,23 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     } finally {
       this._suppressProseMirrorSaveSound = false;
     }
+    if (this.itemEditMode) await this._saveMarkerDraft();
     this.itemEditMode = !this.itemEditMode;
     await this.render({ force: true });
+  }
+
+  async _saveMarkerDraft() {
+    if (!this._markerDraft) return;
+    const markers = this.item.system.markers?.length
+      ? this.item.system.markers
+      : this.item.system.marker ? [this.item.system.marker] : [];
+    if (!foundry.utils.equals(markers, this._markerDraft)) {
+      await this.item.update({
+        "system.markers": foundry.utils.deepClone(this._markerDraft),
+        "system.marker": null,
+      }, { render: false });
+    }
+    this._markerDraft = null;
   }
 
   _captureAutomationExpansion() {
@@ -659,7 +670,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this._automationHelpCleanup = [];
   }
 
-  _applyItemEditMode() {
+  _applyItemEditMode(context) {
     if (!EDIT_MODE_ITEM_TYPES.has(this.item.type)) return;
     const editing = this._isItemEditMode();
     this.element.classList.toggle("item-editing", editing);
@@ -686,7 +697,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       .forEach((control) => {
         const customElement = control.closest("formula-input, autocomplete-tags");
         if (customElement && customElement !== control) return;
-        this._replaceLockedItemField(control);
+        this._replaceLockedItemField(control, context.enriched);
       });
     sheet
       .querySelectorAll("button")
@@ -696,7 +707,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       });
   }
 
-  _replaceLockedItemField(control) {
+  _replaceLockedItemField(control, enriched) {
     if (control.closest(".item-edit-toggle")) return;
     if (control.type === "hidden" || control.classList.contains("ffxiv-hidden") || control.closest(".ffxiv-hidden")) {
       control.disabled = true;
@@ -708,6 +719,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
 
     let display;
+    const field = control.name?.startsWith("system.") ? control.name.slice(7) : null;
+    if (ITEM_ENRICHED_FIELDS.includes(field)) {
+      const html = foundry.utils.getProperty(enriched ?? {}, field);
+      if (typeof html === "string" && html.trim()) {
+        display = document.createElement("div");
+        display.classList.add("item-locked-field-block");
+        display.innerHTML = html;
+      }
+    }
     if (control.name === "system.combo") {
       const resource = control.closest(".combo-resource");
       const preview = resource?.querySelector(":scope > .combo-chain");
@@ -1731,8 +1751,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _toArray(value) {
-    if (Array.isArray(value)) return value;
-    return value === undefined || value === null || value === "" ? [] : [value];
+    return toArray(value);
   }
 
   _getJobResourceBonusEntries(flags) {
@@ -2381,12 +2400,12 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     html.off(".ffxivItemSheet");
     html.on("save.ffxivItemSheet", "prose-mirror", this._onSaveProseMirror.bind(this));
 
-    const storedMarkers =
+    const storedMarkers = this._markerDraft ?? (
       Array.isArray(this.item.system.markers) && this.item.system.markers.length
         ? foundry.utils.deepClone(this.item.system.markers)
         : this.item.system.marker
           ? [foundry.utils.deepClone(this.item.system.marker)]
-          : [];
+          : []);
     const markerEditors = html[0]?.querySelectorAll(".ability-marker-editor") ?? [];
     if (markerEditors.length && this._isItemEditMode() && this.document.isOwner) {
       for (const markerEditor of markerEditors) {
@@ -2396,13 +2415,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           storedMarkers[index],
           (marker) => {
             storedMarkers[index] = foundry.utils.deepClone(marker);
-            return this.item.update(
-              {
-                "system.markers": foundry.utils.deepClone(storedMarkers),
-                "system.marker": null,
-              },
-              { render: false },
-            );
+            this._markerDraft = storedMarkers;
           },
           this._eventAbortController?.signal,
         );
@@ -2462,7 +2475,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const markers = foundry.utils.deepClone(storedMarkers);
       markers.push({
         state,
-        opacity: 0.8,
+        opacity: game.settings.get("ffxiv", "abilityMarkerOpacity"),
         type: "enemy",
         mode: "standard",
         targeted: false,
@@ -2470,12 +2483,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         shape: "grid",
         radius: null,
       });
-      this.item
-        .update(
-          { "system.markers": markers, "system.marker": null },
-          { render: false },
-        )
-        .then(() => this.render({ force: true }))
+      this._markerDraft = markers;
+      this.render({ force: true })
         .catch((err) => ui.notifications.error(err, { console: true }));
     });
     html.on("click.ffxivItemSheet", ".remove-ability-marker", (event) => {
@@ -2485,12 +2494,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       this._captureSheetScroll();
       const markers = foundry.utils.deepClone(storedMarkers);
       markers.splice(Number(event.currentTarget.dataset.index), 1);
-      this.item
-        .update(
-          { "system.markers": markers, "system.marker": null },
-          { render: false },
-        )
-        .then(() => this.render({ force: true }))
+      this._markerDraft = markers;
+      this.render({ force: true })
         .catch((err) => ui.notifications.error(err, { console: true }));
     });
 
@@ -3116,54 +3121,15 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _captureSheetScroll() {
-    const root = this.element;
-    if (!root) return;
-
-    const selectors = [
+    captureSheetScroll(this, [
       ".window-content",
       ".sheet-body",
       ".sheet-body .tab.active",
-    ];
-
-    this._pendingSheetScrollPositions = selectors.flatMap((selector) => {
-      const element = root.matches?.(selector)
-        ? root
-        : root.querySelector(selector);
-      if (!element) return [];
-      return [
-        {
-          selector,
-          scrollTop: element.scrollTop,
-          scrollLeft: element.scrollLeft,
-        },
-      ];
-    });
+    ]);
   }
 
   _restoreSheetScroll() {
-    const positions = this._pendingSheetScrollPositions;
-    if (!positions?.length) return;
-    const restore = () => {
-      for (const position of positions) {
-        const root = this.element;
-        const element = root?.matches?.(position.selector)
-          ? root
-          : root?.querySelector(position.selector);
-        if (!element) continue;
-        element.scrollTop = position.scrollTop;
-        element.scrollLeft = position.scrollLeft;
-      }
-      if (this._pendingSheetScrollPositions === positions) {
-        this._pendingSheetScrollPositions = null;
-      }
-    };
-
-    requestAnimationFrame(() => {
-      restore();
-      setTimeout(() => {
-        if (this._pendingSheetScrollPositions === positions) restore();
-      }, 50);
-    });
+    restoreSheetScroll(this);
   }
 
   _activateFormulaFieldVisibility() {
