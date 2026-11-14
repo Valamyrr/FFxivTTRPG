@@ -1,3 +1,5 @@
+const tooltipSources = new Map();
+
 export function addTooltipLockProgress(tooltip, onLock, { reverse = false, locked = false } = {}) {
   const progress = document.createElement("span");
   progress.className = "ffxiv-tooltip-lock-progress";
@@ -29,12 +31,14 @@ export function addTooltipLockProgress(tooltip, onLock, { reverse = false, locke
 }
 
 export function manageTooltipDismissal(tooltip, source, onDismiss) {
+  tooltipSources.set(tooltip, source);
   const controller = new AbortController();
   let cancelProgress = null;
   let cancelIndicator = addTooltipLockProgress(tooltip, null, { locked: true });
   let pointerFrame = null;
   let pointerPosition = null;
   const cleanup = () => {
+    tooltipSources.delete(tooltip);
     if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
     pointerFrame = null;
     pointerPosition = null;
@@ -53,11 +57,17 @@ export function manageTooltipDismissal(tooltip, source, onDismiss) {
       dismiss();
       return;
     }
-    const rects = [tooltip, source, ...document.querySelectorAll(".locked-tooltip")]
+    const descendants = new Set([tooltip]);
+    for (const parent of descendants) {
+      for (const [child, reference] of tooltipSources) {
+        if (child.isConnected && parent.contains(reference)) descendants.add(child);
+      }
+    }
+    const rects = [source, ...descendants]
       .filter((element) => element.isConnected)
       .map((element) => element.getBoundingClientRect());
-    const tooltipRect = rects[0];
-    const sourceRect = rects[1];
+    const sourceRect = rects[0];
+    const tooltipRect = rects[1];
     const left = Math.max(tooltipRect.left, sourceRect.left);
     const right = Math.min(tooltipRect.right, sourceRect.right);
     const top = Math.max(tooltipRect.top, sourceRect.top);
