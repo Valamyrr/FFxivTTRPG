@@ -3,7 +3,10 @@
         {
             "format": "expanded",
             "extensionName": ".css",
-            "savePath": "/css",
+            "savePath": null,
+            "savePathReplacementPairs": {
+                "/src/scss": "/css"
+            },
             "generateMap": false
         }
     ]
