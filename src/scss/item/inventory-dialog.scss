@@ -1,0 +1,286 @@
+.ffxiv.item .window-content:has(.limited-display) {
+  overflow: hidden;
+  padding: 0
+}
+
+.ffxiv.item:has(.limited-display) .window-resizable-handle {
+  display: none;
+}
+
+
+/* Rarity Title*/
+.text-rarity-basic,
+.limited-display .text-rarity-basic {
+  color: var(--rarity-basic);
+  text-shadow: var(--shadow-improve-readability-white);
+}
+
+.text-rarity-green,
+.limited-display .text-rarity-green {
+  color: var(--rarity-green);
+  text-shadow: var(--shadow-improve-readability-light);
+}
+
+.text-rarity-aetherial,
+.limited-display .text-rarity-aetherial {
+  color: var(--rarity-aetherial);
+  text-shadow: var(--shadow-improve-readability-light);
+}
+
+.text-rarity-blue,
+.limited-display .text-rarity-blue {
+  color: var(--rarity-blue);
+  text-shadow: var(--shadow-improve-readability-light);
+}
+
+.text-rarity-relic,
+.limited-display .text-rarity-relic {
+  color: var(--rarity-relic);
+  text-shadow: var(--shadow-improve-readability-dark);
+}
+
+.text-rarity-unique,
+.limited-display .text-rarity-unique {
+  color: var(--rarity-unique);
+  text-shadow: var(--shadow-improve-readability-dark);
+}
+
+/* General display */
+
+.item-card {
+  border: 2px solid var(--border-color-1);
+  border-radius: 7px;
+  background: var(--primary-color);
+  color: var(--text-color);
+  overflow: hidden;
+}
+
+.item-card strong {
+  color: var(--text-color-strong);
+}
+
+.item-card .item-card-info {
+  background: linear-gradient(0deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  padding: 5px 5px 0 5px;
+  min-height: 66px;
+}
+
+.item-card .item-dialog-header {
+  border-bottom: solid 2px var(--border-color-2);
+  box-shadow: 0px 7px 3px -2px var(--border-shadow-1);
+  display: inline-block;
+  margin: 0 5px 5px 0;
+  padding: 5px 0 5px 0;
+  width: calc(100% - 70px);
+}
+
+.item-card .item-dialog-icon {
+  float: left;
+  width: 60px;
+  height: 60px;
+  border: solid 1px var(--border-color-1);
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 5px 5px 5px 0;
+}
+
+.limited-display .item-dialog-icon {
+  cursor: default;
+}
+
+.item-card .item-dialog-name {
+  font-size: 1.4em;
+  display: inline;
+}
+
+.item-card .item-dialog-right {
+  float: right;
+  display: inline;
+}
+
+.item-card .item-dialog-tags {
+  display: inline-block;
+  vertical-align: super;
+}
+
+.item-card .item-dialog-tags .tag {
+  display: inline;
+  font-style: italic;
+}
+
+
+
+.item-card .item-dialog-details {
+  padding-top: 5px;
+}
+
+.item-card .item-dialog-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+
+.item-card .detail {
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.item-card .item-dialog-effects {
+  padding: 5px;
+}
+
+.item-dialog-effects td {
+  /*modifiers table*/
+  width: 33.33%;
+  padding: 1px;
+}
+
+.item-card .item-dialog-effects table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border-color-1);
+  border-bottom: 1px solid var(--border-color-1);
+  margin: 0.5em 0;
+}
+
+.item-card .effect {
+  display: inline-block;
+}
+
+.item-card .item-dialog-effects-stacked .effect {
+  display: block;
+}
+
+.item-card .item-dialog-flavor {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.item-card .item-dialog-flavor *,
+.item-card .item-dialog-flavor strong {
+  font-style: italic;
+  font-weight: 400 !important;
+}
+
+.item-card .item-dialog-roll-button {
+  background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  border: none;
+  border-radius: 0;
+  padding: 10px;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text-color-strong);
+  transition: color 0.2s ease;
+}
+
+.item-card .item-dialog-button:hover {
+  box-shadow: none;
+  color: var(--text-color);
+}
+
+.item-card .item-dialog-button:focus {
+  box-shadow: none;
+}
+
+.item-card .item-dialog-button:active {
+  box-shadow: none;
+}
+
+.ability-description {
+  padding: 10px;
+}
+
+.item-dialog-description p {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+/* Quantity buttons */
+
+.quantity-form {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+  margin: 4px 0 0 auto;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.quantity-form .detail {
+  display: inline-flex;
+  margin-right: 0;
+}
+
+.item-qty-btn {
+  width: 1.5em;
+  line-height: 1em;
+}
+
+.ffxiv.item .item-card .quantity-form .delete {
+  align-items: center;
+  color: red;
+  border-color: red;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 6px;
+  width: auto;
+}
+
+.gear-equip {
+  padding: 1px;
+}
+
+/* Roll button*/
+
+.item-roll-button {
+  background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  border: none;
+  border-top: solid 1px var(--border-color-1);
+  border-radius: 0;
+  margin: 10px 0 0 -5px;
+  cursor: pointer;
+  color: var(--text-color-strong);
+  transition: color 2s ease;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  width: calc(100% + 10px)
+}
+
+.item-roll-button:hover {
+  box-shadow: none;
+  color: var(--invert-text-color) !important;
+}
+
+.item-roll-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0, 0, 0, 0) 100%);
+  z-index: -1;
+  transition: width 0.4s cubic-bezier(.8, .8, 1, .8);
+  /*cubic-bezier(.64,.14,.62,1.05)*/
+}
+
+.item-roll-button:hover::before {
+  width: 150%;
+}
+
+.item-button:hover {
+  box-shadow: none;
+}
+
+.item-roll-button:focus {
+  box-shadow: none;
+}
+
+.item-roll-button:active {
+  box-shadow: none;
+}

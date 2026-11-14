@@ -1,0 +1,217 @@
+.ffxiv.item .tags-container {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 0 0 8px;
+}
+
+.ffxiv.item .tags-container .resource-label {
+  flex: 1 0 calc(100% - 42px);
+  margin: 0;
+}
+
+.ffxiv.item .tags-container li {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+  justify-content: flex-start;
+  list-style-type: none;
+  line-height: 1;
+}
+
+.ffxiv.item .tags-container li:has(.baked-action-tag) {
+  display: inline-flex;
+}
+
+.ffxiv.item .tags-container .tag-list {
+  display: flex;
+  flex: 1 0 100%;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: auto;
+  max-width: 100%;
+}
+
+.ffxiv.item .tags-container select {
+  height: 26px;
+  line-height: 26px;
+  margin: 0;
+  min-width: 0;
+  width: 150px;
+}
+
+.ffxiv.item .tags-container .baked-action-tag {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  display: inline-block;
+  line-height: 26px;
+  min-height: 26px;
+  padding: 0 6px;
+  text-align: center;
+  width: 96px;
+}
+
+.ffxiv.item .tags-container button {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 26px;
+  height: 26px;
+  justify-content: center;
+  margin: 0;
+  min-height: 26px;
+  padding: 0;
+  width: 26px;
+}
+
+.ffxiv.item .tags-container .add-tag {
+  display: inline-flex;
+  flex: 0 0 34px;
+  order: 0;
+  width: 34px;
+}
+
+.ffxiv.item .tags-container .remove-tag {
+  color: white;
+  font-size: 12px;
+}
+
+.ffxiv.item .tags-container .remove-tag:hover,
+.ffxiv.item .tags-container .remove-tag:focus {
+  color: white;
+  text-shadow: 0 0 5px red;
+}
+
+.ffxiv.item .status-effects-editor {
+  margin: 0 0 10px;
+}
+
+.ffxiv.item .status-effects-editor .status-effects-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ffxiv.item .status-effects-editor .add-status-effect {
+  display: inline-flex;
+  height: 28px;
+  min-height: 28px;
+  width: 34px;
+}
+
+.ffxiv.item .status-effects-editor .linked-effect-create {
+  align-items: center;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0;
+  width: 34px;
+}
+
+.ffxiv.item .status-effect-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.ffxiv.item .status-effect-list li {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 9em 9em 5em 34px;
+}
+
+.ffxiv.item .status-effect-list button {
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+}
+
+.ffxiv.item .status-effect-list .status-effect-stacks {
+  min-width: 0;
+  width: 100%;
+}
+
+.ffxiv.item .ability-effect-name {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ffxiv.item .ability-effect-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ffxiv.item .ability-linked-effect-list li {
+  grid-template-columns: minmax(0, 1fr) 7.5em 7.5em auto;
+}
+
+.ffxiv.item .ability-linked-effect-list .effect-controls {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.ffxiv.item .sheet-body > .sheet-tabs.tabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 10px;
+  border: 0;
+  text-align: center;
+  filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
+}
+
+.ffxiv.item .sheet-body > .sheet-tabs.tabs .item {
+  align-items: center;
+  background: linear-gradient(0deg, var(--gradient-color-1) 0%, var(--gradient-color-2) 40%, var(--gradient-color-3) 60%, var(--gradient-color-4) 100%);
+  border-radius: 3px;
+  clip-path: polygon(5% 0, 95% 0, 100% 30%, 95% 100%, 5% 100%, 0 70%);
+  cursor: pointer;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  min-width: 120px;
+  padding: 0 14px;
+}
+
+.ffxiv.item .sheet-body > .sheet-tabs.tabs .item.active {
+  filter: var(--subtabactive-filter);
+  background: var(--subtabactive-background);
+}
+
+.ffxiv.item .resources.grid.grid-3col {
+  grid-auto-flow: dense;
+}
+
+.ffxiv.item .ability-target-field,
+.ffxiv.item .ability-range-field {
+  grid-row: span 2;
+}
+
+.ffxiv.item .ability-target-field textarea,
+.ffxiv.item .ability-range-field textarea {
+  min-height: 84px;
+  resize: vertical;
+  text-align: left;
+  line-height: 1.2;
+  padding: 6px 8px;
+}
+
+.ffxiv.item .attributes hr {
+  border-top: solid 2px #393939;
+  margin: 15px 0 15px 0;
+}

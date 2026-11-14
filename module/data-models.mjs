@@ -756,6 +756,16 @@ class NpcActorData extends foundry.abstract.TypeDataModel {
         initial: "",
       }),
       elite_foe: new fields.BooleanField({ required: false, initial: false }),
+      threat_rank: new fields.StringField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
+      speed_type: new fields.StringField({
+        required: false,
+        blank: true,
+        initial: "",
+      }),
     };
   }
 }

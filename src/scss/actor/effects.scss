@@ -1,0 +1,140 @@
+.ffxiv.actor .actor-effects .effects-sections {
+  display: grid;
+  gap: 10px;
+}
+
+.ffxiv.actor .actor-effects .effects-panel {
+  padding: 8px 10px;
+}
+
+.ffxiv.actor .actor-effects .effects-section-header {
+  align-items: center;
+  border-bottom: 1px solid var(--border-color-2);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+}
+
+.ffxiv.actor .actor-effects .effects-section-header h3 {
+  font-size: 14px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.ffxiv.actor .actor-effects .effects-create {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.ffxiv.actor .actor-effects .effects-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ffxiv.actor .actor-effects .effect-row {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--border-color-2);
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 10px 10px;
+}
+
+.ffxiv.actor .actor-effects .effect-main {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ffxiv.actor .actor-effects .effect-icon {
+  border-radius: 4px;
+  height: 30px;
+  width: 30px;
+}
+
+.ffxiv.actor .actor-effects .effect-meta {
+  min-width: 0;
+}
+
+.ffxiv.actor .actor-effects .effect-meta h4 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.ffxiv.actor .actor-effects .effect-meta p {
+  font-size: 12px;
+  margin: 0;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ffxiv.actor .actor-effects .effect-right {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.ffxiv.actor .actor-effects .effect-type {
+  border: 1px solid var(--border-color-2);
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ffxiv.actor .actor-effects .effect-duration {
+  font-size: 12px;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.ffxiv.actor .actor-effects .effect-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.ffxiv.actor .actor-effects .effect-stack {
+  align-items: center;
+  border: 1px solid var(--border-color-2);
+  border-radius: 6px;
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.ffxiv.actor .actor-effects .effect-stack-control {
+  align-items: center;
+  display: inline-flex;
+  font-size: 14px;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.ffxiv.actor .actor-effects .effect-stack-count {
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+.ffxiv.actor .actor-effects .effects-empty {
+  font-size: 12px;
+  opacity: 0.8;
+  padding: 6px 2px;
+}

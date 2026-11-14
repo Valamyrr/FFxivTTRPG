@@ -50,7 +50,10 @@
       "Defense": "Defense",
       "MagicDefense": "Magic Defense",
       "Vigilance": "Vigilance",
-      "Speed": "Speed"
+      "VigilanceAbbr": "VIG",
+      "Speed": "Speed",
+      "SpeedAbbr": "SPD",
+      "SpeedType": "Speed Type"
     },
     "SheetLabels": {
       "Actor": "FFXIV Custom Actor Sheet",
@@ -107,6 +110,8 @@
       "CriticalRange": "Treshold to score Critical Hits",
       "EliteFoe": "Elite Foe",
       "EliteFoeHint": "Immune to enfeeblements except Enmity, DOTs, and Knocked Out.",
+      "ThreatRanking": "Threat Ranking",
+      "ThreatPlaceholder": "THREAT",
       "EditSheet": "Edit Sheet",
       "LockSheet": "Lock Sheet"
     },
@@ -854,6 +859,17 @@
       "Large": "Large",
       "Huge": "Huge",
       "Colossal": "Colossal"
+    },
+    "ThreatRanks": {
+      "Mob": "Mob",
+      "Menace": "Menace",
+      "Champion": "Champion",
+      "Solo": "Solo",
+      "Boss": "Boss"
+    },
+    "SpeedTypes": {
+      "Flying": "Flying",
+      "Aquatic": "Aquatic"
     },
     "Rules": {
       "Aliases": "Aliases",

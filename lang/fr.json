@@ -50,7 +50,10 @@
       "Defense": "Défense",
       "MagicDefense": "Défense magique",
       "Vigilance": "Vigilance",
-      "Speed": "Vitesse"
+      "VigilanceAbbr": "VIG",
+      "Speed": "Vitesse",
+      "SpeedAbbr": "SPD",
+      "SpeedType": "Type de vitesse"
     },
     "SheetLabels": {
       "Actor": "Feuille de personnage FFXIV personnalisée",
@@ -107,6 +110,8 @@
       "CriticalRange": "Seuil des coups critiques",
       "EliteFoe": "Ennemi d'élite",
       "EliteFoeHint": "Immunisé contre les affaiblissements sauf l'Inimitié, les dégâts périodiques et K.O.",
+      "ThreatRanking": "Rang de menace",
+      "ThreatPlaceholder": "MENACE",
       "EditSheet": "Modifier la fiche",
       "LockSheet": "Verrouiller la fiche"
     },
@@ -854,6 +859,17 @@
       "Large": "Grand",
       "Huge": "Énorme",
       "Colossal": "Colossal"
+    },
+    "ThreatRanks": {
+      "Mob": "Mob",
+      "Menace": "Menace",
+      "Champion": "Champion",
+      "Solo": "Solo",
+      "Boss": "Boss"
+    },
+    "SpeedTypes": {
+      "Flying": "Volant",
+      "Aquatic": "Aquatique"
     },
     "Rules": {
       "Aliases": "Alias",

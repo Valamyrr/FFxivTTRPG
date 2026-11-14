@@ -1,0 +1,172 @@
+.augments .augment-card {
+  border: 2px solid var(--border-color-1);
+  border-radius: 7px;
+  background: var(--primary-color);
+  color: var(--text-color);
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.augments .augment-card:last-child {
+  margin-bottom: 0;
+}
+
+.augments .augment-card strong {
+  color: var(--text-color-strong);
+}
+
+.augments .augment-card-info {
+  background: linear-gradient(0deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  padding: 6px;
+  min-height: 66px;
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  gap: 0 8px;
+}
+
+.augments .augment-header {
+  border-bottom: solid 2px var(--border-color-2);
+  box-shadow: 0px 7px 3px -2px var(--border-shadow-1);
+  display: block;
+  margin: 0 0 5px 0;
+  padding: 5px 0 5px 0;
+  width: 100%;
+}
+
+.augments .augment-icon {
+  width: 50px;
+  height: 50px;
+  border: none;
+  cursor: pointer;
+  margin: 5px 0 5px 0;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.augments .augment-icon-wrapper {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  height: 50px;
+  margin: 5px 0;
+  position: relative;
+  width: 50px;
+}
+
+.augments .augment-icon-wrapper .augment-icon {
+  grid-column: auto;
+  grid-row: auto;
+  margin: 0;
+}
+
+.augments .ability-delete {
+  align-items: center;
+  background: #b00000;
+  border: 1px solid white;
+  border-radius: 50%;
+  color: white;
+  display: none;
+  font-size: 12px;
+  height: 18px;
+  justify-content: center;
+  line-height: 1;
+  min-height: 18px;
+  padding: 0;
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 18px;
+  z-index: 4;
+}
+
+.augments .augment-icon-wrapper:hover .ability-delete {
+  display: inline-flex;
+}
+
+.augments .ability-delete:hover {
+  background: red;
+  box-shadow: 0 0 5px red;
+}
+
+.augments .augment-name {
+  font-size: 1.4em;
+  display: inline-block;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.augments .augment-right {
+  float: right;
+  display: inline;
+}
+
+.augments .augment-details {
+  padding-top: 5px;
+  grid-column: 2;
+  min-width: 0;
+}
+
+.augments .detail {
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.augments .augment-effects {
+  padding: 8px 10px;
+}
+
+.augments .effect {
+  display: block;
+}
+
+.augments .ability-roll-button {
+  background: linear-gradient(180deg, var(--gradient-color-1) 70%, var(--gradient-color-3) 100%);
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  padding: 0 10px;
+  width: 100%;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-color-strong);
+  transition: color 2s ease;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.augments .ability-roll-button:hover {
+  color: var(--invert-text-color) !important;
+}
+
+.augments .ability-roll-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(to right, var(--secondary-color) 50%, rgba(0, 0, 0, 0) 100%);
+  z-index: -1;
+  transition: width 0.4s cubic-bezier(.8, .8, 1, .8);
+  /*cubic-bezier(.64,.14,.62,1.05)*/
+}
+
+.augments .ability-roll-button:hover::before {
+  width: 150%;
+}
+
+.augments .ability-roll-button:hover {
+  box-shadow: none;
+}
+
+.augments .ability-roll-button:focus {
+  box-shadow: none;
+}
+
+.augments .ability-roll-button:active {
+  box-shadow: none;
+}
