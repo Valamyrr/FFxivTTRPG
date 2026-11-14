@@ -50,7 +50,9 @@
       "Defense": "Défense",
       "MagicDefense": "Défense magique",
       "Vigilance": "Vigilance",
+      "VigilanceAbbr": "VIG",
       "Speed": "Vitesse",
+      "SpeedAbbr": "SPD",
       "SpeedType": "Type de vitesse"
     },
     "SheetLabels": {

@@ -50,7 +50,9 @@
       "Defense": "Defense",
       "MagicDefense": "Magic Defense",
       "Vigilance": "Vigilance",
+      "VigilanceAbbr": "VIG",
       "Speed": "Speed",
+      "SpeedAbbr": "SPD",
       "SpeedType": "Speed Type"
     },
     "SheetLabels": {
