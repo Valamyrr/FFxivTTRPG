@@ -42,14 +42,17 @@ function formatMarkerPlacementKeybinding(action) {
 
 async function clearPlacedMarkers() {
   const scene = canvas.scene;
-  if (!scene || !game.user?.isGM) return;
-  const regionIds = scene.regions
-    .filter((region) => region.getFlag("ffxiv", "markerPlacement"))
-    .map((region) => region.id);
-  const tileIds = scene.tiles
-    .filter((tile) => tile.getFlag("ffxiv", "markerPlacement"))
-    .map((tile) => tile.id);
-  if (!regionIds.length && !tileIds.length) {
+  if (!scene) return;
+  const regions = scene.regions.filter(
+    (region) => region.getFlag("ffxiv", "markerPlacement")
+      && region.canUserModify(game.user, "delete"),
+  );
+  const tiles = scene.tiles.filter(
+    (tile) => tile.getFlag("ffxiv", "markerPlacement")
+      && tile.canUserModify(game.user, "delete"),
+  );
+  const count = regions.length + tiles.length;
+  if (!count) {
     ui.notifications.info(
       game.i18n.localize("FFXIV.MarkerPlacement.Clear.None"),
     );
@@ -61,13 +64,21 @@ async function clearPlacedMarkers() {
       title: game.i18n.localize("FFXIV.MarkerPlacement.Clear.Title"),
     },
     content: `<p>${game.i18n.format(
-      regionIds.length + tileIds.length === 1
+      count === 1
         ? "FFXIV.MarkerPlacement.Clear.ConfirmOne"
         : "FFXIV.MarkerPlacement.Clear.ConfirmMany",
-      { count: regionIds.length + tileIds.length },
+      { count },
     )}</p>`,
   });
-  if (!confirmed) return;
+  if (!confirmed || canvas.scene !== scene) return;
+  const regionIds = regions
+    .filter((region) => scene.regions.has(region.id)
+      && region.canUserModify(game.user, "delete"))
+    .map((region) => region.id);
+  const tileIds = tiles
+    .filter((tile) => scene.tiles.has(tile.id)
+      && tile.canUserModify(game.user, "delete"))
+    .map((tile) => tile.id);
   if (regionIds.length)
     await scene.deleteEmbeddedDocuments("Region", regionIds);
   if (tileIds.length) await scene.deleteEmbeddedDocuments("Tile", tileIds);
@@ -142,6 +153,7 @@ async function openMarkerEditTool() {
       updates.levels = Array.from(placement.levels);
       updates.hidden = placement.hidden;
     }
+    if (!region.canUserModify(game.user, "update")) return;
     await region.update(updates);
   } catch (err) {
     debugError("Marker edit failed:", err);
@@ -266,7 +278,7 @@ export async function openMarkerPlacementTool(
     );
     return false;
   }
-  if (!game.user.hasPermission("REGION_CREATE")) {
+  if (!game.user.can("REGION_CREATE")) {
     ui.notifications.warn(
       game.i18n.localize("FFXIV.MarkerPlacement.Errors.NoPermission"),
     );
@@ -1568,12 +1580,13 @@ export function registerMarkerHooks() {
   });
 
   Hooks.on("getSceneControlButtons", (controls) => {
+    const canSelectRegions = game.user?.can("REGION_CREATE");
     const regionMarkerTool = {
       name: "ffxivRegionMarker",
       title: game.i18n.localize("FFXIV.MarkerPlacement.Title"),
       icon: "fa-solid fa-bullseye",
       order: 1,
-      visible: game.user?.hasPermission("REGION_CREATE"),
+      visible: canSelectRegions,
       button: true,
       toolclip: {
         heading: "FFXIV.MarkerPlacement.Toolclip.Heading",
@@ -1597,7 +1610,7 @@ export function registerMarkerHooks() {
         title: game.i18n.localize("FFXIV.MarkerPlacement.Edit.Title"),
         icon: "fa-solid fa-pen-to-square",
         order: 2,
-        visible: game.user?.hasPermission("REGION_CREATE") || canvas.scene?.regions.some(
+        visible: canSelectRegions || canvas.scene?.regions.some(
           (region) => region.getFlag("ffxiv", "markerPlacement")
             && region.canUserModify(game.user, "update"),
         ),
@@ -1612,7 +1625,11 @@ export function registerMarkerHooks() {
         title: game.i18n.localize("FFXIV.MarkerPlacement.Clear.Title"),
         icon: "fa-solid fa-trash",
         order: 3,
-        visible: game.user?.isGM,
+        visible: game.user?.isGM || [
+          ...(canvas.scene?.regions ?? []),
+          ...(canvas.scene?.tiles ?? []),
+        ].some((marker) => marker.getFlag("ffxiv", "markerPlacement")
+          && marker.canUserModify(game.user, "delete")),
         button: true,
         onChange: async (_event, active) => {
           if (!active) return;
@@ -1621,11 +1638,14 @@ export function registerMarkerHooks() {
       },
     };
 
-    if (game.user?.isGM) {
+    if (canSelectRegions) {
       tools.select = {
         ...controls.regions.tools.select,
         order: -1,
       };
+    }
+
+    if (game.user?.isGM) {
       tools.ffxivLimitBreak = {
         name: "ffxivLimitBreak",
         title: game.i18n.localize("FFXIV.LimitBreak.Control"),
@@ -1645,15 +1665,16 @@ export function registerMarkerHooks() {
       name: "ffxiv",
       title: "Final Fantasy XIV Tools",
       icon: "ffxiv-control-icon",
-      layer: game.user?.isGM ? "regions" : undefined,
-      activeTool: game.user?.isGM ? "select" : undefined,
-      onChange: (_event, active) => {
-        if (!active || !game.user?.isGM || canvas.regions.active) return;
-        canvas.regions.activate();
-        ui.controls.activate({ control: "ffxiv", tool: "select" });
+      layer: canSelectRegions ? "regions" : undefined,
+      activeTool: canSelectRegions ? "select" : undefined,
+      onChange: async (_event, active) => {
+        if (!active || !canSelectRegions || canvas.regions.active) return;
+        await ui.controls.activate({ control: "regions", tool: "select" });
+        if (ui.controls.control?.name !== "regions") return;
+        await ui.controls.activate({ control: "ffxiv", tool: "select" });
       },
       onToolChange: () => {
-        if (game.user?.isGM) canvas.regions.setAllRenderFlags({ refreshState: true });
+        if (canSelectRegions) canvas.regions.setAllRenderFlags({ refreshState: true });
       },
       order:
         Number(controls.tokens?.order ?? controls.token?.order ?? 2) + 0.1,
