@@ -116,6 +116,7 @@
       "EliteFoe": "Elite Foe",
       "EliteFoeHint": "Immune to enfeeblements except Enmity, DOTs, and Knocked Out.",
       "ThreatRanking": "Threat Ranking",
+      "ThreatPlaceholder": "THREAT",
       "EditSheet": "Edit Sheet",
       "LockSheet": "Lock Sheet"
     },

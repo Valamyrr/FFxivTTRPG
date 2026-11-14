@@ -106,6 +106,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.currentAbilityTab = "primary";
     this.actorEditMode = false;
     this._enrichedCache = null;
+    this._sourceToken = null;
   }
 
   /** @override */
@@ -171,6 +172,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
+    if (options.isFirstRender) this._sourceToken = this.token ?? options.token ?? null;
     const skipEnrichment = options?.ffxivSkipEnrichment === true;
     const renderedTabs = this._getRenderedActorTabs(options);
 
@@ -664,8 +666,25 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       updateData["prototypeToken.width"] = width;
       updateData["prototypeToken.height"] = height;
     }
+    let movementAction;
+    if (this.actor.type === "npc" && fieldName === "system.speed_type") {
+      const MOVEMENT_ACTIONS = {
+        Aquatic: "swim",
+        Flying: "fly"
+      };
+      movementAction = MOVEMENT_ACTIONS[String(updateValue)] ?? null;
+      if (this.actor.prototypeToken) updateData["prototypeToken.movementAction"] = movementAction;
+    }
+    const token = this.token ?? this._sourceToken;
     if (fieldName === "system.activeTitle") this._captureSheetScroll();
     this.document.update(updateData, { render: false }).then(async () => {
+      if (movementAction !== undefined) {
+        if (token) await token.update({ movementAction });
+        const baseActor = token?.baseActor;
+        if (baseActor && baseActor !== this.actor && baseActor.prototypeToken && baseActor.isOwner) {
+          await baseActor.update({ "prototypeToken.movementAction": movementAction }, { render: false });
+        }
+      }
       this._syncResourceInputValue(target);
       if (fieldName === "system.health.max") {
         const healthInput = this.element.querySelector('input[name="system.health.value"]');
@@ -829,6 +848,7 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   /** @override */
   async _onClose(options) {
+    this._sourceToken = null;
     this._abilityQuickTabsController?.abort();
     this._abilityQuickTabsController = null;
     this._exitActorEditMode();

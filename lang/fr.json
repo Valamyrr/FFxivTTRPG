@@ -116,6 +116,7 @@
       "EliteFoe": "Ennemi d'élite",
       "EliteFoeHint": "Immunisé contre les affaiblissements sauf l'Inimitié, les dégâts périodiques et K.O.",
       "ThreatRanking": "Rang de menace",
+      "ThreatPlaceholder": "MENACE",
       "EditSheet": "Modifier la fiche",
       "LockSheet": "Verrouiller la fiche"
     },

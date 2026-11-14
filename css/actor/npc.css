@@ -53,8 +53,8 @@
 }
 
 .npc .sheet-npc-header .charname h1 textarea {
-  min-height: calc(2 * 1.02em);
-  max-height: calc(2 * 1.02em);
+  min-height: 2.04em;
+  max-height: 2.04em;
   resize: none;
   overflow: hidden;
   border: none;
@@ -88,7 +88,7 @@
 }
 
 .sheet-npc-header .charname {
-  grid-column: 1 / -1;
+  grid-column: 1/-1;
 }
 
 .sheet-npc-header-left {
@@ -115,7 +115,7 @@
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(40, 40, 44, 0.3) 100%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  padding: 12px;
+  padding: 10px;
   font-weight: bold;
 }
 
@@ -175,15 +175,12 @@
 .npc-combat-stats {
   align-items: start;
   display: grid;
-  gap: 0.6em 1.25em;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 0.5em 0.85em;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .npc-main-stats {
-  display: grid;
-  gap: 0.3em;
-  grid-template-columns: minmax(13em, 1fr);
-  grid-template-rows: auto;
+  display: contents;
 }
 
 .npc-main-stats .resource {
@@ -228,6 +225,7 @@
   grid-column: 1;
   grid-row: 1;
   align-items: center;
+  align-self: start;
   grid-template-columns: minmax(0, 1fr);
   width: 100%;
   border: none !important;
@@ -239,11 +237,14 @@
 .npc-secondary-row {
   display: flex !important;
   flex-direction: row;
+  flex-wrap: nowrap;
+  grid-column: 1/-1;
+  grid-row: 2;
   align-items: center;
   gap: 0.35em;
   padding-left: var(--npc-hp-track-offset);
   margin-left: 0 !important;
-  margin-top: 4px;
+  margin-top: 0;
   width: auto;
   max-width: 100%;
 }
@@ -253,7 +254,7 @@
   background: transparent;
   box-shadow: none;
   padding: 0;
-  max-width: max-content;
+  max-width: 100%;
 }
 
 .npc-secondary-row {
@@ -304,6 +305,19 @@
   grid-template-columns: auto auto;
 }
 
+.npc-secondary-row .npc-secondary-stat:has(select) {
+  flex-shrink: 1;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.npc-secondary-row .npc-stat-control {
+  min-width: 0;
+}
+
+.npc-statblock .npc-secondary-stat select.input-transparent {
+  flex-shrink: 1;
+}
+
 .npc-speed-type {
   text-transform: lowercase;
   white-space: nowrap;
@@ -318,27 +332,33 @@
 
 .npc-defense-table {
   display: grid;
+  grid-column: 2;
+  grid-row: 1;
   grid-template-rows: auto auto auto;
   justify-self: end;
-  min-width: min(100%, 16em);
+  min-width: 12em;
   border: none;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   padding: 0;
-  gap: 4px;
+  gap: 3px;
+}
+
+.npc-statblock .npc-secondary-label,
+.npc-defense-heading {
+  font-size: 0.95em;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .npc-defense-heading {
   color: #ececec;
-  font-size: 0.95em;
-  font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   align-self: center;
-  line-height: 1.2;
   text-align: center;
-  padding: 2px 8px;
+  padding: 0 8px;
 }
 
 .npc-defense-divider {
@@ -370,7 +390,7 @@
   box-sizing: border-box;
 }
 
-.npc-defense-cell+.npc-defense-cell {
+.npc-defense-cell + .npc-defense-cell {
   border-left: none;
   padding-left: 0;
 }
@@ -382,7 +402,7 @@
   width: 26px;
 }
 
-.npc-defense-cell>span:first-child {
+.npc-defense-cell > span:first-child {
   font-size: 0.85em;
   opacity: 0.85;
 }
@@ -444,7 +464,8 @@
 
 .npc-health-row {
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: flex-start;
   gap: 8px;
   width: 100%;
@@ -478,7 +499,7 @@
 }
 
 .npc-health-row .barrier-chip {
-  align-self: flex-end;
+  align-self: flex-start;
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -584,28 +605,27 @@
 }
 
 .statblock-header {
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   justify-content: flex-start;
   align-items: center;
-  column-gap: 0.5em;
-  row-gap: 0;
+  gap: 3px;
   background: #4a4a4e;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  padding: 4px 12px;
+  border-radius: 14px;
+  padding: 4px 6px;
   position: relative;
   z-index: 2;
 }
 
 .statblock-content {
-  padding: 38px 10px 8px;
+  padding: 34px 8px 8px;
   margin: -24px 3px 0;
   background: linear-gradient(180deg, rgba(60, 60, 66, 0.7) 0%, rgba(40, 40, 44, 0.76) 100%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   position: relative;
-  z-index: 1
+  z-index: 1;
 }
 
 .statblock-size-line,
@@ -623,12 +643,29 @@
   min-width: 0;
 }
 
+.statblock-size-line {
+  gap: 0.2em;
+}
+
 .statblock-meta-line {
-  flex: 0 0 auto;
+  grid-column: 2;
+  grid-row: 1;
   flex-wrap: nowrap;
-  justify-content: flex-end;
-  margin-left: auto;
+  justify-content: flex-start;
+  min-width: 0;
+  max-width: 100%;
   white-space: nowrap;
+}
+
+.statblock-meta-line:not(:has(select, .npc-threat-rank)) {
+  display: none;
+}
+
+.statblock-header > .npc-elite-foe-toggle,
+.statblock-header > .npc-elite-foe-badge {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
 }
 
 .statblock-size-line .npc-specie {
@@ -652,7 +689,9 @@
 }
 
 .npc-elite-foe-toggle,
-.npc-elite-foe-badge {
+.npc-elite-foe-badge,
+.npc-threat-rank,
+.npc-statblock .statblock-meta-line select[name="system.threat_rank"] {
   align-items: center;
   border: 1px solid rgba(233, 199, 112, 0.52);
   border-radius: 999px;
@@ -665,29 +704,36 @@
   letter-spacing: 0.04em;
   line-height: 1;
   min-height: 24px;
-  padding: 3px 8px;
+  padding: 3px 6px;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
-.npc-elite-foe-toggle {
+.npc-elite-foe-toggle,
+.npc-statblock .statblock-meta-line select[name="system.threat_rank"]:has(option:checked[value=""]) {
   background: rgba(20, 20, 24, 0.32);
+  box-shadow: none;
   cursor: pointer;
   margin: 0;
 }
 
 .npc-elite-foe-toggle input {
+  --checkbox-size: 16px;
+  --checkbox-checked-color: #efd699;
   margin: 0;
 }
 
-.npc-elite-foe-badge {
+.npc-elite-foe-toggle:has(input:checked),
+.npc-elite-foe-badge,
+.npc-threat-rank,
+.npc-statblock .statblock-meta-line select[name="system.threat_rank"] {
   background: rgba(90, 56, 20, 0.36);
   box-shadow: inset 0 0 0 1px rgba(255, 225, 140, 0.08);
 }
 
 .statblock-header-right {
   margin: auto;
-  margin-right: 0
+  margin-right: 0;
 }
 
 .npc-statblock .input-transparent {
@@ -722,7 +768,7 @@
 }
 
 .npc .input-size-numbers {
-  width: 2.25em !important;
+  width: 1.5em !important;
   height: 1.6em;
   line-height: 1.6em;
   padding: 0;
@@ -773,13 +819,35 @@
   padding: 0 1.35em 0 0.35em;
 }
 
+.npc-statblock .statblock-size-line select[name="system.size"] {
+  font-size: 0.875em;
+  max-width: 6em;
+  padding: 0 0.25em;
+}
+
+.npc-statblock .statblock-meta-line select[name="system.threat_rank"] {
+  font-size: 11px;
+  max-width: 7.5em;
+  padding: 0 0.25em;
+}
+.npc-statblock .statblock-meta-line select[name="system.threat_rank"] option {
+  color: inherit;
+}
+
+.npc-statblock .npc-secondary-stat select[name="system.speed_type"] {
+  padding: 0 0.25em;
+}
+.npc-statblock .npc-secondary-stat select[name="system.speed_type"]:has(option:checked[value=""]) {
+  width: 1.75em;
+}
+
 .npc-statblock select.input-transparent option {
   background: var(--option-background-color);
   color: var(--text-color-input);
 }
 
 .statblock-header input::placeholder {
-  color: #777777 !important
+  color: #777777 !important;
 }
 
 /*Nav*/
@@ -811,17 +879,17 @@
   line-height: 1.1;
 }
 
-.npc nav.nav-sub-tabs:has(.sub-tab[data-tab="effects"]) {
+.npc nav.nav-sub-tabs:has(.sub-tab[data-tab=effects]) {
   --npc-tab-count: 3;
 }
 
-.npc nav.nav-sub-tabs:has(.sub-tab[data-tab="effects"]) .sub-tab {
+.npc nav.nav-sub-tabs:has(.sub-tab[data-tab=effects]) .sub-tab {
   padding: 2px 5px !important;
 }
 
 .npc nav.nav-sub-tabs .npc-add-ability {
   position: absolute;
-  left: calc((100% - (var(--npc-tab-count) * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
+  left: calc((100% - var(--npc-tab-count) * var(--npc-tab-width)) / 2 - var(--npc-add-width) - var(--npc-add-gap));
   top: calc(50% + 1px);
   transform: translateY(-50%);
   transition: none;
@@ -847,9 +915,9 @@
   text-shadow: 0 0 4px var(--text-color-strong);
 }
 
-.npc nav.nav-sub-tabs:has(.sub-tab[data-tab="traits"].active) .npc-add-ability {
+.npc nav.nav-sub-tabs:has(.sub-tab[data-tab=traits].active) .npc-add-ability {
   left: auto;
-  right: calc((100% - (var(--npc-tab-count) * var(--npc-tab-width))) / 2 - var(--npc-add-width) - var(--npc-add-gap));
+  right: calc((100% - var(--npc-tab-count) * var(--npc-tab-width)) / 2 - var(--npc-add-width) - var(--npc-add-gap));
   clip-path: polygon(15% 0, 100% 0, 100% 100%, 15% 100%, 0 50%);
 }
 
@@ -873,18 +941,15 @@
     grid-template-columns: 1fr;
     gap: 0.75em;
   }
-
   .ffxiv.actor.npc .npc-defense-table {
     justify-self: stretch;
     min-width: 0;
     width: 100%;
   }
-
   .ffxiv.actor.npc .npc-defense-values {
     justify-items: center;
   }
 }
-
 /* NPC primary attribute roll controls: align with player-sheet button language */
 .npc-statblock .resources.grid-5col .resource {
   border: 1px solid rgba(233, 199, 112, 0.34);
@@ -926,16 +991,19 @@
   box-shadow: 0 0 0 1px rgba(255, 226, 143, 0.4), inset 0 0 5px rgba(255, 231, 177, 0.15);
 }
 
-/* Keep race inline with size row; override generic npc-specie sizing rules. */
-.sheet-npc-header .statblock-size-line .npc-plain-value.npc-specie,
-.sheet-npc-header .statblock-size-line input.npc-specie {
-  flex: 0 1 auto !important;
+.sheet-npc-header .statblock-size-line .npc-specie {
+  flex: 1 1 auto !important;
   width: auto !important;
-  min-width: 0 !important;
+  min-width: 8ch !important;
   max-width: none !important;
   margin-left: 0.15em !important;
   overflow: hidden;
   text-align: left !important;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sheet-npc-header .statblock-size-line input.npc-specie {
+  min-width: 10ch !important;
+  text-overflow: clip;
 }
