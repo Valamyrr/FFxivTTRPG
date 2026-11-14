@@ -1,4 +1,14 @@
 export class FFXIVTokenDocument extends foundry.documents.TokenDocument {
+  static getTrackedAttributes(data, _path = []) {
+    const attributes = super.getTrackedAttributes(data, _path);
+    return {
+      bar: attributes.bar.filter((path) =>
+        ["health", "barrier", "mana"].includes(path.join(".")),
+      ),
+      value: [],
+    };
+  }
+
   static async _preUpdateOperation(documents, operation, user) {
     const allowed = await super._preUpdateOperation(documents, operation, user);
     if (allowed === false) return false;

@@ -213,7 +213,15 @@ Hooks.once("init", function () {
   CONFIG.Item.documentClass = FFXIVItem;
   CONFIG.ActiveEffect.documentClass = FFXIVActiveEffect;
   CONFIG.Token.documentClass = FFXIVTokenDocument;
+  CONFIG.Actor.trackableAttributes = {
+    character: { bar: ["health", "barrier", "mana"], value: [] },
+    npc: { bar: ["health", "barrier"], value: [] },
+    pet: { bar: [], value: [] },
+    encounter: { bar: [], value: [] },
+  };
   CONFIG.Canvas.layers.regions.layerClass = FFXIVRegionLayer;
+  installTokenBarColors();
+  installTokenBarrierOverlay();
   registerFormulaEditorContexts();
 
   // Active Effects are never copied to the Actor,
@@ -465,8 +473,6 @@ Hooks.once("ready", function () {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);
   });
   installCarouselCombatTrackerStepIndicators();
-  installTokenBarColors();
-  installTokenBarrierOverlay();
   installTokenStatusStackCounterOverlay();
   refreshAllTokenStatusStackCounters().catch((error) => {
     debugError("FFXIV | Failed to refresh status stack counters:", error);

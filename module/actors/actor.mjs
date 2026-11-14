@@ -2,7 +2,6 @@ import { getContentKeys, normalizeContentKey } from "../helpers/content-keys.mjs
 import { debugError, debugLog } from "../helpers/debug.mjs";
 import {
   getActorCheckPenalty,
-  getLargestCheckPenalty,
   hasStatus,
 } from "../helpers/status-effects.mjs";
 
@@ -628,27 +627,19 @@ export class FFXIVActor extends Actor {
     const attrKey = abbreviationEntry.value;
     const rollData = this.getRollData();
     const modifiers = rollData[attrKey] ?? 0;
-    const enmityPenaltyInfo = await this._getEnmityCheckPenaltyInfo();
-    const enmityPenalty = enmityPenaltyInfo.penalty;
-    const statusPenalty = getActorCheckPenalty(this);
-    const checkPenalty = getLargestCheckPenalty(enmityPenalty, statusPenalty);
-    const enmityPenaltyApplies =
-      enmityPenalty && Math.abs(enmityPenalty) >= Math.abs(statusPenalty);
+    const checkPenalty = getActorCheckPenalty(this);
     let formula = `1d20 + ${modifiers}`;
     if (checkPenalty) formula += ` - ${Math.abs(checkPenalty)}`;
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
-    const enmityNote = enmityPenaltyApplies
-      ? `<br>${game.i18n.localize("FFXIV.Effects.Enmity")}: ${enmityPenalty} (${enmityPenaltyInfo.sourceActor.name} not targeted)`
-      : "";
-    const checkPenaltyNote = checkPenalty && !enmityPenaltyApplies
-      ? `<br>${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${statusPenalty}`
+    const checkPenaltyNote = checkPenalty
+      ? `<div>${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${checkPenalty}</div>`
       : "";
 
-    roll.toMessage({
+    await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor: `<i class="fa-solid fa-dice-d20"></i> ${game.i18n.localize(`FFXIV.Attributes.${attributeCapitalized}.long`) || attribute}`,
-      content: `${roll.total} (${roll.formula})${enmityNote}${checkPenaltyNote}`,
+      content: `${await roll.render()}${checkPenaltyNote}`,
       rollMode: game.settings.get('core', 'rollMode'),
       flags: { core: { canParseHTML: true } }
     });
