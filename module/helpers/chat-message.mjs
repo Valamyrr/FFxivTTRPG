@@ -15,21 +15,34 @@ export function maintainChatScroll(messageId, { roll = null } = {}) {
   requestAnimationFrame(() => {
     const animations = roll?.querySelector(".ffxiv-roll-details")?.getAnimations() ?? [];
     const controller = new AbortController();
+    const images = new Set();
+    let frame = null;
     for (const chat of chatLogs) {
       const scroll = chat.element?.querySelector(".chat-scroll");
       if (!scroll) continue;
       for (const event of ["wheel", "touchstart", "pointerdown", "keydown"])
         scroll.addEventListener(event, () => controller.abort(), { signal: controller.signal, once: true, passive: true });
+      for (const image of scroll.querySelectorAll("img")) {
+        if (image.complete) continue;
+        images.add(image);
+        const onLoad = () => {
+          images.delete(image);
+          if (frame === null) frame = requestAnimationFrame(follow);
+        };
+        for (const event of ["load", "error"])
+          image.addEventListener(event, onLoad, { signal: controller.signal, once: true });
+      }
     }
     const follow = () => {
+      frame = null;
       if (controller.signal.aborted) return;
       for (const chat of chatLogs) {
         if (chat.element?.querySelector(`.chat-scroll .message[data-message-id="${messageId}"]`))
-          chat.scrollBottom({ waitImages: !roll });
+          chat.scrollBottom();
       }
       if (animations.some((animation) => animation.playState === "running" || animation.pending))
-        requestAnimationFrame(follow);
-      else controller.abort();
+        frame = requestAnimationFrame(follow);
+      else if (!images.size) controller.abort();
     };
     follow();
   });
