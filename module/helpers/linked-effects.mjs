@@ -6,6 +6,7 @@ import {
   applyStatusEffectChange,
   applyStatusEffectStackDelta,
   applyStatusEffectStackValue,
+  consumeEnfeeblementProtection,
   hasStatus,
   isEliteFoeBlockedStatus,
   isNegativeStatusEffect,
@@ -184,6 +185,15 @@ async function prepareLinkedActiveEffectStatusRules(actor, effectDocs) {
     if (statuses.some((statusId) => isEliteFoeBlockedStatus(actor, statusId)))
       continue;
 
+    let prevented = false;
+    for (const statusId of statuses) {
+      if (await consumeEnfeeblementProtection(actor, statusId)) {
+        prevented = true;
+        break;
+      }
+    }
+    if (prevented) continue;
+
     if (
       statuses.includes("dot") &&
       isThunderSpellEffect(doc) &&
@@ -352,7 +362,14 @@ function prepareLinkedActiveEffectDuration(actor, doc) {
     if (foundry.utils.getProperty(doc, "flags.ffxiv.expireAtCombatantTurnEnd") === true) {
       foundry.utils.setProperty(doc, "flags.ffxiv.expireAtCombatantTurnEnd", combatantExpiry);
     }
-    if (foundry.utils.getProperty(doc, "flags.ffxiv.expireAtCombatantTurnStart") === true) {
+    if (foundry.utils.getProperty(doc, "flags.ffxiv.expireAtSourceTurnStart") === true) {
+      const source = combat.combatants?.find((entry) =>
+        entry.actor?.uuid === doc.flags.ffxiv.linkedSourceActorUuid,
+      );
+      if (source) foundry.utils.setProperty(doc, "flags.ffxiv.expireAtCombatantTurnStart", {
+        ...combatantExpiry, combatantId: source.id,
+      });
+    } else if (foundry.utils.getProperty(doc, "flags.ffxiv.expireAtCombatantTurnStart") === true) {
       foundry.utils.setProperty(doc, "flags.ffxiv.expireAtCombatantTurnStart", combatantExpiry);
     }
   }

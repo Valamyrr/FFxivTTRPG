@@ -1,7 +1,8 @@
 import { isAbilityAutomationEnabled, isCombatAutomationEnabled } from "./automation.mjs";
-import { matchesContentKey } from "./content-keys.mjs";
+import { getSourceText, matchesContentKey } from "./content-keys.mjs";
 import { debugError } from "./debug.mjs";
 import { getActiveGM } from "./socket.mjs";
+import { restorePetForms } from "./pet-automation.mjs";
 import { applyStatusEffectChange, hasStatus, recoverActorHealth } from "./status-effects.mjs";
 
 const pendingHealing = new WeakMap();
@@ -36,10 +37,18 @@ export function getRoleDamageBonus(actor, entry) {
   return Number(matched ? entry.bonus.flat : entry.flat) || 0;
 }
 
-export function getTargetCriticalReduction(targets) {
+export function getTargetCriticalReduction(targets, actor = null) {
   const values = Array.from(targets ?? []).map((token) =>
     Math.max(0, ...Array.from(token.actor?.allApplicableEffects?.() ?? [])
-      .filter((effect) => !effect.disabled)
+      .filter((effect) => {
+        if (effect.disabled) return false;
+        if (!effect.flags?.ffxiv?.critical?.alliesOnly) return true;
+        const source = fromUuidSync(effect.flags.ffxiv.linkedSourceActorUuid ?? "");
+        if (source?.uuid === actor?.uuid) return true;
+        const origin = getToken(source);
+        const attacker = getToken(actor);
+        return origin && attacker && origin.document.disposition === attacker.document.disposition;
+      })
       .map((effect) => Number(effect.flags?.ffxiv?.critical?.targetReduction) || 0)),
   );
   return values.length ? Math.min(...values) : 0;
@@ -59,7 +68,10 @@ function inHealingAura(actor, source, range) {
 
 export async function modifyRecoveryRoll(roll, item) {
   if (!isAbilityAutomationEnabled() || !item.parent) return roll;
-  const healing = item.flags?.ffxiv?.healing?.roll === true;
+  const configured = item.flags?.ffxiv?.healing?.roll;
+  const text = String(getSourceText(item, "base_effect") ?? "").replace(/<[^>]*>/g, "").trim();
+  const healing = configured === true ||
+    (configured !== false && /^(?:restores?|recovers?)\b.*\bHP\b/i.test(text));
   let effect;
   let count = 1;
   if (healing) {
@@ -80,7 +92,7 @@ export async function modifyRecoveryRoll(roll, item) {
   }
   if (!effect) return roll;
   const dice = roll.dice.flatMap((die) => die.results
-    .filter((result) => result.active !== false && !result.rerolled && (!healing || (die.faces === 6 && result.result < 6)))
+    .filter((result) => result.active !== false && !result.rerolled && !result.ffxivRerolled && (!healing || (die.faces === 6 && result.result < 6)))
     .map((result) => ({ die, result })));
   if (!dice.length) return roll;
   const selected = await foundry.applications.api.DialogV2.prompt({
@@ -99,10 +111,49 @@ export async function modifyRecoveryRoll(roll, item) {
     else {
       const replacement = await new Roll(`1d${entry.die.faces}`).evaluate();
       entry.result.result = replacement.total;
+      entry.result.ffxivRerolled = true;
     }
   }
   roll._total = roll._evaluateTotal();
   if (!healing) await effect.delete();
+  return roll;
+}
+
+export async function modifyAbilityCheck(roll, item) {
+  if (!isAbilityAutomationEnabled() || !item.parent) return roll;
+  const effects = Array.from(item.parent.allApplicableEffects?.() ?? []).filter((effect) =>
+    !effect.disabled && Number(effect.flags?.ffxiv?.check?.rerollMax) > 0,
+  );
+  for (const effect of effects) {
+    const dice = roll.dice.flatMap((die) => die.faces === 20 ? die.results
+      .filter((result) => !result.rerolled && !result.ffxivRerolled &&
+        result.result <= Number(effect.flags.ffxiv.check.rerollMax))
+      .map((result) => ({ die, result })) : []);
+    if (!dice.length) continue;
+    const index = await foundry.applications.api.DialogV2.prompt({
+      window: { title: effect.name },
+      content: `<p>${game.i18n.format("FFXIV.Abilities.ChooseEffectDice", { count: 1 })}</p><select name="die"><option value="">${game.i18n.localize("FFXIV.Dialogs.Cancel")}</option>${dice.map(({ result }, index) =>
+        `<option value="${index}">d20: ${result.result}</option>`,
+      ).join("")}</select>`,
+      ok: { callback: (_event, button) => button.form.elements.die.value },
+      rejectClose: false,
+    });
+    if (index === null || index === undefined || index === "") continue;
+    const entry = dice[Number(index)];
+    if (!entry) continue;
+    const replacement = await new Roll("1d20").evaluate();
+    entry.result.result = replacement.total;
+    entry.result.ffxivRerolled = true;
+    const results = entry.die.results.filter((result) => !result.rerolled);
+    const highest = results.reduce((best, result) => result.result > best.result ? result : best);
+    for (const result of results) {
+      result.active = result === highest;
+      result.discarded = result !== highest;
+    }
+    roll._total = roll._evaluateTotal();
+    await effect.delete();
+    break;
+  }
   return roll;
 }
 
@@ -150,7 +201,22 @@ export function initHealingAutomation() {
     }).catch((error) => debugError("Triggered healing failed:", error));
   });
   Hooks.on("createActiveEffect", (effect) => {
-    if (game.user.id !== getActiveGM()?.id || !effect.flags?.ffxiv?.healing?.trigger) return;
+    if (game.user.id !== getActiveGM()?.id) return;
+    if (isCombatAutomationEnabled() && effect.statuses?.has("knocked_out")) {
+      const actors = new Set([
+        ...Array.from(game.actors ?? []),
+        ...Array.from(globalThis.canvas?.tokens?.placeables ?? [], (token) => token.actor),
+      ]);
+      for (const actor of actors) {
+        const ids = Array.from(actor?.effects ?? []).filter((candidate) =>
+          candidate.flags?.ffxiv?.songEffect &&
+          candidate.flags?.ffxiv?.linkedSourceActorUuid === effect.parent?.uuid,
+        ).map((candidate) => candidate.id);
+        if (ids.length) actor.deleteEmbeddedDocuments("ActiveEffect", ids)
+          .catch((error) => debugError("Song removal failed:", error));
+      }
+    }
+    if (!effect.flags?.ffxiv?.healing?.trigger) return;
     if (effect.parent?.documentName === "Actor")
       resolveTriggeredHealing(effect.parent).catch((error) => debugError("Triggered healing failed:", error));
   });
@@ -158,5 +224,6 @@ export function initHealingAutomation() {
     if (game.user.id !== getActiveGM()?.id || !isCombatAutomationEnabled()) return;
     const actors = new Set(Array.from(combat.combatants ?? [], (entry) => entry.actor).filter(Boolean));
     endHealingPhase(actors).catch((error) => debugError("Phase healing failed:", error));
+    restorePetForms(combat).catch((error) => debugError("Pet restoration failed:", error));
   });
 }

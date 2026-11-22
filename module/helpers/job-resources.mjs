@@ -1,5 +1,5 @@
 import { toArray } from "./collections.mjs";
-import { getContentKeys, matchesContentKey, normalizeContentKey } from "./content-keys.mjs";
+import { getContentKeys, normalizeContentKey } from "./content-keys.mjs";
 
 export function normalizeJobResourceName(value) {
   return normalizeContentKey(value);
@@ -16,20 +16,14 @@ export function getActorLevel(actor) {
 
 export function getActorPets(actor, { activeOnly = false } = {}) {
   const ids = new Set(actor?.system?.pets ?? []);
-  return Array.from(game.actors ?? []).filter((pet) =>
-    pet.type === "pet" && (ids.has(pet.id) || pet.flags?.ffxiv?.jobOwnerId === actor?.id) &&
-    (!activeOnly || !globalThis.canvas?.ready || canvas.tokens.placeables.some((token) => token.actor?.uuid === pet.uuid)),
+  const pets = Array.from(game.actors ?? []).filter((pet) =>
+    pet.type === "pet" && (ids.has(pet.id) || pet.flags?.ffxiv?.jobOwnerId === actor?.id),
   );
-}
-
-export function findActorTrait(actor, name) {
-  const key = normalizeJobResourceName(name);
-  if (!actor || !key) return null;
-  return actor.items?.find(
-    (item) =>
-      item?.type === "trait" &&
-      matchesContentKey(item, key),
-  ) ?? null;
+  if (!activeOnly || !globalThis.canvas?.ready) return pets;
+  const petIds = new Set(pets.map((pet) => pet.id));
+  return Array.from(new Set(canvas.tokens.placeables
+    .filter((token) => token.actor && petIds.has(token.document?.actorId ?? token.actor.id))
+    .map((token) => token.actor)));
 }
 
 export function findActorJobResource(actor, name) {

@@ -3,7 +3,6 @@ import { formatShopTierDisplay } from "./shop-tier.mjs";
 import {
   getAbilitySubtype,
   localizeTag,
-  normalizeActionTag,
   normalizeComboName,
   normalizeTagValue,
 } from "./ability-subtype.mjs";
@@ -58,7 +57,7 @@ const BAKED_ACTION_TAGS = new Set([
 
 function isBakedActionTag(tag) {
   return [tag, localizeTag(tag)].some((value) =>
-    BAKED_ACTION_TAGS.has(normalizeActionTag(value)),
+    BAKED_ACTION_TAGS.has(String(value ?? "").trim().toLowerCase()),
   );
 }
 

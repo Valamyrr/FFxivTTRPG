@@ -1566,7 +1566,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _normalizeEffectRuleAction(value) {
     const action = String(value ?? "grant").trim().toLowerCase();
-    return ["grant", "remove", "toggle", "resource", "status"].includes(action)
+    return ["grant", "remove", "toggle", "resource", "status", "cleanse", "limitation"].includes(action)
       ? action
       : "grant";
   }
@@ -1686,7 +1686,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     } else {
       const name = this._formatEffectRef(rule);
       if (!name) return "";
-      const verb = action === "remove" ? "remove" : "grant";
+      const verb = action === "remove" ? "remove"
+        : action === "cleanse" ? game.i18n.localize("FFXIV.Abilities.AutomationCleanse")
+          : action === "limitation" ? game.i18n.localize("FFXIV.Abilities.AutomationRestoreUse") : "grant";
       parts.push(`${trigger}: ${verb} ${name}`);
     }
 
@@ -1931,8 +1933,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         name: String(entry.name ?? ""),
         buttonLabel: String(entry.buttonLabel ?? ""),
         resource: String(entry.resource ?? entry.resourceName ?? ""),
-        amount: Math.max(Number.parseInt(entry.amount ?? entry.cost, 10) || 1, 1),
+        amount: entry.amount === "all" ? "all" : Math.max(Number.parseInt(entry.amount ?? entry.cost, 10) || 1, 1),
         formula: String(entry.formula ?? entry.rollFormula ?? ""),
+        formulaByCount: foundry.utils.deepClone(entry.formulaByCount),
         upgrades: [
           ...this._toArray(entry.formulaByLevel),
           ...this._toArray(entry.formulaUpgrades),
@@ -1954,6 +1957,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       resource: entry.resource,
       amount: entry.amount,
       formula: entry.formula,
+      ...(entry.formulaByCount ? { formulaByCount: entry.formulaByCount } : {}),
       formulaByLevel: entry.upgrades.map((upgrade) => ({
         minLevel: upgrade.minLevel,
         formula: upgrade.formula,
@@ -1983,7 +1987,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const entries = this._getCurrentJobResourceBonuses();
     if (!entries[index]) return;
     const value = this._getAutomationFieldValue(event.currentTarget);
-    entries[index][field] = field === "amount"
+    entries[index][field] = field === "amount" && value !== "all"
       ? Math.max(Number.parseInt(value, 10) || 1, 1)
       : value;
     this._updateJobResourceBonuses(entries).catch((err) =>

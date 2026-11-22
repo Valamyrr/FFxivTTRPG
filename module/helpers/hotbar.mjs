@@ -389,16 +389,12 @@ function getHotbarFlagDocument() {
   return getActiveHotbarActor() ?? game.user;
 }
 
-function getHotbarSettingsDocument() {
-  return getActiveHotbarActor() ?? game.user;
-}
-
 function getHotbarFlagKey(document = getHotbarFlagDocument()) {
   return document?.documentName === "Actor" ? "hotbar" : "hotbarExtra";
 }
 
 function getVisibleHotbarsCount() {
-  const document = getHotbarSettingsDocument();
+  const document = getHotbarFlagDocument();
   const settings = document.getFlag("ffxiv", "hotbarSettings") ?? {};
   const actorType = getActiveHotbarActor()?.type;
   const settingType = {
@@ -414,7 +410,7 @@ function getVisibleHotbarsCount() {
 }
 
 async function setVisibleHotbarsCount(count) {
-  const document = getHotbarSettingsDocument();
+  const document = getHotbarFlagDocument();
   const settings = document.getFlag("ffxiv", "hotbarSettings") ?? {};
   settings.visibleHotbars = Math.max(1, Math.min(5, count));
   await document.setFlag("ffxiv", "hotbarSettings", settings);
@@ -483,10 +479,6 @@ async function setHotbarFlag(
     suppressHotbarRender = wasSuppressingRender;
   }
   if (refresh) refreshHotbar();
-}
-
-function getExtraHotbar() {
-  return getHotbarFlag();
 }
 
 function getMacroForSlot(slot, document = getHotbarFlagDocument(), forceFlag = false) {
@@ -1417,20 +1409,6 @@ function renderExtraBar(page, slotHotbar) {
   return menu;
 }
 
-function renderExtensionSlot(page, index) {
-  const extraKey = `${page}.${index + 1}`;
-  const slotDocument = getDocumentForSlot(extraKey, getHotbarFlagDocument(), true);
-  const slot = createSlot(createSlotData({
-    slot: extraKey,
-    extraKey,
-    hotbarPage: page,
-    keyIndex: index,
-    key: HOTBAR_KEYS[index].label,
-  }, slotDocument));
-  slot.classList.add("ffxiv-extension-slot");
-  return slot;
-}
-
 function getSlotSelector(slot) {
   const slotId = String(slot);
   const escapedSlot = globalThis.CSS?.escape
@@ -1491,13 +1469,6 @@ function updateRenderedHotbarSlots(slots, hotbarDocument, forceFlag) {
     indexHotbarReadiness(hotbar);
     queueHotbarCollisionOffset(hotbar);
   }
-}
-
-function updateExtensionSlots(actionBar, page) {
-  actionBar
-    .querySelectorAll(".ffxiv-extension-slot")
-    .forEach((slot) => slot.remove());
-  for (const index of [10, 11]) actionBar.append(renderExtensionSlot(page, index));
 }
 
 function hideNativePrimarySlots(actionBar) {

@@ -9,6 +9,7 @@ import {
 import {
   applyActorJobResourceDelta,
   fillActorJobResource,
+  getActorJobResourceCount,
   normalizeJobResourceName,
   setActorJobResourceCount,
 } from "./helpers/job-resources.mjs";
@@ -20,6 +21,7 @@ import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
 import { createChatMessage } from "./helpers/chat-message.mjs";
 import { broadcastDutyCommenced } from "./helpers/duty-commenced.mjs";
 import { getSummonerCombatant } from "./helpers/summons.mjs";
+import { restorePetForms } from "./helpers/pet-automation.mjs";
 import { endHealingPhase } from "./helpers/healing.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
@@ -71,6 +73,7 @@ export class FFXIVCombat extends Combat {
   async startPhase() {
     if (!game.user.isGM || !this.started) return;
     await endHealingPhase(this._getUniqueCombatActors().values());
+    await restorePetForms(this);
     await this._resetActorLimitations();
     const round = this.round + 1;
     await this.update({ round, turn: 0, "flags.ffxiv.phaseRound": round });
@@ -236,6 +239,7 @@ export class FFXIVCombat extends Combat {
       await super._onEndTurn(combatant, context);
       clearUserTargetsForTiming(TARGET_CLEAR_TIMINGS.TURN_END);
       const actor = combatant?.actor;
+      await restorePetForms(this, combatant, "turnEnd", context);
       await this._deleteCombatantTurnEndEffects(combatant, context);
       if (!actor) return;
       await this._applyTurnEndJobAutomation(actor);
@@ -249,6 +253,7 @@ export class FFXIVCombat extends Combat {
   async _onStartTurn(combatant, context) {
     return this._withActorSheetScroll(async () => {
       await super._onStartTurn(combatant, context);
+      await restorePetForms(this, combatant, "turnStart", context);
       const actor = combatant?.actor;
       await this._deleteCombatantTurnStartEffects(combatant);
       if (!actor) return;
@@ -966,6 +971,7 @@ export class FFXIVCombat extends Combat {
         requires: this._normalizeEffectRefs(entry?.requires),
         requiresAny: this._normalizeEffectRefs(entry?.requiresAny),
         forbids: this._normalizeEffectRefs(entry?.forbids),
+        requiresResources: Array.from(entry?.requiresResources ?? []),
         flags: foundry.utils.deepClone(entry?.flags ?? {}),
         duration: entry?.duration,
       }))
@@ -987,6 +993,11 @@ export class FFXIVCombat extends Combat {
       return false;
     if (rule.forbids.some((entry) => this._hasActorNamedEffect(actor, entry.key)))
       return false;
+    for (const entry of rule.requiresResources ?? []) {
+      const count = getActorJobResourceCount(actor, entry.resource);
+      if (entry.min !== undefined && count < Number(entry.min)) return false;
+      if (entry.max !== undefined && count > Number(entry.max)) return false;
+    }
     return true;
   }
 

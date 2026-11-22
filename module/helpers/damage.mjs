@@ -155,6 +155,11 @@ export async function applyResolvedDamageToActor(
     targetActor,
     damage.consumedEffectIds,
   );
+  if (sourceActor && sourceActor !== targetActor && damage.reflectedDamage > 0) {
+    await applyDamageToActorWithEffects(sourceActor, damage.reflectedDamage, {
+      sourceActor: targetActor,
+    });
+  }
 }
 
 async function getDamageWithEffects(
@@ -201,6 +206,7 @@ async function getDamageWithEffects(
     resolvedDamage: application.resolvedDamage,
     preventedDamage: Math.max(modifiedDamage - application.resolvedDamage, 0),
     consumedEffectIds: application.consumedEffectIds,
+    reflectedDamage: application.reflectedDamage,
   };
 }
 
@@ -211,6 +217,7 @@ async function applyDamageApplicationModifiers(
 ) {
   let resolvedDamage = Math.max(Number.parseInt(rawDamage, 10) || 0, 0);
   const consumedEffectIds = [];
+  let reflectedDamage = 0;
   for (const effect of targetActor?.allApplicableEffects?.() ?? []) {
     if (!effect || effect.disabled) continue;
 
@@ -231,6 +238,7 @@ async function applyDamageApplicationModifiers(
       const operation = String(entry.operation ?? entry.mode ?? "subtract")
         .trim()
         .toLowerCase();
+      const previousDamage = resolvedDamage;
       if (["override", "replace", "set"].includes(operation)) {
         resolvedDamage = amount;
       } else if (operation === "multiply") {
@@ -239,6 +247,11 @@ async function applyDamageApplicationModifiers(
         resolvedDamage += amount;
       } else {
         resolvedDamage -= amount;
+      }
+
+      if (entry.reflect && damageApplicationEntryApplies(entry.reflect, { sourceActor, sourceItem })) {
+        const prevented = Math.max(previousDamage - Math.max(resolvedDamage, 0), 0);
+        reflectedDamage += Math.ceil(prevented * (Number(entry.reflect.fraction) || 0));
       }
 
       if ((entry.consume === true || entry.remove === true) && effect.id) {
@@ -250,6 +263,7 @@ async function applyDamageApplicationModifiers(
   return {
     resolvedDamage: Math.max(Math.floor(resolvedDamage), 0),
     consumedEffectIds: Array.from(new Set(consumedEffectIds)),
+    reflectedDamage,
   };
 }
 

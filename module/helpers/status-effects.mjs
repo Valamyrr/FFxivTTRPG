@@ -1,5 +1,6 @@
 import { getTurnsUntilActorTurnEnd } from "./effect-utils.mjs";
 import { clearActorJobResources } from "./job-resources.mjs";
+import { isAbilityAutomationEnabled } from "./automation.mjs";
 
 export const STACKABLE_STATUS_EFFECT_IDS = new Set([
   "critical_up",
@@ -699,6 +700,8 @@ export async function applyStatusEffectStackDelta(
     return false;
   if (amount > 0 && isEliteFoeBlockedStatus(actor, normalizedStatusId))
     return false;
+  if (amount > 0 && await consumeEnfeeblementProtection(actor, normalizedStatusId))
+    return false;
 
   const sourceEffects = getStatusStackSourceEffects(
     actor,
@@ -747,6 +750,8 @@ export async function applyStatusEffectStackValue(
   )
     return false;
   if (normalizedCount > 0 && isEliteFoeBlockedStatus(actor, normalizedStatusId))
+    return false;
+  if (normalizedCount > 0 && await consumeEnfeeblementProtection(actor, normalizedStatusId))
     return false;
 
   return setStatusStackCount(actor, normalizedStatusId, normalizedCount, {
@@ -995,6 +1000,38 @@ export function wasPetrifiedAppliedThisTurn(actor, combat = game.combat) {
   );
 }
 
+export async function removeActorEnfeeblement(actor) {
+  const effects = Array.from(actor.effects ?? []).filter((effect) =>
+    !effect.disabled && Array.from(effect.statuses ?? []).some((id) =>
+      isNegativeStatusEffect(id) && !["knocked_out", "weakness", "brink_death", "comatose", "death"].includes(id),
+    ),
+  );
+  if (!effects.length) return false;
+  const id = await foundry.applications.api.DialogV2.prompt({
+    window: { title: game.i18n.localize("FFXIV.Abilities.RemoveEnfeeblement") },
+    content: `<select name="effect">${effects.map((effect) =>
+      `<option value="${effect.id}">${foundry.utils.escapeHTML(effect.name)}</option>`,
+    ).join("")}</select>`,
+    ok: { callback: (_event, button) => button.form.elements.effect.value },
+    rejectClose: false,
+  });
+  if (!id) return null;
+  if (!effects.some((effect) => effect.id === id)) return null;
+  await actor.deleteEmbeddedDocuments("ActiveEffect", [id]);
+  return true;
+}
+
+export async function consumeEnfeeblementProtection(actor, statusId) {
+  if (!isAbilityAutomationEnabled() || !isNegativeStatusEffect(statusId) ||
+      ["knocked_out", "weakness", "brink_death", "comatose", "death"].includes(statusId)) return false;
+  const effect = Array.from(actor.effects ?? []).find((entry) =>
+    !entry.disabled && entry.flags?.ffxiv?.status?.preventEnfeeblement === true,
+  );
+  if (!effect) return false;
+  await effect.delete();
+  return true;
+}
+
 export async function applyStatusEffectChange(
   actor,
   statusId,
@@ -1028,6 +1065,8 @@ export async function applyStatusEffectChange(
 
   if (isActive && isEliteFoeBlockedStatus(actor, normalizedStatusId))
     return false;
+  if (isActive && !isStackableStatusEffect(normalizedStatusId) &&
+      await consumeEnfeeblementProtection(actor, normalizedStatusId)) return false;
 
   if (isActive && normalizedStatusId === "weakness") {
     if (hasStatus(actor, "brink_death")) {

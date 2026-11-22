@@ -31,11 +31,6 @@ function normalize(value) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-function localize(value) {
-  const text = String(value ?? "");
-  return globalThis.game?.i18n?.localize(text) ?? text;
-}
-
 function keyTailAliases(key) {
   const tail = String(key ?? "").split(".").pop() ?? "";
   const spaced = tail.replace(/([a-z])([A-Z])/g, "$1 $2");
@@ -59,7 +54,7 @@ function getSubtypeAliasLookup() {
   for (const [subtype, aliases] of Object.entries(ABILITY_SUBTYPE_ALIASES)) {
     for (const alias of aliases) {
       lookup.set(normalize(alias), subtype);
-      lookup.set(normalize(localize(alias)), subtype);
+      lookup.set(normalize(localizeTag(alias)), subtype);
     }
   }
 
@@ -91,11 +86,11 @@ function getBakedTagAliasLookup() {
 
   for (const key of getBakedTagKeys()) {
     lookup.set(normalize(key), key);
-    lookup.set(normalize(localize(key)), key);
+    lookup.set(normalize(localizeTag(key)), key);
 
     for (const alias of keyTailAliases(key)) {
       lookup.set(normalize(alias), key);
-      lookup.set(normalize(localize(alias)), key);
+      lookup.set(normalize(localizeTag(alias)), key);
     }
   }
 
@@ -103,16 +98,11 @@ function getBakedTagAliasLookup() {
   return lookup;
 }
 
-function legacyTypeToSubtype(type) {
-  if (ABILITY_SUBTYPE_TYPES.includes(type)) return type;
-  return "";
-}
-
 function tagToSubtype(tag) {
   const normalized = normalize(tag);
   if (!normalized) return "";
   const lookup = getSubtypeAliasLookup();
-  return lookup.get(normalized) ?? lookup.get(normalize(localize(tag))) ?? "";
+  return lookup.get(normalized) ?? lookup.get(normalize(localizeTag(tag))) ?? "";
 }
 
 export function canonicalizeBakedTag(tag) {
@@ -120,7 +110,7 @@ export function canonicalizeBakedTag(tag) {
   if (!normalized) return tag;
 
   const lookup = getBakedTagAliasLookup();
-  return lookup.get(normalized) ?? lookup.get(normalize(localize(tag))) ?? tag;
+  return lookup.get(normalized) ?? lookup.get(normalize(localizeTag(tag))) ?? tag;
 }
 
 export function canonicalizeBakedTags(tags) {
@@ -141,8 +131,7 @@ export function canonicalizeBakedTags(tags) {
 }
 
 export function getAbilitySubtype(itemLike) {
-  const directType = legacyTypeToSubtype(itemLike?.type);
-  if (directType) return directType;
+  if (ABILITY_SUBTYPE_TYPES.includes(itemLike?.type)) return itemLike.type;
   if (itemLike?.type !== "ability") return "";
 
   const tags = Array.isArray(itemLike?.system?.tags)
@@ -202,12 +191,6 @@ export function ensureAbilitySubtypeTags(
 export function localizeTag(tag) {
   const text = String(tag ?? "");
   return globalThis.game?.i18n?.localize(text) ?? text;
-}
-
-export function normalizeActionTag(tag) {
-  return String(tag ?? "")
-    .trim()
-    .toLowerCase();
 }
 
 export function normalizeComboName(name) {

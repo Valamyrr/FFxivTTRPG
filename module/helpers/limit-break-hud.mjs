@@ -116,18 +116,6 @@ function getVisibleHotbarSlots(hotbar) {
   return [];
 }
 
-function getHotbarSlot(hotbar, slot) {
-  const selectors = [
-    `[data-slot="${slot}"]`,
-    `[data-hotbar-slot="${slot}"]`,
-    `.macro[data-slot="${slot}"]`,
-    `.slot[data-slot="${slot}"]`,
-  ];
-  const exactSlot = selectors.map((selector) => hotbar.querySelector(selector)).find(Boolean);
-  if (exactSlot) return exactSlot;
-  return getVisibleHotbarSlots(hotbar)[slot - 1] ?? null;
-}
-
 function getHotbarBounds() {
   const hotbar = getHotbarElement();
   if (!hotbar) return null;
