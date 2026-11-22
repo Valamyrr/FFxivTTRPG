@@ -1,6 +1,6 @@
 # Ability Automation Reference
 
-Use this reference when building or changing an ability's automation in FFXIV 5.5.0. Configure abilities through their sheets and linked effect editors. Direct flag edits and Script macros are a last resort for settings that have no editor yet.
+Use this reference when building or changing automation in the FFXIV system. Configure abilities and traits through their sheets and linked effect editors. Direct flag edits and Script macros are a last resort for settings that have no editor yet.
 
 Flag tables omit the `flags.ffxiv.` prefix unless they list full Active Effect change keys. For example, `critical.force` means `flags.ffxiv.critical.force`.
 
@@ -25,7 +25,7 @@ Flag tables omit the `flags.ffxiv.` prefix unless they list full Active Effect c
 
 Use Find (`Ctrl+F`) to search a full path, a short flag name, or a behavior such as "barrier" or "MP". Each row links to the relevant section.
 
-Sheet means there is a control on the ability or trait sheet. Change means an Active Effect change row. Advanced means the data is supported but has no dedicated sheet control. Internal flags are maintained by the system; UI flags belong to hotbar controls. Form only entries are input names, not stored flags.
+Sheet means there is a control on an Item sheet or the Active Effect editor's Automation tab. Change means an Active Effect change row. Advanced means the data is supported but has no dedicated sheet control. Internal flags are maintained by the system; UI flags belong to hotbar controls. Form only entries are input names, not stored flags.
 
 This index covers the system-owned `flags.ffxiv` paths read or written by the current source, including aliases and expanded change keys. Object and array flags are indexed by their root; fields within rule entries are described in the linked sections. `<statusId>` and `<normalizedResourceKey>` stand for dynamic keys. Foundry core flags and flags owned by other modules are outside this reference.
 
@@ -52,9 +52,9 @@ This index covers the system-owned `flags.ffxiv` paths read or written by the cu
 | `flags.ffxiv.baseFormula.override.formula` | Ability sheet | Form only | [Form input saved inside a baseFormula.override rule.](#baseformulaoverride) |
 | `flags.ffxiv.baseFormula.override.threshold` | Ability sheet | Form only | [Form input saved as a target HP condition, not as a threshold flag.](#baseformulaoverride) |
 | `flags.ffxiv.branch` | Linked effect | Advanced | [Ability branch that uses this effect.](#job-resources-and-ability-branches) |
-| `flags.ffxiv.branches` | Ability | Advanced | [Additional ability branch buttons.](#job-resources-and-ability-branches) |
+| `flags.ffxiv.branches` | Ability or Limit Break | Sheet | [Additional ability branch buttons.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.branchKey` | Linked effect | Advanced | [Alias for branch.](#job-resources-and-ability-branches) |
-| `flags.ffxiv.check.advantage` | Applicable effect | Advanced | [Additional advantage dice; also supported as a change row.](#checks-and-roll-formulas) |
+| `flags.ffxiv.check.advantage` | Applicable effect | Sheet / Advanced / Change | [Additional advantage dice; also supported as a change row.](#checks-and-roll-formulas) |
 | `flags.ffxiv.check.ignoreStatuses` | Applicable effect | Advanced | [Ignore specified status check penalties and supported interruption checks.](#checks-and-roll-formulas) |
 | `flags.ffxiv.check.penalty` | Actor effect | Advanced | [Check penalty; the largest absolute penalty applies.](#checks-and-roll-formulas) |
 | `flags.ffxiv.comboFromMigration20` | Item | Internal / Legacy | [Older combo conversion marker.](#system-managed-flags) |
@@ -71,8 +71,8 @@ This index covers the system-owned `flags.ffxiv` paths read or written by the cu
 | `flags.ffxiv.damageDice.alternate.minimum` | Effect change row | Change | [Minimum per die for alternate rolls.](#active-effect-change-keys) |
 | `flags.ffxiv.damageDice.base.minimum` | Effect change row | Change | [Minimum per die for base rolls.](#active-effect-change-keys) |
 | `flags.ffxiv.damageDice.direct.minimum` | Effect change row | Change | [Minimum per die for direct rolls.](#active-effect-change-keys) |
-| `flags.ffxiv.damageDice.minimum` | Applicable effect | Advanced | [Highest qualifying minimum per die; also a change key.](#checks-and-roll-formulas) |
-| `flags.ffxiv.damageFormula` | Applicable effect | Advanced | [Additional formula and flat terms, with optional roll/tag filters.](#checks-and-roll-formulas) |
+| `flags.ffxiv.damageDice.minimum` | Applicable effect | Sheet / Change | [Highest qualifying minimum per die; also a change key.](#checks-and-roll-formulas) |
+| `flags.ffxiv.damageFormula` | Applicable effect | Sheet | [Additional formula and flat terms, with optional roll, ability, and tag filters.](#checks-and-roll-formulas) |
 | `flags.ffxiv.damageFormula.alternate.flat` | Effect change row | Change | [Additional flat term for alternate rolls.](#active-effect-change-keys) |
 | `flags.ffxiv.damageFormula.alternate.formula` | Effect change row | Change | [Additional formula term for alternate rolls.](#active-effect-change-keys) |
 | `flags.ffxiv.damageFormula.alternate.requiredTags` | Effect change row | Change | [Any matching tag enables the corresponding formula/flat rows.](#active-effect-change-keys) |
@@ -91,18 +91,18 @@ This index covers the system-owned `flags.ffxiv` paths read or written by the cu
 | `flags.ffxiv.damageFormula.tags` | Effect change row | Change | [Alias for the corresponding requiredTags change key.](#active-effect-change-keys) |
 | `flags.ffxiv.directHit.options` | Applicable effect | Advanced | [Additional named direct-hit roll options.](#directhitoptions) |
 | `flags.ffxiv.effectAliases` | Active Effect | Advanced | [Additional effect identities, read alongside countsAs.](#effect-identity-application-and-expiration) |
-| `flags.ffxiv.effectKey` | Active Effect | Advanced | [Stable effect matching key.](#effect-identity-application-and-expiration) |
+| `flags.ffxiv.effectKey` | Active Effect | Sheet | [Stable effect matching key; editable on the Automation tab.](#effect-identity-application-and-expiration) |
 | `flags.ffxiv.eliteFoeEffect` | Active Effect | Internal | [System-maintained elite foe effect marker.](#system-managed-flags) |
-| `flags.ffxiv.encounterStart` | Owned Item | Advanced | [Rules at encounter start; requires Full automation.](#encounter-and-turn-rules) |
-| `flags.ffxiv.enmity.checkPenalty` | Active Effect | Advanced | [Enmity check penalty; normally assigned by status application.](#effect-identity-application-and-expiration) |
+| `flags.ffxiv.encounterStart` | Owned Item | Sheet / Advanced | [Rules at encounter start; editable on traits; requires Full automation.](#encounter-and-turn-rules) |
+| `flags.ffxiv.enmity.checkPenalty` | Active Effect | Effect editor | [Enmity check penalty; editable on the Automation tab.](#effect-identity-application-and-expiration) |
 | `flags.ffxiv.enmity.sourceActorUuid` | Active Effect | Advanced | [Actor that applied enmity; normally assigned by status application.](#effect-identity-application-and-expiration) |
 | `flags.ffxiv.enmityPhase` | Active Effect | Internal | [Combat, round, and phase in which enmity was applied.](#system-managed-flags) |
 | `flags.ffxiv.equivalentEffects` | Active Effect | Advanced | [Additional effect identities, read alongside countsAs.](#effect-identity-application-and-expiration) |
-| `flags.ffxiv.expireAtCombatantTurnEnd` | Active Effect | Advanced | [Remove at a specified combatant turn end; see descriptor format.](#effect-identity-application-and-expiration) |
+| `flags.ffxiv.expireAtCombatantTurnEnd` | Active Effect | Sheet / Advanced | [Remove at a specified combatant turn end; see descriptor format.](#effect-identity-application-and-expiration) |
 | `flags.ffxiv.expireAtCombatantTurnStart` | Active Effect | Advanced | [Remove at a specified combatant's later turn start; see descriptor format.](#effect-identity-application-and-expiration) |
-| `flags.ffxiv.expireAtRoundEnd` | Active Effect | Advanced | [Remove at round end.](#effect-identity-application-and-expiration) |
-| `flags.ffxiv.expireAtTurnEnd` | Active Effect | Advanced | [Remove at the affected actor's turn end.](#effect-identity-application-and-expiration) |
-| `flags.ffxiv.expireAtTurnStart` | Active Effect | Advanced | [Remove at the affected actor's turn start.](#effect-identity-application-and-expiration) |
+| `flags.ffxiv.expireAtRoundEnd` | Active Effect | Sheet / Advanced | [Remove at round end.](#effect-identity-application-and-expiration) |
+| `flags.ffxiv.expireAtTurnEnd` | Active Effect | Sheet / Advanced | [Remove at the affected actor's turn end.](#effect-identity-application-and-expiration) |
+| `flags.ffxiv.expireAtTurnStart` | Active Effect | Sheet / Advanced | [Remove at the affected actor's turn start.](#effect-identity-application-and-expiration) |
 | `flags.ffxiv.healing.application` | Source ability | Compatibility | [Older healing application rules; conditional formula replacements use baseFormula.override.](#healingapplication-compatibility) |
 | `flags.ffxiv.hotbar` | Actor | UI | [Actor hotbar slot assignments; edit through the hotbar.](#system-managed-flags) |
 | `flags.ffxiv.hotbarExtra` | User | UI | [Extra hotbar slot assignments when no actor is active.](#system-managed-flags) |
@@ -114,17 +114,19 @@ This index covers the system-owned `flags.ffxiv` paths read or written by the cu
 | `flags.ffxiv.jobResource.bonus` | Ability | Sheet | [Optional resource-spending bonus rolls.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.jobResource.bonuses` | Ability | Sheet | [Compatibility alias for jobResource.bonus.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.jobResource.clearOnAction` | Owned trait | Advanced | [Clear a volatile resource unless the action preserves or consumes it.](#job-resources-and-ability-branches) |
-| `flags.ffxiv.jobResource.key` | Resource Item | Sheet / Advanced | [Additional resource lookup key.](#job-resources-and-ability-branches) |
-| `flags.ffxiv.jobResource.keys` | Resource Item | Sheet / Advanced | [Additional resource keys.](#job-resources-and-ability-branches) |
+| `flags.ffxiv.jobResource.key` | Resource Item | Advanced | [Additional resource lookup key.](#job-resources-and-ability-branches) |
+| `flags.ffxiv.jobResource.keys` | Resource Item | Advanced | [Additional resource keys.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.jobResource.label` | Resource Item | Sheet / Advanced | [Preferred display label.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.jobResource.name` | Resource Item | Sheet / Advanced | [Resource name; editable on the trait sheet.](#job-resources-and-ability-branches) |
-| `flags.ffxiv.jobResource.names` | Resource Item | Sheet / Advanced | [Additional resource names.](#job-resources-and-ability-branches) |
+| `flags.ffxiv.jobResource.names` | Resource Item | Advanced | [Additional resource names.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.jobResource.onCritical` | Owned trait | Advanced | [Resource grants after critical checks.](#job-resources-and-ability-branches) |
+| `flags.ffxiv.jobResource.pool` | Resource Item | Sheet | [Shared resource pool for counting and spending distinct resources together.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.jobResource.preserveOnAction` | Ability | Advanced | [Resource names preserved by this action.](#job-resources-and-ability-branches) |
-| `flags.ffxiv.jobResource.resource` | Resource Item | Sheet / Advanced | [Additional resource lookup name.](#job-resources-and-ability-branches) |
-| `flags.ffxiv.jobResource.resources` | Resource Item | Sheet / Advanced | [Additional resource lookup names.](#job-resources-and-ability-branches) |
+| `flags.ffxiv.jobResource.resource` | Resource Item | Advanced | [Additional resource lookup name.](#job-resources-and-ability-branches) |
+| `flags.ffxiv.jobResource.resources` | Resource Item | Advanced | [Additional resource lookup names.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.jobResourceCosts` | Active Effect | Internal | [Resource costs recorded by an automation rule.](#system-managed-flags) |
 | `flags.ffxiv.jobResourceCosts.<normalizedResourceKey>` | Active Effect | Internal | [Recorded expenditure for a particular resource.](#system-managed-flags) |
+| `flags.ffxiv.limitationGroup` | Ability | Sheet | [Shared per-phase uses between abilities.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.jobSourceUuid` | Granted Item or pet Actor | Internal | [Original job grant UUID.](#system-managed-flags) |
 | `flags.ffxiv.knockedOutFromDefeated` | Combatant | Internal | [Knocked out status added by the defeated toggle.](#system-managed-flags) |
 | `flags.ffxiv.linkedAutoApply` | Active Effect | Internal | [Whether this linked effect was automatically applied.](#system-managed-flags) |
@@ -150,9 +152,9 @@ This index covers the system-owned `flags.ffxiv` paths read or written by the cu
 | `flags.ffxiv.mpCost.reduction.item` | Effect change row | Change | [Ability name/key filter for the MP cost override.](#active-effect-change-keys) |
 | `flags.ffxiv.mpCost.reduction.items` | Effect change row | Change | [Ability name/key filter for the MP cost override.](#active-effect-change-keys) |
 | `flags.ffxiv.mpCost.reduction.override` | Effect change row | Change | [Override MP cost for matching abilities.](#active-effect-change-keys) |
-| `flags.ffxiv.mpCost.reductions` | Owned Item or applicable effect | Advanced | [MP overrides or resource-spending cost reductions.](#mpcostreductions) |
+| `flags.ffxiv.mpCost.reductions` | Owned Item or applicable effect | Sheet / Advanced | [Resource-spending reductions are editable on traits; overrides and effect rules use advanced configuration.](#mpcostreductions) |
 | `flags.ffxiv.mpRecovery` | Owned Item or applicable effect | Advanced | [Adventurer Step MP recovery settings.](#mprecovery) |
-| `flags.ffxiv.mpRecovery.flat` | Owned Item or applicable effect | Advanced / Change | [Flat recovery adjustment.](#mprecovery) |
+| `flags.ffxiv.mpRecovery.flat` | Owned Item or applicable effect | Sheet / Advanced / Change | [Flat recovery adjustment; the effect editor exposes Additional MP Recovery.](#mprecovery) |
 | `flags.ffxiv.mpRecovery.maxRound` | Owned Item or applicable effect | Advanced | [Round condition on recovery settings and their change rows.](#mprecovery) |
 | `flags.ffxiv.mpRecovery.minRound` | Owned Item or applicable effect | Advanced | [Round condition on recovery settings and their change rows.](#mprecovery) |
 | `flags.ffxiv.mpRecovery.mult` | Owned Item or applicable effect | Advanced / Change | [Recovery multiplier.](#mprecovery) |
@@ -162,7 +164,7 @@ This index covers the system-owned `flags.ffxiv` paths read or written by the cu
 | `flags.ffxiv.mpRecovery.round` | Owned Item or applicable effect | Advanced | [Round condition on recovery settings and their change rows.](#mprecovery) |
 | `flags.ffxiv.mpRecovery.suppress` | Owned Item or applicable effect | Advanced / Change | [Suppress recovery.](#mprecovery) |
 | `flags.ffxiv.petrifiedAppliedTurn` | Actor | Internal | [Turn in which petrified was applied.](#system-managed-flags) |
-| `flags.ffxiv.requirementBypass` | Actor effect | Advanced | [Bypass specified named-effect requirements.](#job-resources-and-ability-branches) |
+| `flags.ffxiv.requirementBypass` | Actor effect | Sheet | [Bypass specified named-effect requirements.](#job-resources-and-ability-branches) |
 | `flags.ffxiv.selfAutoLinkedEffectsApplied` | Chat message | Internal | [Prevents repeated self-effect application.](#system-managed-flags) |
 | `flags.ffxiv.sourceItemUuid` | Active Effect | Internal | [Item that created the automation effect.](#system-managed-flags) |
 | `flags.ffxiv.stackCount` | Active Effect | Advanced | [Legacy fallback status stack count.](#effect-identity-application-and-expiration) |
@@ -179,7 +181,7 @@ This index covers the system-owned `flags.ffxiv` paths read or written by the cu
 | `flags.ffxiv.targetDefense.useLower` | Applicable effect | Advanced | [Use the lower target defense.](#checks-and-roll-formulas) |
 | `flags.ffxiv.thunderSpell` | Active Effect | Advanced | [Thunder-tagged effect identity used in source-based DoT handling.](#effect-identity-application-and-expiration) |
 | `flags.ffxiv.turnEnd` | Owned Item | Advanced | [Rules at turn end; requires Full automation.](#encounter-and-turn-rules) |
-| `flags.ffxiv.turnStart` | Owned Item | Advanced | [Rules at turn start; requires Full automation.](#encounter-and-turn-rules) |
+| `flags.ffxiv.turnStart` | Owned Item | Sheet / Advanced | [Rules at turn start; editable on traits; requires Full automation.](#encounter-and-turn-rules) |
 
 ## Building an ability
 
@@ -244,6 +246,10 @@ Set the following flags directly on the effect. Supported change-row equivalents
 | `damageFormula` | Applicable effect | Object/array, e.g. `[{ "formula": "1d6", "flat": 2, "rolls": ["base"] }]`. Appends both formula and flat terms. |
 
 For `damageFormula` and `damageDice.minimum`, optional `rolls` (aliases `rollTypes`, `appliesTo`) restrict to `base`, `direct`, or `alternate`. Omit to apply to all supported roll types. Optional `tags`/`tag` accepts a string or array and requires any matching ability tag. Dice minimums add Foundry's `minN` modifier to simple dice terms; terms already using certain dice modifiers are skipped.
+
+Open a linked effect from an ability or trait's **Effects → Linked Active Effects** list, or an actor effect from the actor sheet, and use its **Automation** tab to edit formula bonuses, flat bonuses, dice minimums, roll types, ability names, and tags. Blank filters apply to all matching rolls or abilities. Check advantage exposes an amount and tags; its advanced ability filters are preserved when saving. The same tab exposes effect expiration, requirement bypasses, MP recovery, and the Enmity check penalty.
+
+Use `abilities` (alias `abilityKeys`) to restrict a formula or dice minimum to named abilities, for example `[{ "formula": "2d6", "rolls": ["base"], "abilities": ["Enpi"] }]`.
 
 For `check.ignoreStatuses`, an object can use `statuses`/`status`/`ids`/`id`, optional `tags`/`tag`, and optional ability restrictions `abilities`/`abilityKeys`/`items`/`itemKeys`. Status IDs must match the system's IDs exactly.
 
@@ -326,6 +332,26 @@ The source Item can also hold object/array healing-application rules. The system
 
 The application reader supports `formula` or `amount`/`flat`/`value`, and `operation`/`mode`: default `add`, `override`/`replace`/`set`, `multiply`, or `subtract`/`consume`. It supports the HP conditions above and source Actor filters `sourceNames`/`sourceName`/`sourceActors`/`sourceActor`. Unlike the base-formula reader, its HP threshold parser also accepts numeric fractions such as `0.5`. Healing-application changes happen when applying healing, not when displaying the original roll.
 
+### Healer effects
+
+| Flag | Put it on | Behavior |
+| --- | --- | --- |
+| `healing.roll` | Ability | Identifies healing rolls for Fey Illumination and excludes damage-only card bonuses. |
+| `healing.resurrect` | Ability | Removes Knocked Out before applying its healing. |
+| `healing.outgoing`, `healing.incoming` | Active Effect | Object/array entries with `flat`, optional `abilities`, and `consume` modify applied healing. |
+| `healing.convertBarrier` | Active Effect | Converts the next healing barrier into additional healing, including every recipient of one AOE application. |
+| `healing.trigger.formula` | Active Effect | Resolves once at half Max HP or below, or at phase end. |
+| `healing.dice` | Active Effect | `{count, range}` allows nearby allies to change that many healing d6 results to 6. |
+| `damage.reroll` | Active Effect | Offers one optional damage-die reroll and consumes the effect when accepted. |
+| `critical.targetReduction` | Active Effect on target | Lowers the attacker's critical threshold. A shared AOE roll uses the smallest reduction among its targets. |
+| `expireOnAbilityUse`, `expireAtPhaseEnd` | Active Effect | Removes the effect after the next ability use or at phase end. |
+| `mpRecovery.firstRoundOfPhase` | Trait or Active Effect | Restricts its MP recovery bonus to the phase's first round. |
+| `phaseStart` | Trait | Uses the same rule format as `encounterStart` when the GM selects Next Phase. |
+
+Effect rules also accept `applyTo: "pet"` for active pets. Status rules use `action: "status"`, a status `key`, `amount`, and optional stack `max`.
+
+Next Phase resolves pending Excogitation, clears phase effects, resets ability limitations, and applies phase-start rules. Combat timing requires Full automation. Ground areas and pet movement still use the existing manual controls.
+
 ### Barriers
 
 Use Barrier on the Resources tab. Under Grant Barrier, choose Fixed HP or Healing Roll, then choose who to Protect. For Fixed HP, enter the barrier HP or formula. The sheet saves a resource rule that runs when the ability is used. This simple grant appears only in the Barrier panel, so it is not listed twice. Conditional or timed barrier rules remain in Advanced Automation.
@@ -364,6 +390,8 @@ This replaces the recipient's barrier and prevents further barrier grants until 
 
 Set this on an owned Item or applicable effect to change ability MP costs. Use an array of rules, a single rule object, or an object whose keys hold rules. The older name `mpCost.reduction` also works; `mpCost.reductions` takes precedence if both are set.
 
+Trait sheets provide an **Automation → MP Cost Reductions** editor for the resource, amount spent, MP reduction, minimum MP cost, application limit, and matching ability names. Amount spent, MP reduction, and application limit are positive integers; minimum MP cost can be zero. A reduction that makes an ability free still spends its configured resource. Overrides and tag filters use advanced configuration and are preserved when editing the visible fields.
+
 This rule spends one resource point to reduce the cost by one MP, up to twice:
 
 ```json
@@ -396,11 +424,19 @@ Put an object or array on an applicable effect, e.g. `[{ "amount": 1, "tags": ["
 | `jobResource.clearOnAction` | Owned trait Item | Resource string, rule object, or array. Clears the resource after an ability-like action unless preserved or consumed by its cost rules. Object fields: `resource`/`name`, and `preserveActions`/`exceptActions`/`exceptions`/`except` for action names. |
 | `jobResource.preserveOnAction` | Ability Item | Resource string or array of resource names that this action preserves. |
 | `jobResource.onCritical` | Owned trait Item | Object or array, e.g. `[{ "resource": "My Resource", "amount": 1, "minLevel": 30 }]`. Grants resource on a critical check through ability automation. `name` aliases `resource`; amount defaults to 1 and must be positive. |
-| `branches` | Ability Item | Object, array, or keyed entries defining extra ability branch buttons. Alias: `abilityBranches`. |
+| `branches` | Ability or Limit Break Item | Object, array, or keyed entries defining extra ability branch buttons. Alias: `abilityBranches`. |
 | `branch` | Item-linked Active Effect | Branch key selecting which branch uses this effect. Alias: `branchKey`. |
 | `requirementBypass` | Actor effect | Effect key string or array, e.g. `["My Required Effect"]`. Also accepts a wrapper with `keys`, `requirements`, or `effects`. Bypasses matching named-effect requirements. |
 
 Resource quantities are stored in `system.job_resource_status` on the resource Item. The `flags.ffxiv.jobResource` object only holds metadata; editing it does not grant resource points.
+
+Set `jobResource.pool` to the same name on distinct resources that can be spent together. For example, the three Sen traits use `"pool": "Sen"`. A cost of `Sen` counts all three and can consume them together, while a grant to `Sen: Getsu` still updates only that trait. Ordinary resource names and aliases continue to select the first matching Item.
+
+Trait sheets expose **Resource Name**, **Resource Display Label**, **Resource Boxes**, and **Resource Pool** on **Info**. Ability sheets expose **Shared Uses** on **Resources**, beside their normal limitation settings. Resource amounts and cost conditions remain editable under **Effects → Rules**, including **Requires**, **Requires Any Effect**, **Forbids**, **Turn Condition**, and **Natural d20 Result**. Clearing a condition removes that restriction. These settings follow the sheet's normal edit lock and ownership permissions.
+
+Abilities with the same `limitationGroup` share their per-phase uses. Give each ability its normal limitation text and matching `system.job_resources_max`. Using one marks a use on every ability in that group.
+
+Resource cost rules in `system.effect_rules` honor `requires`, `requiresAny`, and `forbids`, just like use rules. For example, a cost with `"forbids": ["Magicked Swordplay"]` is skipped while that effect is active. A rule with `"ownTurn": true` runs only during its actor's turn in a started combat. For `hitThreshold` rules, `"parity": "even"` or `"odd"` also checks the natural d20 result after the threshold check.
 
 This bonus costs one resource point and rolls `1d6`, increasing to `2d6` at level 50:
 
@@ -421,6 +457,8 @@ An ability branch with a separate roll:
 
 Branches use `key`, `name`/`label`, `buttonLabel`, `formula`/`rollFormula`, `description`/`text`, `applyEffects`, and the same level-based formula fields as bonus entries. A branch without a formula posts its description. A matching enabled branch-linked effect also enables branch effect application.
 
+The **Resources → Additional Ability Rolls** section on abilities, and the Additional Ability Rolls section on limit break sheets, edit each branch's key, name, button label, formula, description, and linked-effect application. Existing level-based formula overrides are preserved when editing these fields.
+
 ## Effect identity, application, and expiration
 
 All flags in this section live on Active Effects.
@@ -429,7 +467,7 @@ All flags in this section live on Active Effects.
 | --- | --- |
 | `effectKey` | Stable matching key. Matching also considers the effect name. |
 | `countsAs` | Extra matching identities; string or array of effect references. Aliases: `equivalentEffects`, `effectAliases`. |
-| `applyTo` | Application scope for Item-linked effects: `self`, `self_auto`, `target`, or `automation`. Default `target`. Use the Item sheet control to keep the associated application rules consistent. |
+| `applyTo` | Application scope for Item-linked effects: `self`, `self_auto`, `target`, or `automation`. Ability effects default to `target`. Use the ability sheet control to keep the associated application rules consistent. New trait effects use `self` with Foundry effect transfer enabled. |
 | `applyAction` | `add` or `remove` for Item-linked effect application; default `add`. |
 | `expireAtTurnStart` | `true`: delete at the affected actor's turn start. |
 | `expireAtTurnEnd` | `true`: delete at the affected actor's turn end. |
@@ -439,7 +477,7 @@ All flags in this section live on Active Effects.
 | `statusStacks.<statusId>` | Positive stack count for a stackable status carried by the effect. Use the status controls where available; stacking semantics vary by status. |
 | `stackCount` | Legacy fallback stack count. Prefer `statusStacks.<statusId>` for new content. |
 | `enmity.sourceActorUuid` | Source actor UUID used by enmity targeting/check penalties; normally generated by status application. |
-| `enmity.checkPenalty` | Numeric enmity check penalty; normally generated by status application. |
+| `enmity.checkPenalty` | Numeric enmity check penalty. The effect editor's Enmity Check Penalty accepts a negative number, such as `-8` for Enhanced Enmity. Clearing it removes the override and restores normal penalty handling. Status application can also generate this value. |
 | `thunderSpell` | `true` identifies a Thunder Spell effect for source-based DoT handling. Normal ability-tag application sets this automatically; source linkage still matters. |
 
 Combatant expiration descriptor:
@@ -482,6 +520,12 @@ Choose Custom where mode is ignored. MP cost change keys are case-sensitive; use
 ## Encounter and turn rules
 
 Owned Items can hold `encounterStart`, `turnStart`, and `turnEnd`. Each accepts a rule object, an array, or `{ "rules": [...] }`. These require **Full** automation. Turn rules skip actors with knocked out, comatose, or death statuses.
+
+Trait sheets provide **Encounter Start Rules** and **Turn Start Rules** on **Automation**. They support named-effect grants/removals, named job-resource changes, and `requires`, `requiresAny`, and `forbids` conditions. Granted effects can carry expiration flags, durations, and tag-filtered check advantage.
+
+The shared editor also displays ability-only fields. Timing-rule readers do not use `trigger`, `threshold`, `parity`, `ownTurn`, `applyTo`, or resource-expenditure conditions. They do not implement the `toggle` action or `max` resource operation. Use the actions and operations listed below. Timing resource rules operate on resource-bearing Items, including pools; they do not directly change actor HP, MP, or barriers.
+
+Closing a trait's edit mode removes empty/default encounter rules, turn-start rules, and MP cost reduction rows. Configured rules and wrapper metadata are retained. `turnEnd` remains an advanced setting without a trait sheet editor.
 
 ```json
 [{ "action": "resource", "resource": "My Resource",
@@ -534,6 +578,8 @@ The examples were checked against the source, without live-world testing.
 | Source file | Relevant functions |
 | --- | --- |
 | [Item automation](../module/items/item.mjs) | `_getApplicableEffects`, `_getActiveEffectCheckAdvantageDice`, `_getDamageDiceMinimum`, `_collectDamageFormulaFlagTerms`, `_collectDamageFormulaChangeTerms`, `_getDocumentForceCriticalRules`, `_getDirectHitOptionEntries`, `_getMPCostReductionEntriesFrom`, `_getBaseRollFormulaOverride`, `_getRequirementBypassRefs` |
+| [Item sheet controls](../module/items/item-sheet.mjs) | `_getCurrentEffectRules`, `_getEffectRulesUpdate`, `_setEffectRuleField`, `_onEditAbilityFlagEntry`, `_removeEmptyTraitAutomationRules` |
+| [Effect editor](../module/active-effect-config.mjs) | `_preparePartContext`, `_processFormData`, `_editModifier` |
 | [Damage/healing and linked effects](../module/ffxiv.mjs) | `getActorDamageEffectModifiers`, `applyDamageApplicationModifiers`, `getHealingWithEffects`, `getActorDamageMpRecovery`, `prepareLinkedActiveEffectDuration` |
 | [Combat](../module/combat.mjs) | `_getAdventurerStepMpRecovery`, `_getJobAutomationRules`, combatant expiration readers |
 | [Status effects](../module/helpers/status-effects.mjs) | `getActorCheckPenalty`, `getTargetStatusAdvantage`, status stack readers |

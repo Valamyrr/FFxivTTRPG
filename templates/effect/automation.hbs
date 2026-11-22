@@ -1,0 +1,83 @@
+<section class="tab standard-form {{tab.cssClass}}" data-tab="automation" data-group="sheet">
+  <input type="hidden" name="automation.present" value="true" />
+  <div class="form-group">
+    <label>{{localize "FFXIV.EffectAutomation.Key"}}</label>
+    <div class="form-fields"><input name="automation.effectKey" type="text" value="{{effectKey}}" /></div>
+  </div>
+  <div class="form-group">
+    <label>{{localize "FFXIV.EffectAutomation.Expiry"}}</label>
+    <div class="form-fields">
+      <select name="automation.expiry">
+        <option value="">{{localize "FFXIV.None"}}</option>
+        <option value="expireAtTurnStart" {{#if (eq expiry "expireAtTurnStart")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.TurnStart"}}</option>
+        <option value="expireAtTurnEnd" {{#if (eq expiry "expireAtTurnEnd")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.TurnEnd"}}</option>
+        <option value="expireAtRoundEnd" {{#if (eq expiry "expireAtRoundEnd")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.RoundEnd"}}</option>
+        <option value="expireAtCombatantTurnEnd" {{#if (eq expiry "expireAtCombatantTurnEnd")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.CurrentTurnEnd"}}</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>{{localize "FFXIV.EffectAutomation.RequirementBypass"}}</label>
+    <div class="form-fields"><input name="automation.requirementBypass" type="text" value="{{requirementBypass}}" /></div>
+    <p class="hint">{{localize "FFXIV.EffectAutomation.ListHint"}}</p>
+  </div>
+  <div class="form-group">
+    <label>{{localize "FFXIV.EffectAutomation.MPRecovery"}}</label>
+    <div class="form-fields"><input name="automation.mpRecovery" type="number" value="{{mpRecovery}}" /></div>
+  </div>
+  <div class="form-group">
+    <label>{{localize "FFXIV.EffectAutomation.EnmityPenalty"}}</label>
+    <div class="form-fields"><input name="automation.enmityPenalty" type="number" value="{{enmityPenalty}}" /></div>
+    <p class="hint">{{localize "FFXIV.EffectAutomation.EnmityPenaltyHint"}}</p>
+  </div>
+  {{#each modifierGroups as |group|}}
+    <fieldset>
+      <legend>{{localize group.label}}</legend>
+      {{#each group.entries as |entry index|}}
+        <fieldset>
+          {{#if group.formula}}
+            <div class="form-group">
+              <label>{{localize "FFXIV.Abilities.BaseFormula"}}</label>
+              <div class="form-fields"><formula-input name="automation.{{group.path}}.{{index}}.formula" context="ffxiv-ability" value="{{entry.formula}}"></formula-input></div>
+            </div>
+            <div class="form-group">
+              <label>{{localize "FFXIV.EffectAutomation.FlatBonus"}}</label>
+              <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.flat" type="number" step="any" value="{{entry.flat}}" /></div>
+            </div>
+          {{/if}}
+          {{#if group.minimum}}
+            <div class="form-group">
+              <label>{{localize "FFXIV.EffectAutomation.DiceMinimum"}}</label>
+              <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.minimum" type="number" min="1" value="{{entry.minimum}}" /></div>
+            </div>
+          {{/if}}
+          {{#if group.advantage}}
+            <div class="form-group">
+              <label>{{localize "FFXIV.EffectAutomation.Advantage"}}</label>
+              <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.amount" type="number" min="0" value="{{entry.amount}}" /></div>
+            </div>
+          {{/if}}
+          {{#unless group.advantage}}
+          <div class="form-group">
+            <label>{{localize "FFXIV.EffectAutomation.Rolls"}}</label>
+            <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.rolls" type="text" value="{{entry.rollsText}}" placeholder="base, direct, alternate" /></div>
+            <p class="hint">{{localize "FFXIV.EffectAutomation.RollsHint"}}</p>
+          </div>
+          <div class="form-group">
+            <label>{{localize "FFXIV.Abilities.CriticalAbilities"}}</label>
+            <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.abilities" type="text" value="{{entry.abilitiesText}}" /></div>
+            <p class="hint">{{localize "FFXIV.EffectAutomation.AbilitiesHint"}}</p>
+          </div>
+          {{/unless}}
+          <div class="form-group">
+            <label>{{localize "FFXIV.Abilities.CriticalTags"}}</label>
+            <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.tags" type="text" value="{{entry.tagsText}}" /></div>
+            <p class="hint">{{localize "FFXIV.EffectAutomation.TagsHint"}}</p>
+          </div>
+          <button type="button" data-action="removeModifier" data-flag="{{group.path}}" data-index="{{index}}">{{localize "FFXIV.Abilities.StatusRemove"}}</button>
+        </fieldset>
+      {{/each}}
+      <button type="button" data-action="addModifier" data-flag="{{group.path}}">{{localize "FFXIV.EffectAutomation.AddModifier"}}</button>
+    </fieldset>
+  {{/each}}
+</section>

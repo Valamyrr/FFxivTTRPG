@@ -168,6 +168,15 @@ FFXIV.base_tags_abilities = [
   "FFXIV.Tags.Song",
   "FFXIV.Tags.Ninjutsu",
   "FFXIV.Tags.Technique",
+  "FFXIV.Tags.Katana",
+  "FFXIV.Tags.Iaijutsu",
+  "FFXIV.Tags.Getsu",
+  "FFXIV.Tags.Ka",
+  "FFXIV.Tags.Setsu",
+  "FFXIV.Tags.Card",
+  "FFXIV.Tags.AstralDraw",
+  "FFXIV.Tags.UmbralDraw",
+  "FFXIV.Tags.MinorArcana",
   "FFXIV.Tags.Pet",
   "FFXIV.Tags.StationaryMarker",
   "FFXIV.Tags.MobileMarker",
@@ -177,7 +186,9 @@ FFXIV.base_tags_traits = [
   "FFXIV.Tags.Trait",
   "FFXIV.Tags.Enhancement",
   "FFXIV.Tags.JobResource",
+  "FFXIV.Tags.Pet",
   "FFXIV.Tags.Machine",
+  "FFXIV.Tags.Polarity",
 ];
 
 FFXIV.base_tags_consumables = [

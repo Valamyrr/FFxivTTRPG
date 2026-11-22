@@ -1,47 +1,64 @@
-<ol class="items-list effects-list">
-  {{#each effects as |section sid| }}
-    <li class="items-header flexrow" data-effect-type="{{section.type}}">
-      <h3 class="item-name effect-name flexrow">{{localize section.label}}</h3>
-      <div class="effect-source">{{localize "FFXIV.Item.Source"}}</div>
-      <div class="effect-source">{{localize "EFFECT.TABS.duration"}}</div>
-      <div class="item-controls effect-controls flexrow">
-        <a class="effect-control"
-           data-action="create"
-           title="{{localize 'DOCUMENT.Create' type="Effect"}}">
-          <i class="fas fa-plus"></i> {{localize "DOCUMENT.New" type="Effect"}}
-        </a>
-      </div>
-    </li>
-    <ol class="item-list">
-      {{#each section.effects as |effect| }}
-        <li class="item effect flexrow"
-            data-effect-id="{{effect.id}}"
-            data-parent-id="{{effect.parent.id}}">
-          <div class="item-name effect-name flexrow">
-            <img class="item-image" src="{{effect.icon}}" alt="{{effect.name}}" width="24" height="24" />
-            <h4>{{effect.name}}</h4>
-          </div>
-          <div class="effect-source">{{effect.sourceName}}</div>
-          <div class="effect-duration">{{effect.duration.label}}</div>
-          <div class="item-controls effect-controls flexrow">
-            <a class="effect-control"
-               data-action="toggle"
-               title="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}">
-              <i class="fas {{#if effect.disabled }}fa-check{{else}}fa-times{{/if}}"></i>
-            </a>
-            <a class="effect-control"
-               data-action="edit"
-               title="{{localize 'DOCUMENT.Update' type="Effect"}}">
-              <i class="fas fa-edit"></i>
-            </a>
-            <a class="effect-control"
+<div class="status-effects-editor">
+  <div class="status-effects-header">
+    <label class="resource-label">{{ localize "FFXIV.Abilities.LinkedActiveEffects" }}</label>
+    {{#if itemEditMode}}
+    <button type="button" class="effect-control linked-effect-create" data-action="create">+</button>
+    {{/if}}
+  </div>
+  <ul class="status-effect-list ability-linked-effect-list">
+    {{#each abilityLinkedEffects as |effect| }}
+      <li class="{{#if ../traitEffects}}trait-linked-effect{{else}}{{#if effect.isAutomation}}ability-linked-effect-automation{{/if}}{{/if}}"
+          data-effect-id="{{effect.id}}">
+        <div class="ability-effect-name">
+          <img src="{{effect.icon}}" alt="{{effect.name}}" />
+          <span>{{effect.name}}</span>
+        </div>
+        {{#unless ../traitEffects}}
+          <select class="ffxiv-text-center ability-effect-scope"
+                  data-effect-id="{{effect.id}}">
+            <option value="target" {{#if (eq effect.applyTo "target")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToTarget"}}</option>
+            <option value="self" {{#if (eq effect.applyTo "self")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToSelf"}}</option>
+            <option value="self_auto" {{#if (eq effect.applyTo "self_auto")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToSelfAuto"}}</option>
+            <option value="automation" {{#if (eq effect.applyTo "automation")}}selected{{/if}}>{{localize "FFXIV.Abilities.ApplyToAutomation"}}</option>
+          </select>
+          {{#unless effect.isAutomation}}
+            <select class="ffxiv-text-center ability-effect-action"
+                    data-effect-id="{{effect.id}}">
+              <option value="add" {{#if (eq effect.applyAction "add")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusAdd"}}</option>
+              <option value="remove" {{#if (eq effect.applyAction "remove")}}selected{{/if}}>{{localize "FFXIV.Abilities.StatusRemove"}}</option>
+            </select>
+          {{/unless}}
+        {{/unless}}
+        <div class="effect-controls">
+          {{#if ../traitEffects}}
+            {{#if ../itemEditMode}}
+              <a class="effect-control"
+                 data-action="toggle"
+                 title="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}"
+                 aria-label="{{localize 'FFXIV.CharacterSheet.ToggleEffect'}}">
+                <i class="fas {{#if effect.disabled}}fa-toggle-off{{else}}fa-toggle-on{{/if}}"></i>
+              </a>
+            {{/if}}
+          {{/if}}
+          <a class="effect-control"
+             data-action="edit"
+             title="{{localize 'DOCUMENT.Update' type=(localize 'DOCUMENT.ActiveEffect')}}">
+            <i class="fas fa-edit"></i>
+          </a>
+          {{#if ../itemEditMode}}
+            {{#if effect.canDelete}}
+            <a class="effect-control effect-control-delete"
                data-action="delete"
-               title="{{localize 'DOCUMENT.Delete' type="Effect"}}">
+               title="{{localize 'DOCUMENT.Delete' type=(localize 'DOCUMENT.ActiveEffect')}}">
               <span class="delete-icon">×</span>
             </a>
-          </div>
-        </li>
-      {{/each}}
-    </ol>
-  {{/each}}
-</ol>
+            {{/if}}
+          {{/if}}
+        </div>
+      </li>
+    {{/each}}
+    {{#unless abilityLinkedEffects.length}}
+      <li class="status-effect-list-empty">{{localize "FFXIV.CharacterSheet.NoEffects"}}</li>
+    {{/unless}}
+  </ul>
+</div>

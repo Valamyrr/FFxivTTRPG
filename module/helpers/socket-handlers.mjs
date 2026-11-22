@@ -89,13 +89,11 @@ export function registerSystemSocketHooks() {
           case "applyResourceRule": {
             const sourceItem = await resolveItemFromReference(data.sourceItemUuid);
             if (!sourceItem || !isAbilityAutomationEnabled()) break;
-            // Only execute resource rules that are actually configured on the item.
             const rule = sourceItem
               ._getEffectRules()
               .find(
                 (entry) =>
-                  entry.action === "resource" &&
-                  entry.applyTo === "target" &&
+                  ["target", "pet"].includes(entry.applyTo) &&
                   JSON.stringify(entry) === JSON.stringify(data.rule),
               );
             if (!rule) break;

@@ -20,6 +20,7 @@ import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
 import { createChatMessage } from "./helpers/chat-message.mjs";
 import { broadcastDutyCommenced } from "./helpers/duty-commenced.mjs";
 import { getSummonerCombatant } from "./helpers/summons.mjs";
+import { endHealingPhase } from "./helpers/healing.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
 const ENTER_INSTANCE_SOUND = "systems/ffxiv/assets/sfx/ffxiv-enter-instance.ogg";
@@ -67,6 +68,21 @@ export function getTurnStep(combatant) {
 }
 
 export class FFXIVCombat extends Combat {
+  async startPhase() {
+    if (!game.user.isGM || !this.started) return;
+    await endHealingPhase(this._getUniqueCombatActors().values());
+    await this._resetActorLimitations();
+    const round = this.round + 1;
+    await this.update({ round, turn: 0, "flags.ffxiv.phaseRound": round });
+    for (const actor of this._getUniqueCombatActors().values()) {
+      for (const item of actor.items ?? []) {
+        for (const rule of this._getJobAutomationRules(item, "phaseStart")) {
+          if (this._canApplyEncounterStartRule(actor, rule)) await this._applyEncounterStartRule(actor, item, rule);
+        }
+      }
+    }
+  }
+
   /** @override */
   async startCombat() {
     return this._withActorSheetScroll(async () => {
@@ -77,6 +93,7 @@ export class FFXIVCombat extends Combat {
       else if (resetMode === "limitations") await this._resetActorLimitations();
       await this._resetEncounterStatusFlags();
       const startedCombat = await super.startCombat();
+      await this.update({ "flags.ffxiv.phaseRound": 1 });
       if (game.user?.isGM) {
         playEnterInstanceSound();
         broadcastDutyCommenced();
@@ -678,6 +695,7 @@ export class FFXIVCombat extends Combat {
   _mpRecoveryEntryApplies(data) {
     if (!data || typeof data !== "object") return true;
     const round = Number(this.round ?? 0);
+    if (data.firstRoundOfPhase === true && round !== Number(this.flags?.ffxiv?.phaseRound ?? 1)) return false;
     const exactRound = Number(data.round);
     if (Number.isFinite(exactRound) && round !== exactRound) return false;
     const minRound = Number(data.minRound);

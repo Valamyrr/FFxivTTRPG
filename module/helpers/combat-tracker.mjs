@@ -143,6 +143,19 @@ export function renderCombatTrackerOrderControls(app, html) {
   if (!element) return;
 
   const combat = app?.viewed ?? app?.combat ?? game.combat;
+  const controls = element.querySelector(".combat-controls");
+  if (game.user.isGM && combat?.started && controls && !controls.querySelector(".ffxiv-next-phase")) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ffxiv-next-phase";
+    button.textContent = game.i18n.localize("FFXIV.Abilities.NextPhase");
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try { await combat.startPhase(); }
+      finally { button.disabled = false; }
+    });
+    controls.appendChild(button);
+  }
   const turns = combat?.turns ?? [];
   if (!turns.length) return;
 

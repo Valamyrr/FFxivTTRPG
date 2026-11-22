@@ -328,8 +328,9 @@
       box-shadow: inset 0 0 0 1px rgba(255, 234, 174, 0.12), 0 2px 8px rgba(0, 0, 0, 0.42);
     }
 
-    &:has(.ability-sheet-tabs):not(:has(.minion-mount-sheet)):not(:has(.dialog)) {
-      min-width: 720px;
+    &.application:has(.ability-sheet-tabs):not(:has(.minion-mount-sheet)):not(:has(.dialog)),
+    &.application:has(.trait-item-sheet) {
+      min-width: 760px;
     }
 
     &:has(.consumable-item-sheet),
@@ -603,6 +604,13 @@
       color: GrayText;
     }
 
+    .ability-panel-title {
+      align-items: center;
+      display: flex;
+      gap: 6px;
+      min-width: 0;
+    }
+
     .ability-panel-header h2 {
       border: 0;
       color: var(--text-color);
@@ -694,6 +702,16 @@
     .ability-form-grid formula-input input {
       border: 0;
       box-shadow: none;
+    }
+
+    .ability-branch-list .ability-form-grid input:not([type="checkbox"]),
+    .ability-branch-list .ability-form-grid textarea,
+    .ability-branch-list .ability-form-grid formula-input {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .ability-branch-list .ability-form-grid formula-input input {
+      background: transparent;
     }
 
     .ability-sheet-card .ability-form-grid input,
@@ -966,6 +984,7 @@
     .ability-effect-name img {
       border: 1px solid rgba(216, 188, 112, 0.35);
       border-radius: 4px;
+      flex: 0 0 24px;
       height: 24px;
       object-fit: cover;
       width: 24px;
@@ -1181,6 +1200,10 @@
       grid-template-columns: minmax(10em, 1fr) 8.75em auto;
     }
 
+    .ability-linked-effect-list li.trait-linked-effect {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
     .status-effect-list li.status-effect-list-empty {
       grid-template-columns: minmax(0, 1fr);
     }
@@ -1199,6 +1222,15 @@
 
     .ability-automation-edit-list + .status-effects-header {
       margin-top: 14px;
+    }
+
+    .ability-automation-editor > .status-effects-editor {
+      background: none;
+      border: 0;
+      box-shadow: none;
+      margin: 14px 0 0;
+      padding: 0;
+      width: 100%;
     }
 
     .ability-automation-heading {
@@ -1340,12 +1372,14 @@
     .remove-status-effect,
     .remove-effect-requirement,
     .remove-effect-rule,
+    .ability-flag-entry-control[data-entry-action="remove"],
     .effect-control-delete .delete-icon {
       color: #ff3b30;
     }
 
     .remove-effect-requirement,
-    .remove-effect-rule {
+    .remove-effect-rule,
+    .ability-flag-entry-control[data-entry-action="remove"] {
       border-color: rgba(255, 59, 48, 0.45);
       color: #ff3b30;
       font-weight: 700;
@@ -1354,12 +1388,14 @@
     .remove-status-effect:hover,
     .remove-effect-requirement:hover,
     .remove-effect-rule:hover,
+    .ability-flag-entry-control[data-entry-action="remove"]:hover,
     .effect-control-delete:hover .delete-icon {
       color: #ff6b61;
     }
 
     .remove-effect-requirement:hover,
-    .remove-effect-rule:hover {
+    .remove-effect-rule:hover,
+    .ability-flag-entry-control[data-entry-action="remove"]:hover {
       border-color: rgba(255, 107, 97, 0.65);
       color: #ff6b61;
     }
@@ -1557,9 +1593,11 @@
     }
 
     .automation-help {
-      display: inline-block;
+      align-items: center;
+      display: inline-flex;
+      line-height: 1;
       position: relative;
-      vertical-align: text-bottom;
+      vertical-align: middle;
       z-index: 2;
     }
 
@@ -1649,6 +1687,15 @@
       justify-content: center;
       position: relative;
       width: 16px;
+    }
+
+    &.item-locked .ability-automation-checkbox-control {
+      height: auto;
+      width: auto;
+    }
+
+    &.item-locked .ability-automation-checkbox .checkmark {
+      display: none;
     }
 
     .ability-automation-fields .ability-automation-checkbox input[type="checkbox"] {
@@ -1807,6 +1854,20 @@
 
     .job-attribute-section {
       margin: 12px 0;
+    }
+
+    &.trait-item-sheet {
+      .tab {
+        text-align: left;
+      }
+
+      .trait-automation-content {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+      }
     }
 
     .job-attribute-section h2 {

@@ -1,4 +1,4 @@
-<div class="{{cssClass}} item-modern-sheet">
+<div class="{{cssClass}} item-modern-sheet trait-item-sheet">
   {{#if editable }}
   <button type="button"
           class="actor-edit-toggle item-edit-toggle {{#if itemEditMode }}active{{/if }}"
@@ -14,7 +14,7 @@
          {{#if itemEditMode }}
          data-edit="img"
          {{/if}}
-         title="{{item.name}}"  alt="" width="32" height="32" />
+         title="{{item.name}}"  alt="" width="42" height="42" />
     <div class="header-fields">
       <h1 class="charname">
         <input name="name" type="text" value="{{item.name}}" placeholder="Name" />
@@ -28,95 +28,188 @@
       {{/if}}
     </div>
   </header>
+  <hr>
   {{! Sheet Body }}
   <section class="sheet-body">
-    {{! Attributes Tab }}
-    <div class="attributes item-details-card">
-      {{! Tags}}
-      <div class="tags-container">
-        <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label>
-        {{> "systems/ffxiv/templates/item/parts/action-tags.hbs"}}
-      </div>
-      <div class="resources grid grid-2col">
-        <div class="resource flex-group-center">
-          <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <select class="ffxiv-text-center"
-                    name="system.activable"
-                    data-dtype="Boolean">
-              <option value="true" {{#if item.system.activable}}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}</option>
-              <option value="false" {{#unless item.system.activable}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}</option>
-            </select>
-          </div>
+    <nav class="sheet-tabs tabs item-sheet-tabs" data-group="primary">
+      <a class="item" data-tab="description">
+        <i class="fa-solid fa-circle-info"></i>
+        {{localize "FFXIV.CharacterSheet.Info"}}
+      </a>
+      <a class="item" data-tab="automation">
+        <i class="fa-solid fa-gears"></i>
+        {{localize "FFXIV.EffectAutomation.Title"}}
+      </a>
+      <a class="item" data-tab="effects">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        {{localize "FFXIV.CharacterSheet.Effects"}}
+      </a>
+      <a class="item" data-tab="summons">
+        <i class="fa-solid fa-users"></i>
+        {{localize "FFXIV.Abilities.Summons"}}
+      </a>
+    </nav>
+    <div class="tab" data-group="primary" data-tab="description">
+      {{! Attributes Tab }}
+      <div class="attributes item-details-card">
+        {{! Tags}}
+        <div class="tags-container">
+          <label for="system.tags" class="resource-label">{{ localize "FFXIV.Tags.Tags" }}</label>
+          {{> "systems/ffxiv/templates/item/parts/action-tags.hbs"}}
         </div>
-        <div class="resource flex-group-center">
-          <label for="system.job_resources_max" class="resource-label">{{ localize "FFXIV.Abilities.JobResourceMax" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="system.job_resources_max"
-                   type="number"
-                   min="0"
-                   value="{{item.system.job_resources_max}}" />
-          </div>
-        </div>
-        <div class="resource flex-group-center">
-          <label for="flags.ffxiv.jobResource.name" class="resource-label">{{ localize "FFXIV.Abilities.JobResourceName" }}</label>
-          <div class="resource-content flexrow flex-center flex-between">
-            <input name="flags.ffxiv.jobResource.name"
-                   type="text"
-                   value="{{flags.ffxiv.jobResource.name}}" />
-          </div>
-        </div>
-      </div>
-      <hr>
-      {{! Modifiers}}
-      <div class="tags-container">
-        <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label>
-        <button type="button" class="add-modifier">+</button>
-        <ul class="tag-list">
-          {{#each system.modifiers as |modifier index| }}
-            <li>
-              <select class="ffxiv-text-center modifier-name"
-                      data-index="{{index}}">
-                {{#each ../config.attributes as |m| }}
-                  <option value="{{m.label}}"
-                          {{#if (eq m.label modifier.[0]) }}
-                          selected
-                          {{/if}}>{{ localize m.label }}
-                  </option>
-                {{/each}}
-                {{#each ../config.characteristics as |m| }}
-                  <option value="{{m.label}}"
-                          {{#if (eq m.label modifier.[0]) }}
-                          selected
-                          {{/if}}>{{ localize m.label }}
-                  </option>
-                {{/each}}
+        <div class="resources grid grid-2col">
+          <div class="resource flex-group-center">
+            <label for="system.activable" class="resource-label">{{ localize "FFXIV.Traits.Activable" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <select class="ffxiv-text-center"
+                      name="system.activable"
+                      data-dtype="Boolean">
+                <option value="true" {{#if item.system.activable}}selected{{/if}}>{{ localize "FFXIV.Dialogs.Yes" }}</option>
+                <option value="false" {{#unless item.system.activable}}selected{{/unless}}>{{ localize "FFXIV.Dialogs.No" }}</option>
               </select>
-              <input type="text"
-                     class="modifier-value"
-                     value="{{modifier.[1]}}"
-                     data-index="{{index}}">
-              <button type="button" class="remove-modifier" data-index="{{index}}">x</button>
-            </li>
-          {{/each}}
-        </ul>
-      </div>
-      <hr>
-      <section class="item-modern-panel item-description-panel">
-        <header class="ability-panel-header">
-          <h2>{{ localize "FFXIV.Item.Description" }}</h2>
-        </header>
-        {{! Editors must receive enriched text data from getData to properly handle rolls }}
-        {{#if itemEditMode }}
-          <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
-        {{else}}
-          {{#if (hasContent enrichedDescription) }}
-            <div class="profile-paragraph-block item-description-readonly">{{{enrichedDescription}}}</div>
+            </div>
+          </div>
+          <div class="resource flex-group-center">
+            <label for="system.job_resources_max" class="resource-label">{{ localize "FFXIV.Abilities.JobResourceMax" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="system.job_resources_max"
+                     type="number"
+                     min="0"
+                     value="{{item.system.job_resources_max}}" />
+            </div>
+          </div>
+          <div class="resource flex-group-center">
+            <label for="flags.ffxiv.jobResource.name" class="resource-label">{{ localize "FFXIV.Abilities.JobResourceName" }}</label>
+            <div class="resource-content flexrow flex-center flex-between">
+              <input name="flags.ffxiv.jobResource.name"
+                     type="text"
+                     value="{{flags.ffxiv.jobResource.name}}" />
+            </div>
+          </div>
+          <div class="resource flex-group-center">
+            <label for="flags.ffxiv.jobResource.pool" class="resource-label">
+              <span>
+                {{localize "FFXIV.Abilities.JobResourcePool"}}
+                {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.JobResourcePoolHint" hover=true}}
+              </span>
+            </label>
+            <input name="flags.ffxiv.jobResource.pool" type="text" value="{{flags.ffxiv.jobResource.pool}}" />
+          </div>
+          <div class="resource flex-group-center">
+            <label for="flags.ffxiv.jobResource.label" class="resource-label">{{localize "FFXIV.Abilities.JobResourceLabel"}}</label>
+            <input name="flags.ffxiv.jobResource.label" type="text" value="{{flags.ffxiv.jobResource.label}}" />
+          </div>
+        </div>
+        <hr>
+        {{! Modifiers}}
+        <div class="tags-container">
+          <label for="system.modifiers" class="resource-label">{{ localize "FFXIV.Item.Modifiers" }}</label>
+          <button type="button" class="add-modifier">+</button>
+          <ul class="tag-list">
+            {{#each system.modifiers as |modifier index| }}
+              <li>
+                <select class="ffxiv-text-center modifier-name"
+                        data-index="{{index}}">
+                  {{#each ../config.attributes as |m| }}
+                    <option value="{{m.label}}"
+                            {{#if (eq m.label modifier.[0]) }}
+                            selected
+                            {{/if}}>{{ localize m.label }}
+                    </option>
+                  {{/each}}
+                  {{#each ../config.characteristics as |m| }}
+                    <option value="{{m.label}}"
+                            {{#if (eq m.label modifier.[0]) }}
+                            selected
+                            {{/if}}>{{ localize m.label }}
+                    </option>
+                  {{/each}}
+                </select>
+                <input type="text"
+                       class="modifier-value"
+                       value="{{modifier.[1]}}"
+                       data-index="{{index}}">
+                <button type="button" class="remove-modifier" data-index="{{index}}">x</button>
+              </li>
+            {{/each}}
+          </ul>
+        </div>
+        <hr>
+        <section class="item-modern-panel item-description-panel">
+          <header class="ability-panel-header">
+            <h2>{{ localize "FFXIV.Item.Description" }}</h2>
+          </header>
+          {{! Editors must receive enriched text data from getData to properly handle rolls }}
+          {{#if itemEditMode }}
+            <prose-mirror name="system.description" value="{{source.description}}" document-uuid="{{item.uuid}}" class="sized"></prose-mirror>
           {{else}}
-            <span class="item-locked-field item-locked-field-empty">{{localize "FFXIV.None"}}</span>
+            {{#if (hasContent enrichedDescription) }}
+              <div class="profile-paragraph-block item-description-readonly">{{{enrichedDescription}}}</div>
+            {{else}}
+              <span class="item-locked-field item-locked-field-empty">{{localize "FFXIV.None"}}</span>
+            {{/if}}
           {{/if}}
-        {{/if}}
-      </section>
+        </section>
+      </div>
+    </div>
+    <div class="tab" data-group="primary" data-tab="automation">
+      <div class="trait-automation-content">
+        {{> "systems/ffxiv/templates/item/parts/effect-rules.hbs" entries=encounterRuleEntries rulePath="flags.ffxiv.encounterStart" ruleTitle="FFXIV.Abilities.EncounterStartRules" compactEmpty=true }}
+        {{> "systems/ffxiv/templates/item/parts/effect-rules.hbs" entries=turnStartRuleEntries rulePath="flags.ffxiv.turnStart" ruleTitle="FFXIV.Abilities.TurnStartRules" compactEmpty=true }}
+        <section class="item-modern-panel">
+          <header class="ability-panel-header">
+            <div class="ability-panel-title">
+              <h2>{{localize "FFXIV.Abilities.MPCostReductions"}}</h2>
+              {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.MPCostReductionsHint" hover=true}}
+            </div>
+            {{#if itemEditMode}}
+              <button type="button" class="ability-flag-entry-control" data-flag="mpCost.reductions" data-entry-action="add">+</button>
+            {{/if}}
+          </header>
+          <ul class="status-effect-list ability-automation-list ability-automation-edit-list">
+            {{#each mpCostReductionEntries as |entry index|}}
+              <li>
+                <div class="ability-automation-fields ability-form-grid ability-form-grid-2">
+                  <label>
+                    <span>{{localize "FFXIV.Abilities.AutomationResourceName"}}</span>
+                    <input type="text" class="ability-flag-entry-field" data-flag="mpCost.reductions" data-index="{{index}}" data-field="resource" value="{{entry.resource}}" />
+                  </label>
+                  <label>
+                    <span>{{localize "FFXIV.Abilities.AutomationAmount"}}</span>
+                    <input type="number" min="1" class="ability-flag-entry-field" data-flag="mpCost.reductions" data-index="{{index}}" data-field="amount" value="{{entry.amount}}" />
+                  </label>
+                  <label>
+                    <span>{{localize "FFXIV.Abilities.MPCostReduction"}}</span>
+                    <input type="number" min="1" class="ability-flag-entry-field" data-flag="mpCost.reductions" data-index="{{index}}" data-field="reduction" value="{{entry.reduction}}" />
+                  </label>
+                  <label>
+                    <span>{{localize "FFXIV.Abilities.MinimumMPCost"}}</span>
+                    <input type="number" min="0" class="ability-flag-entry-field" data-flag="mpCost.reductions" data-index="{{index}}" data-field="minCost" value="{{entry.minCost}}" />
+                  </label>
+                  <label>
+                    <span>{{localize "FFXIV.Abilities.MaxCostReductions"}}</span>
+                    <input type="number" min="1" class="ability-flag-entry-field" data-flag="mpCost.reductions" data-index="{{index}}" data-field="maxApplications" value="{{entry.maxApplications}}" />
+                  </label>
+                  <label>
+                    <span>{{localize "FFXIV.Abilities.CriticalAbilities"}}</span>
+                    <input type="text" class="ability-flag-entry-field" data-flag="mpCost.reductions" data-index="{{index}}" data-field="abilityNames" data-list="true" value="{{entry.abilitiesText}}" />
+                  </label>
+                </div>
+                {{#if ../itemEditMode}}
+                  <button type="button" class="ability-flag-entry-control" data-flag="mpCost.reductions" data-index="{{index}}" data-entry-action="remove" title="{{localize 'FFXIV.Abilities.StatusRemove'}}" aria-label="{{localize 'FFXIV.Abilities.StatusRemove'}}">x</button>
+                {{/if}}
+              </li>
+            {{/each}}
+          </ul>
+        </section>
+      </div>
+    </div>
+    <div class="tab" data-group="primary" data-tab="effects">
+      <div class="attributes item-details-card">
+        {{> "systems/ffxiv/templates/item/parts/item-effects.hbs" traitEffects=true }}
+      </div>
+    </div>
+    <div class="tab" data-group="primary" data-tab="summons">
       {{> "systems/ffxiv/templates/item/parts/item-summons.hbs" }}
     </div>
   </section>

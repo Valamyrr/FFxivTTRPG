@@ -15,7 +15,9 @@ import {
   getActorCheckPenalty,
   getActorCriticalRange,
   getLargestCheckPenalty,
+  getStatusStackCount,
   getStatusStackTotal,
+  getStatusStackValue,
   getTargetStatusAdvantage,
   hasStatus,
   isAdditiveStackableStatusEffect,
@@ -38,10 +40,13 @@ import {
   fillActorJobResource,
   getActorJobResourceCount,
   getActorLevel,
+  getActorPets,
   hasActorJobResource,
   normalizeJobResourceName,
   setActorJobResourceCount,
 } from "../helpers/job-resources.mjs";
+import { getRoleDamageBonus, getTargetCriticalReduction, modifyRecoveryRoll } from "../helpers/healing.mjs";
+import { applyResolvedHealingToActor, getHealingWithEffects } from "../helpers/damage.mjs";
 import { createSummonTokenFromRequest, FFXIV_SUMMON_SOCKET_TYPE } from "../helpers/summons.mjs";
 import { clearUserTargetsForTiming, TARGET_CLEAR_TIMINGS } from "../helpers/target-selection.mjs";
 import { isAbilityAutomationEnabled } from "../helpers/automation.mjs";
@@ -969,6 +974,9 @@ export class FFXIVItem extends Item {
    */
   async roll() {
     this._ffxivJobResourceCostResult = {};
+    const consumedEffects = Array.from(this.parent?.effects ?? []).filter((effect) =>
+      isAbilityAutomationEnabled() && !effect.disabled && effect.flags?.ffxiv?.expireOnAbilityUse === true,
+    );
     if (!(await this._confirmTargetSelection())) return;
     if (!this._canUseAbility()) return this._playErrorSound();
     if (!this._canUseLimitBreak()) return this._playErrorSound();
@@ -1053,6 +1061,9 @@ export class FFXIVItem extends Item {
     await this._consumeEffectRequirements();
     await this._applyDeferredHitThresholdRules(checkResult);
     await this._autoApplyStatusEffects(chatMessage);
+    for (const effect of consumedEffects) {
+      if (this.parent.effects.has(effect.id)) await effect.delete();
+    }
     await this._applyInvokingStatus();
     await this._summonActorsIfNeeded();
 
@@ -1660,14 +1671,23 @@ export class FFXIVItem extends Item {
     if (this.type !== "ability" || this.parent?.documentName !== "Actor") return "";
     if (!String(this.system?.limitations ?? "").trim()) return "";
 
-    const max = Number.parseInt(this.system?.job_resources_max, 10);
-    if (!Number.isFinite(max) || max <= 0) return "";
-    const status = this.system?.job_resource_status;
-    if (!Array.isArray(status) || status.length < max) return "";
-    for (let index = 0; index < max; index++) {
-      if (!status[index]) return "";
+    for (const item of this._getSharedLimitationItems()) {
+      const max = Number.parseInt(item.system?.job_resources_max, 10);
+      if (!Number.isFinite(max) || max <= 0) continue;
+      const status = item.system?.job_resource_status;
+      if (!Array.isArray(status) || status.length < max) continue;
+      if (status.slice(0, max).every(Boolean))
+        return game.i18n.localize("FFXIV.Notifications.LimitationsConsumed");
     }
-    return game.i18n.localize("FFXIV.Notifications.LimitationsConsumed");
+    return "";
+  }
+
+  _getSharedLimitationItems() {
+    const group = String(this.getFlag("ffxiv", "limitationGroup") ?? "").trim();
+    if (!group) return [this];
+    return Array.from(this.parent?.items ?? []).filter((item) =>
+      item.type === "ability" && String(item.getFlag("ffxiv", "limitationGroup") ?? "").trim() === group,
+    );
   }
 
   async _consumeLimitationIfNeeded() {
@@ -1680,20 +1700,22 @@ export class FFXIVItem extends Item {
     if (this.parent?.documentName !== "Actor") return true;
     if (!String(this.system?.limitations ?? "").trim()) return true;
 
-    const max = Number.parseInt(this.system?.job_resources_max, 10);
-    if (!Number.isFinite(max) || max <= 0) return true;
+    for (const item of this._getSharedLimitationItems()) {
+      const max = Number.parseInt(item.system?.job_resources_max, 10);
+      if (!Number.isFinite(max) || max <= 0) continue;
 
-    const resourceStatus = Array.isArray(this.system?.job_resource_status)
-      ? this.system.job_resource_status.slice(0, max)
-      : [];
-    while (resourceStatus.length < max) resourceStatus.push(false);
+      const resourceStatus = Array.isArray(item.system?.job_resource_status)
+        ? item.system.job_resource_status.slice(0, max)
+        : [];
+      while (resourceStatus.length < max) resourceStatus.push(false);
 
-    const index = resourceStatus.findIndex((status) => !status);
-    resourceStatus[index] = true;
-    await this.update(
-      { "system.job_resource_status": resourceStatus },
-      { render: false },
-    );
+      const index = resourceStatus.findIndex((status) => !status);
+      resourceStatus[index] = true;
+      await item.update(
+        { "system.job_resource_status": resourceStatus },
+        { render: false },
+      );
+    }
     return true;
   }
 
@@ -1741,7 +1763,7 @@ export class FFXIVItem extends Item {
     if (actor?.documentName !== "Actor") return true;
 
     const cost = this._getResolvedMPCost(actor);
-    if (cost.amount <= 0) return true;
+    if (cost.amount <= 0 && !cost.reductions.length) return true;
     const currentMana = Number(actor.system?.mana?.value ?? 0);
     if (currentMana < cost.amount) {
       ui.notifications.warn(game.i18n.format("FFXIV.Hotbar.RequiresMP", { amount: cost.amount }));
@@ -1749,6 +1771,10 @@ export class FFXIVItem extends Item {
     }
 
     for (const reduction of cost.reductions) {
+      if (reduction.effectId) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", [reduction.effectId]);
+        continue;
+      }
       await applyActorJobResourceDelta(
         actor,
         reduction.resource,
@@ -1863,7 +1889,11 @@ export class FFXIVItem extends Item {
       if (!this._mpCostReductionApplies(entry)) continue;
       const override = Number.parseInt(entry.override, 10);
       if (Number.isFinite(override)) {
-        amount = Math.max(override, 0);
+        const nextAmount = Math.min(amount, Math.max(override, 0));
+        if (nextAmount < amount && entry.consume === true && entry.effectId) {
+          reductions.push({ effectId: entry.effectId });
+        }
+        amount = nextAmount;
         continue;
       }
       const resource = String(entry.resource ?? entry.resourceName ?? "").trim();
@@ -1920,7 +1950,7 @@ export class FFXIVItem extends Item {
     }
     for (const effect of actor?.allApplicableEffects?.() ?? []) {
       if (!effect || effect.disabled) continue;
-      entries.push(...this._getMPCostReductionEntriesFrom(effect));
+      entries.push(...this._getMPCostReductionEntriesFrom(effect).map((entry) => ({ ...entry, effectId: effect.id })));
     }
     return entries;
   }
@@ -2259,10 +2289,10 @@ export class FFXIVItem extends Item {
     const d20Result = activeD20Results.length
       ? Math.max(...activeD20Results.map((result) => result.result))
       : null;
-    const criticalRange = getActorCriticalRange(
+    const criticalRange = Math.max(1, getActorCriticalRange(
       this.parent,
       this.parent?.system?.criticalRange,
-    );
+    ) - (isAbilityAutomationEnabled() ? getTargetCriticalReduction(game.user.targets) : 0));
     const forceCriticalRule = this._getForceCriticalRule("base", options);
     const isCritical = Boolean(forceCriticalRule) ||
       (d20Result !== null && d20Result >= criticalRange);
@@ -2504,6 +2534,7 @@ export class FFXIVItem extends Item {
       : formula;
     const roll = new Roll(resolvedFormula, rollData);
     await roll.evaluate();
+    await modifyRecoveryRoll(roll, this);
     const rollHTML = $("<div>" + (await roll.render()) + "</div>");
     return {
       roll,
@@ -3065,6 +3096,7 @@ export class FFXIVItem extends Item {
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
 
+    await modifyRecoveryRoll(roll, this);
     return {
       roll,
       critical: Boolean(critical),
@@ -3607,6 +3639,8 @@ export class FFXIVItem extends Item {
       icon: String(entry?.icon ?? "").trim(),
       applyTo: String(entry?.applyTo ?? "self").trim().toLowerCase(),
       threshold: Number.parseInt(entry?.threshold, 10),
+      parity: String(entry?.parity ?? "").trim().toLowerCase(),
+      ownTurn: typeof entry?.ownTurn === "boolean" ? entry.ownTurn : null,
       remove: this._normalizeEffectRefs(entry?.remove),
       requires: this._normalizeEffectRefs(entry?.requires),
       requiresAny: this._normalizeEffectRefs(entry?.requiresAny),
@@ -3619,6 +3653,7 @@ export class FFXIVItem extends Item {
         .toLowerCase(),
       resource: String(entry?.resource ?? entry?.resourceName ?? "").trim(),
       amount: entry?.amount ?? 1,
+      max: entry?.max,
       min: entry?.min,
       spentResource: String(entry?.spentResource ?? entry?.amountResource ?? "").trim(),
       storeResourceCosts:
@@ -3764,7 +3799,8 @@ export class FFXIVItem extends Item {
       (rule) =>
         rule.action === "resource" &&
         rule.trigger === "cost" &&
-        rule.operation === "consume",
+        rule.operation === "consume" &&
+        this._canApplyEffectRule(this.parent, rule, {}),
     );
   }
 
@@ -3841,7 +3877,8 @@ export class FFXIVItem extends Item {
       if (rule.trigger !== trigger) continue;
       if (!this._canApplyEffectRule(actor, rule, context)) continue;
       let recipients = [actor];
-      if (rule.action === "resource" && rule.applyTo === "target") {
+      if (rule.applyTo === "pet") recipients = getActorPets(actor, { activeOnly: true });
+      if (rule.applyTo === "target") {
         recipients = Array.from(
           new Set(
             Array.from(game.user.targets ?? [])
@@ -3891,8 +3928,7 @@ export class FFXIVItem extends Item {
       }
       for (const recipient of recipients) {
         if (
-          rule.action === "resource" &&
-          rule.applyTo === "target" &&
+          ["target", "pet"].includes(rule.applyTo) &&
           !recipient.testUserPermission(game.user, "OWNER")
         ) {
           emitToActiveGM({
@@ -3966,6 +4002,16 @@ export class FFXIVItem extends Item {
       if (!Number.isFinite(threshold) || !Number.isFinite(d20Result))
         return false;
       if (d20Result < threshold) return false;
+      if (rule.parity === "even" && d20Result % 2 !== 0) return false;
+      if (rule.parity === "odd" && d20Result % 2 !== 1) return false;
+    }
+
+    if (typeof rule.ownTurn === "boolean") {
+      const currentActor = game.combat?.started ? game.combat.combatant?.actor : null;
+      const actorRef = actor?.uuid ?? actor?.id;
+      const ownTurn = Boolean(actorRef && currentActor &&
+        (currentActor.uuid ?? currentActor.id) === actorRef);
+      if (rule.ownTurn !== ownTurn) return false;
     }
 
     if (rule.requires.some((entry) => !this._hasNamedEffect(actor, entry.key)))
@@ -3990,6 +4036,28 @@ export class FFXIVItem extends Item {
   }
 
   async _applyEffectRule(actor, rule, context = {}) {
+    if (rule.action === "status") {
+      const current = getStatusStackCount(actor, rule.key);
+      const sourceEffect = Array.from(actor.effects ?? [])
+        .filter((effect) => !effect.disabled && effect.statuses?.has(rule.key))
+        .sort((a, b) => getStatusStackValue(b, 1, rule.key) - getStatusStackValue(a, 1, rule.key))[0];
+      const amount = Math.max(Number(rule.amount) || 0, 0);
+      const max = Number(rule.max) > 0 ? Number(rule.max) : Infinity;
+      let stacks;
+      switch (rule.operation) {
+        case "consume": stacks = current - amount; break;
+        case "clear": stacks = 0; break;
+        case "fill": stacks = Number.isFinite(max) ? max : current; break;
+        case "set": stacks = amount; break;
+        case "max": stacks = Math.max(current, amount); break;
+        default: stacks = current + amount;
+      }
+      return applyStatusEffectStackValue(actor, rule.key, Math.max(0, Math.min(stacks, max)), {
+        sourceEffect,
+        origin: sourceEffect?.origin,
+        duration: rule.duration,
+      });
+    }
     if (rule.action === "resource") {
       return this._applyResourceRule(actor, rule, context);
     }
@@ -4046,6 +4114,16 @@ export class FFXIVItem extends Item {
 
   async _applyActorResourceRule(actor, resource, rule, context = {}) {
     const current = Number(actor.system?.[resource]?.value ?? 0);
+    if (resource === "health" && rule.operation === "grant") {
+      const amount = this._resolveActorResourceRuleAmount(actor, resource, rule, context);
+      const options = { sourceActor: this.parent, sourceItem: this };
+      const healing = await getHealingWithEffects(actor, amount, options);
+      const result = await applyResolvedHealingToActor(actor, healing, options);
+      return {
+        type: "actorResource", actor, resource, operation: rule.operation,
+        current, next: result.nextHealth, delta: result.healing,
+      };
+    }
     if (
       resource === "barrier" &&
       ["grant", "set", "max"].includes(rule.operation)
@@ -4457,6 +4535,14 @@ export class FFXIVItem extends Item {
   }
 
   _applyRuleContextFlags(effectData, rule, context = {}) {
+    if (effectData.flags?.ffxiv?.expireAtSourceTurnStart === true) {
+      const combat = game.combat;
+      const combatant = combat?.combatants?.find((entry) => entry.actor?.uuid === this.parent?.uuid);
+      if (combatant) effectData.flags.ffxiv.expireAtCombatantTurnStart = {
+        combatId: String(combat.id), combatantId: String(combatant.id),
+        round: combat.round ?? 0, turn: combat.turn ?? 0,
+      };
+    }
     if (rule?.storeResourceCosts !== true) return;
     const costs = context?.jobResourceCosts;
     if (!costs || typeof costs !== "object" || !Object.keys(costs).length)
@@ -5047,7 +5133,7 @@ export class FFXIVItem extends Item {
 
       const formula = this._getDamageFormulaEntryFormula(effect, entry);
       if (formula) terms.push(formula);
-      const flat = Number(entry.flat);
+      const flat = entry.bonus ? getRoleDamageBonus(this.parent, entry) : Number(entry.flat);
       if (Number.isFinite(flat) && flat !== 0) terms.push(String(flat));
     }
   }
@@ -5120,6 +5206,7 @@ export class FFXIVItem extends Item {
 
   _damageFormulaEntryApplies(entry, rollType) {
     if (!entry || typeof entry !== "object") return false;
+    if (entry.damageOnly === true && this.flags?.ffxiv?.healing?.roll === true) return false;
 
     const rollTypes = this._toArray(
       entry.rolls ?? entry.rollTypes ?? entry.appliesTo,
@@ -5128,6 +5215,11 @@ export class FFXIVItem extends Item {
       .filter(Boolean);
     if (rollTypes.length && !rollTypes.includes(String(rollType).toLowerCase()))
       return false;
+
+    const abilities = this._toArray(entry.abilities ?? entry.abilityKeys)
+      .map((value) => this._normalizeEffectKey(value))
+      .filter(Boolean);
+    if (abilities.length && !this._matchesAnyEffectKey(abilities)) return false;
 
     const tags = this._toArray(entry.tags ?? entry.tag).filter(Boolean);
     if (!tags.length) return true;

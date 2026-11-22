@@ -14,6 +14,14 @@ export function getActorLevel(actor) {
   return Number.isFinite(level) ? level : 0;
 }
 
+export function getActorPets(actor, { activeOnly = false } = {}) {
+  const ids = new Set(actor?.system?.pets ?? []);
+  return Array.from(game.actors ?? []).filter((pet) =>
+    pet.type === "pet" && (ids.has(pet.id) || pet.flags?.ffxiv?.jobOwnerId === actor?.id) &&
+    (!activeOnly || !globalThis.canvas?.ready || canvas.tokens.placeables.some((token) => token.actor?.uuid === pet.uuid)),
+  );
+}
+
 export function findActorTrait(actor, name) {
   const key = normalizeJobResourceName(name);
   if (!actor || !key) return null;
@@ -35,8 +43,20 @@ export function findActorJobResource(actor, name) {
   }) ?? null;
 }
 
+export function findActorJobResources(actor, name) {
+  const key = normalizeJobResourceName(name);
+  if (!actor || !key) return [];
+  const pooled = Array.from(actor.items ?? []).filter((item) =>
+    Number(item.system?.job_resources_max) > 0 &&
+    normalizeJobResourceName(item.flags?.ffxiv?.jobResource?.pool) === key,
+  );
+  if (pooled.length) return pooled;
+  const item = findActorJobResource(actor, name);
+  return item ? [item] : [];
+}
+
 function getItemJobResourceKeys(item) {
-  const keys = new Set(getContentKeys(item));
+  const keys = new Set(getContentKeys(item).map(normalizeJobResourceName));
   const data = foundry.utils.getProperty(item, "flags.ffxiv.jobResource") ?? {};
   for (const value of [
     data.name,
@@ -84,11 +104,15 @@ export function getJobResourceCount(item) {
 }
 
 export function getActorJobResourceCount(actor, name) {
-  return getJobResourceCount(findActorJobResource(actor, name));
+  return findActorJobResources(actor, name).reduce(
+    (total, item) => total + getJobResourceCount(item),
+    0,
+  );
 }
 
 export async function setActorJobResourceCount(actor, name, count, options = {}) {
-  const item = findActorJobResource(actor, name);
+  const items = findActorJobResources(actor, name);
+  const item = items[0];
   if (!item) {
     return {
       changed: false,
@@ -99,8 +123,10 @@ export async function setActorJobResourceCount(actor, name, count, options = {})
     };
   }
 
-  const max = Math.max(Number.parseInt(item.system?.job_resources_max, 10) || 0, 0);
-  const current = getJobResourceCount(item);
+  const max = items.reduce((total, entry) =>
+    total + getNormalizedJobResourceStatus(entry).length, 0);
+  const current = items.reduce((total, entry) =>
+    total + getJobResourceCount(entry), 0);
   const next = Math.max(Math.min(Number.parseInt(count, 10) || 0, max), 0);
   if (next === current) {
     return {
@@ -112,10 +138,19 @@ export async function setActorJobResourceCount(actor, name, count, options = {})
     };
   }
 
-  await item.update(
-    { "system.job_resource_status": Array.from({ length: max }, (_v, index) => index < next) },
-    { render: options.render ?? false },
-  );
+  let remaining = next - current;
+  for (const entry of items) {
+    const status = getNormalizedJobResourceStatus(entry);
+    const value = getJobResourceCount(entry);
+    const delta = Math.max(-value, Math.min(remaining, status.length - value));
+    if (!delta) continue;
+    await entry.update(
+      { "system.job_resource_status": Array.from({ length: status.length }, (_v, index) => index < value + delta) },
+      { render: options.render ?? false },
+    );
+    remaining -= delta;
+    if (!remaining) break;
+  }
   return {
     changed: true,
     current,
@@ -126,14 +161,13 @@ export async function setActorJobResourceCount(actor, name, count, options = {})
 }
 
 export async function applyActorJobResourceDelta(actor, name, delta, options = {}) {
-  const item = findActorJobResource(actor, name);
-  const current = getJobResourceCount(item);
+  const current = getActorJobResourceCount(actor, name);
   return setActorJobResourceCount(actor, name, current + delta, options);
 }
 
 export async function fillActorJobResource(actor, name, options = {}) {
-  const item = findActorJobResource(actor, name);
-  const max = Number.parseInt(item?.system?.job_resources_max, 10) || 0;
+  const max = findActorJobResources(actor, name).reduce((total, item) =>
+    total + getNormalizedJobResourceStatus(item).length, 0);
   return setActorJobResourceCount(actor, name, max, options);
 }
 

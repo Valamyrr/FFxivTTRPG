@@ -166,10 +166,15 @@
 }
 
 .ffxiv.item .sheet-body > .sheet-tabs.tabs {
+  box-sizing: border-box;
   display: flex;
+  flex: 0 0 auto;
   gap: 8px;
   justify-content: center;
   margin: 0 0 10px;
+  min-width: 0;
+  padding: 0 10px;
+  width: 100%;
   border: 0;
   text-align: center;
   filter: drop-shadow(-1px -1px 1px var(--shadow-color-top)) drop-shadow(1px 2px 1px var(--shadow-color-bottom));
@@ -182,10 +187,13 @@
   clip-path: polygon(5% 0, 95% 0, 100% 30%, 95% 100%, 5% 100%, 0 70%);
   cursor: pointer;
   display: inline-flex;
+  flex: 0 1 120px;
+  font-size: 12px;
+  gap: 5px;
   height: 28px;
   justify-content: center;
-  min-width: 120px;
-  padding: 0 14px;
+  min-width: 0;
+  padding: 0 8px;
 }
 
 .ffxiv.item .sheet-body > .sheet-tabs.tabs .item.active {

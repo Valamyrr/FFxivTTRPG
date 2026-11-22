@@ -1,0 +1,49 @@
+<section class="ability-sheet-panel">
+  <header class="ability-panel-header">
+    <h2>{{localize "FFXIV.Abilities.Branches"}}</h2>
+    {{#if itemEditMode}}
+      <button type="button" class="ability-flag-entry-control" data-flag="branches" data-entry-action="add">+</button>
+    {{/if}}
+  </header>
+  <ul class="status-effect-list ability-automation-list ability-automation-edit-list ability-branch-list">
+    {{#each abilityBranchEntries as |entry index|}}
+      <li>
+        <div class="ability-automation-fields ability-form-grid ability-form-grid-2">
+          <label>
+            <span>{{localize "FFXIV.Abilities.BranchKey"}}</span>
+            <input type="text" class="ability-flag-entry-field" data-flag="branches" data-index="{{index}}" data-field="key" value="{{entry.key}}" />
+          </label>
+          <label>
+            <span>{{localize "FFXIV.Abilities.AutomationName"}}</span>
+            <input type="text" class="ability-flag-entry-field" data-flag="branches" data-index="{{index}}" data-field="name" value="{{entry.name}}" />
+          </label>
+          <label>
+            <span>{{localize "FFXIV.Abilities.JobResourceBonusButtonLabel"}}</span>
+            <input type="text" class="ability-flag-entry-field" data-flag="branches" data-index="{{index}}" data-field="buttonLabel" value="{{entry.buttonLabel}}" />
+          </label>
+          <label>
+            <span>{{localize "FFXIV.Abilities.BaseFormula"}}</span>
+            <formula-input context="ffxiv-ability" class="ability-flag-entry-field" data-flag="branches" data-index="{{index}}" data-field="formula" value="{{entry.formula}}"></formula-input>
+          </label>
+          <label class="ability-form-span">
+            <span>{{localize "FFXIV.Item.Description"}}</span>
+            <textarea class="ability-flag-entry-field" data-flag="branches" data-index="{{index}}" data-field="description">{{entry.description}}</textarea>
+          </label>
+          <div class="ability-automation-checkbox ability-form-span">
+            <span>{{localize "FFXIV.Abilities.BranchEffects"}}</span>
+            <span class="ability-automation-checkbox-control">
+              <input type="checkbox" class="ability-flag-entry-field" data-flag="branches" data-index="{{index}}" data-field="applyEffects" aria-label="{{localize 'FFXIV.Abilities.BranchEffects'}}" {{#if entry.applyEffects}}checked{{/if}} />
+              <span class="checkmark"></span>
+            </span>
+          </div>
+        </div>
+        {{#if ../itemEditMode}}
+          <button type="button" class="ability-flag-entry-control" data-flag="branches" data-index="{{index}}" data-entry-action="remove" title="{{localize 'FFXIV.Abilities.StatusRemove'}}" aria-label="{{localize 'FFXIV.Abilities.StatusRemove'}}">x</button>
+        {{/if}}
+      </li>
+    {{/each}}
+  </ul>
+  {{#unless abilityBranchEntries.length}}
+    <span class="ability-automation-text">{{localize "FFXIV.None"}}</span>
+  {{/unless}}
+</section>

@@ -33,12 +33,12 @@ export function onManageActiveEffect(event, owner, options = {}) {
           effectType === "temporary" ? 1 : undefined,
         disabled: effectType === "inactive",
       };
-      if (owner?.documentName === "Item" && owner?.type === "ability") {
+      if (owner?.documentName === "Item" && ["ability", "trait"].includes(owner.type)) {
         effectData.name = owner.name;
         effectData.img = owner.img;
         effectData.icon = owner.img;
-        effectData.transfer = false;
-        effectData["flags.ffxiv.applyTo"] = "target";
+        effectData.transfer = owner.type === "trait";
+        effectData["flags.ffxiv.applyTo"] = owner.type === "trait" ? "self" : "target";
         effectData["flags.ffxiv.applyAction"] = "add";
       }
       return owner.createEmbeddedDocuments("ActiveEffect", [

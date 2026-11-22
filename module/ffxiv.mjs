@@ -1,8 +1,11 @@
 import { initBarrierAutomation } from "./helpers/barrier.mjs";
+import { initHealingAutomation } from "./helpers/healing.mjs";
+import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
 import { FFXIVActor } from "./actors/actor.mjs";
 import { FFXIVCombat } from "./combat.mjs";
 import { FFXIVItem } from "./items/item.mjs";
 import { FFXIVActiveEffect } from "./active-effect.mjs";
+import { FFXIVActiveEffectConfig } from "./active-effect-config.mjs";
 import { FFXIVTokenDocument } from "./token.mjs";
 import { FFXIVRegionLayer } from "./region-layer.mjs";
 import { registerDataModels } from "./data-models.mjs";
@@ -253,6 +256,10 @@ Hooks.once("init", function () {
     makeDefault: true,
     label: "FFXIV.SheetLabels.Item",
   });
+  DocumentSheetConfig.registerSheet(ActiveEffect, "ffxiv", FFXIVActiveEffectConfig, {
+    makeDefault: true,
+    label: "FFXIV.EffectAutomation.SheetLabel",
+  });
 
   CONFIG.Item.typeLabels = {
     ability: game.i18n.localize("FFXIV.ItemType.ability"),
@@ -392,6 +399,9 @@ Hooks.on("updateActor", (actor, changes, options) => {
   if (!foundry.utils.hasProperty(changes, "system.health.value")) return;
   const health = Number(actor.system?.health?.value ?? 0);
   if (health > 0 || hasStatus(actor, "knocked_out")) return;
+  if (isCombatAutomationEnabled() && getActiveGM() && Array.from(actor.effects ?? []).some((effect) =>
+    !effect.disabled && effect.flags?.ffxiv?.healing?.trigger,
+  )) return;
   applyStatusEffectChange(actor, "knocked_out", true).catch((error) => {
     debugError("FFXIV | Failed to apply knocked out status:", error);
   });
@@ -468,6 +478,7 @@ Hooks.once("ready", function () {
   initLimitBreakHud();
   initHudResources();
   initBarrierAutomation();
+  initHealingAutomation();
   initDutyCommenced();
   configureCombatTrackedResource().catch((error) => {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);

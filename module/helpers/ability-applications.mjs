@@ -215,6 +215,7 @@ async function applyAbilityResult(message, actorRefs, { direct = false, kind = "
     if (resolution.pendingApplicationId !== applicationId) return;
     const sourceActor = await resolveActorFromReference(resolution.sourceActorUuid);
     const sourceItem = await resolveItemFromReference(resolution.sourceItemUuid, sourceActor);
+    const sourceEffects = Array.from(sourceActor?.effects ?? []);
     const appliedTargets = [...resolution.appliedTargets];
     const applications = [...(resolution.applications ?? [])];
     const results = [];
@@ -231,7 +232,7 @@ async function applyAbilityResult(message, actorRefs, { direct = false, kind = "
       ];
       const before = captureAbilityApplication([actor, sourceActor]);
       const result = kind === "heal"
-        ? await getHealingWithEffects(actor, damage.reduce((total, amount) => total + Number(amount), 0), { sourceActor, sourceItem })
+        ? await getHealingWithEffects(actor, damage.reduce((total, amount) => total + Number(amount), 0), { sourceActor, sourceItem, sourceEffects })
         : await applyDamageToActorWithEffects(actor, damage, { sourceActor, sourceItem });
       if (!result) continue;
       if (kind === "heal") {

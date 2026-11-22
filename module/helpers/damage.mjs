@@ -11,6 +11,7 @@ import {
   recoverActorMana,
 } from "./status-effects.mjs";
 import { getActiveEffectChangeType } from "./effect-utils.mjs";
+import { consumeHealingModifiers, getHealingModifiers, resolveTriggeredHealing } from "./healing.mjs";
 
 async function applyDamageToActor(actor, damage, options = {}) {
   const incomingDamage = Math.max(Number.parseInt(damage, 10) || 0, 0);
@@ -28,8 +29,9 @@ async function applyDamageToActor(actor, damage, options = {}) {
     updates["system.barrier.value"] = Math.max(barrier - incomingDamage, 0);
   }
 
-  const result = await actor.update(updates, { ffxivSkipKnockedOutSync: true });
-  if (healthDamage > 0 && nextHealth <= 0 && !hasStatus(actor, "knocked_out")) {
+  const result = await actor.update(updates, { ffxivSkipKnockedOutSync: true, ffxivSkipHealingTrigger: true });
+  await resolveTriggeredHealing(actor);
+  if (healthDamage > 0 && Number(actor.system.health?.value) <= 0 && !hasStatus(actor, "knocked_out")) {
     await applyStatusEffectChange(actor, "knocked_out", true);
   }
   showFloatingCombatText(actor, incomingDamage, "damage", options);
@@ -42,10 +44,14 @@ async function applyHealingToActor(actor, amount, options = {}) {
 }
 
 export async function applyResolvedHealingToActor(actor, healing, options = {}) {
+  if (isAbilityAutomationEnabled() && options.sourceItem?.flags?.ffxiv?.healing?.resurrect) {
+    await applyStatusEffectChange(actor, "knocked_out", false);
+  }
   const result = await recoverActorHealth(actor, healing.resolvedHealing);
   if (
     isAbilityAutomationEnabled() &&
-    options.sourceItem?.getFlag("ffxiv", "barrier.onHealing") === true
+    options.sourceItem?.getFlag("ffxiv", "barrier.onHealing") === true &&
+    !healing.convertBarrier
   ) {
     // Use the resolved healing roll, including when the target is at full HP.
     const amount = Math.max(
@@ -57,6 +63,7 @@ export async function applyResolvedHealingToActor(actor, healing, options = {}) 
       sourceItem: options.sourceItem,
     });
   }
+  if (result.healing > 0 || healing.convertBarrier) await consumeHealingModifiers(healing.modifiers);
   if (result.healing > 0) {
     showFloatingCombatText(actor, result.healing, "healing", options);
   }
@@ -328,7 +335,7 @@ async function consumeDamageApplicationEffects(actor, effectIds) {
 export async function getHealingWithEffects(
   targetActor,
   rawHealing,
-  { sourceActor = null, sourceItem = null } = {},
+  { sourceActor = null, sourceItem = null, sourceEffects = null } = {},
 ) {
   const baseHealing = Math.max(Number.parseInt(rawHealing, 10) || 0, 0);
   if (!targetActor || baseHealing <= 0) {
@@ -336,6 +343,18 @@ export async function getHealingWithEffects(
   }
 
   let resolvedHealing = baseHealing;
+  const modifiers = [
+    ...getHealingModifiers(sourceActor, "outgoing", sourceItem),
+    ...getHealingModifiers(targetActor, "incoming", sourceItem),
+  ];
+  for (const { entry } of modifiers) resolvedHealing += Number(entry.flat) || 0;
+  const conversion = isAbilityAutomationEnabled() && sourceItem?.flags?.ffxiv?.barrier?.onHealing === true
+    ? Array.from(sourceEffects ?? sourceActor?.effects ?? []).find((effect) => !effect.disabled && effect.flags?.ffxiv?.healing?.convertBarrier)
+    : null;
+  if (conversion) {
+    resolvedHealing *= 2;
+    modifiers.push({ effect: conversion, entry: { consume: true } });
+  }
   const entries = getItemHealingApplicationEntries(sourceItem);
   for (const entry of entries) {
     if (!healingApplicationEntryApplies(entry, targetActor, sourceActor)) continue;
@@ -361,6 +380,8 @@ export async function getHealingWithEffects(
     actor: targetActor,
     baseHealing,
     resolvedHealing: Math.max(Math.floor(resolvedHealing), 0),
+    modifiers,
+    convertBarrier: Boolean(conversion),
   };
 }
 
