@@ -12,6 +12,7 @@ import {
 } from "./status-effects.mjs";
 import { getActiveEffectChangeType } from "./effect-utils.mjs";
 import { consumeHealingModifiers, getHealingModifiers, resolveTriggeredHealing } from "./healing.mjs";
+import { getInventoryHealingBonus } from "./inventory.mjs";
 
 async function applyDamageToActor(actor, damage, options = {}) {
   const incomingDamage = Math.max(Number.parseInt(damage, 10) || 0, 0);
@@ -48,6 +49,10 @@ export async function applyResolvedHealingToActor(actor, healing, options = {}) 
     await applyStatusEffectChange(actor, "knocked_out", false);
   }
   const result = await recoverActorHealth(actor, healing.resolvedHealing);
+  if (isAbilityAutomationEnabled() && options.sourceItem?.flags?.ffxiv?.inventory?.resurrection) {
+    await applyStatusEffectChange(actor, "weakness", true);
+    await applyStatusEffectChange(actor, "transcendent", true);
+  }
   if (
     isAbilityAutomationEnabled() &&
     options.sourceItem?.getFlag("ffxiv", "barrier.onHealing") === true &&
@@ -356,7 +361,7 @@ export async function getHealingWithEffects(
     return { actor: targetActor, baseHealing, resolvedHealing: 0 };
   }
 
-  let resolvedHealing = baseHealing;
+  let resolvedHealing = baseHealing + getInventoryHealingBonus(sourceActor, sourceItem);
   const modifiers = [
     ...getHealingModifiers(sourceActor, "outgoing", sourceItem),
     ...getHealingModifiers(targetActor, "incoming", sourceItem),

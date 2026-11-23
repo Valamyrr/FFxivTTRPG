@@ -52,6 +52,7 @@ import { createSummonTokenFromRequest, FFXIV_SUMMON_SOCKET_TYPE } from "../helpe
 import { applyPetAction, preparePetAction } from "../helpers/pet-automation.mjs";
 import { clearUserTargetsForTiming, TARGET_CLEAR_TIMINGS } from "../helpers/target-selection.mjs";
 import { isAbilityAutomationEnabled } from "../helpers/automation.mjs";
+import { prepareInventoryUse, applyInventoryUse, prepareInventoryCheck, finishInventoryCheck, rerollInventoryDice } from "../helpers/inventory.mjs";
 import { emitToActiveGM, getActiveGM } from "../helpers/socket.mjs";
 import { createChatMessage } from "../helpers/chat-message.mjs";
 import {
@@ -981,6 +982,7 @@ export class FFXIVItem extends Item {
     );
     if (!(await this._confirmTargetSelection())) return;
     if (!this._canUseAbility()) return this._playErrorSound();
+    if (!await prepareInventoryUse(this)) return;
     if (!this._canUseLimitBreak()) return this._playErrorSound();
     const repeatedSong = await this._prepareRepeatedSong();
     if (repeatedSong === false) return;
@@ -1067,6 +1069,7 @@ export class FFXIVItem extends Item {
     await this._consumeEffectRequirements();
     await this._applyDeferredHitThresholdRules(checkResult);
     await this._autoApplyStatusEffects(chatMessage);
+    await applyInventoryUse(this);
     if (repeatedSong) {
       const key = repeatedSong.flags.ffxiv.song.selfEffectKey;
       if (key) await repeatedSong._grantNamedEffect(this.parent, { key });
@@ -2297,7 +2300,13 @@ export class FFXIVItem extends Item {
 
     if (!result || typeof result !== "object") return;
 
-    const { advantageDice, flatModifier } = result;
+    const inventoryContext = {
+      item: this, attribute: this.system.hit_formula_attribute,
+      special: /special/i.test(this.system.check),
+    };
+    const inventory = await prepareInventoryCheck(this.parent, inventoryContext);
+    const advantageDice = result.advantageDice + inventory.advantage;
+    const flatModifier = result.flatModifier + inventory.bonus;
 
     let formula = resolveFormula(baseFormula);
     const d20Pattern = /(\d*)d20/i;
@@ -2319,6 +2328,7 @@ export class FFXIVItem extends Item {
     await roll.evaluate();
 
     await modifyAbilityCheck(roll, this);
+    await finishInventoryCheck(this.parent, roll, inventory, inventoryContext);
     const d20 = roll.dice.find((die) => die.faces === 20);
     const activeD20Results =
       d20?.results?.filter((result) => result.active !== false) ||
@@ -2330,7 +2340,7 @@ export class FFXIVItem extends Item {
     const criticalRange = Math.max(1, getActorCriticalRange(
       this.parent,
       this.parent?.system?.criticalRange,
-    ) - (isAbilityAutomationEnabled() ? getTargetCriticalReduction(game.user.targets, this.parent) : 0));
+    ) - inventory.criticalReduction - (isAbilityAutomationEnabled() ? getTargetCriticalReduction(game.user.targets, this.parent) : 0));
     const forceCriticalRule = this._getForceCriticalRule("base", options);
     const isCritical = Boolean(forceCriticalRule) ||
       (d20Result !== null && d20Result >= criticalRange);
@@ -2363,6 +2373,7 @@ export class FFXIVItem extends Item {
         effectSnapshot: options.effectSnapshot,
       })
       : null;
+    await rerollInventoryDice(this.parent, [baseResult?.roll, directHitResult?.roll], "outgoing");
     const buttonData = this._getChatButtonData();
 
     let extraButtons = '<div class="ffxiv-chat-buttons">';
@@ -2430,6 +2441,7 @@ export class FFXIVItem extends Item {
       content: `${rollHTML.html()} ${isInterrupted || resolution ? "" : extraButtons}`,
       flags: resolution ? { ffxiv: { damageResolution: resolution } } : {},
     });
+    await this._consumeCheckAdvantageEffects(options);
     if (baseResult?.forceCriticalRule)
       await this._consumeForceCriticalRule(baseResult.forceCriticalRule);
     if (directHitResult?.forceCriticalRule)
@@ -3217,6 +3229,7 @@ export class FFXIVItem extends Item {
 
   async _postAbilityDamage(baseResult, directHitResult, options = {}) {
     if (!baseResult && !directHitResult) return;
+    await rerollInventoryDice(this.parent, [baseResult?.roll, directHitResult?.roll], "outgoing");
     const resolution = this._createAbilityDamageResolution(baseResult, directHitResult, options);
     return createChatMessage({
       user: game.user.id,
@@ -5127,6 +5140,20 @@ export class FFXIVItem extends Item {
       }
     }
     return Math.max(Math.floor(dice), 0);
+  }
+
+  async _consumeCheckAdvantageEffects(options = {}) {
+    if (!isAbilityAutomationEnabled()) return;
+    for (const effect of this._getApplicableEffects(options)) {
+      const current = this.parent?.effects?.get(effect?.id);
+      if (!current || current.disabled || effect.disabled) continue;
+      const data = foundry.utils.getProperty(effect, "flags.ffxiv.check.advantage");
+      const entries = Array.isArray(data) ? data : data ? [data] : [];
+      if (entries.some((entry) => entry?.consume === true &&
+        Number(entry.amount ?? entry.value) > 0 && this._traitModifierEntryApplies(entry))) {
+        await current.delete();
+      }
+    }
   }
 
   _appendDamageFormulaModifiers(formula, rollType, options = {}) {

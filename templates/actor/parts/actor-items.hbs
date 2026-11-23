@@ -1,5 +1,8 @@
 <div class="inventory modern-tab-layout">
   <h2>{{ localize "FFXIV.CharacterSheet.Inventory"}}</h2>
+  {{#if editable}}
+    <button type="button" class="inventory-rest">{{localize "FFXIV.Inventory.Rest"}}</button>
+  {{/if}}
   <div class="inventory-grid modern-panel">
     {{!-- Build inventory grid with 20 slots --}}
     {{#each (buildInventoryGrid actor.items 27) as |item| }}

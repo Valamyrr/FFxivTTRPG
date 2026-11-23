@@ -1,5 +1,6 @@
 import { initBarrierAutomation } from "./helpers/barrier.mjs";
 import { initHealingAutomation } from "./helpers/healing.mjs";
+import { initInventoryAutomation } from "./helpers/inventory.mjs";
 import { isCombatAutomationEnabled } from "./helpers/automation.mjs";
 import { FFXIVActor } from "./actors/actor.mjs";
 import { FFXIVCombat } from "./combat.mjs";
@@ -479,6 +480,7 @@ Hooks.once("ready", function () {
   initHudResources();
   initBarrierAutomation();
   initHealingAutomation();
+  initInventoryAutomation();
   initDutyCommenced();
   configureCombatTrackedResource().catch((error) => {
     debugError("FFXIV | Failed to configure combat tracked resource:", error);

@@ -46,6 +46,8 @@
     </nav>
     <div class="tab description" data-group="primary" data-tab="description">
       <div class="attributes item-details-card ability-sheet-card">
+        {{> "systems/ffxiv/templates/item/parts/ability-automation.hbs" traitAutomation=true}}
+        {{> "systems/ffxiv/templates/item/parts/item-effects.hbs" traitEffects=true}}
         <section class="ability-sheet-panel">
           <header class="ability-panel-header">
             <h2>{{localize "FFXIV.Tags.Tags"}}</h2>

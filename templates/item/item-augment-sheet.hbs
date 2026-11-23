@@ -31,6 +31,8 @@
   <hr>
   {{! Sheet Body }}
   <section class="sheet-body">
+    {{> "systems/ffxiv/templates/item/parts/ability-automation.hbs" traitAutomation=true}}
+    {{> "systems/ffxiv/templates/item/parts/item-effects.hbs" traitEffects=true}}
     <div class="attributes item-details-card">
       <div class="resources grid grid-2col">
         <div class="resource flex-group-center consumable-price-resource">

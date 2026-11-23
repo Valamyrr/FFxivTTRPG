@@ -1,0 +1,27 @@
+<section class="ability-sheet-panel">
+  <header class="ability-panel-header">
+    <h2>{{localize "FFXIV.Abilities.EffectAutomation"}}</h2>
+  </header>
+  {{#unless traitAutomation}}
+    <div class="ability-automation-fields ability-form-grid ability-form-grid-2">
+      <label>
+        <span>{{localize "FFXIV.EffectAutomation.HealingRoll"}}</span>
+        <select class="ability-healing-field" data-field="roll">
+          <option value="" {{#if (eq healingRoll "")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.AutomaticRoll"}}</option>
+          <option value="true" {{#if (eq healingRoll "true")}}selected{{/if}}>{{localize "FFXIV.Chat.Heal"}}</option>
+          <option value="false" {{#if (eq healingRoll "false")}}selected{{/if}}>{{localize "FFXIV.Chat.Damage"}}</option>
+        </select>
+      </label>
+      <div class="ability-automation-checkbox">
+        <span>{{localize "FFXIV.EffectAutomation.Resurrect"}}</span>
+        <span class="ability-automation-checkbox-control">
+          <input type="checkbox" class="ability-healing-field" data-field="resurrect" aria-label="{{localize 'FFXIV.EffectAutomation.Resurrect'}}" {{checked flags.ffxiv.healing.resurrect}} />
+          <span class="checkmark"></span>
+        </span>
+      </div>
+    </div>
+  {{/unless}}
+  {{#if itemEditMode}}
+    <button type="button" class="edit-automation-data">{{localize "FFXIV.EffectAutomation.AdvancedData"}}</button>
+  {{/if}}
+</section>

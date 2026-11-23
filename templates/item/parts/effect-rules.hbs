@@ -97,6 +97,12 @@
                 <span>{{localize "FFXIV.Abilities.AutomationCap"}}</span>
                 <input class="effect-rule-field" data-index="{{entry.index}}" data-field="max" type="number" value="{{entry.max}}" />
               </label>
+              {{#if (eq entry.action "status")}}
+                <label>
+                  <span>{{localize "FFXIV.EffectAutomation.ExistingStatusBonus"}}</span>
+                  <input class="effect-rule-field" data-index="{{entry.index}}" data-field="existingBonus" type="number" value="{{entry.existingBonus}}" />
+                </label>
+              {{/if}}
             {{/if}}
             <label>
               <span>{{localize "FFXIV.Abilities.AutomationThreshold"}} {{> "systems/ffxiv/templates/item/parts/automation-help.hbs" text="FFXIV.Abilities.AutomationThresholdHelp"}}</span>

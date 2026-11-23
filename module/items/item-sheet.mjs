@@ -14,6 +14,7 @@ import {
   getSubtypeTagLabel,
 } from "../helpers/ability-subtype.mjs";
 import { isStackableStatusEffect } from "../helpers/status-effects.mjs";
+import { editAutomationData } from "../helpers/automation-editor.mjs";
 import PopoutEditor from "../popout-editor.js";
 
 const DEFAULT_SOUNDS = {
@@ -220,6 +221,14 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     context.turnStartRuleEntries = this._getEffectRuleEntries({
       effect_rules: this._toArray(itemData.flags?.ffxiv?.turnStart?.rules ?? itemData.flags?.ffxiv?.turnStart),
     }, { includeEmpty: true });
+    context.phaseStartRuleEntries = this._getEffectRuleEntries({
+      effect_rules: this._toArray(itemData.flags?.ffxiv?.phaseStart?.rules ?? itemData.flags?.ffxiv?.phaseStart),
+    }, { includeEmpty: true });
+    context.turnEndRuleEntries = this._getEffectRuleEntries({
+      effect_rules: this._toArray(itemData.flags?.ffxiv?.turnEnd?.rules ?? itemData.flags?.ffxiv?.turnEnd),
+    }, { includeEmpty: true });
+    context.healingRoll = typeof itemData.flags?.ffxiv?.healing?.roll === "boolean"
+      ? String(itemData.flags.ffxiv.healing.roll) : "";
     context.abilityBranchEntries = this.item._getAbilityBranchEntries?.() ?? [];
     context.jobResourceBonusEntries = this._getJobResourceBonusEntries(itemData.flags);
     context.mpCostReductionEntries = this._getAbilityFlagEntries("mpCost.reductions").map((entry) => ({
@@ -554,7 +563,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (this.item.type !== "trait") return;
 
     const update = {};
-    for (const flag of ["encounterStart", "turnStart"]) {
+    for (const flag of ["encounterStart", "phaseStart", "turnStart", "turnEnd"]) {
       const data = this.item.getFlag("ffxiv", flag);
       const rules = this._toArray(data?.rules ?? data);
       const configured = rules.filter((rule) =>
@@ -1539,6 +1548,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ? Number.parseInt(rule.min, 10)
         : "",
       max: rule?.max ?? "",
+      existingBonus: rule?.existingBonus ?? "",
       spentResource: String(rule?.spentResource ?? rule?.amountResource ?? "").trim(),
       requiresResourceSpent: String(rule?.requiresResourceSpent ?? "").trim(),
       requiresResourceSpentMin: Number.isFinite(Number.parseInt(
@@ -1877,7 +1887,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   _getCurrentEffectRules(path = "system.effect_rules") {
-    if (["flags.ffxiv.encounterStart", "flags.ffxiv.turnStart"].includes(path)) {
+    if (["flags.ffxiv.encounterStart", "flags.ffxiv.phaseStart", "flags.ffxiv.turnStart", "flags.ffxiv.turnEnd"].includes(path)) {
       const data = this.item.getFlag("ffxiv", path.slice("flags.ffxiv.".length));
       return foundry.utils.deepClone(this._toArray(data?.rules ?? data));
     }
@@ -1886,7 +1896,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _getEffectRulePath(target) {
     const path = target.closest("[data-rule-path]")?.dataset.rulePath;
-    return ["flags.ffxiv.encounterStart", "flags.ffxiv.turnStart"].includes(path)
+    return ["flags.ffxiv.encounterStart", "flags.ffxiv.phaseStart", "flags.ffxiv.turnStart", "flags.ffxiv.turnEnd"].includes(path)
       ? path
       : "system.effect_rules";
   }
@@ -2136,6 +2146,27 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       .catch((err) => ui.notifications.error(err, { console: true }));
   }
 
+  async _onChangeHealingField(event) {
+    if (!this._isItemEditMode()) return;
+    const target = event.currentTarget;
+    const field = target.dataset.field;
+    if (!["roll", "resurrect"].includes(field)) return;
+    this._captureSheetScroll();
+    if (target.value === "" && target.type !== "checkbox") await this.item.unsetFlag("ffxiv", `healing.${field}`);
+    else await this.item.setFlag("ffxiv", `healing.${field}`, target.type === "checkbox" ? target.checked : target.value === "true");
+  }
+
+  async _onEditAutomationData(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this._isItemEditMode() || this._isReadOnlyItemSheet() || this._isCompendiumLocked()) return;
+    await this._saveProseMirrorEditors();
+    await this.submit();
+    const systemFields = ABILITY_SHEET_TYPES.has(this.item.type) || ["limit_break", "consumable", "augment"].includes(this.item.type)
+      ? ["effect_rules", "effect_requirements", "status_effects"] : [];
+    return editAutomationData(this.item, { systemFields });
+  }
+
   _onChangeEffectRule(event) {
     const index = Number(event.currentTarget.dataset.index);
     if (!Number.isInteger(index)) return;
@@ -2277,7 +2308,7 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return;
     }
 
-    if (["min", "max"].includes(field)) {
+    if (["min", "max", "existingBonus"].includes(field)) {
       const parsed = Number.parseInt(value, 10);
       if (Number.isFinite(parsed)) rule[field] = parsed;
       else delete rule[field];
@@ -2757,6 +2788,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     html.on("click.ffxivItemSheet", ".ability-flag-entry-control", this._onEditAbilityFlagEntry.bind(this));
     html.on("change.ffxivItemSheet", ".ability-barrier-grant-field", this._onChangeBarrierGrant.bind(this));
     html.on("change.ffxivItemSheet", ".ability-critical-mode", this._onChangeCriticalMode.bind(this));
+    html.on("change.ffxivItemSheet", ".ability-healing-field", this._onChangeHealingField.bind(this));
+    html.on("click.ffxivItemSheet", ".edit-automation-data", this._onEditAutomationData.bind(this));
     html.on("click.ffxivItemSheet", ".ability-critical-conditions > summary", (event) => {
       this._playConfiguredSound(event.currentTarget.closest("details").open
         ? "soundNotificationFFXIV_closeSheet"
@@ -3086,6 +3119,8 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   async _rollItem(event) {
     event.preventDefault();
     event.stopPropagation();
+    if (["consumable", "augment"].includes(this.item.type) && this.item.parent?.documentName === "Actor")
+      return this.item.roll();
     const templatePath =
       this.item.type == "gear"
         ? "systems/ffxiv/templates/chat/gear-chat-card.hbs"
@@ -3450,9 +3485,9 @@ export class FFXIVItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       Number.isFinite(position.width)
     ) {
       const viewportWidth = Math.max(320, window.innerWidth - 24);
-      position.width = Math.max(
-        Math.min(ABILITY_SHEET_MIN_WIDTH, viewportWidth),
-        position.width,
+      position.width = Math.min(
+        viewportWidth,
+        Math.max(AUTOMATION_SHEET_MIN_WIDTH, position.width),
       );
     }
 

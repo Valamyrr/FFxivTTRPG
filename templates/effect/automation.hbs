@@ -13,6 +13,7 @@
         <option value="expireAtTurnEnd" {{#if (eq expiry "expireAtTurnEnd")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.TurnEnd"}}</option>
         <option value="expireAtRoundEnd" {{#if (eq expiry "expireAtRoundEnd")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.RoundEnd"}}</option>
         <option value="expireAtCombatantTurnEnd" {{#if (eq expiry "expireAtCombatantTurnEnd")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.CurrentTurnEnd"}}</option>
+        <option value="expireAtCombatantTurnStart" {{#if (eq expiry "expireAtCombatantTurnStart")}}selected{{/if}}>{{localize "FFXIV.EffectAutomation.CurrentTurnStart"}}</option>
       </select>
     </div>
   </div>
@@ -56,6 +57,35 @@
               <label>{{localize "FFXIV.EffectAutomation.Advantage"}}</label>
               <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.amount" type="number" min="0" value="{{entry.amount}}" /></div>
             </div>
+            <div class="form-group">
+              <label>{{localize "FFXIV.EffectAutomation.ConsumeAdvantage"}}</label>
+              <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.consume" type="checkbox" {{checked entry.consume}} /></div>
+            </div>
+          {{/if}}
+          {{#if group.formula}}
+            <div class="form-group">
+              <label>{{localize "FFXIV.EffectAutomation.DamageOnly"}}</label>
+              <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.damageOnly" type="checkbox" {{checked entry.damageOnly}} /></div>
+            </div>
+            <details>
+              <summary>{{localize "FFXIV.EffectAutomation.RoleBonus"}}</summary>
+              <div class="form-group">
+                <label>{{localize "FFXIV.EffectAutomation.FlatBonus"}}</label>
+                <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.bonus.flat" type="number" step="any" value="{{entry.bonus.flat}}" /></div>
+              </div>
+              <div class="form-group">
+                <label>{{localize "FFXIV.EffectAutomation.Roles"}}</label>
+                <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.bonus.roles" type="text" value="{{entry.bonusRolesText}}" /></div>
+              </div>
+              <div class="form-group">
+                <label>{{localize "FFXIV.EffectAutomation.Jobs"}}</label>
+                <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.bonus.jobs" type="text" value="{{entry.bonusJobsText}}" /></div>
+              </div>
+              <div class="form-group">
+                <label>{{localize "FFXIV.EffectAutomation.Companions"}}</label>
+                <div class="form-fields"><input name="automation.{{group.path}}.{{index}}.bonus.companions" type="checkbox" {{checked entry.bonus.companions}} /></div>
+              </div>
+            </details>
           {{/if}}
           {{#unless group.advantage}}
           <div class="form-group">
@@ -80,4 +110,52 @@
       <button type="button" data-action="addModifier" data-flag="{{group.path}}">{{localize "FFXIV.EffectAutomation.AddModifier"}}</button>
     </fieldset>
   {{/each}}
+  {{#each automationRuleGroups as |group|}}
+    <fieldset>
+      <legend>{{localize (concat "FFXIV.EffectAutomation." group.label)}}</legend>
+      <input type="hidden" name="automation.rules.{{group.path}}.present" value="true" />
+      {{#each group.entries as |entry index|}}
+        <fieldset>
+          {{#each entry.fields as |field|}}
+            <div class="form-group">
+              <label>{{localize (concat "FFXIV.EffectAutomation." field.label)}}</label>
+              <div class="form-fields">
+                {{#if (eq field.type "checkbox")}}
+                  <input type="checkbox" name="automation.rules.{{group.path}}.entries.{{index}}.{{field.path}}" {{checked field.value}} />
+                {{else}}
+                  {{#if field.formula}}
+                    <formula-input name="automation.rules.{{group.path}}.entries.{{index}}.{{field.path}}" context="ffxiv-ability" value="{{field.value}}"></formula-input>
+                  {{else}}
+                  <input type="{{field.type}}" name="automation.rules.{{group.path}}.entries.{{index}}.{{field.path}}" value="{{field.value}}" {{#if (eq field.type "number")}}step="any"{{/if}} />
+                  {{/if}}
+                {{/if}}
+              </div>
+            </div>
+          {{/each}}
+          <button type="button" data-action="removeModifier" data-flag="{{group.path}}" data-index="{{index}}">{{localize "FFXIV.Abilities.StatusRemove"}}</button>
+        </fieldset>
+      {{/each}}
+      <button type="button" data-action="addModifier" data-flag="{{group.path}}">{{localize "FFXIV.EffectAutomation.AddModifier"}}</button>
+    </fieldset>
+  {{/each}}
+  <fieldset>
+    <legend>{{localize "FFXIV.EffectAutomation.AdditionalSettings"}}</legend>
+    {{#each automationFields as |field|}}
+      <div class="form-group">
+        <label>{{localize (concat "FFXIV.EffectAutomation." field.label)}}</label>
+        <div class="form-fields">
+          {{#if (eq field.type "checkbox")}}
+            <input type="checkbox" name="automation.values.{{field.path}}" {{checked field.value}} />
+          {{else}}
+            {{#if field.formula}}
+              <formula-input name="automation.values.{{field.path}}" context="ffxiv-ability" value="{{field.value}}"></formula-input>
+            {{else}}
+            <input type="{{field.type}}" name="automation.values.{{field.path}}" value="{{field.value}}" {{#if (eq field.type "number")}}step="any"{{/if}} />
+            {{/if}}
+          {{/if}}
+        </div>
+      </div>
+    {{/each}}
+  </fieldset>
+  <button type="button" data-action="editAutomationData">{{localize "FFXIV.EffectAutomation.AdvancedData"}}</button>
 </section>

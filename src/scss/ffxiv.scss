@@ -36,6 +36,14 @@
   letter-spacing: -0.08em;
 }
 
+.active-effect-config .tab[data-tab="automation"] {
+  max-height: 60vh;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
 .ffxiv-marker-config {
   align-items: flex-start;
   display: flex;

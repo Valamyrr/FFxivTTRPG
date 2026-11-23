@@ -247,6 +247,12 @@ Set the following flags directly on the effect. Supported change-row equivalents
 
 For `damageFormula` and `damageDice.minimum`, optional `rolls` (aliases `rollTypes`, `appliesTo`) restrict to `base`, `direct`, or `alternate`. Omit to apply to all supported roll types. Optional `tags`/`tag` accepts a string or array and requires any matching ability tag. Dice minimums add Foundry's `minN` modifier to simple dice terms; terms already using certain dice modifiers are skipped.
 
+A `check.advantage` entry with `consume: true` removes its actor effect after a matching ability check is rolled. Abilities without a check, cancelled rolls, disabled effects, and checks that do not match its filters leave it in place.
+
+The linked effect's Automation tab edits consumption, role bonuses, incoming damage rules, healing modifiers, MP cost overrides, forced criticals, and additional expiration settings. Trait Automation also exposes phase-start and turn-end rules. Ability Resources includes healing classification and resurrection controls.
+
+Use **Edit Automation Data** on an ability, trait, limit break, or linked effect sheet for settings without dedicated controls. It edits the document's FFXIV flags as JSON; ability and limit break editors also include effect rules, requirements, and statuses. Invalid JSON or field types leave the document unchanged.
+
 Open a linked effect from an ability or trait's **Effects → Linked Active Effects** list, or an actor effect from the actor sheet, and use its **Automation** tab to edit formula bonuses, flat bonuses, dice minimums, roll types, ability names, and tags. Blank filters apply to all matching rolls or abilities. Check advantage exposes an amount and tags; its advanced ability filters are preserved when saving. The same tab exposes effect expiration, requirement bypasses, MP recovery, and the Enmity check penalty.
 
 Use `abilities` (alias `abilityKeys`) to restrict a formula or dice minimum to named abilities, for example `[{ "formula": "2d6", "rolls": ["base"], "abilities": ["Enpi"] }]`.

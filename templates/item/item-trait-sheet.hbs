@@ -155,7 +155,10 @@
     <div class="tab" data-group="primary" data-tab="automation">
       <div class="trait-automation-content">
         {{> "systems/ffxiv/templates/item/parts/effect-rules.hbs" entries=encounterRuleEntries rulePath="flags.ffxiv.encounterStart" ruleTitle="FFXIV.Abilities.EncounterStartRules" compactEmpty=true }}
+        {{> "systems/ffxiv/templates/item/parts/effect-rules.hbs" entries=phaseStartRuleEntries rulePath="flags.ffxiv.phaseStart" ruleTitle="FFXIV.EffectAutomation.PhaseStartRules" compactEmpty=true }}
         {{> "systems/ffxiv/templates/item/parts/effect-rules.hbs" entries=turnStartRuleEntries rulePath="flags.ffxiv.turnStart" ruleTitle="FFXIV.Abilities.TurnStartRules" compactEmpty=true }}
+        {{> "systems/ffxiv/templates/item/parts/effect-rules.hbs" entries=turnEndRuleEntries rulePath="flags.ffxiv.turnEnd" ruleTitle="FFXIV.EffectAutomation.TurnEndRules" compactEmpty=true }}
+        {{> "systems/ffxiv/templates/item/parts/ability-automation.hbs" traitAutomation=true }}
         <section class="item-modern-panel">
           <header class="ability-panel-header">
             <div class="ability-panel-title">

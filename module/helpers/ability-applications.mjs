@@ -2,6 +2,7 @@ import { applyStatusEffectChange, hasStatus } from "./status-effects.mjs";
 import { emitToActiveGM, getActiveGM } from "./socket.mjs";
 import { getAbilityDamageResolution, getAbilityDamageTargets } from "./ability-targets.mjs";
 import { clearUserTargetsForTiming, TARGET_CLEAR_TIMINGS } from "./target-selection.mjs";
+import { rerollInventoryDice } from "./inventory.mjs";
 import {
   applyResolvedHealingToActor,
   applyDamageToActorWithEffects,
@@ -226,11 +227,18 @@ async function applyAbilityResult(message, actorRefs, { direct = false, kind = "
       const actor = await resolveActorFromReference(actorRef);
       if (!actor || !actor.testUserPermission(game.user, "OWNER")) continue;
       const hasDirectHit = target?.direct ?? direct;
-      const damage = [
+      let damage = [
         resolution.baseRoll?.total ?? 0,
         hasDirectHit ? resolution.directRoll?.total ?? 0 : 0,
       ];
       const before = captureAbilityApplication([actor, sourceActor]);
+      if (kind !== "heal") {
+        const rolls = [resolution.baseRoll, hasDirectHit ? resolution.directRoll : null].filter(Boolean).map((data) => Roll.fromData(data));
+        if (await rerollInventoryDice(actor, rolls, "incoming")) {
+          damage = rolls.map((roll) => roll.total);
+          await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }), rolls, flavor: actor.name });
+        }
+      }
       const result = kind === "heal"
         ? await getHealingWithEffects(actor, damage.reduce((total, amount) => total + Number(amount), 0), { sourceActor, sourceItem, sourceEffects })
         : await applyDamageToActorWithEffects(actor, damage, { sourceActor, sourceItem });

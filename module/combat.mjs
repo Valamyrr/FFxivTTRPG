@@ -23,6 +23,7 @@ import { broadcastDutyCommenced } from "./helpers/duty-commenced.mjs";
 import { getSummonerCombatant } from "./helpers/summons.mjs";
 import { restorePetForms } from "./helpers/pet-automation.mjs";
 import { endHealingPhase } from "./helpers/healing.mjs";
+import { startInventoryEncounter, startInventoryTurn } from "./helpers/inventory.mjs";
 
 const ADVENTURER_STEP_MP_RECOVERY = 2;
 const ENTER_INSTANCE_SOUND = "systems/ffxiv/assets/sfx/ffxiv-enter-instance.ogg";
@@ -95,6 +96,7 @@ export class FFXIVCombat extends Combat {
       if (resetMode === "full") await this._resetActorsForCombatStart();
       else if (resetMode === "limitations") await this._resetActorLimitations();
       await this._resetEncounterStatusFlags();
+      await startInventoryEncounter(this);
       const startedCombat = await super.startCombat();
       await this.update({ "flags.ffxiv.phaseRound": 1 });
       if (game.user?.isGM) {
@@ -259,6 +261,8 @@ export class FFXIVCombat extends Combat {
       if (!actor) return;
       await this._removeExpiredEnmity(combatant);
       await this._removeTurnStartStatuses(actor);
+      const firstAdventurer = this.turns.find((entry) => getTurnStep(entry) === 0);
+      await startInventoryTurn(this, combatant, firstAdventurer?.id === combatant.id);
       await this._applyTurnStartJobAutomation(actor);
       if (actor.type !== "npc") return;
       await this._removeInvokingStatus(actor);

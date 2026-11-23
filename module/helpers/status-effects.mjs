@@ -1025,7 +1025,8 @@ export async function consumeEnfeeblementProtection(actor, statusId) {
   if (!isAbilityAutomationEnabled() || !isNegativeStatusEffect(statusId) ||
       ["knocked_out", "weakness", "brink_death", "comatose", "death"].includes(statusId)) return false;
   const effect = Array.from(actor.effects ?? []).find((entry) =>
-    !entry.disabled && entry.flags?.ffxiv?.status?.preventEnfeeblement === true,
+    !entry.disabled && (entry.flags?.ffxiv?.status?.preventEnfeeblement === true ||
+      entry.flags?.ffxiv?.status?.preventStatuses?.includes(statusId)),
   );
   if (!effect) return false;
   await effect.delete();

@@ -1823,6 +1823,19 @@ export class FFXIVActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     html.on('click.ffxivActorSheet', '.pet-ability-roll-button', this._rollPet.bind(this));
 
     html.on('click.ffxivActorSheet', '.roll-attribute', this._rollAttribute.bind(this));
+    html.on("click.ffxivActorSheet", ".inventory-rest", async (event) => {
+      event.preventDefault();
+      if (!this.actor.isOwner) return;
+      const timing = await foundry.applications.api.DialogV2.prompt({
+        window: { title: game.i18n.localize("FFXIV.Inventory.Rest") },
+        content: `<select name="timing">${["Rest", "FullCycle", "EndAdventure"].map((key) =>
+          `<option value="${key}">${game.i18n.localize(`FFXIV.Inventory.${key}`)}</option>`,
+        ).join("")}</select>`,
+        ok: { callback: (_event, button) => button.form.elements.timing.value },
+        rejectClose: false,
+      });
+      if (timing) await this.actor.rest({ fullCycle: timing === "FullCycle", endAdventure: timing === "EndAdventure" });
+    });
 
     html.on('change.ffxivActorSheet', '.ability-limitations .job_resource', this._onChangeJobResource.bind(this))
 

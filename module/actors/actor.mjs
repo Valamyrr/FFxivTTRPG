@@ -1,5 +1,6 @@
 import { getContentKeys, normalizeContentKey } from "../helpers/content-keys.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
+import { prepareInventoryData, prepareInventoryCheck, finishInventoryCheck, expireInventoryEffects } from "../helpers/inventory.mjs";
 import {
   getActorCheckPenalty,
   hasStatus,
@@ -322,6 +323,7 @@ export class FFXIVActor extends Actor {
     this._prepareCharacterData(this);
     this._prepareNpcData(this);
     this._preparePetData(this);
+    prepareInventoryData(this);
   }
 
   /**
@@ -628,10 +630,12 @@ export class FFXIVActor extends Actor {
     const rollData = this.getRollData();
     const modifiers = rollData[attrKey] ?? 0;
     const checkPenalty = getActorCheckPenalty(this);
-    let formula = `1d20 + ${modifiers}`;
+    const inventory = await prepareInventoryCheck(this, { attribute: attrKey });
+    let formula = `${1 + inventory.advantage}d20kh1 + ${modifiers} + ${inventory.bonus}`;
     if (checkPenalty) formula += ` - ${Math.abs(checkPenalty)}`;
     const roll = new Roll(formula, rollData);
     await roll.evaluate();
+    await finishInventoryCheck(this, roll, inventory, { attribute: attrKey });
     const checkPenaltyNote = checkPenalty
       ? `<div>${game.i18n.localize("FFXIV.RollDialog.StatusPenalty")}: ${checkPenalty}</div>`
       : "";
@@ -645,5 +649,12 @@ export class FFXIVActor extends Actor {
     });
 
     return roll;
+  }
+
+  async rest({ fullCycle = false, endAdventure = false } = {}) {
+    if (!this.isOwner) return;
+    await expireInventoryEffects(this, "expireOnRest");
+    if (fullCycle || endAdventure) await expireInventoryEffects(this, "expireOnFullRest");
+    if (endAdventure) await expireInventoryEffects(this, "expireAtAdventureEnd");
   }
 }
