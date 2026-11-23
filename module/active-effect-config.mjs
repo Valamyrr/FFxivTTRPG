@@ -28,6 +28,10 @@ const AUTOMATION_FIELDS = [
   { path: "mpRecovery.suppress", label: "SuppressMPRecovery", type: "checkbox" },
   { path: "mpRecovery.firstRoundOfPhase", label: "FirstRoundOfPhase", type: "checkbox" },
   { path: "status.preventEnfeeblement", label: "PreventEnfeeblement", type: "checkbox" },
+  { path: "stacking.key", label: "StackingKey", type: "text" },
+  { path: "stacking.cumulative", label: "CumulativeStacks", type: "checkbox" },
+  { path: "stacking.max", label: "MaximumStacks", type: "number" },
+  { path: "stackCount", label: "StackCount", type: "number" },
 ];
 
 const AUTOMATION_RULE_GROUPS = [
@@ -39,6 +43,7 @@ const AUTOMATION_RULE_GROUPS = [
       { path: "formula", label: "Formula" },
       { path: "percent", label: "Percent", type: "number" },
       { path: "fraction", label: "Fraction", type: "number" },
+      { path: "abilityOnly", label: "AbilityDamageOnly", type: "checkbox" },
       { path: "sourceNames", label: "SourceAbilities", list: true },
       { path: "sourceActorNames", label: "SourceActors", list: true },
       { path: "sourceTags", label: "Tags", list: true },
@@ -66,6 +71,7 @@ const AUTOMATION_RULE_GROUPS = [
       { path: "reduction", label: "MPCostReduction", type: "number" },
       { path: "minCost", label: "MinimumMPCost", type: "number" },
       { path: "maxApplications", label: "MaxApplications", type: "number" },
+      { path: "optional", label: "Optional", type: "checkbox" },
       { path: "consume", label: "Consume", type: "checkbox" },
     ],
   },

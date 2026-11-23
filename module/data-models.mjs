@@ -84,6 +84,11 @@ function buildAbilityFields() {
       initial: "",
     }),
     marker: new fields.ObjectField({ required: false, nullable: true }),
+    marker_removal: new fields.StringField({
+      required: false,
+      blank: true,
+      initial: "",
+    }),
     markers: new fields.ArrayField(
       new fields.AnyField({ required: false }),
     ),

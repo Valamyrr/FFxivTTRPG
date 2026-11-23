@@ -1,5 +1,6 @@
 import { getContentKeys, normalizeContentKey } from "../helpers/content-keys.mjs";
 import { debugError, debugLog } from "../helpers/debug.mjs";
+import { getEffectiveStackedEffects } from "../helpers/stacking.mjs";
 import { prepareInventoryData, prepareInventoryCheck, finishInventoryCheck, expireInventoryEffects } from "../helpers/inventory.mjs";
 import {
   getActorCheckPenalty,
@@ -11,6 +12,10 @@ import {
  * @extends {Actor}
  */
 export class FFXIVActor extends Actor {
+  *allApplicableEffects() {
+    yield* getEffectiveStackedEffects(super.allApplicableEffects());
+  }
+
   static _normalizeLinkedTraitName(value) {
     return normalizeContentKey(value);
   }
@@ -508,6 +513,7 @@ export class FFXIVActor extends Actor {
   }
 
   _getStatusAdjustedSpeed(baseSpeed) {
+    if (this.isImmobile) return 0;
     let speed = Math.max(Number(baseSpeed) || 0, 0);
     if (hasStatus(this, "bind")) {
       speed = this._isSmallOrMedium() ? 0 : Math.max(speed - 2, 0);
@@ -519,6 +525,10 @@ export class FFXIVActor extends Actor {
       speed = Math.ceil(speed / 2);
     }
     return speed;
+  }
+
+  get isImmobile() {
+    return String(this.system.speed_type ?? "").trim().toLowerCase() === "immobile";
   }
 
   _isSmallOrMedium() {

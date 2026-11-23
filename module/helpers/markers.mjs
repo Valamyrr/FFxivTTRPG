@@ -269,7 +269,7 @@ function getMarkerColor(marker) {
 
 export async function openMarkerPlacementTool(
   assignedMarker = null,
-  { sourceItemUuid = null, sourceTokenId = null, showInstructions = true } = {},
+  { sourceItemUuid = null, sourceTokenId = null, showInstructions = true, removal = "" } = {},
 ) {
   cancelMarkerEdit?.();
   if (!canvas.scene) {
@@ -312,6 +312,7 @@ export async function openMarkerPlacementTool(
     placementData.flags.ffxiv.markerSource = {
       itemUuid: sourceItemUuid,
       tokenId: sourceTokenId,
+      removal,
     };
   }
   try {

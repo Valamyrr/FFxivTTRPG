@@ -6,6 +6,7 @@ import { FFXIVItem } from "../items/item.mjs";
 import {
   applyStatusEffectChange,
   getActorDrainValue,
+  getHighestStatusStackCount,
   hasStatus,
   recoverActorHealth,
   recoverActorMana,
@@ -13,6 +14,8 @@ import {
 import { getActiveEffectChangeType } from "./effect-utils.mjs";
 import { consumeHealingModifiers, getHealingModifiers, resolveTriggeredHealing } from "./healing.mjs";
 import { getInventoryHealingBonus } from "./inventory.mjs";
+import { getAbilitySubtype } from "./ability-subtype.mjs";
+import { getEffectiveStackedEffects, getEffectStackCount, getEffectStackKey } from "./stacking.mjs";
 
 async function applyDamageToActor(actor, damage, options = {}) {
   const incomingDamage = Math.max(Number.parseInt(damage, 10) || 0, 0);
@@ -129,6 +132,19 @@ export async function applyDamageToActorWithEffects(
   rawDamage,
   { sourceActor = null, sourceItem = null, targetToken = null } = {},
 ) {
+  if (Array.isArray(rawDamage) && rawDamage.some(Array.isArray)) {
+    const instances = [];
+    for (const instance of rawDamage) {
+      instances.push(await applyDamageToActorWithEffects(targetActor, instance, { sourceActor, sourceItem, targetToken }));
+    }
+    return {
+      actor: targetActor,
+      instances,
+      baseDamage: instances.reduce((total, result) => total + (result?.baseDamage ?? 0), 0),
+      resolvedDamage: instances.reduce((total, result) => total + (result?.resolvedDamage ?? 0), 0),
+      healthLost: instances.reduce((total, result) => total + (result?.healthLost ?? 0), 0),
+    };
+  }
   const damage = await getDamageWithEffects(targetActor, rawDamage, {
     sourceActor,
     sourceItem,
@@ -136,6 +152,7 @@ export async function applyDamageToActorWithEffects(
   if (!damage) return null;
   await applyResolvedDamageToActor(targetActor, damage, {
     sourceActor,
+    sourceItem,
     targetToken,
   });
   return damage;
@@ -144,9 +161,12 @@ export async function applyDamageToActorWithEffects(
 export async function applyResolvedDamageToActor(
   targetActor,
   damage,
-  { sourceActor = null, targetToken = null } = {},
+  { sourceActor = null, sourceItem = null, targetToken = null } = {},
 ) {
   if (!targetActor || !damage) return;
+  const health = Math.max(Number(targetActor.system.health?.value) || 0, 0);
+  const barrier = Math.max(Number(targetActor.system.barrier?.value) || 0, 0);
+  damage.healthLost = Math.min(health, Math.max(damage.resolvedDamage - barrier, 0));
   if (damage.resolvedDamage > 0) {
     await applyDamageToActor(targetActor, damage.resolvedDamage, {
       token: targetToken,
@@ -155,6 +175,10 @@ export async function applyResolvedDamageToActor(
       await applyStatusEffectChange(targetActor, "sleep", false);
     }
     await applyDrainRecovery(sourceActor);
+    const fraction = Number(sourceItem?.flags?.ffxiv?.healing?.onHpLost?.fraction);
+    if (sourceActor && fraction > 0 && damage.healthLost > 0) {
+      await applyHealingToActor(sourceActor, Math.floor(damage.healthLost * fraction), { sourceActor, sourceItem });
+    }
   }
   await consumeDamageApplicationEffects(
     targetActor,
@@ -223,11 +247,14 @@ async function applyDamageApplicationModifiers(
   let resolvedDamage = Math.max(Number.parseInt(rawDamage, 10) || 0, 0);
   const consumedEffectIds = [];
   let reflectedDamage = 0;
-  for (const effect of targetActor?.allApplicableEffects?.() ?? []) {
+  for (const effect of getEffectiveStackedEffects(targetActor?.allApplicableEffects?.() ?? [])) {
     if (!effect || effect.disabled) continue;
 
     const data = foundry.utils.getProperty(effect, "flags.ffxiv.damage.application");
-    const entries = Array.isArray(data) ? data : data ? [data] : [];
+    const entries = Array.isArray(data) ? [...data] : data ? [data] : [];
+    if (!entries.length && isAbilityAutomationEnabled() && matchesContentKey(effect, "Third Eye")) {
+      entries.push({ operation: "prevent", formula: "@target.vigilance + 5", abilityOnly: true });
+    }
     for (const entry of entries) {
       if (!damageApplicationEntryApplies(entry, { sourceActor, sourceItem }))
         continue;
@@ -244,14 +271,17 @@ async function applyDamageApplicationModifiers(
         .trim()
         .toLowerCase();
       const previousDamage = resolvedDamage;
-      if (["override", "replace", "set"].includes(operation)) {
+      if (operation === "prevent") {
+        if (resolvedDamage > amount) continue;
+        resolvedDamage = 0;
+      } else if (["override", "replace", "set"].includes(operation)) {
         resolvedDamage = amount;
       } else if (operation === "multiply") {
         resolvedDamage *= amount;
       } else if (["add", "grant"].includes(operation)) {
-        resolvedDamage += amount;
+        resolvedDamage += amount * (getEffectStackKey(effect) ? getEffectStackCount(effect) : 1);
       } else {
-        resolvedDamage -= amount;
+        resolvedDamage -= amount * (getEffectStackKey(effect) ? getEffectStackCount(effect) : 1);
       }
 
       if (entry.reflect && damageApplicationEntryApplies(entry.reflect, { sourceActor, sourceItem })) {
@@ -274,6 +304,7 @@ async function applyDamageApplicationModifiers(
 
 function damageApplicationEntryApplies(entry, { sourceActor = null, sourceItem = null } = {}) {
   if (!entry || typeof entry !== "object") return false;
+  if (entry.abilityOnly === true && !sourceItem?._isAbilityLikeItem?.()) return false;
 
   const sourceNames = toArray(
     entry.sourceNames ?? entry.sourceName ?? entry.sourceAbilities ?? entry.sourceAbility,
@@ -331,6 +362,7 @@ async function resolveDamageApplicationAmount(
       {};
     const roll = new Roll(formula, {
       ...rollData,
+      target: targetActor?.getRollData?.() ?? {},
       damage: currentDamage,
     });
     await roll.evaluate();
@@ -488,7 +520,7 @@ async function applyDrainRecovery(sourceActor) {
 
 export async function applyDamageSourceManaRecovery(sourceActor, sourceItem, damageResults) {
   if (!sourceActor || !sourceItem) return;
-  const damageInstances = Array.from(damageResults ?? []).filter(
+  const damageInstances = Array.from(damageResults ?? []).flatMap((result) => result?.instances ?? [result]).filter(
     (result) => Number(result?.resolvedDamage) > 0,
   ).length;
   if (damageInstances <= 0) return;
@@ -541,18 +573,38 @@ function mpRecoveryEntryAppliesToItem(entry, item) {
   );
 }
 
-function getActorDamageEffectModifiers(actor, channel) {
+function getActorDamageEffectModifiers(actor, channel, { sourceItem = null } = {}) {
   const channelPath = `damage.${channel}`;
 
   const result = { flat: 0, mult: 1 };
-  const effects = Array.from(actor?.allApplicableEffects?.() ?? []);
+  if (sourceItem) {
+    if (channel === "outgoing" && getAbilitySubtype(sourceItem) === "primary_ability") {
+      result.flat -= getHighestStatusStackCount(actor, "damage_down");
+    }
+    if (channel === "incoming") {
+      const tags = Array.from(sourceItem.system?.tags ?? []);
+      for (const type of ["physical", "magic"]) {
+        if (tags.some((tag) => FFXIVItem._tagMatches(tag, [`FFXIV.Tags.${type === "physical" ? "Physical" : "Magic"}`]))) {
+          result.flat += getHighestStatusStackCount(actor, `${type}_vulnerability_up`);
+        }
+      }
+      for (const aspect of ["fire", "ice", "wind", "earth", "lightning", "water"]) {
+        if (tags.some((tag) => FFXIVItem._tagMatches(tag, [`FFXIV.Tags.${aspect[0].toUpperCase()}${aspect.slice(1)}Aspected`]))) {
+          result.flat += getHighestStatusStackCount(actor, `${aspect}_resistance_down`);
+        }
+      }
+    }
+  }
+  const effects = getEffectiveStackedEffects(actor?.allApplicableEffects?.() ?? []);
   for (const effect of effects) {
     if (!effect || effect.disabled) continue;
 
+    const stacks = getEffectStackKey(effect) ? getEffectStackCount(effect) : 1;
+
     const flagFlat = Number(foundry.utils.getProperty(effect, `flags.ffxiv.${channelPath}.flat`));
-    if (Number.isFinite(flagFlat)) result.flat += flagFlat;
+    if (Number.isFinite(flagFlat)) result.flat += flagFlat * stacks;
     const flagMult = Number(foundry.utils.getProperty(effect, `flags.ffxiv.${channelPath}.mult`));
-    if (Number.isFinite(flagMult)) result.mult *= flagMult;
+    if (Number.isFinite(flagMult)) result.mult *= flagMult ** stacks;
 
     for (const change of effect.changes ?? []) {
       const key = String(change?.key ?? "").trim().toLowerCase();
@@ -561,16 +613,16 @@ function getActorDamageEffectModifiers(actor, channel) {
       if (!Number.isFinite(value)) continue;
 
       if (key === `flags.ffxiv.${channelPath}.flat`) {
-        if (mode === "multiply") result.flat *= value;
+        if (mode === "multiply") result.flat *= value ** stacks;
         else if (mode === "override") result.flat = value;
-        else if (mode === "subtract") result.flat -= value;
-        else result.flat += value;
+        else if (mode === "subtract") result.flat -= value * stacks;
+        else result.flat += value * stacks;
       }
       if (key === `flags.ffxiv.${channelPath}.mult`) {
-        if (mode === "add") result.mult += value;
+        if (mode === "add") result.mult += value * stacks;
         else if (mode === "override") result.mult = value;
-        else if (mode === "subtract") result.mult -= value;
-        else result.mult *= value;
+        else if (mode === "subtract") result.mult -= value * stacks;
+        else result.mult *= value ** stacks;
       }
     }
   }

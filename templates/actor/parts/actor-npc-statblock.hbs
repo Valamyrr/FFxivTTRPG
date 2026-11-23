@@ -182,7 +182,7 @@
                           class="input-transparent ffxiv-w-auto"
                           title="{{localize 'FFXIV.Attributes.SpeedType'}}">
                     <option value=""></option>
-                    {{#each (array "Aquatic" "Flying") as |label| }}
+                    {{#each (array "Aquatic" "Flying" "Immobile") as |label| }}
                       <option value="{{label}}" {{#if (eq ../system.speed_type label) }}selected{{/if}}>
                         {{toLowerCase (localize (concat "FFXIV.SpeedTypes." label))}}
                       </option>

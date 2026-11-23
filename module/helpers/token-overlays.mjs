@@ -2,6 +2,7 @@ import {
   getStatusStackCount,
   getStatusStackValue,
   isStackableStatusEffect,
+  usesNumberedStatusIcon,
 } from "./status-effects.mjs";
 
 const FFXIV_BARRIER_OVERLAY_KEY = "ffxivBarrierOverlay";
@@ -167,6 +168,7 @@ function drawFFXIVStatusStackCounters(token) {
   )) {
     const statusId = iconPathToStatusId.get(sprite.name);
     if (!statusId) continue;
+    if (usesNumberedStatusIcon(statusId)) continue;
 
     const effect = iconPathToEffects.get(sprite.name)?.shift();
     const stackCount = effect

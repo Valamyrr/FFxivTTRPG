@@ -1,4 +1,17 @@
+import { getEffectStackCount, getEffectStackKey } from "./helpers/stacking.mjs";
+
 export class FFXIVActiveEffect extends ActiveEffect {
+  prepareBaseData() {
+    const stacks = getEffectStackKey(this) ? getEffectStackCount(this) : 1;
+    if (getEffectStackKey(this) && this._source.system?.changes) {
+      this.system.changes = this._source.system.changes.flatMap((change) =>
+        Array.from({ length: change.key?.startsWith("system.") ? stacks : 1 }, () => foundry.utils.deepClone(change)),
+      );
+      this.constructor._shimChanges(this.system.changes);
+    }
+    super.prepareBaseData();
+  }
+
   getReplacementData(baseData) {
     const sourceItem = this._getSourceItem();
     if (!sourceItem) return super.getReplacementData(baseData);

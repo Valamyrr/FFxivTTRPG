@@ -12,6 +12,12 @@ export class FFXIVTokenDocument extends foundry.documents.TokenDocument {
   static async _preUpdateOperation(documents, operation, user) {
     const allowed = await super._preUpdateOperation(documents, operation, user);
     if (allowed === false) return false;
+    if (!operation.ffxivReposition && documents.some((token) => {
+      const movement = operation._movement?.[token.id];
+      return token.actor?.isImmobile && movement && ["x", "y", "elevation", "level"].some((key) =>
+        movement.origin[key] !== movement.destination[key],
+      );
+    })) return false;
     if (!operation._regionUpdates) return;
 
     for (const token of documents) {

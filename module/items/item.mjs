@@ -1087,6 +1087,7 @@ export class FFXIVItem extends Item {
     await applyPetAction(this, petAction);
 
     await this._consumeFromInventoryIfNeeded();
+    await this._markInstantAbilityUsed();
     if (this.parent?.type !== "npc" || this.type !== "ability") {
       for (const marker of this._getAbilityMarkers()) {
         await game.ffxivttrpg.placeMarker(foundry.utils.deepClone(marker));
@@ -1121,6 +1122,7 @@ export class FFXIVItem extends Item {
       const placed = await game.ffxivttrpg.placeMarker(foundry.utils.deepClone(marker), {
         sourceItemUuid: this.uuid,
         sourceTokenId: sourceToken?.id ?? null,
+        removal: String(marker.removal ?? this.system.marker_removal ?? "").trim(),
         showInstructions: index === 0,
       });
       if (!placed) return false;
@@ -1150,10 +1152,31 @@ export class FFXIVItem extends Item {
     }
     const disposition = sourceToken?.disposition
       ?? this.parent.prototypeToken.disposition;
+    const resolving = [];
+    for (const region of regions) {
+      const removal = region.getFlag("ffxiv", "markerSource")?.removal;
+      if (removal) {
+        const action = await foundry.applications.api.DialogV2.wait({
+          window: { title: game.i18n.localize("FFXIV.Abilities.MarkerRemoval") },
+          content: `<p>${foundry.utils.escapeHTML(removal)}</p>`,
+          buttons: [
+            { action: "resolve", label: "FFXIV.MarkerPlacement.Ability.Resolve", callback: () => "resolve", default: true },
+            { action: "remove", label: "FFXIV.Abilities.RemoveMarker", callback: () => "remove" },
+          ],
+          rejectClose: false,
+        });
+        if (!action) return;
+        if (action === "remove") continue;
+      }
+      resolving.push(region);
+    }
+    if (canvas.scene !== scene || regions.some((region) =>
+      !scene.regions.has(region.id) || !region.canUserModify(game.user, "delete"),
+    )) return;
     const targetIds = scene.tokens.filter((token) =>
       token.actor && token.actor.type !== "pet" && token.object && token.disposition !== disposition
       && (!token.hidden || game.user.isGM)
-      && regions.some((region) => token.testInsideRegion(region)),
+      && resolving.some((region) => token.testInsideRegion(region)),
     ).map((token) => token.id);
     await scene.deleteEmbeddedDocuments("Region", regions.map((region) => region.id));
     if (canvas.scene === scene) canvas.tokens.setTargets(targetIds, { mode: "replace" });
@@ -1251,8 +1274,33 @@ export class FFXIVItem extends Item {
     if (hasStatus(this.parent, "silence") && this._isInvokedAbility()) {
       return game.i18n.localize("FFXIV.Notifications.Silenced");
     }
-    return this._getEffectRequirementFailure() || this._getJobResourceCostFailure() ||
+    return this._getInstantAbilityFailure() || this._getEffectRequirementFailure() || this._getJobResourceCostFailure() ||
       this._getMPCostFailure();
+  }
+
+  _usesInstantAbilityAllowance() {
+    return isAbilityAutomationEnabled() && getAbilitySubtype(this) === "instant_ability" &&
+      !(this.system.tags ?? []).some((tag) => FFXIVItem._tagMatches(tag, ["FFXIV.Tags.Surge"]));
+  }
+
+  _getInstantAbilityTurn() {
+    const combat = game.combat;
+    return combat?.started ? `${combat.id}:${combat.round}:${combat.turn}` : null;
+  }
+
+  _getInstantAbilityFailure() {
+    if (!this._usesInstantAbilityAllowance()) return "";
+    const turn = this._getInstantAbilityTurn();
+    return turn && this.parent?.getFlag("ffxiv", "instantAbilityTurn") === turn
+      ? game.i18n.localize("FFXIV.Notifications.InstantAbilityUsed") : "";
+  }
+
+  async _markInstantAbilityUsed() {
+    if (!this._usesInstantAbilityAllowance()) return;
+    const turn = this._getInstantAbilityTurn();
+    if (turn && this.parent?.documentName === "Actor") {
+      await this.parent.setFlag("ffxiv", "instantAbilityTurn", turn);
+    }
   }
 
   _canUseLimitBreak() {
@@ -1802,7 +1850,18 @@ export class FFXIVItem extends Item {
     const actor = this.parent;
     if (actor?.documentName !== "Actor") return true;
 
-    const cost = this._getResolvedMPCost(actor);
+    const excludedResources = new Set();
+    const confirmedResources = new Set();
+    for (const reduction of this._getResolvedMPCost(actor).reductions) {
+      if (!reduction.optional || confirmedResources.has(reduction.resource)) continue;
+      confirmedResources.add(reduction.resource);
+      const spend = await foundry.applications.api.DialogV2.confirm({
+        window: { title: this.name },
+        content: `<p>${game.i18n.format("FFXIV.Abilities.SpendOptionalResource", { resource: foundry.utils.escapeHTML(reduction.resource) })}</p>`,
+      });
+      if (!spend) excludedResources.add(reduction.resource);
+    }
+    const cost = this._getResolvedMPCost(actor, { excludedResources });
     if (cost.amount <= 0 && !cost.reductions.length) return true;
     const currentMana = Number(actor.system?.mana?.value ?? 0);
     if (currentMana < cost.amount) {
@@ -1919,7 +1978,7 @@ export class FFXIVItem extends Item {
     }
   }
 
-  _getResolvedMPCost(actor) {
+  _getResolvedMPCost(actor, { excludedResources = new Set() } = {}) {
     const baseCost = this._getBaseMPCost(actor);
     if (baseCost <= 0) return { amount: 0, baseCost: 0, reductions: [] };
 
@@ -1938,6 +1997,8 @@ export class FFXIVItem extends Item {
       }
       const resource = String(entry.resource ?? entry.resourceName ?? "").trim();
       if (!resource) continue;
+      if (excludedResources.has(resource)) continue;
+      const optional = entry.optional === true || ["umbral_heart", "umbral_hearts"].includes(normalizeJobResourceName(resource));
       const resourceAmount = Math.max(
         Number.parseInt(entry.amount ?? entry.resourceAmount, 10) || 1,
         1,
@@ -1952,7 +2013,7 @@ export class FFXIVItem extends Item {
       );
       const nextAmount = Math.max(amount - reductionAmount, minCost);
       if (nextAmount >= amount) continue;
-      reductions.push({ resource, amount: resourceAmount });
+      reductions.push({ resource, amount: resourceAmount, optional });
       amount = nextAmount;
 
       const maxApplications = Number.parseInt(entry.maxApplications, 10);
@@ -1963,7 +2024,7 @@ export class FFXIVItem extends Item {
           break;
         const repeatedAmount = Math.max(amount - reductionAmount, minCost);
         if (repeatedAmount >= amount) break;
-        reductions.push({ resource, amount: resourceAmount });
+        reductions.push({ resource, amount: resourceAmount, optional });
         amount = repeatedAmount;
       }
     }

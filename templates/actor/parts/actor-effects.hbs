@@ -37,7 +37,9 @@
                 <a class="effect-control effect-stack-control"
                    data-action="stack-decrease"
                    title="{{localize 'FFXIV.CharacterSheet.StackDecrease'}}">-</a>
-                <span class="effect-stack-count">{{effect.ffxivStackCount}}</span>
+                {{#unless effect.ffxivNumberedIcon}}
+                  <span class="effect-stack-count">{{effect.ffxivStackCount}}</span>
+                {{/unless}}
                 <a class="effect-control effect-stack-control"
                    data-action="stack-increase"
                    title="{{localize 'FFXIV.CharacterSheet.StackIncrease'}}">+</a>

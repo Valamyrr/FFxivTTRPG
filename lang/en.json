@@ -232,6 +232,9 @@
       "Tank": "Tank"
     },
     "Abilities": {
+      "MarkerRemoval": "Marker Removal",
+      "RemoveMarker": "Remove Without Resolving",
+      "SpendOptionalResource": "Spend {resource}?",
       "TraitsShort": "Traits",
       "Traits": "Traits & LB",
       "Abilities": "Abilities",
@@ -491,6 +494,15 @@
       "AutomationCap": "Maximum stacks"
     },
     "Effects": {
+      "FireResistanceDown": "Fire Resistance Down",
+      "IceResistanceDown": "Ice Resistance Down",
+      "WindResistanceDown": "Wind Resistance Down",
+      "EarthResistanceDown": "Earth Resistance Down",
+      "LightningResistanceDown": "Lightning Resistance Down",
+      "WaterResistanceDown": "Water Resistance Down",
+      "DamageDown": "Damage Down",
+      "PhysicalVulnerabilityUp": "Physical Vulnerability Up",
+      "MagicVulnerabilityUp": "Magic Vulnerability Up",
       "Ascendent": "Transcendent",
       "Bind": "Bind",
       "Blind": "Blind",
@@ -705,6 +717,7 @@
       "RotateRegionMarkerCounterclockwiseHint": "Rotate an active FFXIV region marker placement counterclockwise by one grid-facing step."
     },
     "Notifications": {
+      "InstantAbilityUsed": "You have already used an instant ability this turn.",
       "NoTarget": "No target selected.",
       "TargetWarningTitle": "Target Selection Warning",
       "NoTargetWithKeybind": "No target selected.\nUse {singleKeybind} while hovering a token to select a target.\nUse {multipleKeybind} while hovering additional tokens to select multiple targets.",
@@ -912,6 +925,7 @@
       "Boss": "Boss"
     },
     "SpeedTypes": {
+      "Immobile": "Immobile",
       "Flying": "Flying",
       "Aquatic": "Aquatic"
     },
@@ -925,6 +939,12 @@
     "True": "True",
     "False": "False",
     "EffectAutomation": {
+      "StackingKey": "Stacking group",
+      "CumulativeStacks": "Cumulative stacks",
+      "MaximumStacks": "Maximum stacks",
+      "StackCount": "Stack count / value (X)",
+      "AbilityDamageOnly": "Ability damage only",
+      "Optional": "Optional spending",
       "Title": "Automation",
       "SheetLabel": "FFXIV Effect Sheet",
       "Key": "Effect Matching Key",
@@ -970,7 +990,7 @@
       "FirstRoundOfPhase": "MP recovery in first round of phase only",
       "PreventEnfeeblement": "Prevent the next enfeeblement",
       "DamageApplication": "Incoming Damage Rules",
-      "Operation": "Operation (subtract, override, multiply, add)",
+      "Operation": "Operation (subtract, override, multiply, add, prevent)",
       "Amount": "Amount",
       "Formula": "Formula",
       "Percent": "Percentage of damage",

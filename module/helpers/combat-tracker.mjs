@@ -4,6 +4,7 @@ import {
   getStatusStackCount,
   hasStatus,
   isStackableStatusEffect,
+  usesNumberedStatusIcon,
 } from "./status-effects.mjs";
 import { getSummonerCombatant } from "./summons.mjs";
 import { getHookHTMLElement } from "./ui.mjs";
@@ -100,6 +101,12 @@ function decorateCombatantStatusStacks(combatantElement, actor, statusEffects) {
     if (!(icon instanceof HTMLImageElement)) continue;
     const label = game.i18n.localize(status?.name ?? status?.label ?? statusId);
     const count = getStatusStackCount(actor, statusId);
+    if (usesNumberedStatusIcon(statusId)) {
+      const title = count > 1 ? `${label} (x${count})` : label;
+      icon.title = title;
+      icon.setAttribute("data-tooltip", title);
+      continue;
+    }
     if (count <= 1) {
       icon.title = label;
       icon.setAttribute("data-tooltip", label);

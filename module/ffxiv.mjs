@@ -24,11 +24,13 @@ import {
   KNOCKED_OUT_ALLOWED_STATUS_IDS,
   applyStatusEffectChange,
   applyStatusEffectStackDelta,
+  getNumberedStatusIcon,
   getStatusStackCount,
   hasStatus,
   isEliteFoeBlockedStatus,
   isNegativeStatusEffect,
   isStackableStatusEffect,
+  usesNumberedStatusIcon,
   migrateLegacyStatusStackEffects,
   updateStatusEffects,
 } from "./helpers/status-effects.mjs";
@@ -293,6 +295,12 @@ Hooks.on("preCreateActiveEffect", (effect) => {
   if (!actor) return;
   applyLinkedTraitDataToActiveEffectSource(effect, actor);
   const statuses = Array.from(effect.statuses ?? effect._source?.statuses ?? []);
+  if (statuses.length === 1) {
+    const statusId = statuses[0];
+    const count = getEffectStatusStackCount(effect, statusId);
+    const icon = getNumberedStatusIcon(statusId, count);
+    if (icon) effect.updateSource({ img: icon, icon });
+  }
   if (
     hasStatus(actor, "knocked_out") &&
     statuses.some((statusId) => !KNOCKED_OUT_ALLOWED_STATUS_IDS.has(statusId))
@@ -322,12 +330,35 @@ Hooks.on("preUpdateItem", (_item, changes) => {
 
 Hooks.on("preUpdateActiveEffect", (effect, changes, options) => {
   normalizeLegacySubtractActiveEffectUpdate(changes);
+  const statuses = Array.from(changes.statuses ?? effect.statuses ?? []);
+  if (statuses.length === 1) {
+    const statusId = statuses[0];
+    const scopedCount = Number.parseInt(
+      changes[`flags.ffxiv.statusStacks.${statusId}`] ??
+        foundry.utils.getProperty(changes, `flags.ffxiv.statusStacks.${statusId}`),
+      10,
+    );
+    const stackCount = Number.parseInt(
+      changes["flags.ffxiv.stackCount"] ??
+        foundry.utils.getProperty(changes, "flags.ffxiv.stackCount"),
+      10,
+    );
+    const count = Number.isFinite(scopedCount)
+      ? scopedCount
+      : Number.isFinite(stackCount)
+        ? stackCount
+        : getEffectStatusStackCount(effect, statusId);
+    const icon = getNumberedStatusIcon(statusId, count);
+    if (icon) {
+      changes.img = icon;
+      changes.icon = icon;
+    }
+  }
   if (options?.ffxivSyncEliteFoeEffect) return;
   if (effect?.parent?.documentName !== "Actor") return;
   if (
     foundry.utils.hasProperty(changes, "statuses")
   ) {
-    const statuses = Array.from(changes.statuses ?? []);
     if (
       hasStatus(effect.parent, "knocked_out") &&
       statuses.some((statusId) => !KNOCKED_OUT_ALLOWED_STATUS_IDS.has(statusId))
@@ -875,10 +906,11 @@ function installActiveEffectStatusDuplicateControls() {
           continue;
         }
 
+        const numberedIcon = usesNumberedStatusIcon(statusId);
         const currentValue = `x${getEffectStatusStackCount(effect, statusId)}`;
         if (existing) {
           const valueNode = existing.querySelector(".ffxiv-status-stack-value");
-          if (valueNode && valueNode.textContent !== currentValue) {
+          if (!numberedIcon && valueNode && valueNode.textContent !== currentValue) {
             valueNode.textContent = currentValue;
           }
           continue;
@@ -896,6 +928,7 @@ function installActiveEffectStatusDuplicateControls() {
         const value = document.createElement("span");
         value.className = "ffxiv-status-stack-value";
         value.textContent = currentValue;
+        if (numberedIcon) value.hidden = true;
 
         const plus = document.createElement("button");
         plus.type = "button";
@@ -906,11 +939,15 @@ function installActiveEffectStatusDuplicateControls() {
         const updateCount = async (delta) => {
           const current = getEffectStatusStackCount(effect, statusId);
           const next = Math.max(1, current + delta);
+          const icon = getNumberedStatusIcon(statusId, next);
           await effect.update(
-            { [`flags.ffxiv.statusStacks.${statusId}`]: next },
+            {
+              [`flags.ffxiv.statusStacks.${statusId}`]: next,
+              ...(icon ? { img: icon, icon } : {}),
+            },
             { render: false, ffxivStatusStackControl: true },
           );
-          value.textContent = `x${next}`;
+          if (!numberedIcon) value.textContent = `x${next}`;
         };
 
         minus.addEventListener("click", (event) => {
@@ -1003,6 +1040,8 @@ function installStackableStatusEffectHudBehavior() {
       );
       const count = getStatusStackCount(actor, statusId);
       const title = count > 0 ? `${baseTitle} (x${count})` : baseTitle;
+      const numberedIcon = getNumberedStatusIcon(statusId, count);
+      if (numberedIcon) icon.src = numberedIcon;
       icon.setAttribute("data-tooltip-text", title);
     }
   };

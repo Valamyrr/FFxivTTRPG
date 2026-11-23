@@ -232,6 +232,9 @@
       "Tank": "Tank"
     },
     "Abilities": {
+      "MarkerRemoval": "Retrait du marqueur",
+      "RemoveMarker": "Retirer sans résoudre",
+      "SpendOptionalResource": "Dépenser la ressource {resource} ?",
       "TraitsShort": "Traits",
       "Traits": "Traits & Transc.",
       "Abilities": "Compétences",
@@ -491,6 +494,15 @@
       "AutomationCap": "Cumul maximum"
     },
     "Effects": {
+      "FireResistanceDown": "Résistance au feu réduite",
+      "IceResistanceDown": "Résistance à la glace réduite",
+      "WindResistanceDown": "Résistance au vent réduite",
+      "EarthResistanceDown": "Résistance à la terre réduite",
+      "LightningResistanceDown": "Résistance à la foudre réduite",
+      "WaterResistanceDown": "Résistance à l’eau réduite",
+      "DamageDown": "Dégâts réduits",
+      "PhysicalVulnerabilityUp": "Vulnérabilité physique augmentée",
+      "MagicVulnerabilityUp": "Vulnérabilité magique augmentée",
       "Ascendent": "Transcendant",
       "Bind": "Entrave",
       "Blind": "Cécité",
@@ -705,6 +717,7 @@
       "RotateRegionMarkerCounterclockwiseHint": "Fait pivoter le placement actif d'un marqueur de région FFXIV d'un cran de grille dans le sens antihoraire."
     },
     "Notifications": {
+      "InstantAbilityUsed": "Une capacité instantanée a déjà été utilisée pendant ce tour.",
       "NoTarget": "Aucune cible sélectionnée.",
       "TargetWarningTitle": "Avertissement de ciblage",
       "NoTargetWithKeybind": "Aucune cible sélectionnée.\nUtilisez {singleKeybind} en survolant un token pour sélectionner une cible.\nUtilisez {multipleKeybind} en survolant d'autres tokens pour sélectionner plusieurs cibles.",
@@ -912,6 +925,7 @@
       "Boss": "Boss"
     },
     "SpeedTypes": {
+      "Immobile": "Immobile",
       "Flying": "Volant",
       "Aquatic": "Aquatique"
     },
@@ -925,6 +939,12 @@
     "True": "Vrai",
     "False": "Faux",
     "EffectAutomation": {
+      "StackingKey": "Groupe de cumul",
+      "CumulativeStacks": "Effets cumulatifs",
+      "MaximumStacks": "Cumul maximal",
+      "StackCount": "Nombre de cumuls / valeur (X)",
+      "AbilityDamageOnly": "Dégâts de capacité uniquement",
+      "Optional": "Dépense facultative",
       "Title": "Automatisation",
       "SheetLabel": "Fiche d'effet FFXIV",
       "Key": "Identifiant de correspondance de l'effet",

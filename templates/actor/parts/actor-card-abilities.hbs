@@ -112,6 +112,11 @@
         <strong>{{localize "FFXIV.Abilities.MarkerTrigger"}}:</strong> {{{enriched.marker_trigger}}}
       </div>
     {{/if}}
+    {{#if system.marker_removal}}
+      <div class="effect">
+        <strong>{{localize "FFXIV.Abilities.MarkerRemoval"}}:</strong> {{system.marker_removal}}
+      </div>
+    {{/if}}
     {{#if system.marker_effect }}
       <div class="effect">
         <strong>{{localize "FFXIV.Abilities.MarkerEffect"}}:</strong> {{{enriched.marker_effect}}}

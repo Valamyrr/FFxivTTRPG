@@ -66,6 +66,7 @@ const ITEM_ENRICHED_FIELDS = [
   "marker_area",
   "marker_effect",
   "marker_trigger",
+  "marker_removal",
   "origin",
   "range",
   "target",

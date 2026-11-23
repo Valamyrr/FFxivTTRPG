@@ -16,6 +16,7 @@ import {
   removeEnmityInflictedByActor,
 } from "./status-effects.mjs";
 import { clearActorJobResources } from "./job-resources.mjs";
+import { getEffectStackKey, prepareCumulativeEffects } from "./stacking.mjs";
 
 function normalizeStatusEntryStacks(entry) {
   const parsed = Number.parseInt(entry?.stacks, 10);
@@ -97,6 +98,7 @@ export async function applyLinkedEffectsToActor(actor, effectDocs) {
     normalizedEffectDocs,
   );
   if (!normalizedEffectDocs.length) return 0;
+  normalizedEffectDocs = await prepareCumulativeEffects(actor, normalizedEffectDocs);
 
   const replacementSources = normalizedEffectDocs
     .filter((doc) => !isLinkedEffectDocAdditiveStackable(doc))
@@ -105,7 +107,7 @@ export async function applyLinkedEffectsToActor(actor, effectDocs) {
       if (!sourceEffectId) return null;
       const sourceItemUuid = String(foundry.utils.getProperty(doc, "flags.ffxiv.linkedSourceItemUuid") ?? doc.origin ?? "").trim();
       const sourceItemId = String(foundry.utils.getProperty(doc, "flags.ffxiv.linkedSourceItemId") ?? getItemIdFromUuid(sourceItemUuid)).trim();
-      return { sourceEffectId, sourceItemUuid, sourceItemId };
+      return { sourceEffectId, sourceItemUuid, sourceItemId, statuses: getLinkedEffectDocStatuses(doc), stackKey: getEffectStackKey(doc) };
     })
     .filter(Boolean);
 
@@ -118,10 +120,14 @@ export async function applyLinkedEffectsToActor(actor, effectDocs) {
         const originItemId = getItemIdFromUuid(origin);
         const flaggedSourceUuid = String(effect.getFlag("ffxiv", "linkedSourceItemUuid") ?? "").trim();
         const flaggedSourceItemId = String(effect.getFlag("ffxiv", "linkedSourceItemId") ?? "").trim();
-        return replacementSources.some(({ sourceEffectId, sourceItemUuid, sourceItemId }) => {
-          if (linkedId !== sourceEffectId) return false;
+        return replacementSources.some(({ sourceEffectId, sourceItemUuid, sourceItemId, statuses, stackKey }) => {
+          if (linkedId !== sourceEffectId &&
+            !statuses.some((statusId) => effect.statuses?.has(statusId)) &&
+            !(stackKey && getEffectStackKey(effect) === stackKey)) return false;
           if (!sourceItemUuid && !sourceItemId) return true;
-          if (sourceItemUuid && (origin === sourceItemUuid || flaggedSourceUuid === sourceItemUuid)) return true;
+          if (sourceItemUuid && (origin || flaggedSourceUuid)) {
+            return origin === sourceItemUuid || flaggedSourceUuid === sourceItemUuid;
+          }
           if (!sourceItemId) return false;
           if (originItemId === sourceItemId || flaggedSourceItemId === sourceItemId) return true;
           return getItemIdFromUuid(flaggedSourceUuid) === sourceItemId;
@@ -294,6 +300,7 @@ function hasThunderSpellDotFromSource(actor, sourceActorUuid) {
 }
 
 function isLinkedEffectDocAdditiveStackable(doc) {
+  if (doc.flags?.ffxiv?.stacking?.cumulative === true) return true;
   return getLinkedEffectDocStatuses(doc).some((statusId) =>
     isAdditiveStackableStatusEffect(statusId),
   );

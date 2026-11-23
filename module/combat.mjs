@@ -1238,6 +1238,9 @@ export class FFXIVCombat extends Combat {
   async _resetEncounterStatusFlags() {
     const actors = this._getUniqueCombatActors();
     for (const actor of actors.values()) {
+      if (actor.getFlag("ffxiv", "instantAbilityTurn") !== undefined) {
+        await actor.unsetFlag("ffxiv", "instantAbilityTurn");
+      }
       if (actor.getFlag("ffxiv", "stunnedInEncounter") !== undefined) {
         await actor.unsetFlag("ffxiv", "stunnedInEncounter");
       }

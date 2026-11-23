@@ -2,11 +2,30 @@ import { getTurnsUntilActorTurnEnd } from "./effect-utils.mjs";
 import { clearActorJobResources } from "./job-resources.mjs";
 import { isAbilityAutomationEnabled } from "./automation.mjs";
 
+const NUMERIC_ENFEEBLEMENT_IDS = [
+  "damage_down",
+  "physical_vulnerability_up",
+  "magic_vulnerability_up",
+  ...["fire", "ice", "wind", "earth", "lightning", "water"].map((aspect) => `${aspect}_resistance_down`),
+];
+const NUMBERED_STATUS_ICON_MAX = new Map([
+  ["damage_down", 16],
+  ["physical_vulnerability_up", 16],
+  ["magic_vulnerability_up", 16],
+  ["fire_resistance_down", 8],
+  ["ice_resistance_down", 8],
+  ["wind_resistance_down", 8],
+  ["earth_resistance_down", 8],
+  ["lightning_resistance_down", 16],
+  ["water_resistance_down", 16],
+]);
+
 export const STACKABLE_STATUS_EFFECT_IDS = new Set([
   "critical_up",
   "dot",
   "drain",
   "revivify",
+  ...NUMERIC_ENFEEBLEMENT_IDS,
 ]);
 const ADDITIVE_STACKABLE_STATUS_EFFECT_IDS = new Set(["critical_up"]);
 const STACK_COUNT_FLAG_SCOPE = "ffxiv";
@@ -15,6 +34,11 @@ const MANUAL_STACK_SOURCE = "__manual__";
 const PETRIFIED_APPLIED_TURN_FLAG = "petrifiedAppliedTurn";
 
 const STATUS_DEFINITIONS = [
+  ...NUMERIC_ENFEEBLEMENT_IDS.map((id) => ({
+    id,
+    labelKey: `FFXIV.Effects.${id.split("_").map((part) => part[0].toUpperCase() + part.slice(1)).join("")}`,
+    icon: getNumberedStatusIcon(id, 1),
+  })),
   {
     id: "transcendent",
     labelKey: "FFXIV.Effects.Ascendent",
@@ -213,6 +237,7 @@ export const BENEFICIAL_STATUS_IDS = [
 ];
 
 export const NEGATIVE_STATUS_IDS = [
+  ...NUMERIC_ENFEEBLEMENT_IDS,
   "bind",
   "blind",
   "brink_death",
@@ -271,6 +296,18 @@ function createStatusEffect(id, labelKey, icon, order) {
 
 export function isStackableStatusEffect(statusId) {
   return STACKABLE_STATUS_EFFECT_IDS.has(String(statusId ?? ""));
+}
+
+export function usesNumberedStatusIcon(statusId) {
+  return NUMBERED_STATUS_ICON_MAX.has(String(statusId ?? ""));
+}
+
+export function getNumberedStatusIcon(statusId, count = 1) {
+  const normalizedStatusId = String(statusId ?? "");
+  const max = NUMBERED_STATUS_ICON_MAX.get(normalizedStatusId);
+  if (!max) return null;
+  const stack = Math.clamp(Number.parseInt(count, 10) || 1, 1, max);
+  return `systems/ffxiv/assets/effects/${normalizedStatusId.replaceAll("_", "-")}/${stack}.webp`;
 }
 
 export function isAdditiveStackableStatusEffect(statusId) {
@@ -593,6 +630,8 @@ async function createStatusStack(
     [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]:
       normalizeStackCount(count, 1),
   });
+  const icon = getNumberedStatusIcon(statusId, count);
+  if (icon) effect.updateSource({ img: icon, icon });
   if (origin) effect.updateSource({ origin });
   if (overlay) effect.updateSource({ "flags.core.overlay": true });
   const preparedDuration = prepareStatusEffectDuration(duration, actor);
@@ -623,6 +662,11 @@ async function collapseLegacyStatusStacks(
   const updateData = {
     [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]: targetCount,
   };
+  const icon = getNumberedStatusIcon(statusId, targetCount);
+  if (icon) {
+    updateData.img = icon;
+    updateData.icon = icon;
+  }
   if (origin) updateData.origin = origin;
   const preparedDuration = prepareStatusEffectDuration(duration, actor);
   if (preparedDuration) updateData.duration = preparedDuration;
@@ -1021,16 +1065,81 @@ export async function removeActorEnfeeblement(actor) {
   return true;
 }
 
-export async function consumeEnfeeblementProtection(actor, statusId) {
-  if (!isAbilityAutomationEnabled() || !isNegativeStatusEffect(statusId) ||
-      ["knocked_out", "weakness", "brink_death", "comatose", "death"].includes(statusId)) return false;
-  const effect = Array.from(actor.effects ?? []).find((entry) =>
-    !entry.disabled && (entry.flags?.ffxiv?.status?.preventEnfeeblement === true ||
-      entry.flags?.ffxiv?.status?.preventStatuses?.includes(statusId)),
-  );
-  if (!effect) return false;
+export async function choosePreventedEnfeeblement(actor, statusIds) {
+  if (!isAbilityAutomationEnabled()) return null;
+  const blockedStatuses = new Set([
+    "knocked_out",
+    "weakness",
+    "brink_death",
+    "comatose",
+    "death",
+  ]);
+  const incoming = [...new Set((Array.isArray(statusIds) ? statusIds : [statusIds])
+    .map((statusId) => String(statusId ?? "").trim())
+    .filter((statusId) => isNegativeStatusEffect(statusId) && !blockedStatuses.has(statusId)))];
+  if (!incoming.length) return null;
+
+  const effect = Array.from(actor?.effects ?? []).find((entry) => {
+    if (!entry || entry.disabled) return false;
+    const protection = entry.flags?.ffxiv?.status;
+    if (protection?.preventEnfeeblement === true) return true;
+    const protectedStatuses = Array.isArray(protection?.preventStatuses)
+      ? protection.preventStatuses
+      : [];
+    return incoming.some((statusId) => protectedStatuses.includes(statusId));
+  });
+  if (!effect) return null;
+
+  const protection = effect.flags?.ffxiv?.status;
+  const protectedStatuses = Array.isArray(protection?.preventStatuses)
+    ? protection.preventStatuses
+    : [];
+  const eligible = protection?.preventEnfeeblement === true
+    ? incoming
+    : incoming.filter((statusId) => protectedStatuses.includes(statusId));
+  if (!eligible.length) return null;
+
+  let selected = eligible[0];
+  if (eligible.length > 1) {
+    const choice = await foundry.applications.api.DialogV2.prompt({
+      window: { title: game.i18n.localize("FFXIV.Abilities.RemoveEnfeeblement") },
+      content: `<select name="statusId">${eligible.map((statusId) => {
+        const status = CONFIG.statusEffects?.find((entry) => entry.id === statusId);
+        const label = game.i18n.localize(status?.name ?? status?.label ?? statusId);
+        return `<option value="${foundry.utils.escapeHTML(statusId)}">${foundry.utils.escapeHTML(label)}</option>`;
+      }).join("")}</select>`,
+      ok: { callback: (_event, button) => button.form.elements.statusId.value },
+      rejectClose: false,
+    });
+    if (eligible.includes(choice)) selected = choice;
+  }
+
   await effect.delete();
-  return true;
+  return selected;
+}
+
+export async function filterPreventedStatusEntries(actor, entries) {
+  const normalizedEntries = Array.isArray(entries) ? entries : [];
+  const activeEntries = normalizedEntries.filter((entry) => entry?.active !== false);
+  const preventedStatusId = await choosePreventedEnfeeblement(
+    actor,
+    activeEntries.map((entry) => entry?.statusId ?? entry?.id ?? entry?.effect?.id),
+  );
+  if (!preventedStatusId) return normalizedEntries;
+
+  let prevented = false;
+  return normalizedEntries.filter((entry) => {
+    const statusId = String(entry?.statusId ?? entry?.id ?? entry?.effect?.id ?? "").trim();
+    if (!prevented && entry?.active !== false && statusId === preventedStatusId) {
+      prevented = true;
+      return false;
+    }
+    return true;
+  });
+}
+
+export async function consumeEnfeeblementProtection(actor, statusId) {
+  return Boolean(await choosePreventedEnfeeblement(actor, [statusId]));
 }
 
 export async function applyStatusEffectChange(
@@ -1180,6 +1289,12 @@ export async function migrateLegacyStatusStackEffects() {
       }
 
       for (const group of groups.values()) {
+        const primary = group[0];
+        const targetCount = group.reduce(
+          (total, effect) => total + getStatusStackValue(effect, 1, statusId),
+          0,
+        );
+        const icon = getNumberedStatusIcon(statusId, targetCount);
         const missingCounterFlag = group.some((effect) => {
           const value = effect.getFlag(
             STACK_COUNT_FLAG_SCOPE,
@@ -1187,17 +1302,14 @@ export async function migrateLegacyStatusStackEffects() {
           );
           return !Number.isFinite(Number.parseInt(value, 10));
         });
-        if (group.length === 1 && !missingCounterFlag) continue;
+        const hasCurrentIcon = !icon || primary.img === icon;
+        if (group.length === 1 && !missingCounterFlag && hasCurrentIcon) continue;
 
-        const primary = group[0];
-        const targetCount = group.reduce(
-          (total, effect) => total + getStatusStackValue(effect, 1, statusId),
-          0,
-        );
         await primary.update(
           {
             [`flags.${STACK_COUNT_FLAG_SCOPE}.${STACK_COUNT_FLAG_KEY}`]:
               normalizeStackCount(targetCount, 1),
+            ...(icon ? { img: icon, icon } : {}),
           },
           { render: false },
         );

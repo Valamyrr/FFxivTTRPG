@@ -1,8 +1,10 @@
 import { createHotbarObserver } from "./ui.mjs";
 import {
+  getNumberedStatusIcon,
   getStatusStackCount,
   isBeneficialStatusEffect,
   isNegativeStatusEffect,
+  usesNumberedStatusIcon,
 } from "./status-effects.mjs";
 
 const TEMPLATE = "systems/ffxiv/templates/actor/parts/actor-hud-resources.hbs";
@@ -75,9 +77,15 @@ function getActiveStatusEffects(actor) {
     return {
       id: statusId,
       name,
-      icon: status?.icon || status?.img || "icons/svg/aura.svg",
+      icon:
+        getNumberedStatusIcon(statusId, stackCount) ||
+        status?.icon ||
+        status?.img ||
+        "icons/svg/aura.svg",
       stackCount,
-      stackLabel: stackCount > 1 ? String(stackCount) : "",
+      stackLabel: stackCount > 1 && !usesNumberedStatusIcon(statusId)
+        ? String(stackCount)
+        : "",
       type: isBeneficialStatusEffect(statusId)
         ? "beneficial"
         : isNegativeStatusEffect(statusId)

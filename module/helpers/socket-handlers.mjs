@@ -367,7 +367,7 @@ export function registerSystemSocketHooks() {
               const damageResults = [];
               if (applications.length) {
                 for (const { actor, result } of applications) {
-                  await applyResolvedDamageToActor(actor, result, { sourceActor });
+                  await applyResolvedDamageToActor(actor, result, { sourceActor, sourceItem });
                   damageResults.push(result);
                 }
               } else {

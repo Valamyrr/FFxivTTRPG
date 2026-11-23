@@ -3,6 +3,7 @@ import {
   getStatusStackValue,
   isEliteFoeBlockedStatus,
   isStackableStatusEffect,
+  usesNumberedStatusIcon,
 } from "./status-effects.mjs";
 
 /**
@@ -126,6 +127,7 @@ export function prepareActiveEffectCategories(effects) {
       type: effectType,
       typeLabel: effectTypeLabel,
       ffxivStackable: stackable,
+      ffxivNumberedIcon: usesNumberedStatusIcon(statusId),
       ffxivStackCount: stackable ? getStatusStackValue(e, 1, statusId) : 1,
       ffxivStatusId: statusId,
       ffxivLockedControls: e.getFlag("ffxiv", "eliteFoeEffect") === true,

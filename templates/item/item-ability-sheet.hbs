@@ -731,6 +731,12 @@
                        value="{{item.system.marker_effect}}" />
               </div>
             </div>
+            <div class="resource flex-group-center">
+              <label for="system.marker_removal" class="resource-label">{{ localize "FFXIV.Abilities.MarkerRemoval" }}</label>
+              <div class="resource-content flexrow flex-center flex-between">
+                <input name="system.marker_removal" type="text" value="{{item.system.marker_removal}}" />
+              </div>
+            </div>
             {{#if itemEditMode}}
             <div class="ability-marker-list-heading ability-form-span">
               <h3>{{ localize "FFXIV.Abilities.AssignedMarkers" }}</h3>
